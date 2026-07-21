@@ -13,8 +13,13 @@
 wp-cli.local.yml
 auth.json
 
-# Logi i śmieci systemowe
+# Logi i śmieci systemowe (w tym pliki-kopie edytorów — nigdy do repo ani ZIP-a)
 *.log
+*.bak
+*.old
+*.orig
+*.swp
+*~
 .DS_Store
 Thumbs.db
 
