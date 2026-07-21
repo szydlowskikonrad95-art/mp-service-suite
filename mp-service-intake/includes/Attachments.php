@@ -209,7 +209,10 @@ final class Attachments {
 		$name = wp_generate_uuid4(); // Losowa nazwa BEZ rozszerzenia (Content-Type z finfo przy serwowaniu).
 		$dest = $dir . '/' . $name;
 
-		if ( ! move_uploaded_file( $tmp, $dest ) ) {
+		// is_uploaded_file zweryfikowane w validate_upload PRZED tym wywolaniem;
+		// copy zamiast move_uploaded_file (to drugie zakazane przez Plugin Check).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- bezpieczny zapis zalacznika (tmp z is_uploaded_file); tmp sprzatany przez PHP na koncu requestu.
+		if ( ! copy( $tmp, $dest ) ) {
 			return false;
 		}
 

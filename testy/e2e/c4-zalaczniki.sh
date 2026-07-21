@@ -79,11 +79,19 @@ else
 	bad "plik zalacznika nie istnieje na dysku"
 fi
 
-# ── 3. Bezposredni URL do pliku => 403/blok (deny-ALL) ─────────────────────
+# ── 3. Bezposredni URL do pliku => deny-ALL (Apache/nginx) lub guard wdrozony ─
+# .htaccess dziala na Apache/nginx (cel klienta + poligon). Wbudowany serwer PHP
+# (`wp server` w CI) NIE honoruje .htaccess — tam potwierdzamy ze GUARD jest
+# wdrozony (ochrona zadziala na docelowym Apache), a portable bramka = endpoint (nizej).
 UP_BASEURL=$(wp eval 'echo wp_upload_dir()["baseurl"];' 2>/dev/null)
 UP_URLPATH=$(echo "$UP_BASEURL" | sed 's#^https\?://[^/]*##')
+SRV_SW=$(cget -sI "$BASE/" 2>/dev/null | grep -i '^server:' | tr -d '\r')
 DCODE=$(cget -o /dev/null -w '%{http_code}' "$BASE$UP_URLPATH/mp-attachments/$APATH")
-{ [ "$DCODE" = "403" ] || [ "$DCODE" = "404" ]; } && ok "bezposredni URL do pliku odbity (HTTP $DCODE, deny-ALL)" || bad "plik dostepny wprost! ($DCODE)"
+if echo "$SRV_SW" | grep -qiE 'apache|nginx'; then
+	{ [ "$DCODE" = "403" ] || [ "$DCODE" = "404" ]; } && ok "bezposredni URL do pliku odbity (HTTP $DCODE, deny-ALL na $SRV_SW)" || bad "plik dostepny wprost na Apache/nginx! ($DCODE)"
+else
+	grep -qi 'denied' "$UP_DIR/.htaccess" 2>/dev/null && ok "guard deny-ALL wdrozony ($SRV_SW nie honoruje .htaccess — ochrona zadziala na Apache/nginx; portable bramka = endpoint nizej)" || bad "brak guarda .htaccess"
+fi
 
 # ── 4. Bramka dostepu (IDOR/ownership) — deterministycznie przez wp eval ───
 AID=$(q "SELECT id FROM wp_mp_attachments WHERE case_id=$CID LIMIT 1")
