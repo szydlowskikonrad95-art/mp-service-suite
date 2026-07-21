@@ -11,6 +11,7 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\Attachments;
 use MP\Intake\CaseRepo;
 use MP\Intake\FormConfig;
 
@@ -39,6 +40,20 @@ final class SubmissionHandler {
 		add_action( 'admin_post_mp_intake_submit', array( self::class, 'handle_submit' ) );
 		add_action( 'admin_post_nopriv_mp_intake_verify', array( self::class, 'handle_verify' ) );
 		add_action( 'admin_post_mp_intake_verify', array( self::class, 'handle_verify' ) );
+		add_action( 'admin_post_mp_intake_attachment', array( self::class, 'handle_attachment' ) );
+	}
+
+	/**
+	 * Serwuje zalacznik przez PHP (endpoint z bramka dostepu + nonce).
+	 *
+	 * @return void
+	 */
+	public static function handle_attachment(): void {
+		$id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+
+		check_admin_referer( 'mp_intake_attachment_' . $id );
+
+		Attachments::serve( $id );
 	}
 
 	/**
@@ -84,6 +99,14 @@ final class SubmissionHandler {
 					),
 				)
 			);
+		}
+
+		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
+		// sprzatane cronem sierot razem ze sprawa).
+		$files = self::collect_files();
+
+		if ( array() !== $files ) {
+			Attachments::store_for_case( (int) $result['case_id'], $kind, $files );
 		}
 
 		Mailer::send_magic_link( $email, (string) $result['token'] );
@@ -153,6 +176,40 @@ final class SubmissionHandler {
 		}
 
 		return $values;
+	}
+
+	/**
+	 * Zbiera przeslane pliki z pola `mp_files[]` do znormalizowanej listy.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private static function collect_files(): array {
+		if ( ! isset( $_FILES['mp_files'] ) || ! is_array( $_FILES['mp_files']['name'] ?? null ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce zweryfikowany w handle_submit.
+			return array();
+		}
+
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- $_FILES: error/size to liczby, tmp_name od PHP (is_uploaded_file w Attachments), name -> sanitize_file_name w Attachments; nonce zweryfikowany wyzej.
+		$names = (array) $_FILES['mp_files']['name'];
+		$files = array();
+
+		foreach ( array_keys( $names ) as $i ) {
+			$error = (int) ( $_FILES['mp_files']['error'][ $i ] ?? UPLOAD_ERR_NO_FILE );
+
+			if ( UPLOAD_ERR_NO_FILE === $error ) {
+				continue;
+			}
+
+			$files[] = array(
+				'name'     => (string) ( $_FILES['mp_files']['name'][ $i ] ?? '' ),
+				'type'     => (string) ( $_FILES['mp_files']['type'][ $i ] ?? '' ),
+				'tmp_name' => (string) ( $_FILES['mp_files']['tmp_name'][ $i ] ?? '' ),
+				'error'    => $error,
+				'size'     => (int) ( $_FILES['mp_files']['size'][ $i ] ?? 0 ),
+			);
+		}
+		// phpcs:enable
+
+		return $files;
 	}
 
 	/**

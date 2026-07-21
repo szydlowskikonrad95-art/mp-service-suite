@@ -34,6 +34,30 @@ if ( $mp_intake_page_id > 0 ) {
 delete_option( MP\Intake\Front\Frontend::PAGE_OPTION );
 delete_option( MP\Intake\Front\Frontend::FINGERPRINT_OPTION );
 
+// Warstwa (i) — katalog zalacznikow (PLIKI techniczne) sprzatany ZAWSZE.
+$mp_intake_uploads = wp_upload_dir();
+$mp_intake_att_dir = rtrim( (string) $mp_intake_uploads['basedir'], '/' ) . '/mp-attachments';
+
+if ( is_dir( $mp_intake_att_dir ) ) {
+	$mp_intake_files = glob( $mp_intake_att_dir . '/*' );
+
+	foreach ( ( false === $mp_intake_files ? array() : $mp_intake_files ) as $mp_intake_file ) {
+		if ( is_file( $mp_intake_file ) ) {
+			wp_delete_file( $mp_intake_file );
+		}
+	}
+
+	// Zostaja tylko .htaccess/index.php (guardy) — skasuj i zdejmij katalog.
+	foreach ( array( '/.htaccess', '/index.php' ) as $mp_intake_guard ) {
+		if ( is_file( $mp_intake_att_dir . $mp_intake_guard ) ) {
+			wp_delete_file( $mp_intake_att_dir . $mp_intake_guard );
+		}
+	}
+
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- uninstall: pusty katalog techniczny zalacznikow.
+	rmdir( $mp_intake_att_dir );
+}
+
 // Warstwa (ii) — dane biznesowe C — kasowane WYLACZNIE za jawna zgoda admina.
 // srv_counters czyszczone RAZEM ze sprawami: skasowanie licznika przy zostawionych
 // sprawach => duplikaty SRV po reinstalacji w tym samym roku (DATABASE.md sekcja 4).

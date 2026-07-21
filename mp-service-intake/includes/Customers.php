@@ -64,6 +64,30 @@ final class Customers {
 	}
 
 	/**
+	 * Czy konto WP nalezy do danego klienta (ownership dla dostepu do zalacznikow).
+	 *
+	 * @param int $wp_user_id  ID uzytkownika WP.
+	 * @param int $customer_id ID klienta.
+	 * @return bool
+	 */
+	public static function wp_user_owns_customer( int $wp_user_id, int $customer_id ): bool {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$owner = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT wp_user_id FROM {$table} WHERE id = %d AND anonymized_at IS NULL",
+				$customer_id
+			)
+		);
+		// phpcs:enable
+
+		return null !== $owner && (int) $owner === $wp_user_id;
+	}
+
+	/**
 	 * Odczyt klienta po ID.
 	 *
 	 * @param int $customer_id ID klienta.

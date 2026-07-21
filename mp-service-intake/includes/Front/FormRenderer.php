@@ -78,6 +78,15 @@ final class FormRenderer {
 			$out .= self::render_field( $field, $values, $errors );
 		}
 
+		// Zalaczniki (opcjonalne): JPG/PNG/WebP/PDF, do 5 plikow.
+		$out .= self::field_wrap(
+			'mp_files',
+			esc_html__( 'Załączniki (opcjonalnie: zdjęcia, PDF — do 5 plików)', 'mp-service-intake' ),
+			'<input type="file" id="mp-f-mp_files" name="mp_files[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" />',
+			$errors,
+			'mp-f-mp_files'
+		);
+
 		$out .= '<p class="mp-intake-hint">' . esc_html__( 'Wskazówka: nie podawaj w opisie danych osobowych innych osób.', 'mp-service-intake' ) . '</p>';
 		$out .= '<button type="submit" class="mp-intake-submit">' . esc_html__( 'Wyślij zgłoszenie', 'mp-service-intake' ) . '</button>';
 		$out .= '</form></div>';

@@ -146,5 +146,7 @@ jobs:
           wp server --host=127.0.0.1 --port=8080 --docroot=/tmp/wp >/tmp/wp-server.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ -o /dev/null && break; sleep 1; done
           MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c3-front.sh
+      - name: Testy C4 (załączniki twardo — finfo, EXIF-strip, deny-ALL, IDOR, retencja)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c4-zalaczniki.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
