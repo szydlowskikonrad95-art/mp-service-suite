@@ -53,18 +53,18 @@ final class ImportScreen {
 	}
 
 	/**
-	 * Dodaje strone importu do menu (top-level do czasu listy produktow z 3/3).
+	 * Dodaje strone importu jako podstrone Rejestru MP.
 	 *
 	 * @return void
 	 */
 	public static function add_menu(): void {
-		self::$hook_suffix = (string) add_menu_page(
+		self::$hook_suffix = (string) add_submenu_page(
+			ProductsScreen::PAGE_SLUG,
 			__( 'Import produktów z CSV', 'mp-warranty-registry' ),
-			__( 'Rejestr MP', 'mp-warranty-registry' ),
+			__( 'Import CSV', 'mp-warranty-registry' ),
 			'mp_system_admin',
 			self::PAGE_SLUG,
-			array( self::class, 'render' ),
-			'dashicons-database-import'
+			array( self::class, 'render' )
 		);
 	}
 

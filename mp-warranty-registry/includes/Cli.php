@@ -22,6 +22,62 @@ final class Cli {
 		\WP_CLI::add_command( 'mp import-products', array( self::class, 'import_products' ) );
 		\WP_CLI::add_command( 'mp exception-add', array( self::class, 'exception_add' ) );
 		\WP_CLI::add_command( 'mp exception-revoke', array( self::class, 'exception_revoke' ) );
+		\WP_CLI::add_command( 'mp product-archive', array( self::class, 'product_archive' ) );
+		\WP_CLI::add_command( 'mp product-restore', array( self::class, 'product_restore' ) );
+	}
+
+	/**
+	 * Archiwizuje produkt (FAIL-CLOSED bez modulu spraw; wymaga --user admina).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <serial>
+	 * : Numer seryjny produktu.
+	 *
+	 * @param string[] $args Argumenty pozycyjne: [0] serial.
+	 * @return void
+	 */
+	public static function product_archive( array $args ): void {
+		$row = Repo::find_by_serial( (string) ( $args[0] ?? '' ) );
+
+		if ( null === $row ) {
+			\WP_CLI::error( 'Nie ma produktu o takim numerze seryjnym.' );
+		}
+
+		$result = Archive::archive( (int) $row['id'] );
+
+		if ( is_array( $result ) ) {
+			\WP_CLI::error( (string) $result['error'] );
+		}
+
+		\WP_CLI::success( 'Produkt zarchiwizowany.' );
+	}
+
+	/**
+	 * Przywraca produkt z archiwum (jawnie — import go nie wskrzesza).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <serial>
+	 * : Numer seryjny produktu.
+	 *
+	 * @param string[] $args Argumenty pozycyjne: [0] serial.
+	 * @return void
+	 */
+	public static function product_restore( array $args ): void {
+		$row = Repo::find_by_serial( (string) ( $args[0] ?? '' ) );
+
+		if ( null === $row ) {
+			\WP_CLI::error( 'Nie ma produktu o takim numerze seryjnym.' );
+		}
+
+		$result = Archive::restore( (int) $row['id'] );
+
+		if ( is_array( $result ) ) {
+			\WP_CLI::error( (string) $result['error'] );
+		}
+
+		\WP_CLI::success( 'Produkt przywrocony z archiwum.' );
 	}
 
 	/**

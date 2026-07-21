@@ -21,6 +21,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   reason, pola PII w diffach jako {field, changed:true}), listenery `mp_cases_data_erased`
   (rewokacja per-sprawa, globalne zostaja) i `mp_privacy_redact_for_customer` (redakcja reason),
   komendy `wp mp exception-add` / `wp mp exception-revoke`.
+- Registry (B): wyszukiwarka produktow (serial/model/faktura przez esc_like — `_`/`%` szukaja
+  literalnie; "po kliencie" mechanika odwrocona P2.6 przez `mp_customer_find_products` z obsluga
+  truncated="doprecyzuj"; degraded bez Intake = pole klienta nieaktywne), archiwum produktu
+  (soft delete FAIL-CLOSED: bez `mp_product_active_cases_count` odmowa; wpis w historii),
+  ekrany admina: lista produktow (WP_List_Table, status gwarancji wyliczany + badge wyjatku,
+  liczba spraw z C albo uczciwe "brak danych") za `mp_agent`, wyjatki gwarancyjne (lista +
+  przyznanie + cofniecie) i archiwizacja za `mp_system_admin`; import przeniesiony do submenu
+  Rejestru MP; CLI `wp mp product-archive` / `product-restore`.
 - Role mp_* dostaja swoje capabilities (cap-marka per rola) przy aktywacji; wbudowany
   administrator dostaje caps personelu (zdejmowane przy uninstall ostatniego pluginu).
   Pelna macierz uprawnien doprecyzuje SECURITY.md (D2).

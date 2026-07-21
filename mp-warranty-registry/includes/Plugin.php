@@ -50,8 +50,10 @@ final class Plugin {
 		add_filter( 'mp_privacy_redact_for_customer', array( WarrantyExceptions::class, 'privacy_redact' ), 10, 3 );
 
 		if ( is_admin() ) {
+			Admin\ProductsScreen::register();
 			Admin\ImportScreen::register();
 			Admin\ImportEndpoints::register();
+			Admin\ExceptionsScreen::register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {

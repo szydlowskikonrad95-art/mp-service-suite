@@ -1,0 +1,25 @@
+/* Lista produktow rejestru MP (badge + filtry). */
+
+.mp-registry .mp-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 9px;
+	font-size: 11px;
+	line-height: 1.6;
+	vertical-align: middle;
+}
+
+.mp-registry .mp-badge-archived {
+	background: #dcdcde;
+	color: #50575e;
+}
+
+.mp-registry .mp-badge-exception {
+	background: #fcf9e8;
+	color: #996800;
+	border: 1px solid #dba617;
+}
+
+.mp-registry .mp-registry-filters label {
+	margin-right: 12px;
+}
