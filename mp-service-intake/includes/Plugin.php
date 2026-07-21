@@ -39,6 +39,10 @@ final class Plugin {
 	 */
 	public function boot(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			Cli::register();
+		}
 	}
 
 	/**
