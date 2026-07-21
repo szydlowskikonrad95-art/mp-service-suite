@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Intake (C): front zgłoszenia (P1.1 + antyspam część) — renderowanie formularza BLOKIEM Gutenberga
+  `mp/intake-form` (+ shortcode fallback, lekcja: buildery nie renderują shortcode), WCAG-lite
+  (label per pole, aria-describedby, role=alert/status); auto-strona tworzona przy aktywacji
+  z ODCISKIEM PALCA (kasowana w uninstall tylko gdy nieedytowana ręcznie); handler zgłoszenia
+  (admin-post): nonce + honeypot + pułapka czasu (<2 s = bot, cichy odrzut) → CaseRepo::create
+  → mail z magic-linkiem → komunikat NEUTRALNY (bez enumeracji); potwierdzenie magic-linkiem (GET)
+  na własnej minimalnej stronie (Cache-Control: no-store, Referrer-Policy: no-referrer, nosniff,
+  SAMEORIGIN), neutralnej (SRV tylko mailem) + 2. mail z numerem SRV po weryfikacji; nagłówki
+  bezpieczeństwa na stronie formularza; test C3 w CI (wp server + przechwyt wp_mail).
 - Intake (C): formularz dynamiczny + walidacje (P1.1/1.2/1.4) — PLASKI schemat pol per RODZAJ
   sprawy (reklamacja/naprawa/zapytanie/zwrot; `FormConfig`, zero logiki warunkowej, admin nadpisze
   opcja autoload=no); walidacja SYNCHRONICZNA PRZED insertem (odmowa = bledy {field, reason_code},

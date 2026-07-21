@@ -31,7 +31,7 @@ final class Frontend {
 	/**
 	 * Znacznik bloku w tresci auto-strony.
 	 */
-	private const BLOCK_MARKUP = "<!-- wp:mp/intake-form /-->";
+	private const BLOCK_MARKUP = '<!-- wp:mp/intake-form /-->';
 
 	/**
 	 * Rejestruje shortcode, blok i naglowki (na init/front).
@@ -66,7 +66,7 @@ final class Frontend {
 		register_block_type(
 			'mp/intake-form',
 			array(
-				'api_version'     => 3,
+				'api_version'     => '3',
 				'title'           => __( 'Formularz zgłoszenia MP', 'mp-service-intake' ),
 				'category'        => 'widgets',
 				'icon'            => 'clipboard',

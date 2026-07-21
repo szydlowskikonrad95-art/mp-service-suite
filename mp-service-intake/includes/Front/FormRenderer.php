@@ -89,8 +89,8 @@ final class FormRenderer {
 	 * Render pojedynczego pola wg definicji FormConfig.
 	 *
 	 * @param array{key: string, label: string, type: string, required: bool, pii_sensitive: bool} $field Definicja.
-	 * @param array<string, mixed>                                                                  $values Wartosci.
-	 * @param array<string, string>                                                                 $errors Kody bledow per pole.
+	 * @param array<string, mixed>                                                                 $values Wartosci.
+	 * @param array<string, string>                                                                $errors Kody bledow per pole.
 	 * @return string
 	 */
 	private static function render_field( array $field, array $values, array $errors ): string {
@@ -154,7 +154,7 @@ final class FormRenderer {
 
 		foreach ( FormConfig::KINDS as $kind ) {
 			$out .= '<option value="' . esc_attr( $kind ) . '"' . selected( $selected, $kind, false ) . '>'
-				. esc_html( $labels[ $kind ] ?? $kind ) . '</option>';
+				. esc_html( $labels[ $kind ] ) . '</option>';
 		}
 
 		return $out . '</select>';

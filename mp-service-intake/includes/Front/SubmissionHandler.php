@@ -52,7 +52,7 @@ final class SubmissionHandler {
 		}
 
 		// Antyspam: honeypot wypelniony ALBO za szybko => cichy sukces (bot nie wie).
-		$honeypot = isset( $_POST['mp_hp'] ) ? trim( (string) wp_unslash( $_POST['mp_hp'] ) ) : '';
+		$honeypot = isset( $_POST['mp_hp'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['mp_hp'] ) ) : '';
 		$started  = isset( $_POST['mp_ts'] ) ? (int) $_POST['mp_ts'] : 0;
 
 		if ( '' !== $honeypot || ( $started > 0 && ( time() - $started ) < self::MIN_FILL_SECONDS ) ) {
@@ -75,10 +75,13 @@ final class SubmissionHandler {
 			self::redirect_back(
 				array(
 					'errors' => self::flatten_errors( $result['validation'] ?? array() ),
-					'values' => array_merge( $values, array(
-						'kind'  => $kind,
-						'email' => $email,
-					) ),
+					'values' => array_merge(
+						$values,
+						array(
+							'kind'  => $kind,
+							'email' => $email,
+						)
+					),
 				)
 			);
 		}
@@ -141,7 +144,8 @@ final class SubmissionHandler {
 				continue;
 			}
 
-			$raw = wp_unslash( (string) $_POST[ $key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- jw.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce zweryfikowany w handle_submit; sanityzacja wg typu pola w nastepnej instrukcji (sanitize_textarea_field/sanitize_text_field).
+			$raw = wp_unslash( (string) $_POST[ $key ] );
 
 			$values[ $key ] = 'textarea' === $field['type']
 				? sanitize_textarea_field( $raw )
@@ -217,8 +221,12 @@ final class SubmissionHandler {
 	private static function client_key(): string {
 		$cookie = 'mp_intake_sess';
 
-		if ( isset( $_COOKIE[ $cookie ] ) && 1 === preg_match( '/^[a-f0-9]{32}$/', (string) $_COOKIE[ $cookie ] ) ) {
-			return (string) $_COOKIE[ $cookie ];
+		if ( isset( $_COOKIE[ $cookie ] ) ) {
+			$existing = sanitize_text_field( wp_unslash( (string) $_COOKIE[ $cookie ] ) );
+
+			if ( 1 === preg_match( '/^[a-f0-9]{32}$/', $existing ) ) {
+				return $existing;
+			}
 		}
 
 		$key = md5( wp_generate_password( 32, false, false ) );

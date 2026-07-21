@@ -127,14 +127,24 @@ jobs:
           mkdir -p /tmp/wp && cd /tmp/wp
           wp core download --version=6.9.4
           wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
-          wp core install --url=http://localhost --title=DoD --admin_user=admin \
+          # URL == adres wbudowanego serwera (wp server) — front E2E bez 301 na canonical.
+          wp core install --url=http://127.0.0.1:8080 --title=DoD --admin_user=admin \
             --admin_password=admin --admin_email=dod@example.com --skip-email
           cp -r "$GITHUB_WORKSPACE"/mp-service-intake "$GITHUB_WORKSPACE"/mp-warranty-registry \
             "$GITHUB_WORKSPACE"/mp-workflow-automator /tmp/wp/wp-content/plugins/
+          # Przechwyt wp_mail (token magic-linka dla testu C3) — dev-only mu-plugin.
+          mkdir -p /tmp/wp/wp-content/mu-plugins
+          cp "$GITHUB_WORKSPACE"/docker/mu-plugins/mp-test-mail-capture.php /tmp/wp/wp-content/mu-plugins/
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
       - name: Testy C1 (rdzeń sprawy — SRV współbieżny + narodziny + snapshot z partią)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c1-rdzen.sh
       - name: Testy C2 (formularz dynamiczny + walidacje przed insertem)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c2-formularz.sh
+      - name: Testy C3 (front — formularz, honeypot, magic-link, potwierdzenie)
+        run: |
+          cd /tmp/wp
+          wp server --host=127.0.0.1 --port=8080 --docroot=/tmp/wp >/tmp/wp-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ -o /dev/null && break; sleep 1; done
+          MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c3-front.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
