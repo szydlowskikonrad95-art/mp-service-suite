@@ -17,20 +17,31 @@ wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_case_events; DEL
 wp option delete $(wp option list --search='mp_pending_contact_*' --field=option_name 2>/dev/null) >/dev/null 2>&1 || true
 
 # ── 1. CROWN-JEWEL: 30 rownoleglych procesow rwie po numery SRV = ZERO duplikatow ──
+# DETERMINIZM: kazdy proces pisze do WLASNEGO pliku (brak wyscigu wspolnego >>),
+# a atomowosc mierzymy LICZNIKIEM Z BAZY. Matematyka: next() = jeden atomowy
+# INSERT...ON DUPLICATE + LAST_INSERT_ID (per-connection), wiec licznik==PROCS
+# zachodzi WTEDY I TYLKO WTEDY gdy przydzielono PROCS UNIKALNYCH numerow
+# (dwa te same numery => zgubiony inkrement => licznik<PROCS). Plik = tylko
+# czytelny cross-check duplikatow, NIE zrodlo prawdy o atomowosci.
 PROCS=30
+rm -f /tmp/mp-srv-*.txt
 for i in $(seq 1 $PROCS); do
-	wp eval "echo MP\Intake\SrvCounter::next($YEAR), PHP_EOL;" >> /tmp/mp-srv-nums.txt 2>/dev/null &
+	wp eval "echo MP\Intake\SrvCounter::next($YEAR), PHP_EOL;" > "/tmp/mp-srv-$i.txt" 2>/dev/null &
 done
 wait
-TOTAL=$(grep -c . /tmp/mp-srv-nums.txt)
-UNIQ=$(sort -u /tmp/mp-srv-nums.txt | grep -c .)
+
 COUNTER=$(q "SELECT value FROM wp_mp_srv_counters WHERE year=$YEAR")
-[ "$TOTAL" = "$PROCS" ] && [ "$UNIQ" = "$PROCS" ] && ok "SRV wspolbiezny: $PROCS procesow -> $UNIQ unikalnych numerow, ZERO duplikatow" \
-	|| bad "SRV: total=$TOTAL uniq=$UNIQ (duplikaty!)"
-[ "$COUNTER" = "$PROCS" ] && ok "licznik roku = $PROCS (atomowe podbicie, bez zgubionych)" || bad "licznik=$COUNTER != $PROCS"
-FMT=$(head -1 /tmp/mp-srv-nums.txt)
+[ "$COUNTER" = "$PROCS" ] \
+	&& ok "SRV atomowy: $PROCS procesow -> licznik w bazie = $PROCS = $PROCS unikalnych numerow (dowod z DB)" \
+	|| bad "SRV NIEATOMOWY: licznik=$COUNTER != $PROCS (zgubiony inkrement = kolizja numeru)"
+
+# Cross-check: zaden numer nie zostal wydany DWA razy (realny test duplikatu).
+DUPES=$(cat /tmp/mp-srv-*.txt 2>/dev/null | sort | uniq -d | wc -l | tr -d ' ')
+[ "$DUPES" -eq 0 ] && ok "zaden numer nie powtorzony (uniq -d pusty)" || bad "powtorzone numery: $DUPES"
+
+FMT=$(cat /tmp/mp-srv-1.txt 2>/dev/null)
 echo "$FMT" | grep -qE "^SRV/$YEAR/[0-9]{4}" && ok "format numeru: $FMT (SRV/RRRR/NNNN)" || bad "zly format: $FMT"
-rm -f /tmp/mp-srv-nums.txt
+rm -f /tmp/mp-srv-*.txt
 wp db query "DELETE FROM wp_mp_srv_counters;" >/dev/null 2>&1
 
 # ── 2. Seed produktu w B (z PARTIA) do snapshotu ──────────────────────────
