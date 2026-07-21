@@ -27,8 +27,18 @@ final class Roles {
 	);
 
 	/**
+	 * Capabilities personelu — te dostaje TAKZE wbudowany administrator WP
+	 * (bez nich nie widzialby ekranow mp_*); mp_client swiadomie poza lista.
+	 */
+	public const STAFF_CAPS = array( 'mp_system_admin', 'mp_coordinator', 'mp_agent' );
+
+	/**
 	 * Tworzy brakujace role (idempotentnie — wolane przy KAZDEJ aktywacji,
 	 * takze po awaryjnym zdjeciu rol; runda W: aktywacja zawsze odtwarza).
+	 *
+	 * Kazda rola niesie wlasna cap-marke (kod sprawdza WYLACZNIE capability,
+	 * nigdy nazwe roli). To minimalny zestaw pod klocek B; pelna macierz
+	 * uprawnien doprecyzuje SECURITY.md (D2) — rozszerzenie, nie przebudowa.
 	 *
 	 * @return void
 	 */
@@ -36,6 +46,22 @@ final class Roles {
 		foreach ( self::ROLES as $slug => $label ) {
 			if ( null === get_role( $slug ) ) {
 				add_role( $slug, $label, array( 'read' => true ) );
+			}
+
+			$role = get_role( $slug );
+
+			if ( null !== $role && ! $role->has_cap( $slug ) ) {
+				$role->add_cap( $slug );
+			}
+		}
+
+		$admin = get_role( 'administrator' );
+
+		if ( null !== $admin ) {
+			foreach ( self::STAFF_CAPS as $cap ) {
+				if ( ! $admin->has_cap( $cap ) ) {
+					$admin->add_cap( $cap );
+				}
 			}
 		}
 	}

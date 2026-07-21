@@ -29,6 +29,18 @@ final class CsvParser {
 	);
 
 	/**
+	 * Czy serwer ma czym konwertowac Windows-1250 -> UTF-8 (iconv lub intl).
+	 *
+	 * Bez zadnego z nich import przyjmie WYLACZNIE pliki juz w UTF-8
+	 * (ekran admina pokazuje wtedy ostrzezenie).
+	 *
+	 * @return bool True gdy jest iconv lub UConverter.
+	 */
+	public static function has_transcoder(): bool {
+		return function_exists( 'iconv' ) || class_exists( \UConverter::class );
+	}
+
+	/**
 	 * Konwertuje surowa tresc pliku do UTF-8 bez BOM.
 	 *
 	 * Poprawne UTF-8 zostaje. Inaczej: Windows-1250 (polski Excel) przez

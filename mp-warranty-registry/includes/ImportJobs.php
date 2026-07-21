@@ -90,6 +90,47 @@ final class ImportJobs {
 	}
 
 	/**
+	 * Zwraca zywy job (processing pod globalnym lockiem) lub null.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public static function find_live(): ?array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::IMPORT_JOBS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE lock_key = %s", self::LOCK_LIVE ),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $row ) ? $row : null;
+	}
+
+	/**
+	 * Ostatnie joby importu (historia na ekranie admina).
+	 *
+	 * @param int $limit Ile wierszy.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function latest( int $limit = 5 ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::IMPORT_JOBS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} ORDER BY id DESC LIMIT %d", $limit ),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Przejecie/wznowienie joba = NOWY token (stary batch dostaje odmowe).
 	 *
 	 * @param int $job_id ID joba.
