@@ -6,13 +6,15 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Rejestr produktow, numerow seryjnych, partii i okresow gwarancyjnych: import CSV, statusy gwarancji, wyjatki gwarancyjne, wyszukiwarka.
+Product, serial number, production batch and warranty registry with CSV import, warranty status and admin search.
 
 == Description ==
 
-Rejestr produktow, numerow seryjnych, partii i okresow gwarancyjnych: import CSV, statusy gwarancji, wyjatki gwarancyjne, wyszukiwarka. Czesc pakietu MP Service Suite (3 wspolpracujace pluginy; kazdy dziala tez samodzielnie w trybie ograniczonym).
+Stores products, serial numbers, production batches and warranty periods in dedicated database tables. Imports registry data from CSV files (resilient to regional encodings and separators), determines warranty status automatically (active, expired, no data, verification required), detects serial number reuse across cases, supports admin-approved warranty exceptions and provides an administrative search by serial, customer, invoice or model.
+
+Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are fully translatable (Polish translation included).
 
 == Changelog ==
 
 = 0.1.0 =
-* Szkielet pluginu: bootstrap OOP, cykl zycia (aktywacja/deaktywacja/uninstall), wspolne role mp_*, i18n.
+* Plugin skeleton: OOP bootstrap, lifecycle (activation/deactivation/uninstall), shared mp_* roles, i18n.
