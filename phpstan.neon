@@ -1,0 +1,29 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - mp-service-intake
+        - mp-warranty-registry
+        - mp-workflow-automator
+        - lib
+    scanFiles:
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+    # kopie Common sa generowane przez build/build.sh — tu tylko DISCOVERY symboli
+    # (analiza chodzi po zrodle lib/mp-common; kopie pozostaja w excludePaths)
+    scanDirectories:
+        - mp-service-intake/includes/Common
+        - mp-warranty-registry/includes/Common
+        - mp-workflow-automator/includes/Common
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    excludePaths:
+        analyseAndScan:
+            - '*/testy/*'
+            - '*/vendor/*'
+        # kopie Common: poza ANALIZA (analizujemy zrodlo lib/mp-common),
+        # ale dostepne dla DISCOVERY symboli (scanDirectories wyzej)
+        analyse:
+            - '*/includes/Common/*'

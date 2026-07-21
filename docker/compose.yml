@@ -1,0 +1,59 @@
+# Poligon deweloperski/demo MP Service Suite — piny KLEPNIETE (FREEZE 2026-07-21):
+# WP 6.9.4 + PHP 8.4 + MariaDB 11.8 LTS + Mailpit v1.30.2.
+# Zmiana pinow = swiadoma decyzja przy wydaniu, nie "bo samo sie zmienilo".
+services:
+  db:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wp
+      MARIADB_PASSWORD: wp
+      MARIADB_ROOT_PASSWORD: root-dev-only
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:6.9.4-php8.4-apache
+    depends_on:
+      - db
+      - mailpit
+    ports:
+      - "8090:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+      # DISABLE_WP_CRON: cron jedzie z kontenera "cron" (runda W — zero nakladania wywolan)
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'DISABLE_WP_CRON', true );
+    volumes:
+      - wp_data:/var/www/html
+      - ./php.ini:/usr/local/etc/php/conf.d/zz-mp.ini:ro
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ../mp-service-intake:/var/www/html/wp-content/plugins/mp-service-intake
+      - ../mp-warranty-registry:/var/www/html/wp-content/plugins/mp-warranty-registry
+      - ../mp-workflow-automator:/var/www/html/wp-content/plugins/mp-workflow-automator
+
+  mailpit:
+    image: axllent/mailpit:v1.30.2
+    ports:
+      - "8025:8025"
+
+  # realny cron: wp cron event run co 60 s (WP-Cron przez HTTP wylaczony wyzej)
+  cron:
+    image: wordpress:cli-php8.4
+    depends_on:
+      - wordpress
+    user: "33:33"
+    entrypoint: ["bash", "-c", "sleep 30; while true; do wp cron event run --due-now --path=/var/www/html 2>/dev/null || true; sleep 60; done"]
+    volumes:
+      - wp_data:/var/www/html
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ../mp-service-intake:/var/www/html/wp-content/plugins/mp-service-intake
+      - ../mp-warranty-registry:/var/www/html/wp-content/plugins/mp-warranty-registry
+      - ../mp-workflow-automator:/var/www/html/wp-content/plugins/mp-workflow-automator
+
+volumes:
+  db_data:
+  wp_data:

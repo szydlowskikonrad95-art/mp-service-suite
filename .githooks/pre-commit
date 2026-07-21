@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Pre-commit MP (zlote zasady skladni): php -l na zmienionych + linter tabel + sekrety.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
+if [ -n "$files" ]; then
+  while IFS= read -r f; do php -l "$f" > /dev/null; done <<< "$files"
+fi
+php build/lint-cudze-tabele.php > /dev/null
+if command -v gitleaks > /dev/null 2>&1; then
+  gitleaks protect --staged --no-banner
+else
+  echo "UWAGA: gitleaks nieobecny lokalnie — skan sekretow pilnuje job w CI." >&2
+fi

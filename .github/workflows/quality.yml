@@ -1,0 +1,91 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # matryca: skladnia + testy jednostkowe na KAZDEJ wersji PHP (podloga 8.1 ze spec)
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '${{ matrix.php }}'
+          tools: 'composer:v2'
+      - run: composer install --prefer-dist --no-progress
+      - name: Lint skladni
+        run: find mp-service-intake mp-warranty-registry mp-workflow-automator lib -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+      - name: PHPUnit
+        run: vendor/bin/phpunit
+
+  # lint/static raz na 8.3 (zgodnosc wersji lapie PHPCompatibilityWP w phpcs)
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: 'composer:v2'
+      - run: composer install --prefer-dist --no-progress
+      - name: Build kopii Common (PHPStan discovery symboli)
+        run: bash build/build.sh
+      - name: PHPCS (czysty WPCS + PHPCompatibilityWP)
+        run: vendor/bin/phpcs
+      - name: PHPStan (lvl 6 + wordpress-stubs)
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - name: Linter cudzych tabel (tokenowy)
+        run: php build/lint-cudze-tabele.php
+
+  # artefakty: build ZIP-ow (stempel Common + BUILD-INFO + smoke z kopii)
+  build-artefakty:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: Build (kopie Common, BUILD-INFO, ZIP, smoke)
+        run: bash build/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mp-plugins-zip
+          path: build/dist/*.zip
+
+  # oficjalny Plugin Check — na ZBUDOWANYM artefakcie (runda W), per plugin
+  plugin-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        plugin: [mp-service-intake, mp-warranty-registry, mp-workflow-automator]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: Build artefaktu
+        run: bash build/build.sh
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './build/dist/${{ matrix.plugin }}'
+
+  # skan sekretow (maszyna; lokalny pre-commit to tylko pierwsza linia)
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

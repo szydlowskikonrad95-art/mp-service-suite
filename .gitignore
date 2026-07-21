@@ -26,3 +26,12 @@ Thumbs.db
 # Lokalne pliki IDE
 .idea/
 .vscode/
+
+# --- D1: narzedzia i artefakty ---
+vendor/
+build/dist/
+.phpunit.cache/
+# kopie mp-common GENEROWANE przez build/build.sh — edycje TYLKO w lib/mp-common
+mp-service-intake/includes/Common/
+mp-warranty-registry/includes/Common/
+mp-workflow-automator/includes/Common/
