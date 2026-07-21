@@ -17,6 +17,23 @@ require_once __DIR__ . '/includes/Autoloader.php';
 
 MP\Intake\Autoloader::register();
 
+// Warstwa (i) — auto-strona formularza: kasowana TYLKO gdy tresc nietknieta
+// (odcisk palca == oryginal). Recznie zredagowana strona ZOSTAJE (blad #5 kolegi).
+$mp_intake_page_id = (int) get_option( MP\Intake\Front\Frontend::PAGE_OPTION, 0 );
+
+if ( $mp_intake_page_id > 0 ) {
+	$mp_intake_page = get_post( $mp_intake_page_id );
+
+	if ( $mp_intake_page instanceof WP_Post
+		&& md5( (string) $mp_intake_page->post_content ) === MP\Intake\Front\Frontend::original_fingerprint()
+	) {
+		wp_delete_post( $mp_intake_page_id, true );
+	}
+}
+
+delete_option( MP\Intake\Front\Frontend::PAGE_OPTION );
+delete_option( MP\Intake\Front\Frontend::FINGERPRINT_OPTION );
+
 // Warstwa (ii) — dane biznesowe C — kasowane WYLACZNIE za jawna zgoda admina.
 // srv_counters czyszczone RAZEM ze sprawami: skasowanie licznika przy zostawionych
 // sprawach => duplikaty SRV po reinstalacji w tym samym roku (DATABASE.md sekcja 4).
