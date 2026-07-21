@@ -117,5 +117,15 @@ final class Uninstall {
 
 			remove_role( $role_slug );
 		}
+
+		$admin = get_role( 'administrator' );
+
+		if ( null !== $admin ) {
+			foreach ( Roles::STAFF_CAPS as $cap ) {
+				if ( $admin->has_cap( $cap ) ) {
+					$admin->remove_cap( $cap );
+				}
+			}
+		}
 	}
 }

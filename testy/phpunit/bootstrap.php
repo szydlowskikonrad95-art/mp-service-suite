@@ -20,6 +20,23 @@ MP\Intake\Autoloader::register();
 MP\Registry\Autoloader::register();
 MP\Automator\Autoloader::register();
 
+// Minimalne stuby WP dla czystych klas, ktore tlumacza komunikaty.
+// Testy jednostkowe NIE laduja WordPressa (golden/E2E maja zywy WP).
+if ( ! function_exists( '__' ) ) {
+	/**
+	 * Stub translacji: zwraca tekst bez zmian.
+	 *
+	 * @param string $text   Tekst.
+	 * @param string $domain Domena (ignorowana).
+	 * @return string
+	 */
+	function __( string $text, string $domain = 'default' ): string { // phpcs:ignore
+		unset( $domain );
+
+		return $text;
+	}
+}
+
 spl_autoload_register(
 	static function ( string $class_name ) use ( $mp_repo_root ): void {
 		$prefix = 'MP\\Common\\';

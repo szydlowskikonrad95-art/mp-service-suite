@@ -37,6 +37,18 @@
         </properties>
     </rule>
 
+    <!-- capabilities mp_* sa CUSTOM — nadawane przy aktywacji w Roles::ensure (add_cap) -->
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array">
+                <element value="mp_system_admin"/>
+                <element value="mp_coordinator"/>
+                <element value="mp_agent"/>
+                <element value="mp_client"/>
+            </property>
+        </properties>
+    </rule>
+
     <!-- 3 text-domainy (po jednym per plugin); doprecyzowanie per-plugin przy realnych stringach i18n (D3+) -->
     <rule ref="WordPress.WP.I18n">
         <properties>
