@@ -13,27 +13,29 @@
 
 declare(strict_types=1);
 
+// Nazwy BEZ prefiksu wp_ — kod uzywa $wpdb->prefix . 'mp_...', wiec literaly
+// w zrodlach sa krotsze; stripos zlapie tez pelne 'wp_mp_...' (zawiera krotsza).
 $mp_ownership = array(
 	'mp-service-intake'     => array(
-		'wp_mp_customers',
-		'wp_mp_service_cases',
-		'wp_mp_case_events',
-		'wp_mp_messages',
-		'wp_mp_attachments',
-		'wp_mp_consents',
-		'wp_mp_srv_counters',
+		'mp_customers',
+		'mp_service_cases',
+		'mp_case_events',
+		'mp_messages',
+		'mp_attachments',
+		'mp_consents',
+		'mp_srv_counters',
 	),
 	'mp-warranty-registry'  => array(
-		'wp_mp_product_registry',
-		'wp_mp_product_events',
-		'wp_mp_warranty_exceptions',
-		'wp_mp_import_jobs',
+		'mp_product_registry',
+		'mp_product_events',
+		'mp_warranty_exceptions',
+		'mp_import_jobs',
 	),
 	'mp-workflow-automator' => array(
-		'wp_mp_workflow_rules',
-		'wp_mp_case_sla',
-		'wp_mp_case_checklists',
-		'wp_mp_workflow_events',
+		'mp_workflow_rules',
+		'mp_case_sla',
+		'mp_case_checklists',
+		'mp_workflow_events',
 	),
 );
 

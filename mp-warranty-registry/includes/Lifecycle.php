@@ -46,6 +46,8 @@ final class Lifecycle {
 		if ( false === get_option( self::SCHEMA_OPTION, false ) ) {
 			add_option( self::SCHEMA_OPTION, '0', '', false );
 		}
+
+		Schema::migrate();
 	}
 
 	/**
