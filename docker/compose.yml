@@ -46,6 +46,12 @@ services:
     depends_on:
       - wordpress
     user: "33:33"
+    environment:
+      # wp-config oficjalnego obrazu czyta te wartosci w RUNTIME — wp-cli musi je miec tak samo
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
     entrypoint: ["bash", "-c", "sleep 30; while true; do wp cron event run --due-now --path=/var/www/html 2>/dev/null || true; sleep 60; done"]
     volumes:
       - wp_data:/var/www/html
