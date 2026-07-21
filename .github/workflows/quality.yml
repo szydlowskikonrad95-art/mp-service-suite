@@ -95,3 +95,42 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # E2E DoD klocka B na ZYWYM WP (sygnal #1): import 10k, kill-polowa-wznowienie,
+  # partia CSV->check, negatywne uprawnienia, snapshot-uninstall.
+  e2e-import:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: wp
+          MARIADB_PASSWORD: wp
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mysqli, iconv, intl
+          tools: wp-cli
+      - name: Build pluginow (kopie Common)
+        run: bash build/build.sh
+      - name: Instalacja WP 6.9.4 (pin ze spec)
+        run: |
+          mkdir -p /tmp/wp && cd /tmp/wp
+          wp core download --version=6.9.4
+          wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
+          wp core install --url=http://localhost --title=DoD --admin_user=admin \
+            --admin_password=admin --admin_email=dod@example.com --skip-email
+          cp -r "$GITHUB_WORKSPACE"/mp-service-intake "$GITHUB_WORKSPACE"/mp-warranty-registry \
+            "$GITHUB_WORKSPACE"/mp-workflow-automator /tmp/wp/wp-content/plugins/
+          wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
+      - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
