@@ -14,6 +14,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (przejecie joba = nowy token, stare batche dostaja odmowe), pobieranie raportu bledow
   przez PHP z capability (nonce + nosniff), stale-detekcja przy renderze, ostrzezenie
   gdy serwer nie ma iconv/intl.
+- Registry (B): wyjatki gwarancyjne — CRUD stanu wg precedensu kontraktu (max 1 aktywny per
+  zakres, per-sprawa > globalny, wylacznie mp_system_admin, "expired" wyliczane z valid_until
+  nigdy zapisywane, valid_until > NOW przy CREATE), emisja `mp_warranty_exception_changed`
+  PO COMMIT (5 argumentow), historia produktu `wp_mp_product_events` (append-only, payload bez
+  reason, pola PII w diffach jako {field, changed:true}), listenery `mp_cases_data_erased`
+  (rewokacja per-sprawa, globalne zostaja) i `mp_privacy_redact_for_customer` (redakcja reason),
+  komendy `wp mp exception-add` / `wp mp exception-revoke`.
 - Role mp_* dostaja swoje capabilities (cap-marka per rola) przy aktywacji; wbudowany
   administrator dostaje caps personelu (zdejmowane przy uninstall ostatniego pluginu).
   Pelna macierz uprawnien doprecyzuje SECURITY.md (D2).
