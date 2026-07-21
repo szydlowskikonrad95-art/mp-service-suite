@@ -41,6 +41,13 @@ final class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_filter( 'mp_warranty_check', array( WarrantyCheck::class, 'handle' ), 10, 4 );
 		add_filter( 'mp_serial_usage_count', array( $this, 'serial_usage_count' ), 10, 2 );
+		add_action(
+			'mp_cases_data_erased',
+			static function (): void {
+				WarrantyExceptions::on_cases_data_erased();
+			}
+		);
+		add_filter( 'mp_privacy_redact_for_customer', array( WarrantyExceptions::class, 'privacy_redact' ), 10, 3 );
 
 		if ( is_admin() ) {
 			Admin\ImportScreen::register();
