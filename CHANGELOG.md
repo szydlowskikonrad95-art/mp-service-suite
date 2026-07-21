@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Intake (C): rdzen sprawy serwisowej — schemat 7 tabel (customers, service_cases, case_events,
+  messages, attachments, consents, srv_counters) z migracjami; atomowy licznik numeru sprawy
+  SRV/RRRR/NNNN (`INSERT ... VALUES(year, LAST_INSERT_ID(1)) ON DUPLICATE KEY UPDATE ...` +
+  UNIQUE na case_number — zero duplikatow przy zbieznosci); narodziny sprawy wg flow z krytyki:
+  zgloszenie -> sprawa `unverified` (status NULL, SRV nadany od razu, snapshot gwarancji z chwili
+  zgloszenia NIOSACY PARTIE, token jednorazowy = tylko HASH w bazie, TTL 24h) -> potwierdzenie
+  magic-linkiem ATOMOWE (UPDATE-warunkowy: token zywy, w oknie 72h) -> DOPIERO TERAZ event
+  CASE_CREATED (append-only, NO-PII) + akcja `mp_case_created` + utworzenie/podpiecie klienta
+  (Automator nigdy nie widzi niepotwierdzonych); form_data z etykietami z chwili zlozenia
+  (render historyczny) + flaga pii_sensitive per pole; komendy `wp mp case-create` / `case-verify`;
+  test C1 w CI (job e2e-import: SRV wspolbiezny 30 procesow + narodziny + snapshot z partia).
 - Registry (B): tabele produktow/eventow/wyjatkow/jobow importu z migracjami, silnik statusu
   gwarancji (`mp_warranty_check`), silnik importu CSV odporny na polskiego Excela (Windows-1250,
   separatory `;`/`,`, raport bledow per wiersz, joby z lockiem INSERT-pod-UNIQUE i tokenem UUID,
