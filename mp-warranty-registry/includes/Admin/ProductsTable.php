@@ -11,6 +11,10 @@ use MP\Registry\Repo;
 use MP\Registry\Search;
 use MP\Registry\WarrantyStatus;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Plik wykonuje require na poziomie pliku — strażnik przed bezpośrednim wejściem.
+}
+
 if ( ! class_exists( '\WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
