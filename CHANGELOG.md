@@ -29,6 +29,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   liczba spraw z C albo uczciwe "brak danych") za `mp_agent`, wyjatki gwarancyjne (lista +
   przyznanie + cofniecie) i archiwizacja za `mp_system_admin`; import przeniesiony do submenu
   Rejestru MP; CLI `wp mp product-archive` / `product-restore`.
+- Registry (B): `wp mp import-resume <job>` (wznowienie przerwanego importu z CLI — ta sama
+  mechanika co "Wznow" w UI) oraz testy DoD klocka B w CI (job e2e-import na zywym WP 6.9.4
+  + MariaDB 11.8): import 10 000 wierszy, kill -9 klienta w polowie + wznowienie z offsetu
+  (ksiegowosc joba == wiersze w bazie, zero duplikatow), partia CSV->mp_warranty_check,
+  negatywne uprawnienia, snapshot-uninstall (default OFF: dane zostaja; opt-in: tabele znikaja,
+  role i caps zdjete).
 - Role mp_* dostaja swoje capabilities (cap-marka per rola) przy aktywacji; wbudowany
   administrator dostaje caps personelu (zdejmowane przy uninstall ostatniego pluginu).
   Pelna macierz uprawnien doprecyzuje SECURITY.md (D2).

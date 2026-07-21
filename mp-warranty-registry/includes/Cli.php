@@ -24,6 +24,52 @@ final class Cli {
 		\WP_CLI::add_command( 'mp exception-revoke', array( self::class, 'exception_revoke' ) );
 		\WP_CLI::add_command( 'mp product-archive', array( self::class, 'product_archive' ) );
 		\WP_CLI::add_command( 'mp product-restore', array( self::class, 'product_restore' ) );
+		\WP_CLI::add_command( 'mp import-resume', array( self::class, 'import_resume' ) );
+	}
+
+	/**
+	 * Wznawia przerwany import (odpowiednik "Wznow" z UI: nowy token,
+	 * stare batche dostaja odmowe; start od zapisanego offsetu).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <job_id>
+	 * : ID joba importu (wp_mp_import_jobs).
+	 *
+	 * @param string[] $args Argumenty pozycyjne: [0] ID joba.
+	 * @return void
+	 */
+	public static function import_resume( array $args ): void {
+		$job_id = (int) ( $args[0] ?? 0 );
+		$job    = ImportJobs::get( $job_id );
+
+		if ( null === $job ) {
+			\WP_CLI::error( 'Job importu nie istnieje.' );
+		}
+
+		if ( ! is_file( (string) $job['file_path'] ) ) {
+			\WP_CLI::error( 'Plik roboczy importu juz nie istnieje — nie ma czego wznawiac.' );
+		}
+
+		$token = ImportJobs::reclaim( $job_id );
+
+		if ( null === $token ) {
+			\WP_CLI::error( 'Job jest juz zakonczony — nie ma czego wznawiac.' );
+		}
+
+		\WP_CLI::log( sprintf( 'Wznawiam job #%d od wiersza %d/%d.', $job_id, (int) $job['processed_rows'], (int) $job['total_rows'] ) );
+
+		do {
+			$result = Importer::process_batch( $job_id, $token );
+
+			if ( 'error' === $result['status'] ) {
+				\WP_CLI::error( (string) $result['message'] );
+			}
+
+			\WP_CLI::log( sprintf( 'Postep: %d/%d (bledy: %d)', $result['processed'], $result['total'], $result['errors'] ) );
+		} while ( 'processing' === $result['status'] );
+
+		\WP_CLI::success( sprintf( 'Import dokonczony: %d/%d, bledy: %d.', $result['processed'], $result['total'], $result['errors'] ) );
 	}
 
 	/**
