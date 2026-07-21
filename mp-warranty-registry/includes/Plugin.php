@@ -41,6 +41,10 @@ final class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_filter( 'mp_warranty_check', array( WarrantyCheck::class, 'handle' ), 10, 4 );
 		add_filter( 'mp_serial_usage_count', array( $this, 'serial_usage_count' ), 10, 2 );
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			Cli::register();
+		}
 	}
 
 	/**
