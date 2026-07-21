@@ -37,6 +37,22 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * Stub opcji: zwraca wartosc domyslna (testy jednostkowe = brak nadpisan,
+	 * FormConfig::fields_for spada na defaults() z tej klasy).
+	 *
+	 * @param string $name    Nazwa opcji (ignorowana).
+	 * @param mixed  $default Wartosc domyslna.
+	 * @return mixed
+	 */
+	function get_option( string $name, $default = false ) { // phpcs:ignore
+		unset( $name );
+
+		return $default;
+	}
+}
+
 spl_autoload_register(
 	static function ( string $class_name ) use ( $mp_repo_root ): void {
 		$prefix = 'MP\\Common\\';

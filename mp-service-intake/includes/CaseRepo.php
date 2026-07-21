@@ -31,23 +31,33 @@ final class CaseRepo {
 	/**
 	 * Tworzy sprawe NIEPOTWIERDZONA (status NULL) i zwraca surowy token.
 	 *
-	 * Snapshot gwarancji: pelna zwrotka mp_warranty_check z chwili zgloszenia
-	 * (niesie model, gwarancje ORAZ PARTIE — kartka linia 47). Bez serialu /
-	 * bez modulu B: snapshot NULL (sprawa bez produktu jest dozwolona).
+	 * WALIDACJA SYNCHRONICZNA PRZED insertem (P1.4): odmowa = zwrot bledow
+	 * {field, reason_code}, NIC nie ldauje w bazie ani w osi czasu. Snapshot
+	 * gwarancji: pelna zwrotka mp_warranty_check z chwili zgloszenia (niesie
+	 * model, gwarancje ORAZ PARTIE — kartka linia 47). Bez serialu / bez
+	 * modulu B: snapshot NULL (sprawa bez produktu jest dozwolona).
 	 *
-	 * @param array<string, mixed> $input kind, email, name, phone, serial, form_data, country, lang.
-	 * @return array{case_id: int, case_number: string, token: string}|array{error: string}
+	 * @param array<string, mixed> $input kind, email, name, phone, values (mapa pol), country, lang.
+	 * @return array{case_id: int, case_number: string, token: string}|array{error: string, validation?: array<int, array{field: string, reason_code: string}>}
 	 */
 	public static function create( array $input ): array {
 		global $wpdb;
 
-		$kind = (string) ( $input['kind'] ?? '' );
+		$kind   = (string) ( $input['kind'] ?? '' );
+		$email  = (string) ( $input['email'] ?? '' );
+		$values = is_array( $input['values'] ?? null ) ? $input['values'] : array();
+		$today  = gmdate( 'Y-m-d' );
 
-		if ( '' === $kind ) {
-			return array( 'error' => __( 'Brak rodzaju zgłoszenia.', 'mp-service-intake' ) );
+		$errors = self::collect_validation_errors( $kind, $email, $values, $today );
+
+		if ( array() !== $errors ) {
+			return array(
+				'error'      => __( 'Formularz zawiera błędy — popraw zaznaczone pola.', 'mp-service-intake' ),
+				'validation' => $errors,
+			);
 		}
 
-		$serial   = trim( (string) ( $input['serial'] ?? '' ) );
+		$serial   = trim( (string) ( $values['serial'] ?? '' ) );
 		$snapshot = self::build_snapshot( $serial );
 
 		$token = wp_generate_password( 48, false, false );
@@ -79,7 +89,7 @@ final class CaseRepo {
 					'verify_token_hash'                => self::hash_token( $token ),
 					'verify_token_expires_at'          => gmdate( 'Y-m-d H:i:s', time() + self::TOKEN_TTL_HOURS * HOUR_IN_SECONDS ),
 					'verify_token_used_at'             => null,
-					'form_data'                        => (string) wp_json_encode( self::normalize_form_data( $input['form_data'] ?? array() ) ),
+					'form_data'                        => (string) wp_json_encode( self::form_data_from_values( $kind, $values ) ),
 					'form_schema_version'              => 1,
 					'warranty_snapshot'                => null === $snapshot ? null : (string) wp_json_encode( $snapshot ),
 					'warranty_snapshot_schema_version' => null === $snapshot ? null : (int) ( $snapshot['schema_version'] ?? 1 ),
@@ -206,6 +216,66 @@ final class CaseRepo {
 			'case_id'     => $case_id,
 			'case_number' => (string) $row['case_number'],
 		);
+	}
+
+	/**
+	 * Zbiera bledy walidacji zgloszenia (kind + email + pola wg schematu).
+	 *
+	 * Czysta orkiestracja walidatorow — testowana jednostkowo.
+	 *
+	 * @param string               $kind   Rodzaj sprawy.
+	 * @param string               $email  E-mail kontaktowy.
+	 * @param array<string, mixed> $values Wartosci pol.
+	 * @param string               $today  Dzis 'Y-m-d' (UTC).
+	 * @return array<int, array{field: string, reason_code: string}>
+	 */
+	public static function collect_validation_errors( string $kind, string $email, array $values, string $today ): array {
+		$errors = array();
+
+		if ( '' === trim( $email ) || ! Validator::is_email( trim( $email ) ) ) {
+			$errors[] = array(
+				'field'       => 'email',
+				'reason_code' => 'INVALID_EMAIL',
+			);
+		}
+
+		$flat = array();
+
+		foreach ( $values as $key => $value ) {
+			$flat[ (string) $key ] = is_scalar( $value ) ? (string) $value : '';
+		}
+
+		return array_merge( $errors, Validator::validate( $kind, $flat, $today ) );
+	}
+
+	/**
+	 * Buduje form_data (klucz => {label z chwili zlozenia, value, pii_sensitive})
+	 * z wartosci + schematu rodzaju. Etykieta i flaga PII BIORA SIE ZE SCHEMATU
+	 * z chwili zlozenia -> render historyczny nie zalezy od biezacej mapy.
+	 *
+	 * @param string               $kind   Rodzaj sprawy.
+	 * @param array<string, mixed> $values Wartosci pol.
+	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 */
+	public static function form_data_from_values( string $kind, array $values ): array {
+		$out = array();
+
+		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+			$key   = $field['key'];
+			$value = trim( (string) ( $values[ $key ] ?? '' ) );
+
+			if ( '' === $value ) {
+				continue;
+			}
+
+			$out[ $key ] = array(
+				'label'         => $field['label'],
+				'value'         => $value,
+				'pii_sensitive' => $field['pii_sensitive'],
+			);
+		}
+
+		return $out;
 	}
 
 	/**

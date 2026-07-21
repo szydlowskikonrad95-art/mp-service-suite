@@ -38,7 +38,7 @@ wp db query "INSERT INTO wp_mp_product_registry (serial_display, serial_normaliz
 ok "seed produktu B z partia PARTIA-C1-XYZ"
 
 # ── 3. Narodziny sprawy: create (unverified) -> event NIE powstaje jeszcze ──
-OUT=$(wp mp case-create --kind=reklamacja --email='jan@example.com' --name='Jan Testowy' --serial='C1-SERIAL-1' --desc='Nie grzeje' 2>/dev/null)
+OUT=$(wp mp case-create --kind=reklamacja --email='jan@example.com' --name='Jan Testowy' --serial='C1-SERIAL-1' --document='FV/2026/1' --date='2026-03-15' --desc='Nie grzeje' 2>/dev/null)
 CID=$(echo "$OUT" | grep '^case_id=' | cut -d= -f2)
 CNUM=$(echo "$OUT" | grep '^case_number=' | cut -d= -f2)
 TOKEN=$(echo "$OUT" | grep '^token=' | cut -d= -f2)
@@ -90,7 +90,7 @@ REUSE=$(wp eval "\$r=MP\Intake\CaseRepo::verify('$TOKEN'); echo isset(\$r['error
 [ "$REUSE" = "DENIED" ] && ok "token jednorazowy: drugie uzycie odrzucone" || bad "token uzyty drugi raz!"
 
 # ── 6. Sprawa bez produktu (zapytanie bez serialu) = snapshot NULL ─────────
-OUT2=$(wp mp case-create --kind=zapytanie --email='anna@example.com' 2>/dev/null)
+OUT2=$(wp mp case-create --kind=zapytanie --email='anna@example.com' --desc='Czy pasuje do modelu X?' 2>/dev/null)
 CID2=$(echo "$OUT2" | grep '^case_id=' | cut -d= -f2)
 SNAP2=$(q "SELECT COALESCE(warranty_snapshot,'NULL') FROM wp_mp_service_cases WHERE id=$CID2")
 PROD2=$(q "SELECT COALESCE(product_registry_id,'NULL') FROM wp_mp_service_cases WHERE id=$CID2")

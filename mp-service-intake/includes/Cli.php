@@ -39,8 +39,17 @@ final class Cli {
 	 * [--name=<name>]
 	 * : Imie/nazwa zglaszajacego.
 	 *
+	 * [--document=<dokument>]
+	 * : Dokument zakupu (nr faktury/paragonu).
+	 *
+	 * [--date=<data>]
+	 * : Data zakupu (Y-m-d).
+	 *
 	 * [--desc=<opis>]
-	 * : Opis usterki (trafia do form_data jako pole pii_sensitive).
+	 * : Opis usterki (pole issue_description, pii_sensitive).
+	 *
+	 * [--return-reason=<powod>]
+	 * : Powod zwrotu (pole return_reason dla rodzaju „zwrot").
 	 *
 	 * @param string[]              $args       Pozycyjne (nieuzywane).
 	 * @param array<string, string> $assoc_args Flagi.
@@ -49,27 +58,30 @@ final class Cli {
 	public static function case_create( array $args, array $assoc_args ): void {
 		unset( $args );
 
-		$form_data = array();
-
-		if ( isset( $assoc_args['desc'] ) ) {
-			$form_data['issue_description'] = array(
-				'label'         => 'Opis usterki',
-				'value'         => (string) $assoc_args['desc'],
-				'pii_sensitive' => true,
-			);
-		}
+		$values = array(
+			'serial'            => (string) ( $assoc_args['serial'] ?? '' ),
+			'purchase_document' => (string) ( $assoc_args['document'] ?? '' ),
+			'purchase_date'     => (string) ( $assoc_args['date'] ?? '' ),
+			'issue_description' => (string) ( $assoc_args['desc'] ?? '' ),
+			'return_reason'     => (string) ( $assoc_args['return-reason'] ?? '' ),
+		);
 
 		$result = CaseRepo::create(
 			array(
-				'kind'      => (string) ( $assoc_args['kind'] ?? '' ),
-				'email'     => (string) ( $assoc_args['email'] ?? '' ),
-				'name'      => (string) ( $assoc_args['name'] ?? '' ),
-				'serial'    => (string) ( $assoc_args['serial'] ?? '' ),
-				'form_data' => $form_data,
+				'kind'   => (string) ( $assoc_args['kind'] ?? '' ),
+				'email'  => (string) ( $assoc_args['email'] ?? '' ),
+				'name'   => (string) ( $assoc_args['name'] ?? '' ),
+				'values' => array_filter( $values, static fn( $v ) => '' !== $v ),
 			)
 		);
 
 		if ( isset( $result['error'] ) ) {
+			if ( isset( $result['validation'] ) ) {
+				foreach ( $result['validation'] as $err ) {
+					\WP_CLI::log( sprintf( '  - %s: %s', $err['field'], $err['reason_code'] ) );
+				}
+			}
+
 			\WP_CLI::error( (string) $result['error'] );
 		}
 

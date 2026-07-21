@@ -134,5 +134,7 @@ jobs:
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
       - name: Testy C1 (rdzeń sprawy — SRV współbieżny + narodziny + snapshot z partią)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c1-rdzen.sh
+      - name: Testy C2 (formularz dynamiczny + walidacje przed insertem)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c2-formularz.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
