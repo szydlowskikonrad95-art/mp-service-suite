@@ -3,7 +3,7 @@
 /node_modules/
 
 # Artefakty budowania (ZIP-y idą do GitHub Releases, nie do repo)
-/build/
+/build/dist/
 /dist/
 *.zip
 
