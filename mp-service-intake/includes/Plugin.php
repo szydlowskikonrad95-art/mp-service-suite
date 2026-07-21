@@ -42,6 +42,7 @@ final class Plugin {
 
 		Front\Frontend::register();
 		Front\SubmissionHandler::register();
+		Lifecycle::register_cron();
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();

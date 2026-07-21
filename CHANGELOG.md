@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Intake (C): załączniki twardo (spec T5) — MIME PO TREŚCI (finfo; brak ext-fileinfo = admin
+  notice + odmowa), limity 8 MB/plik + 5/zgłoszenie + globalny CAP przestrzeni pending 2 GB;
+  katalog `uploads/mp-attachments/` z deny-ALL + losowe nazwy UUID BEZ rozszerzenia; strip EXIF/GPS
+  (imagick → fallback reenkod GD) dla JPEG/PNG/WebP; `retention_until` liczone z rodzaju sprawy
+  (reklamacja 24 / naprawa·zwrot 12 / zapytanie 3 mies.) + cron retencji (kasuje wiersz + PLIK);
+  serwowanie przez endpoint PHP z bramką IDOR (personel każdy; klient tylko własna sprawa verified;
+  unverified = tylko personel) + Content-Type z finfo + nosniff; kasacja ZAWSZE = wiersz + plik
+  z dysku; pole załączników w formularzu; sprzątanie katalogu przy uninstall (warstwa i);
+  test C4 w CI (upload z EXIF, deny-ALL, IDOR/ownership, retencja).
 - Intake (C): front zgłoszenia (P1.1 + antyspam część) — renderowanie formularza BLOKIEM Gutenberga
   `mp/intake-form` (+ shortcode fallback, lekcja: buildery nie renderują shortcode), WCAG-lite
   (label per pole, aria-describedby, role=alert/status); auto-strona tworzona przy aktywacji
