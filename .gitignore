@@ -1,0 +1,23 @@
+# Zależności (Composer tylko dev-tools — vendor nigdy do repo)
+/vendor/
+/node_modules/
+
+# Artefakty budowania (ZIP-y idą do GitHub Releases, nie do repo)
+/build/
+/dist/
+*.zip
+
+# Sekrety i konfiguracja lokalna
+.env
+.env.*
+wp-cli.local.yml
+auth.json
+
+# Logi i śmieci systemowe
+*.log
+.DS_Store
+Thumbs.db
+
+# Lokalne pliki IDE
+.idea/
+.vscode/
