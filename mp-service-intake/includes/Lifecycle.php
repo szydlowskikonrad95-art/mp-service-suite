@@ -48,6 +48,7 @@ final class Lifecycle {
 		}
 
 		Schema::migrate();
+		Front\Frontend::ensure_page();
 	}
 
 	/**
