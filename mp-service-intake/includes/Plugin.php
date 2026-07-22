@@ -47,6 +47,10 @@ final class Plugin {
 		Lifecycle::register_cron();
 		Privacy::register();
 
+		if ( is_admin() ) {
+			Admin\UnverifiedScreen::register();
+		}
+
 		// Listener kontraktowy: wiadomosc systemowa od D (np. raport koncowy).
 		add_filter(
 			'mp_case_add_system_message',

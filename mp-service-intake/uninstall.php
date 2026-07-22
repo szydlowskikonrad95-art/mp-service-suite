@@ -50,6 +50,9 @@ if ( $mp_account_page_id > 0 ) {
 delete_option( MP\Intake\Front\AccountPage::PAGE_OPTION );
 delete_option( MP\Intake\Front\AccountPage::FINGERPRINT_OPTION );
 
+// Audit-log operacji personelu (metadane operacyjne — kasowane zawsze).
+delete_option( MP\Intake\Audit::OPTION );
+
 // Warstwa (i) — katalog zalacznikow (PLIKI techniczne) sprzatany ZAWSZE.
 $mp_intake_uploads = wp_upload_dir();
 $mp_intake_att_dir = rtrim( (string) $mp_intake_uploads['basedir'], '/' ) . '/mp-attachments';

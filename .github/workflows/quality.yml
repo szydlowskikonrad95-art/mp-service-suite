@@ -162,5 +162,7 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy C7a (serial-reuse P2.3 — flaga possible_duplicate)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c7a-serial-reuse.sh
+      - name: Testy C7b (admin unverified — capability + throttle + resend + negatywna macierz ról)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c7b-admin-unverified.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
