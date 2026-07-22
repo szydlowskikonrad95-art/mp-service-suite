@@ -54,6 +54,7 @@ final class Lifecycle {
 
 		Schema::migrate();
 		Front\Frontend::ensure_page();
+		Front\AccountPage::ensure_page();
 
 		if ( ! wp_next_scheduled( self::RETENTION_CRON ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::RETENTION_CRON );

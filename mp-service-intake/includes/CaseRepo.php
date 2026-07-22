@@ -498,6 +498,9 @@ final class CaseRepo {
 			(string) ( $pending['phone'] ?? '' )
 		);
 
+		// Konto WP klienta DOPIERO teraz (panel „moje zgloszenia"; edge personel/admin — Accounts).
+		Accounts::ensure_for_customer( $customer_id, (string) $pending['email'], (string) ( $pending['name'] ?? '' ) );
+
 		$table = Tables::full( Tables::CASES );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
