@@ -20,6 +20,8 @@ final class Cli {
 	public static function register(): void {
 		\WP_CLI::add_command( 'mp case-create', array( self::class, 'case_create' ) );
 		\WP_CLI::add_command( 'mp case-verify', array( self::class, 'case_verify' ) );
+		\WP_CLI::add_command( 'mp login-link', array( self::class, 'login_link' ) );
+		\WP_CLI::add_command( 'mp login-consume', array( self::class, 'login_consume' ) );
 	}
 
 	/**
@@ -110,5 +112,51 @@ final class Cli {
 		}
 
 		\WP_CLI::success( sprintf( 'Sprawa %s potwierdzona (case_id=%d).', $result['case_number'], $result['case_id'] ) );
+	}
+
+	/**
+	 * Wystawia passwordless link logowania i wypisuje selector+token (E2E).
+	 *
+	 * Nie wysyla maila — zwraca surowe dane linku, zeby test mogl je „kliknac".
+	 *
+	 * ## OPTIONS
+	 *
+	 * <email>
+	 * : E-mail konta klienta.
+	 *
+	 * @param string[] $args Pozycyjne: [0] email.
+	 * @return void
+	 */
+	public static function login_link( array $args ): void {
+		$issued = Front\Login::issue_for_email( (string) ( $args[0] ?? '' ) );
+
+		if ( null === $issued ) {
+			\WP_CLI::error( 'Brak konta klienta dla tego e-maila (albo e-mail nieprawidlowy).' );
+		}
+
+		\WP_CLI::log( 'selector=' . $issued['selector'] );
+		\WP_CLI::log( 'token=' . $issued['token'] );
+		\WP_CLI::success( 'Link logowania wystawiony.' );
+	}
+
+	/**
+	 * Zuzywa link logowania (selector+token) i wypisuje user_id (E2E).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <selector>
+	 * : Publiczny selektor linku.
+	 *
+	 * <token>
+	 * : Surowy walidator linku.
+	 *
+	 * @param string[] $args Pozycyjne: [0] selector, [1] token.
+	 * @return void
+	 */
+	public static function login_consume( array $args ): void {
+		$user_id = Front\Login::consume( (string) ( $args[0] ?? '' ), (string) ( $args[1] ?? '' ) );
+
+		\WP_CLI::log( 'user_id=' . $user_id );
+		\WP_CLI::success( 0 === $user_id ? 'Link odrzucony.' : 'Link zuzyty, uzytkownik uwierzytelniony.' );
 	}
 }

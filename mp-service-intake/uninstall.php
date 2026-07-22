@@ -34,6 +34,22 @@ if ( $mp_intake_page_id > 0 ) {
 delete_option( MP\Intake\Front\Frontend::PAGE_OPTION );
 delete_option( MP\Intake\Front\Frontend::FINGERPRINT_OPTION );
 
+// Warstwa (i) — auto-strona panelu klienta: ta sama zasada (kasuj tylko gdy nietknieta).
+$mp_account_page_id = (int) get_option( MP\Intake\Front\AccountPage::PAGE_OPTION, 0 );
+
+if ( $mp_account_page_id > 0 ) {
+	$mp_account_page = get_post( $mp_account_page_id );
+
+	if ( $mp_account_page instanceof WP_Post
+		&& md5( (string) $mp_account_page->post_content ) === MP\Intake\Front\AccountPage::original_fingerprint()
+	) {
+		wp_delete_post( $mp_account_page_id, true );
+	}
+}
+
+delete_option( MP\Intake\Front\AccountPage::PAGE_OPTION );
+delete_option( MP\Intake\Front\AccountPage::FINGERPRINT_OPTION );
+
 // Warstwa (i) — katalog zalacznikow (PLIKI techniczne) sprzatany ZAWSZE.
 $mp_intake_uploads = wp_upload_dir();
 $mp_intake_att_dir = rtrim( (string) $mp_intake_uploads['basedir'], '/' ) . '/mp-attachments';

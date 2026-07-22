@@ -42,6 +42,8 @@ final class Plugin {
 
 		Front\Frontend::register();
 		Front\SubmissionHandler::register();
+		Front\AccountPage::register();
+		Front\Login::register();
 		Lifecycle::register_cron();
 		Privacy::register();
 

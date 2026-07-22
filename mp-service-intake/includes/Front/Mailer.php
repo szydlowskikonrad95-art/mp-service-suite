@@ -43,6 +43,37 @@ final class Mailer {
 	}
 
 	/**
+	 * Wysyla passwordless link logowania do panelu (krotki TTL, jednorazowy).
+	 *
+	 * Link prowadzi na strone z przyciskiem — zalogowanie DOPIERO przez POST
+	 * (skanery poczty prefetchuja GET; sam GET NIE loguje).
+	 *
+	 * @param string $email    Adres odbiorcy.
+	 * @param string $selector Publiczny selektor (lookup).
+	 * @param string $token    Surowy walidator (do URL).
+	 * @return bool Wynik wp_mail.
+	 */
+	public static function send_login_link( string $email, string $selector, string $token ): bool {
+		$url = add_query_arg(
+			array(
+				'action' => 'mp_intake_login',
+				'sel'    => rawurlencode( $selector ),
+				'tok'    => rawurlencode( $token ),
+			),
+			admin_url( 'admin-post.php' )
+		);
+
+		$subject = __( 'Logowanie do panelu zgłoszeń serwisowych', 'mp-service-intake' );
+		$body    = sprintf(
+			/* translators: %s: link logowania. */
+			__( "Aby zalogować się do panelu swoich zgłoszeń, otwórz link poniżej i kliknij przycisk logowania (link ważny 20 minut, jednorazowy):\n\n%s\n\nJeśli to nie Ty prosiłeś o logowanie, zignoruj tę wiadomość — nikt nie uzyskał dostępu do konta.", 'mp-service-intake' ),
+			$url
+		);
+
+		return wp_mail( $email, $subject, $body );
+	}
+
+	/**
 	 * Wysyla potwierdzenie z numerem SRV (po weryfikacji).
 	 *
 	 * @param string $email       Adres odbiorcy.

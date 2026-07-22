@@ -154,4 +154,71 @@ final class Customers {
 
 		return is_array( $row ) ? $row : null;
 	}
+
+	/**
+	 * Ustawia konto WP klienta (spiecie po weryfikacji — Accounts).
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @param int $wp_user_id  ID uzytkownika WP.
+	 * @return void
+	 */
+	public static function set_wp_user( int $customer_id, int $wp_user_id ): void {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET wp_user_id = %d, updated_at = %s WHERE id = %d",
+				$wp_user_id,
+				gmdate( 'Y-m-d H:i:s' ),
+				$customer_id
+			)
+		);
+		// phpcs:enable
+	}
+
+	/**
+	 * Odczyt konta WP klienta (null = brak spiecia albo klient nie istnieje).
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @return int|null
+	 */
+	public static function wp_user_id( int $customer_id ): ?int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$value = $wpdb->get_var(
+			$wpdb->prepare( "SELECT wp_user_id FROM {$table} WHERE id = %d", $customer_id )
+		);
+		// phpcs:enable
+
+		return null === $value ? null : (int) $value;
+	}
+
+	/**
+	 * ID nieanonimizowanych klientow spietych z danym kontem WP (panel).
+	 *
+	 * Jeden e-mail = jeden klient, ale konto personelu moze byc podpiete
+	 * do >1 rekordu (rozne e-maile w czasie) — zwracamy liste.
+	 *
+	 * @param int $wp_user_id ID uzytkownika WP.
+	 * @return array<int, int>
+	 */
+	public static function ids_by_wp_user( int $wp_user_id ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE wp_user_id = %d AND anonymized_at IS NULL", $wp_user_id )
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
+	}
 }
