@@ -21,9 +21,38 @@ final class Rules {
 	public const TRIGGER_CASE_CREATED = 'case_created';
 
 	/**
-	 * Akcje (zamknieta lista; P3.1 = tylko przydzial).
+	 * Trigger zmiany statusu (emitowany przez C PO COMMIT — P3.2).
+	 */
+	public const TRIGGER_STATUS_CHANGED = 'status_changed';
+
+	/**
+	 * Akcje (zamknieta lista). P3.1 = przydzial; P3.2 = zmiana statusu.
 	 */
 	public const ACTION_ASSIGN = 'assign';
+
+	/**
+	 * Akcja: zmiana statusu sprawy (wola kontraktowa C mp_case_change_status).
+	 */
+	public const ACTION_CHANGE_STATUS = 'change_status';
+
+	/**
+	 * Akcje MUTUJACE stan sprawy — objete GUARDEM PETLI (mutacja tylko na
+	 * glebokosci 0). Akcje spoza tej listy (mailowe — P3.3) przechodza na kazdej
+	 * glebokosci. Zamknieta lista w kodzie (ZAKAZ eval).
+	 *
+	 * @var string[]
+	 */
+	public const MUTATING_ACTIONS = array( self::ACTION_ASSIGN, self::ACTION_CHANGE_STATUS );
+
+	/**
+	 * Czy akcja mutuje stan sprawy (podlega guardowi petli).
+	 *
+	 * @param string $action_type Stala ACTION_*.
+	 * @return bool
+	 */
+	public static function is_mutating( string $action_type ): bool {
+		return in_array( $action_type, self::MUTATING_ACTIONS, true );
+	}
 
 	/**
 	 * Operatory warunku (zamknieta lista — r.D1/Kimi).
