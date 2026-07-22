@@ -65,9 +65,11 @@ DL=$(q "SELECT IFNULL(deadline_at,'NULL') FROM wp_mp_case_sla WHERE case_id=$CID
 [ "$DL" = "NULL" ] && ok "status terminalny 'zamknięte' => deadline_at NULL" || bad "terminal ma deadline ($DL)"
 
 # ── 6. notify(escalation): mail do koordynatora + SLA_ESCALATED na osi C + marker ─
+# pre_wp_mail=true => wysylka "uda sie" niezaleznie od SMTP srodowiska (CI nie ma
+# skonfigurowanego transportu; capture i tak zapisuje mail PRZED short-circuitem).
 CID2=$(mkcase sla2@example.com SLAK-2)
 capclear
-wp eval "MP\Automator\Sla::notify($CID2, 'escalation');" >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail','__return_true'); MP\Automator\Sla::notify($CID2, 'escalation');" >/dev/null 2>&1
 L=$(caplast)
 echo "$L" | grep -q '"to":"koord@example.com"' && ok "eskalacja => mail do KOORDYNATORA" || bad "zly odbiorca eskalacji ($L)"
 echo "$L" | grep -q 'ESKALACJA' && ok "szablon sla_escalation zrenderowany" || bad "zly szablon eskalacji"
@@ -80,7 +82,7 @@ echo "$EV" | grep -q 'koord@example.com' && bad "adres w evencie SLA (PII!)" || 
 
 # ── 7. notify(reminder) bez przydzialu => koordynator (fallback) + SLA_REMINDER_SENT ─
 capclear
-wp eval "MP\Automator\Sla::notify($CID2, 'reminder');" >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail','__return_true'); MP\Automator\Sla::notify($CID2, 'reminder');" >/dev/null 2>&1
 SR=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID2 AND event_type='SLA_REMINDER_SENT'")
 [ "$SR" = "1" ] && ok "przypomnienie nieprzydzielonej => koordynator + SLA_REMINDER_SENT" || bad "brak SLA_REMINDER_SENT ($SR)"
 
