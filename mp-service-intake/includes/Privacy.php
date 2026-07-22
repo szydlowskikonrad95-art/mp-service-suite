@@ -95,6 +95,8 @@ final class Privacy {
 			}
 
 			Customers::anonymize( $customer_id );
+			// FLAGA #6: redakcja e-maila (PII) w zgodach — rozliczalnosc art. 7 zostaje (tekst+daty).
+			Consents::redact_email_for_customer( $customer_id );
 
 			foreach ( $case_ids as $case_id ) {
 				CaseEvents::log( $case_id, CaseEvents::PII_REDACTION, array( 'target' => 'customer' ), null );

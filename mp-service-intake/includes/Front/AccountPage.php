@@ -15,9 +15,12 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\CaseEvents;
 use MP\Intake\CaseRepo;
+use MP\Intake\Consents;
 use MP\Intake\Customers;
 use MP\Intake\Messages;
+use MP\Intake\Privacy;
 
 /**
  * Rejestracja strony panelu/logowania i jej render.
@@ -50,6 +53,7 @@ final class AccountPage {
 		// Wysylka wiadomosci + edycja danych wymagaja zalogowania (tylko priv — klient).
 		add_action( 'admin_post_mp_intake_message', array( self::class, 'handle_send_message' ) );
 		add_action( 'admin_post_mp_intake_update_contact', array( self::class, 'handle_update_contact' ) );
+		add_action( 'admin_post_mp_intake_withdraw', array( self::class, 'handle_withdraw' ) );
 	}
 
 	/**
@@ -152,6 +156,7 @@ final class AccountPage {
 		}
 
 		$out .= self::render_contact_form( $wp_user_id );
+		$out .= self::render_privacy_form();
 
 		if ( array() === $cases ) {
 			$out .= '<p>' . esc_html__( 'Nie znaleźliśmy zgłoszeń przypisanych do tego konta.', 'mp-service-intake' ) . '</p></div>';
@@ -244,6 +249,85 @@ final class AccountPage {
 		}
 
 		return Customers::get( (int) $ids[0] );
+	}
+
+	/**
+	 * Sekcja RODO: wycofanie zgody + usuniecie danych (art. 7(3) + art. 17).
+	 *
+	 * @return string HTML.
+	 */
+	private static function render_privacy_form(): string {
+		$out  = '<section class="mp-account__privacy" style="margin:1rem 0;padding:1rem;border:1px solid #e0b0b0;border-radius:6px;background:#fdf6f6">';
+		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Prywatność (RODO)', 'mp-service-intake' ) . '</h3>';
+		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
+		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
+		$out .= '<input type="hidden" name="action" value="mp_intake_withdraw" />';
+		$out .= wp_nonce_field( 'mp_intake_withdraw', '_mp_nonce', true, false );
+		$out .= '<p><button type="submit" style="padding:.5rem 1rem;cursor:pointer;color:#a33;border:1px solid #a33;background:#fff">' . esc_html__( 'Wycofaj zgodę i usuń moje dane', 'mp-service-intake' ) . '</button></p>';
+		$out .= '</form></section>';
+
+		return $out;
+	}
+
+	/**
+	 * Obsluga wycofania zgody + kanal do erasera (POST).
+	 *
+	 * Wycofanie zgody (art. 7(3)) jest NATYCHMIASTOWE i emituje CONSENT_WITHDRAWN
+	 * na sprawach klienta — niezaleznie od tego, czy eraser od razu usunie dane
+	 * (aktywna sprawa => odroczenie EN BLOC w Privacy::erase).
+	 *
+	 * @return void
+	 */
+	public static function handle_withdraw(): void {
+		$user_id = get_current_user_id();
+
+		if ( 0 === $user_id
+			|| ! isset( $_POST['_mp_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['_mp_nonce'] ) ), 'mp_intake_withdraw' )
+		) {
+			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
+		}
+
+		$emails = array();
+
+		foreach ( Customers::ids_by_wp_user( $user_id ) as $customer_id ) {
+			Consents::withdraw( $customer_id, Consents::KEY_PROCESSING );
+
+			// CONSENT_WITHDRAWN na KAZDEJ sprawie klienta (audit-trail art. 7).
+			foreach ( CaseRepo::for_customer( $customer_id ) as $case ) {
+				CaseEvents::log(
+					(int) ( $case['id'] ?? 0 ),
+					CaseEvents::CONSENT_WITHDRAWN,
+					array( 'consent_key' => Consents::KEY_PROCESSING ),
+					$user_id
+				);
+			}
+
+			$customer = Customers::get( $customer_id );
+
+			if ( null !== $customer && '' !== (string) ( $customer['email'] ?? '' ) ) {
+				$emails[ (string) $customer['email'] ] = true;
+			}
+		}
+
+		$retained = false;
+		$removed  = false;
+
+		foreach ( array_keys( $emails ) as $email ) {
+			$result   = Privacy::erase( $email );
+			$retained = $retained || (bool) $result['items_retained'];
+			$removed  = $removed || (bool) $result['items_removed'];
+		}
+
+		if ( $removed ) {
+			$notice = __( 'Zgoda została wycofana, a Twoje dane osobowe zostały usunięte.', 'mp-service-intake' );
+		} elseif ( $retained ) {
+			$notice = __( 'Zgoda została wycofana. Masz aktywne zgłoszenie — dane usuniemy po jego zakończeniu.', 'mp-service-intake' );
+		} else {
+			$notice = __( 'Zgoda została wycofana.', 'mp-service-intake' );
+		}
+
+		self::redirect_notice( $notice );
 	}
 
 	/**
