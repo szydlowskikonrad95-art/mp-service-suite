@@ -28,7 +28,9 @@ ROWM=$(q "SELECT CONCAT(source,'|',system_key,'|',trigger_type,'|',action_type,'
 
 POOL=$(q "SELECT action_config_json FROM wp_mp_workflow_rules WHERE system_key='default_assign'")
 echo "$POOL" | grep -qE '"pool":\[\]' && ok "pula PUSTA (admin/demo wypelnia; do tego czasu ASSIGNMENT_UNMATCHED)" || bad "pula nie pusta ($POOL)"
-echo "$POOL" | grep -q '"notify_agent":true' && ok "notify_agent=true (uzyte w P3.3)" || bad "brak notify_agent"
+# notify_agent USUNIETY z konfiguracji: notyfikacja przydzialu = stale zachowanie
+# na hooku mp_case_assigned (kazdy przydzial), nie flaga w regule.
+echo "$POOL" | grep -q 'notify_agent' && bad "notify_agent wciaz w konfiguracji (martwa flaga)" || ok "brak martwej flagi notify_agent (notyfikacja przez hook)"
 
 MCFG=$(q "SELECT action_config_json FROM wp_mp_workflow_rules WHERE system_key='status_changed_client_mail'")
 echo "$MCFG" | grep -q '"recipient":"client"' && ok "regula mailowa: recipient=client, template z config" || bad "zla konfiguracja maila ($MCFG)"

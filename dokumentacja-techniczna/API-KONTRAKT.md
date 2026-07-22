@@ -40,6 +40,15 @@ do_action( 'mp_case_status_changed', 123, 'nowe', 'w analizie', 7 );
 do_action( 'mp_case_message_added', 123, 456, 'client' );
 ```
 
+### `mp_case_assigned( $case_id, $from, $to, $actor_id )` — C → D
+Emitowana PO COMMIT przez `mp_case_assign()` przy KAŻDYM przydziale (auto i ręczny; dowolny caller —
+`assigned_to` ma jednego writera). Zasada „każdy przydział → notyfikacja nowego pracownika" = gwarancja
+struktury, nie call‑site. Wpis na osi (`CASE_ASSIGNED`) powstaje w tej samej transakcji; hook służy
+akcjom PO fakcie (mail D). `$from` = poprzedni przypisany (`null` = brak).
+```php
+do_action( 'mp_case_assigned', 123, null, 7, 0 );
+```
+
 ### `mp_warranty_exception_changed( $exception_id, $product_registry_id, $case_id, $status, $schema_version )` — B → C, D
 Po przyznaniu/cofnięciu wyjątku (PO COMMIT). `$case_id` NULL = wyjątek globalny na produkt.
 C: dopisuje case_event EXCEPTION_APPLIED/REVOKED (case_id=NULL → jawny no‑op).
@@ -165,7 +174,7 @@ transakcji, akcje PO commit. `mp_cases_query` respektuje ROLĘ wołającego (mp_
 
 | Hook | Emituje/oddaje | Słucha/woła |
 |---|---|---|
-| mp_case_created · mp_case_status_changed · mp_case_message_added | C | D |
+| mp_case_created · mp_case_status_changed · mp_case_message_added · mp_case_assigned | C | D |
 | mp_warranty_exception_changed | B | C, D |
 | mp_sla_notified | D | C |
 | mp_cases_data_erased | C | B, D |

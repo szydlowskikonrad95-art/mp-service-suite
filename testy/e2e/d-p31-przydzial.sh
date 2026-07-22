@@ -51,8 +51,9 @@ XGOT=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE assigned_to=$X")
 # ── 3. Eventy: CASE_ASSIGNED (w C) + RULE_EXECUTED (w D) per sprawa ───────────
 CA=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE event_type='CASE_ASSIGNED'")
 [ "$CA" = "3" ] && ok "3x CASE_ASSIGNED na osi spraw (C)" || bad "CASE_ASSIGNED = $CA (oczekiwano 3)"
-RE=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='RULE_EXECUTED'")
-[ "$RE" = "3" ] && ok "3x RULE_EXECUTED w rejestrze operacji D" || bad "RULE_EXECUTED = $RE (oczekiwano 3)"
+# Filtr action=assign: hook mp_case_assigned dokłada RULE_EXECUTED(notify) per przydział — liczymy TYLKO przydziały.
+RE=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='RULE_EXECUTED' AND payload LIKE '%\"action\":\"assign\"%'")
+[ "$RE" = "3" ] && ok "3x RULE_EXECUTED (assign) w rejestrze operacji D" || bad "RULE_EXECUTED(assign) = $RE (oczekiwano 3)"
 REPAY=$(q "SELECT payload FROM wp_mp_workflow_events WHERE event_type='RULE_EXECUTED' ORDER BY id DESC LIMIT 1")
 echo "$REPAY" | grep -q '"depth":0' && ok "RULE_EXECUTED payload: depth=0 ($REPAY)" || bad "brak depth=0 w payloadzie"
 

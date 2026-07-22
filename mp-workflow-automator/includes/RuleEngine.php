@@ -48,6 +48,24 @@ final class RuleEngine {
 	public static function register(): void {
 		add_action( 'mp_case_created', array( self::class, 'on_case_created' ), 10, 1 );
 		add_action( 'mp_case_status_changed', array( self::class, 'on_status_changed' ), 10, 4 );
+		add_action( 'mp_case_assigned', array( self::class, 'on_case_assigned' ), 10, 4 );
+	}
+
+	/**
+	 * Trigger `mp_case_assigned` (C, PO COMMIT): ZASADA kazdy przydzial (auto i
+	 * reczny, dowolny caller) => mail do NOWO przypisanego pracownika. Nie jest
+	 * to regula z tabeli — to stale zachowanie (gwarancja S10), wiec nie podlega
+	 * dopasowaniu warunkow. Akcja mailowa, nie mutuje => zero ryzyka petli.
+	 *
+	 * @param int      $case_id  ID sprawy.
+	 * @param int|null $from     Poprzedni przypisany (nieuzywany).
+	 * @param int      $to       Nowo przypisany pracownik.
+	 * @param int      $actor_id Kto przydzielil (nieuzywany).
+	 * @return void
+	 */
+	public static function on_case_assigned( $case_id, $from, $to, $actor_id ): void {
+		unset( $from, $actor_id );
+		self::notify_assignment( (int) $case_id, (int) $to );
 	}
 
 	/**
@@ -405,6 +423,59 @@ final class RuleEngine {
 		}
 
 		return array( '', $recipient );
+	}
+
+	/**
+	 * Mail powiadamiajacy pracownika o przydziale (szablon assignment_notify).
+	 * Agent bez adresu => MAIL_SKIPPED_NO_RECIPIENT (nie awaria). Log NO-PII.
+	 *
+	 * @param int $case_id  ID sprawy.
+	 * @param int $agent_id Nowo przypisany pracownik.
+	 * @return void
+	 */
+	private static function notify_assignment( int $case_id, int $agent_id ): void {
+		$user = $agent_id > 0 ? get_userdata( $agent_id ) : false;
+		$addr = $user ? (string) $user->user_email : '';
+
+		if ( '' === $addr ) {
+			WorkflowEvents::log(
+				WorkflowEvents::MAIL_SKIPPED_NO_RECIPIENT,
+				array(
+					'template_key'  => 'assignment_notify',
+					'recipient_ref' => 'agent',
+				),
+				$case_id
+			);
+
+			return;
+		}
+
+		$ctx = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+
+		if ( ! is_array( $ctx ) ) {
+			return;
+		}
+
+		$rendered = MailTemplates::render( 'assignment_notify', $ctx );
+		$result   = 'failed_template_missing';
+
+		if ( null !== $rendered ) {
+			$result = Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ? 'success' : 'failed';
+		}
+
+		WorkflowEvents::log(
+			WorkflowEvents::RULE_EXECUTED,
+			array(
+				'rule_id'       => 0,
+				'trigger'       => 'assigned',
+				'action'        => Rules::ACTION_NOTIFY,
+				'template_key'  => 'assignment_notify',
+				'recipient_ref' => 'agent',
+				'result'        => $result,
+				'depth'         => 0,
+			),
+			$case_id
+		);
 	}
 
 	/**

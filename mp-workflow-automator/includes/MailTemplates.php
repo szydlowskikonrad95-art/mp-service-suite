@@ -37,6 +37,10 @@ final class MailTemplates {
 				'subject' => 'Zgłoszenie {{numer_sprawy}} — zmiana statusu',
 				'body'    => "Dzień dobry,\n\nStatus Twojego zgłoszenia {{numer_sprawy}} zmienił się na: {{status}}.\n\nSzczegóły sprawdzisz po zalogowaniu na swoje konto.\n\nData zmiany: {{data}}",
 			),
+			'assignment_notify'     => array(
+				'subject' => 'Przydzielono Ci zgłoszenie {{numer_sprawy}}',
+				'body'    => "Dzień dobry,\n\nPrzydzielono Ci do obsługi zgłoszenie {{numer_sprawy}} (rodzaj: {{rodzaj}}, status: {{status}}).\n\nSzczegóły znajdziesz w panelu sprawy.\n\nData przydziału: {{data}}",
+			),
 		);
 	}
 
@@ -100,6 +104,11 @@ final class MailTemplates {
 
 	/**
 	 * Mapa marker => wartosc. Data w strefie WITRYNY przez wp_date (baza=UTC).
+	 *
+	 * ⚠️ BEZPIECZENSTWO: wartosci sa strip_crlf (anty header-injection), ale
+	 * NIE html-escape — bo maile sa PLAIN-TEXT (text/plain). JESLI kiedykolwiek
+	 * dojdzie mail HTML (Content-Type text/html), te wartosci MUSZA przejsc
+	 * esc_html() TUTAJ, inaczej marker z danych klienta = XSS w mailu.
 	 *
 	 * @param array<string, mixed> $ctx Kontekst sprawy.
 	 * @return array<string, string>

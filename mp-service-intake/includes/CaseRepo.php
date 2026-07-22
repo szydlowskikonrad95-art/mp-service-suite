@@ -469,6 +469,22 @@ final class CaseRepo {
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
 
+		/**
+		 * Przydzial dokonany (PO COMMIT) — sygnal C->D dla powiadomien.
+		 *
+		 * Emitowany przy KAZDYM przydziale (dowolny caller mp_case_assign; jedyny
+		 * writer assigned_to), zeby zasada „kazdy przydzial -> notyfikacja nowego
+		 * pracownika" byla GWARANCJA STRUKTURY, nie zalezala od miejsca wywolania.
+		 * Blizniak `mp_case_status_changed`. Wpis na osi (CASE_ASSIGNED) juz powstal
+		 * w transakcji wyzej — ten hook sluzy WYLACZNIE akcjom po fakcie (mail D).
+		 *
+		 * @param int      $case_id  ID sprawy.
+		 * @param int|null $from     Poprzedni przypisany (null = brak).
+		 * @param int      $user_id  Nowo przypisany pracownik.
+		 * @param int      $actor_id Kto przydzielil (system/koordynator).
+		 */
+		do_action( 'mp_case_assigned', $case_id, $from, $user_id, $actor_id );
+
 		return array(
 			'success'     => true,
 			'assigned_to' => $user_id,
