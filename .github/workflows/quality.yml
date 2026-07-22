@@ -168,3 +168,46 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-dod-security-matrix.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
+
+  # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
+  dirty-env:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: wp
+          MARIADB_PASSWORD: wp
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mysqli, iconv, intl
+          tools: wp-cli
+      - name: Build pluginow (kopie Common)
+        run: bash build/build.sh
+      - name: Instalacja WP — NIESTANDARDOWY prefiks + WP_DEBUG + object-cache
+        run: |
+          mkdir -p /tmp/wp && cd /tmp/wp
+          wp core download --version=6.9.4
+          wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1 --dbprefix=cms_x9_
+          wp config set WP_DEBUG true --raw --type=constant
+          wp config set WP_DEBUG_LOG true --raw --type=constant
+          wp config set WP_DEBUG_DISPLAY false --raw --type=constant
+          wp core install --url=http://127.0.0.1:8080 --title=Dirty --admin_user=admin \
+            --admin_password=admin --admin_email=dirty@example.com --skip-email
+          cp -r "$GITHUB_WORKSPACE"/mp-service-intake "$GITHUB_WORKSPACE"/mp-warranty-registry \
+            "$GITHUB_WORKSPACE"/mp-workflow-automator /tmp/wp/wp-content/plugins/
+          # persistent object-cache ON (drop-in testowy)
+          cp "$GITHUB_WORKSPACE"/testy/fixtures/object-cache.php /tmp/wp/wp-content/object-cache.php
+          wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
+      - name: Dirty-env test (prefiks + WP_DEBUG zero-notice + object-cache + degraded)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/dirty-env.sh
