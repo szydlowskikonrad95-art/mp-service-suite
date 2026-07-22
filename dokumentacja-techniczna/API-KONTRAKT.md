@@ -59,7 +59,9 @@ do_action( 'mp_warranty_exception_changed', 11, 42, 123, 'active', 1 );
 
 ### `mp_sla_notified( $case_id, $kind, $recipient_ref )` — D → C
 Po skutecznej wysyłce przypomnienia/eskalacji SLA. `$kind` ∈ {reminder, escalation};
-`$recipient_ref` = referencja adresata (user_id / 'customer'), NIGDY adres e‑mail.
+`$recipient_ref` = referencja adresata NO‑PII, NIGDY adres e‑mail. Wartości emitowane przez D:
+`'user:<id>'` (przypomnienie → przypisany agent) · `'role:mp_coordinator'` (eskalacja i fallback
+nieprzydzielonej sprawy → koordynator). SLA NIE powiadamia klienta (odbiorcą jest personel).
 C: dopisuje event SLA_REMINDER_SENT / SLA_ESCALATED do osi sprawy (spec, relacja 3).
 ```php
 do_action( 'mp_sla_notified', 123, 'escalation', 'role:mp_coordinator' );
