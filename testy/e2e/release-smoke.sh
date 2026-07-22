@@ -53,6 +53,7 @@ done
 # ── 5. Uninstall grep-zero (opt-in delete-data) ─────────────────────────────
 wp option update mp_intake_delete_data 1 >/dev/null 2>&1
 wp option update mp_registry_delete_data 1 >/dev/null 2>&1
+wp option update mp_automator_delete_data 1 >/dev/null 2>&1
 wp plugin deactivate mp-service-intake mp-warranty-registry mp-workflow-automator >/dev/null 2>&1
 for p in mp-service-intake mp-warranty-registry mp-workflow-automator; do wp plugin uninstall "$p" >/dev/null 2>&1; done
 TBL=$(q "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE '${PFX}mp\\_%'")
