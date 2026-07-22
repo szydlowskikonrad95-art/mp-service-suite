@@ -3,6 +3,8 @@
 # - dedup: ten sam (serial+email+rodzaj) w 15 min => 2. zgloszenie odrzucone
 # - rate-limit e-mail (3/doba): 4. zgloszenie z tego samego maila odrzucone
 # - retry po odrzuceniu (brak zgody) NIE jest falszywym duplikatem
+# - zrodlo IP do rate-limitu = filtr mp_intake_client_ip (flaga #10): domyslnie
+#   REMOTE_ADDR, filtr podmienia liczony IP; realna droga HTTP liczy IP z filtra
 # Wymaga MP_BASE. Chodzi na poligonie i w CI (e2e-import).
 set -u
 : "${MP_BASE:?MP_BASE wymagane (adres front HTTP)}"
@@ -72,6 +74,53 @@ CR0=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 submit 'retry@example.com' 'RT-1'
 CR1=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 { [ "$CR0" = "0" ] && [ "$CR1" = "1" ]; } && ok "retry po odrzuceniu (brak zgody) NIE jest duplikatem (0->1)" || bad "retry zablokowany jako duplikat (CR0=$CR0 CR1=$CR1)"
+
+# ── 4. Zrodlo IP do rate-limitu = filtr mp_intake_client_ip (flaga #10) ──────
+# 4a. Jednostkowo na REALNEJ metodzie ktora wola handler (RateLimit::client_ip):
+#     domyslnie = REMOTE_ADDR (regresja zero), filtr podmienia liczony IP.
+IP_DEFAULT=$(wp eval '$_SERVER["REMOTE_ADDR"]="198.51.100.5"; echo \MP\Intake\RateLimit::client_ip();' 2>/dev/null)
+[ "$IP_DEFAULT" = "198.51.100.5" ] && ok "client_ip() domyslnie = REMOTE_ADDR (regresja zero)" || bad "domyslny IP != REMOTE_ADDR (=$IP_DEFAULT)"
+
+IP_FILTERED=$(wp eval '$_SERVER["REMOTE_ADDR"]="198.51.100.5"; add_filter("mp_intake_client_ip", function(){ return "203.0.113.77"; }); echo \MP\Intake\RateLimit::client_ip();' 2>/dev/null)
+[ "$IP_FILTERED" = "203.0.113.77" ] && ok "filtr mp_intake_client_ip podmienia liczony IP (proxy-safe)" || bad "filtr nie zmienil IP (=$IP_FILTERED)"
+
+# 4b. REALNA droga HTTP: wdrozenie za proxy podpina filtr (mu-plugin z naglowka).
+#     Dowod: licznik rate-limitu bity dla IP z filtra, a NIE dla REMOTE_ADDR.
+MU="wp-content/mu-plugins/mp-test-client-ip.php"
+mkdir -p "wp-content/mu-plugins"
+cat > "$MU" <<'PHP'
+<?php
+// TEST-ONLY: symuluje wdrozenie za proxy — podpina mp_intake_client_ip do
+// naglowka X-MP-Test-IP. W PRODUKCJI wdrozeniowiec bierze ZAUFANE zrodlo IP,
+// nie goly naglowek (X-Forwarded-For jest spoofowalny). Patrz SECURITY.md §7.
+add_filter( 'mp_intake_client_ip', static function ( $ip ) {
+	return isset( $_SERVER['HTTP_X_MP_TEST_IP'] )
+		? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_MP_TEST_IP'] ) )
+		: $ip;
+} );
+PHP
+
+reset_all
+FILTERED_IP="203.0.113.99"
+curl -s -o /dev/null -H "X-MP-Test-IP: $FILTERED_IP" \
+	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
+	--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=proxy@example.com" \
+	--data-urlencode "mp_consent=1" \
+	--data-urlencode "serial=PROXY-1" --data-urlencode "purchase_document=FV/1" \
+	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
+	"$MP_BASE/wp-admin/admin-post.php"
+
+HASH_F=$(wp eval "echo md5('$FILTERED_IP');" 2>/dev/null)
+HASH_R=$(wp eval "echo md5('127.0.0.1');" 2>/dev/null)
+CNT_F=$(wp transient get "mp_rl_ip_$HASH_F" 2>/dev/null)
+CNT_R=$(wp transient get "mp_rl_ip_$HASH_R" 2>/dev/null)
+CASE_OK=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
+[ "$CASE_OK" = "1" ] && ok "zgloszenie za proxy przyjete (sprawa utworzona)" || bad "zgloszenie za proxy nie przeszlo ($CASE_OK)"
+[ "$CNT_F" = "1" ] && ok "real-path: licznik rate-limitu bity dla IP z filtra ($FILTERED_IP)" || bad "licznik IP z filtra nie bity (=$CNT_F)"
+[ -z "$CNT_R" ] && ok "real-path: REMOTE_ADDR (127.0.0.1) NIE liczony gdy filtr aktywny" || bad "REMOTE_ADDR liczony mimo filtra (=$CNT_R)"
+
+rm -f "$MU"
 
 echo
 echo "WYNIK C6c: $PASS ok, $FAIL fail"

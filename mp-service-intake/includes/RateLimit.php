@@ -71,7 +71,7 @@ final class RateLimit {
 	 *
 	 * NIE ustawia markera dedup (to robi mark_submitted po sukcesie).
 	 *
-	 * @param string $ip     Adres IP (REMOTE_ADDR).
+	 * @param string $ip     Adres IP klienta (z RateLimit::client_ip() — filtr mp_intake_client_ip, domyslnie REMOTE_ADDR).
 	 * @param string $email  E-mail zglaszajacego.
 	 * @param string $serial Numer seryjny (moze byc pusty).
 	 * @param string $kind   Rodzaj sprawy.
@@ -109,6 +109,36 @@ final class RateLimit {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Realny adres IP klienta uzywany do rate-limitu.
+	 *
+	 * DOMYSLNIE = REMOTE_ADDR (bezpiecznie). Za reverse-proxy / Cloudflare
+	 * WSZYSCY klienci maja IP proxy = 1 adres => rate-limit zablokowalby
+	 * wszystkich. Wdrozeniowiec podpina filtr `mp_intake_client_ip` do
+	 * ZAUFANEGO zrodla IP. Kod celowo NIE ufa slepo `X-Forwarded-For`
+	 * (spoofowalny naglowek) — to decyzja wdrozenia, nie domyslka kodu.
+	 * Nota wdrozeniowa: patrz dokumentacja-techniczna/SECURITY.md §7.
+	 *
+	 * @return string Adres IP (moze byc pusty, gdy brak REMOTE_ADDR).
+	 */
+	public static function client_ip(): string {
+		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) )
+			: '';
+
+		/**
+		 * Filtr realnego IP klienta do rate-limitu.
+		 *
+		 * Domyslnie REMOTE_ADDR. Za proxy podepnij ZAUFANE zrodlo IP.
+		 *
+		 * @param string $remote_addr REMOTE_ADDR (juz zsanityzowany) = domyslne zrodlo.
+		 */
+		$ip = (string) apply_filters( 'mp_intake_client_ip', $remote_addr );
+
+		// Ponowna sanityzacja wyniku filtra (hook moze zwrocic surowa wartosc naglowka).
+		return sanitize_text_field( $ip );
 	}
 
 	/**
