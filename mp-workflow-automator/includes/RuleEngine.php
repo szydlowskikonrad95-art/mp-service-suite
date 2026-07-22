@@ -399,7 +399,24 @@ final class RuleEngine {
 		}
 
 		$rendered = MailTemplates::render( $template_key, $ctx );
-		$result   = 'failed_template_missing';
+
+		// DEDUP-OKNO (best-effort): identyczny mail (adresat+tresc) w oknie => pomin.
+		if ( null !== $rendered
+			&& ! MailDedup::claim( $addr, $rendered['body'], MailDedup::window_for( $template_key ) )
+		) {
+			WorkflowEvents::log(
+				WorkflowEvents::MAIL_DEDUPED,
+				array(
+					'template_key'  => $template_key,
+					'recipient_ref' => $ref,
+				),
+				$case_id
+			);
+
+			return;
+		}
+
+		$result = 'failed_template_missing';
 
 		if ( null !== $rendered ) {
 			$result = Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ? 'success' : 'failed';
@@ -496,7 +513,24 @@ final class RuleEngine {
 		}
 
 		$rendered = MailTemplates::render( 'assignment_notify', $ctx );
-		$result   = 'failed_template_missing';
+
+		// DEDUP-OKNO (best-effort): identyczny mail przydzialu w oknie => pomin.
+		if ( null !== $rendered
+			&& ! MailDedup::claim( $addr, $rendered['body'], MailDedup::window_for( 'assignment_notify' ) )
+		) {
+			WorkflowEvents::log(
+				WorkflowEvents::MAIL_DEDUPED,
+				array(
+					'template_key'  => 'assignment_notify',
+					'recipient_ref' => 'agent',
+				),
+				$case_id
+			);
+
+			return;
+		}
+
+		$result = 'failed_template_missing';
 
 		if ( null !== $rendered ) {
 			$result = Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ? 'success' : 'failed';

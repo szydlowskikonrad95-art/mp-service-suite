@@ -59,6 +59,11 @@ final class WorkflowEvents {
 	public const MAIL_SKIPPED_NO_RECIPIENT = 'MAIL_SKIPPED_NO_RECIPIENT';
 
 	/**
+	 * Identyczny mail (adresat+tresc) w oknie dedupu — pominiety (best-effort).
+	 */
+	public const MAIL_DEDUPED = 'MAIL_DEDUPED';
+
+	/**
 	 * Wygenerowano eksport CSV ({user_id, rows, filters_hash}).
 	 */
 	public const EXPORT_GENERATED = 'EXPORT_GENERATED';
