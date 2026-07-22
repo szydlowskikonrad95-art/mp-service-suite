@@ -40,6 +40,9 @@ final class Plugin {
 	public function boot(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
+
+		// Silnik regul: nasluch triggerow C/B (P3.1 = auto-przydzial na case_created).
+		RuleEngine::register();
 	}
 
 	/**
