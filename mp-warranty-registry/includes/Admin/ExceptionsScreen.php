@@ -39,6 +39,9 @@ final class ExceptionsScreen {
 		add_action( 'admin_menu', array( self::class, 'add_menu' ) );
 		add_action( 'admin_post_mp_exception_add', array( self::class, 'handle_add' ) );
 		add_action( 'admin_post_mp_exception_revoke', array( self::class, 'handle_revoke' ) );
+		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep DoD sekcja 3).
+		add_action( 'admin_post_nopriv_mp_exception_add', array( self::class, 'handle_add' ) );
+		add_action( 'admin_post_nopriv_mp_exception_revoke', array( self::class, 'handle_revoke' ) );
 	}
 
 	/**

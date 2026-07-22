@@ -164,5 +164,7 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c7a-serial-reuse.sh
       - name: Testy C7b (admin unverified — capability + throttle + resend + negatywna macierz ról)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c7b-admin-unverified.sh
+      - name: DoD §3 — security-sweep (macierz ról negatywna, wszystkie endpointy admina => 403)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-dod-security-matrix.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
