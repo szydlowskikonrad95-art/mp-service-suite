@@ -71,6 +71,7 @@ cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "kind=reklamacja" --data-urlencode "email=klient@example.com" \
 	--data-urlencode "serial=REK-1" --data-urlencode "purchase_document=FV/2026/77" \
 	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=Nie grzeje" \
+	--data-urlencode "mp_consent=1" \
 	"$BASE/wp-admin/admin-post.php"
 CNT=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE status IS NULL AND identity_status='pending'")
 [ "$CNT" = "1" ] && ok "poprawne zgloszenie: sprawa unverified utworzona" || bad "sprawa unverified: $CNT"
