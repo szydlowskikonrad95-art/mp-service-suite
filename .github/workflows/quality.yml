@@ -170,6 +170,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/a11y-forms.sh
       - name: Testy D1 (schemat Automatora — 4 tabele + append-only + idempotencja migracji)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d1-schema.sh
+      - name: Testy C-hooki dla D (mp_case_get_context + mp_case_assign + CASE_ASSIGNED)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-hooki-c.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-e2e.sh
       - name: BLOK-S tabletop (S1-S10 niezmienniki, cross-plugin B↔C, SKIP D-pending)
