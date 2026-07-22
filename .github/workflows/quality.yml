@@ -152,5 +152,7 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c5-rodo.sh
       - name: Testy C6a (konto mp_client + passwordless login + panel IDOR)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c6a-konto-panel.sh
+      - name: Testy C6b (wiadomości na panelu — historia + wysyłka + IDOR + zamknięta)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6b-wiadomosci.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
