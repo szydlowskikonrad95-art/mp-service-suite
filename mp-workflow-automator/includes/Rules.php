@@ -26,6 +26,11 @@ final class Rules {
 	public const TRIGGER_STATUS_CHANGED = 'status_changed';
 
 	/**
+	 * Trigger dodania wiadomosci (C); warunki po author_type (client/staff/system).
+	 */
+	public const TRIGGER_MESSAGE_ADDED = 'message_added';
+
+	/**
 	 * Akcje (zamknieta lista). P3.1 = przydzial; P3.2 = zmiana statusu.
 	 */
 	public const ACTION_ASSIGN = 'assign';
@@ -84,6 +89,16 @@ final class Rules {
 	 * Klucz systemowy domyslnej reguly: mail do klienta przy zmianie statusu (P3.3).
 	 */
 	public const SYSTEM_KEY_STATUS_MAIL_CLIENT = 'status_changed_client_mail';
+
+	/**
+	 * Klucz systemowy: wiadomosc KLIENTA => mail do przypisanego agenta (P3.3).
+	 */
+	public const SYSTEM_KEY_MSG_CLIENT_TO_AGENT = 'msg_client_to_agent';
+
+	/**
+	 * Klucz systemowy: wiadomosc STAFF => mail do klienta (P3.3; C sam nie maili).
+	 */
+	public const SYSTEM_KEY_MSG_STAFF_TO_CLIENT = 'msg_staff_to_client';
 
 	/**
 	 * Reguly WLACZONE dla triggera, posortowane: priority ASC, remis -> id ASC.
@@ -236,6 +251,44 @@ final class Rules {
 				'enabled'       => 1,
 				'source'        => 'system',
 				'system_key'    => self::SYSTEM_KEY_STATUS_MAIL_CLIENT,
+			)
+		);
+
+		// Wiadomosc KLIENTA => mail do przypisanego AGENTA (klient odpowiedzial).
+		self::insert(
+			array(
+				'trigger_type'       => self::TRIGGER_MESSAGE_ADDED,
+				'condition_key'      => 'author_type',
+				'condition_operator' => 'equals',
+				'condition_value'    => 'client',
+				'action_type'        => self::ACTION_NOTIFY,
+				'action_config'      => array(
+					'template_key' => 'message_from_client',
+					'recipient'    => 'agent',
+				),
+				'priority'           => 10,
+				'enabled'            => 1,
+				'source'             => 'system',
+				'system_key'         => self::SYSTEM_KEY_MSG_CLIENT_TO_AGENT,
+			)
+		);
+
+		// Wiadomosc STAFF => mail do KLIENTA (serwis odpowiedzial; C sam nie maili).
+		self::insert(
+			array(
+				'trigger_type'       => self::TRIGGER_MESSAGE_ADDED,
+				'condition_key'      => 'author_type',
+				'condition_operator' => 'equals',
+				'condition_value'    => 'staff',
+				'action_type'        => self::ACTION_NOTIFY,
+				'action_config'      => array(
+					'template_key' => 'message_from_staff',
+					'recipient'    => 'client',
+				),
+				'priority'           => 10,
+				'enabled'            => 1,
+				'source'             => 'system',
+				'system_key'         => self::SYSTEM_KEY_MSG_STAFF_TO_CLIENT,
 			)
 		);
 

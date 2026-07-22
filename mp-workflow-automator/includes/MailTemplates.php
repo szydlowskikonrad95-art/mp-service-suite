@@ -41,6 +41,14 @@ final class MailTemplates {
 				'subject' => 'Przydzielono Ci zgłoszenie {{numer_sprawy}}',
 				'body'    => "Dzień dobry,\n\nPrzydzielono Ci do obsługi zgłoszenie {{numer_sprawy}} (rodzaj: {{rodzaj}}, status: {{status}}).\n\nSzczegóły znajdziesz w panelu sprawy.\n\nData przydziału: {{data}}",
 			),
+			'message_from_client'   => array(
+				'subject' => 'Nowa wiadomość w zgłoszeniu {{numer_sprawy}}',
+				'body'    => "Dzień dobry,\n\nKlient dodał nową wiadomość w zgłoszeniu {{numer_sprawy}} (status: {{status}}).\n\nOdpowiedz w panelu sprawy.\n\nData: {{data}}",
+			),
+			'message_from_staff'    => array(
+				'subject' => 'Odpowiedź serwisu w zgłoszeniu {{numer_sprawy}}',
+				'body'    => "Dzień dobry,\n\nSerwis dodał odpowiedź w Twoim zgłoszeniu {{numer_sprawy}}.\n\nTreść zobaczysz po zalogowaniu na swoje konto.\n\nData: {{data}}",
+			),
 		);
 	}
 

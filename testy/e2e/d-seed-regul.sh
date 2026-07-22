@@ -18,7 +18,7 @@ wp option delete mp_automator_mail_templates >/dev/null 2>&1
 reactivate
 
 N=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
-[ "$N" = "2" ] && ok "aktywacja zasiala 2 reguly domyslne (przydzial + mail statusu)" || bad "regul po seedzie: $N (oczekiwano 2)"
+[ "$N" = "4" ] && ok "aktywacja zasiala 4 reguly domyslne (przydzial + mail statusu + 2x wiadomosci)" || bad "regul po seedzie: $N (oczekiwano 4)"
 
 ROWA=$(q "SELECT CONCAT(source,'|',system_key,'|',trigger_type,'|',action_type,'|',enabled) FROM wp_mp_workflow_rules WHERE system_key='default_assign'")
 [ "$ROWA" = "system|default_assign|case_created|assign|1" ] && ok "regula A: system/default_assign, case_created->assign ($ROWA)" || bad "zla regula przydzialu ($ROWA)"
@@ -38,6 +38,12 @@ echo "$MCFG" | grep -q '"recipient":"client"' && ok "regula mailowa: recipient=c
 TPL=$(wp eval 'echo MP\Automator\MailTemplates::get("status_changed_client") ? "1":"0";' 2>/dev/null)
 [ "$TPL" = "1" ] && ok "szablon status_changed_client zasiany RAZEM z regula (warstwa ii)" || bad "brak szablonu (sierota reguly!)"
 
+# Reguly wiadomosci (message_added) — po author_type
+MC=$(q "SELECT CONCAT(trigger_type,'|',condition_key,'|',condition_value,'|',action_type) FROM wp_mp_workflow_rules WHERE system_key='msg_client_to_agent'")
+[ "$MC" = "message_added|author_type|client|notify" ] && ok "regula: wiadomosc klienta->agent (message_added/author_type=client)" || bad "zla regula msg-client ($MC)"
+MS=$(q "SELECT CONCAT(trigger_type,'|',condition_key,'|',condition_value,'|',action_type) FROM wp_mp_workflow_rules WHERE system_key='msg_staff_to_client'")
+[ "$MS" = "message_added|author_type|staff|notify" ] && ok "regula: wiadomosc staff->klient (message_added/author_type=staff)" || bad "zla regula msg-staff ($MS)"
+
 SV=$(q "SELECT option_value FROM wp_options WHERE option_name='mp_automator_seed_version'")
 [ "$SV" = "1" ] && ok "mp_automator_seed_version = 1 (bramka siewu)" || bad "seed_version = $SV"
 
@@ -51,7 +57,7 @@ N2=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
 wp option delete mp_automator_seed_version >/dev/null 2>&1
 reactivate
 N3=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
-[ "$N3" = "2" ] && ok "po skasowaniu seed_version reinstalacja SIEJE swiezo (2 reguly)" || bad "reinstalacja nie zasiala ($N3)"
+[ "$N3" = "4" ] && ok "po skasowaniu seed_version reinstalacja SIEJE swiezo (4 reguly)" || bad "reinstalacja nie zasiala ($N3)"
 
 echo ""
 echo "D-SEED-REGUL: PASS=$PASS FAIL=$FAIL"
