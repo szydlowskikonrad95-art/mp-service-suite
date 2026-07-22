@@ -584,6 +584,10 @@ final class Attachments {
 	/**
 	 * Katalog zalacznikow uploads/mp-attachments z deny-ALL + index.php.
 	 *
+	 * ⚠️ `.htaccess` deny dziala TYLKO na Apache/LiteSpeed — **nginx go IGNORUJE**.
+	 * Realna, przenosna brama (kazdy serwer) = odczyt WYLACZNIE przez endpoint
+	 * `mp_intake_attachment` (nonce + ownership). Nota + snippet nginx: SECURITY.md.
+	 *
 	 * @return string|null
 	 */
 	public static function dir(): ?string {
