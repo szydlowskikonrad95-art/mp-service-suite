@@ -170,6 +170,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/a11y-forms.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-e2e.sh
+      - name: BLOK-S tabletop (S1-S10 niezmienniki, cross-plugin B↔C, SKIP D-pending)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-tabletop.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 
