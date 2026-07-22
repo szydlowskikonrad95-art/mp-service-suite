@@ -33,12 +33,13 @@ final class Plugin {
 	}
 
 	/**
-	 * Rejestruje hooki startowe (i18n; moduly domenowe dochodza w D5-D6).
+	 * Rejestruje hooki startowe (i18n, upgrade-bez-reaktywacji; moduly domenowe dochodza w D5-D6).
 	 *
 	 * @return void
 	 */
 	public function boot(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 	}
 
 	/**
