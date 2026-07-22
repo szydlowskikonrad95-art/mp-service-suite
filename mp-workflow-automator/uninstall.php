@@ -42,6 +42,8 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\Schema::VERSION_OPTION );
 	// SEED_VERSION w warstwie (ii): pelny uninstall kasuje => reinstalacja sieje swiezo.
 	delete_option( MP\Automator\Rules::SEED_VERSION_OPTION );
+	// Definicje statusow wlasnych (opcja-tresc warstwy ii).
+	delete_option( MP\Automator\StatusDefs::OPTION );
 }
 
 MP\Automator\Common\Uninstall::run(

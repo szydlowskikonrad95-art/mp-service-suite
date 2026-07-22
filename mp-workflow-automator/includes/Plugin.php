@@ -41,6 +41,9 @@ final class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
+		// Statusy wlasne (P3.2): D = zrodlo definicji => publikuje je do walidatora C.
+		add_filter( 'mp_registered_statuses', array( StatusDefs::class, 'register_statuses' ) );
+
 		// Silnik regul: nasluch triggerow C/B (P3.1 = auto-przydzial na case_created).
 		RuleEngine::register();
 	}
