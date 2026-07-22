@@ -29,7 +29,7 @@ final class Lifecycle {
 	 *
 	 * @var string[]
 	 */
-	public const CRON_HOOKS = array();
+	public const CRON_HOOKS = array( Sweep::CRON_HOOK );
 
 	/**
 	 * Aktywacja: role wspolne (idempotentnie), marker modulu, migracje schematu.
@@ -49,6 +49,7 @@ final class Lifecycle {
 
 		Schema::migrate();
 		Rules::maybe_seed_defaults();
+		Sweep::schedule();
 	}
 
 	/**
@@ -69,6 +70,7 @@ final class Lifecycle {
 		Roles::ensure();
 		Schema::migrate();
 		Rules::maybe_seed_defaults();
+		Sweep::schedule();
 	}
 
 	/**
@@ -77,7 +79,6 @@ final class Lifecycle {
 	 * @return void
 	 */
 	public static function deactivate(): void {
-		// @phpstan-ignore foreach.emptyArray (CRON_HOOKS puste do czasu pierwszego crona — D7-8)
 		foreach ( self::CRON_HOOKS as $hook ) {
 			wp_clear_scheduled_hook( $hook );
 		}

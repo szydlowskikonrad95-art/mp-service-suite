@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 1;
+	public const LATEST = 2;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -38,7 +38,41 @@ final class Schema {
 			self::VERSION_OPTION,
 			array(
 				1 => array( self::class, 'migration_1_tables' ),
+				2 => array( self::class, 'migration_2_warning_at' ),
 			)
+		);
+	}
+
+	/**
+	 * V2 (SLA-2): kolumna `warning_at` w case_sla — moment progu przypomnienia
+	 * (= deadline − warning_hours, liczony przy provisioningu). Indeks pozwala
+	 * sweepowi wybrac wymagalne przypomnienia czystym SARGABLE WHERE bez per-status
+	 * liczenia w SQL. dbDelta dokłada kolumne+indeks do istniejacej tabeli.
+	 *
+	 * @return void
+	 */
+	public static function migration_2_warning_at(): void {
+		global $wpdb;
+
+		$charset = $wpdb->get_charset_collate();
+		$sla     = Tables::full( Tables::CASE_SLA );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$sla} (
+				case_id BIGINT UNSIGNED NOT NULL,
+				status VARCHAR(20) NOT NULL DEFAULT '',
+				sla_policy_version INT UNSIGNED NOT NULL DEFAULT 1,
+				deadline_at DATETIME NULL,
+				warning_at DATETIME NULL,
+				reminder_sent_at DATETIME NULL,
+				escalated_at DATETIME NULL,
+				reminder_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+				escalation_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+				updated_at DATETIME NOT NULL,
+				PRIMARY KEY  (case_id),
+				KEY deadline_at (deadline_at),
+				KEY warning_at (warning_at)
+			) {$charset};"
 		);
 	}
 

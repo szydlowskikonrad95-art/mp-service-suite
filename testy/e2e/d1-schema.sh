@@ -39,6 +39,12 @@ PKCOL=$(q "SELECT column_name FROM information_schema.key_column_usage WHERE tab
 DLIDX=$(q "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_sla' AND index_name='deadline_at'")
 [ "$DLIDX" -ge 1 ] 2>/dev/null && ok "case_sla indeks deadline_at (sweep SARGABLE)" || bad "brak indeksu deadline_at"
 
+# case_sla v2 (SLA-2): kolumna + indeks warning_at (sweep SARGA po progu przypomnienia).
+WACOL=$(q "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_sla' AND column_name='warning_at'")
+[ "$WACOL" = "1" ] && ok "case_sla kolumna warning_at (migracja v2)" || bad "brak kolumny warning_at"
+WAIDX=$(q "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_sla' AND index_name='warning_at'")
+[ "$WAIDX" -ge 1 ] 2>/dev/null && ok "case_sla indeks warning_at (sweep SARGABLE)" || bad "brak indeksu warning_at"
+
 # case_checklists: UNIQUE (case_id,template_id,step_key) — wiersz per krok, zero wyscigu o blob.
 CLU=$(q "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_checklists' AND index_name='case_step' AND non_unique=0")
 [ "$CLU" -ge 1 ] 2>/dev/null && ok "case_checklists UNIQUE (case_id,template_id,step_key)" || bad "brak UNIQUE case_step"
@@ -58,11 +64,11 @@ wp db query "DELETE FROM ${PREFIX}mp_workflow_events" >/dev/null 2>&1
 
 # ── 4. Migracja IDEMPOTENTNA: wersja == LATEST, drugi przebieg nie sypie ──────
 VER=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
-[ "$VER" = "1" ] && ok "mp_automator_schema_version = $VER (== LATEST)" || bad "wersja schematu != 1 (jest: $VER)"
+[ "$VER" = "2" ] && ok "mp_automator_schema_version = $VER (== LATEST)" || bad "wersja schematu != 2 (jest: $VER)"
 
 wp eval 'MP\Automator\Schema::migrate();' >/dev/null 2>&1
 VER2=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
-[ "$VER2" = "1" ] && ok "ponowny migrate() idempotentny (wersja nadal $VER2)" || bad "ponowny migrate zmienil wersje na $VER2"
+[ "$VER2" = "2" ] && ok "ponowny migrate() idempotentny (wersja nadal $VER2)" || bad "ponowny migrate zmienil wersje na $VER2"
 
 # ── Podsumowanie ─────────────────────────────────────────────────────────────
 echo ""

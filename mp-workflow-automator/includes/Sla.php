@@ -96,6 +96,17 @@ final class Sla {
 		$base     = isset( $ctx['status_changed_at'] ) ? $ctx['status_changed_at'] : null;
 		$deadline = SlaConfig::deadline_for( $status, is_string( $base ) ? $base : null, $priority );
 
+		// Prog przypomnienia = deadline − warning_hours (SARGABLE dla sweepa SLA-2).
+		$warning_at = null;
+
+		if ( null !== $deadline ) {
+			$warn_h = SlaConfig::for_status( $status )['warning_hours'];
+
+			if ( $warn_h > 0 ) {
+				$warning_at = gmdate( 'Y-m-d H:i:s', (int) strtotime( $deadline . ' UTC' ) - $warn_h * HOUR_IN_SECONDS );
+			}
+		}
+
 		$table = Tables::full( Tables::CASE_SLA );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna; REPLACE = swiezy zegar (reset markerow), obsluguje NULL deadline.
@@ -106,13 +117,14 @@ final class Sla {
 				'status'              => $status,
 				'sla_policy_version'  => SlaConfig::policy_version(),
 				'deadline_at'         => $deadline,
+				'warning_at'          => $warning_at,
 				'reminder_sent_at'    => null,
 				'escalated_at'        => null,
 				'reminder_attempts'   => 0,
 				'escalation_attempts' => 0,
 				'updated_at'          => gmdate( 'Y-m-d H:i:s' ),
 			),
-			array( '%d', '%s', '%d', '%s', '%s', '%s', '%d', '%d', '%s' )
+			array( '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s' )
 		);
 		// phpcs:enable
 	}
