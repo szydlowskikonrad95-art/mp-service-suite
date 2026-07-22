@@ -61,17 +61,7 @@ final class Login {
 	 * @return bool
 	 */
 	private static function is_client( \WP_User $user ): bool {
-		if ( user_can( $user, 'manage_options' ) ) {
-			return false;
-		}
-
-		foreach ( \MP\Intake\Common\Roles::STAFF_CAPS as $staff_cap ) {
-			if ( user_can( $user, $staff_cap ) ) {
-				return false;
-			}
-		}
-
-		return user_can( $user, \MP\Intake\Accounts::CLIENT_ROLE );
+		return \MP\Intake\Accounts::is_client_only( $user );
 	}
 
 	/**

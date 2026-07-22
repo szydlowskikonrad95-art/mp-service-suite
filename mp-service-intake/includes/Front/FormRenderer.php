@@ -137,6 +137,8 @@ final class FormRenderer {
 
 		$done = true;
 
+		self::enqueue_style();
+
 		wp_enqueue_script(
 			'mp-intake-form',
 			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/js/intake-form.js',
@@ -157,6 +159,24 @@ final class FormRenderer {
 					FormConfig::union_fields()
 				),
 			)
+		);
+	}
+
+	/**
+	 * Wpina arkusz stylu frontu Intake (formularz + panel klienta).
+	 *
+	 * Wspoldzielony przez FormRenderer (formularz) i AccountPage (panel) —
+	 * jeden handle, wp_enqueue_style idempotentne. Wersjonowanie po
+	 * MP_INTAKE_VERSION (bump = nowy ?ver). Sam wyglad, zero logiki.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_style(): void {
+		wp_enqueue_style(
+			'mp-intake',
+			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/css/intake.css',
+			array(),
+			MP_INTAKE_VERSION
 		);
 	}
 

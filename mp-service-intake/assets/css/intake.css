@@ -1,0 +1,112 @@
+/**
+ * MP Service Intake — styl frontu: formularz zgłoszenia + panel klienta.
+ * Polerka (flaga #16): etykiety w bloku nad polami, pola pełnej szerokości,
+ * czytelne karty/komunikaty. Zakres wąski (.mp-intake / .mp-account) — nie
+ * walczy z motywem. Zero zmian logiki.
+ */
+
+.mp-intake,
+.mp-account {
+	max-width: 40rem;
+	margin: 0 auto;
+}
+
+.mp-intake h2,
+.mp-account h2 {
+	margin: 0 0 1rem;
+}
+
+/* Pole: etykieta w osobnym bloku NAD polem (koniec "etykieta[pole]"). */
+.mp-intake-field {
+	margin: 0 0 1.1rem;
+}
+
+.mp-intake-field > label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 0.3rem;
+}
+
+.mp-intake-field input[type="text"],
+.mp-intake-field input[type="email"],
+.mp-intake-field input[type="date"],
+.mp-intake-field input[type="tel"],
+.mp-intake-field select,
+.mp-intake-field textarea,
+.mp-account__form input[type="email"],
+.mp-account__contact-form input,
+.mp-account__send textarea {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.5rem 0.6rem;
+	font: inherit;
+}
+
+.mp-intake-field textarea,
+.mp-account__send textarea {
+	min-height: 6rem;
+	resize: vertical;
+}
+
+/* Zgoda RODO: checkbox obok tekstu, nie na całą szerokość. */
+.mp-intake-consent > label {
+	display: flex;
+	gap: 0.5rem;
+	align-items: flex-start;
+	font-weight: 400;
+}
+
+.mp-intake-consent input[type="checkbox"] {
+	width: auto;
+	flex: 0 0 auto;
+	margin-top: 0.2rem;
+}
+
+.mp-intake-hint {
+	color: #555;
+	font-size: 0.9em;
+}
+
+.mp-intake-error-summary,
+.mp-intake-error {
+	color: #b3261e;
+}
+
+.mp-intake-error {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.9em;
+}
+
+.mp-intake-notice,
+.mp-account__notice {
+	padding: 0.6rem 0.8rem;
+	background: #eef4fb;
+	border-left: 3px solid #1a3d5c;
+}
+
+.mp-intake-submit,
+.mp-account__form button,
+.mp-account__contact-form button,
+.mp-account__send button {
+	padding: 0.6rem 1.4rem;
+	font: inherit;
+	cursor: pointer;
+}
+
+/* Panel klienta: sprawy jako czytelne karty. */
+.mp-account__case {
+	border: 1px solid #ddd;
+	border-radius: 0.4rem;
+	padding: 0.8rem 1rem;
+	margin: 0 0 1rem;
+}
+
+.mp-account__contact,
+.mp-account__privacy {
+	margin: 1.2rem 0;
+	padding: 0.8rem 1rem;
+	background: #fafafa;
+	border: 1px solid #eee;
+	border-radius: 0.4rem;
+}
