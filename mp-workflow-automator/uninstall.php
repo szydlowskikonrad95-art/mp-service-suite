@@ -44,6 +44,8 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\Rules::SEED_VERSION_OPTION );
 	// Definicje statusow wlasnych (opcja-tresc warstwy ii).
 	delete_option( MP\Automator\StatusDefs::OPTION );
+	// Szablony maili (opcja-tresc warstwy ii — przezywaja RAZEM z regulami).
+	delete_option( MP\Automator\MailTemplates::OPTION );
 }
 
 MP\Automator\Common\Uninstall::run(

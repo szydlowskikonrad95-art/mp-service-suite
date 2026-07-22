@@ -36,6 +36,12 @@ final class Rules {
 	public const ACTION_CHANGE_STATUS = 'change_status';
 
 	/**
+	 * Akcja: powiadomienie e-mail z szablonu (P3.3). NIEMUTUJACA — przechodzi
+	 * przez guard petli na kazdej glebokosci (powiadomienie o zmianie MUSI wyjsc).
+	 */
+	public const ACTION_NOTIFY = 'notify';
+
+	/**
 	 * Akcje MUTUJACE stan sprawy — objete GUARDEM PETLI (mutacja tylko na
 	 * glebokosci 0). Akcje spoza tej listy (mailowe — P3.3) przechodza na kazdej
 	 * glebokosci. Zamknieta lista w kodzie (ZAKAZ eval).
@@ -73,6 +79,11 @@ final class Rules {
 	 * Klucz systemowy domyslnej reguly przydzialu (rozpoznanie seeda).
 	 */
 	public const SYSTEM_KEY_DEFAULT_ASSIGN = 'default_assign';
+
+	/**
+	 * Klucz systemowy domyslnej reguly: mail do klienta przy zmianie statusu (P3.3).
+	 */
+	public const SYSTEM_KEY_STATUS_MAIL_CLIENT = 'status_changed_client_mail';
 
 	/**
 	 * Reguly WLACZONE dla triggera, posortowane: priority ASC, remis -> id ASC.
@@ -209,6 +220,26 @@ final class Rules {
 				'system_key'    => self::SYSTEM_KEY_DEFAULT_ASSIGN,
 			)
 		);
+
+		// Domyslna: mail do KLIENTA przy KAZDEJ zmianie statusu (warunek pusty = zawsze).
+		self::insert(
+			array(
+				'trigger_type'  => self::TRIGGER_STATUS_CHANGED,
+				'condition_key' => '',
+				'action_type'   => self::ACTION_NOTIFY,
+				'action_config' => array(
+					'template_key' => 'status_changed_client',
+					'recipient'    => 'client',
+				),
+				'priority'      => 10,
+				'enabled'       => 1,
+				'source'        => 'system',
+				'system_key'    => self::SYSTEM_KEY_STATUS_MAIL_CLIENT,
+			)
+		);
+
+		// Szablony maili sieja sie RAZEM z regulami (warstwa ii, jedna bramka).
+		MailTemplates::seed_defaults();
 
 		update_option( self::SEED_VERSION_OPTION, self::SEED_VERSION, false );
 	}

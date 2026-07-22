@@ -215,9 +215,9 @@ final class RuleEngine {
 					continue;
 				}
 
-				// Dyspozytor akcji (P3.2: change_status; akcje mailowe dochodza w P3.3).
-				if ( Rules::ACTION_CHANGE_STATUS !== $action ) {
-					// Nieobslugiwana tu akcja (np. mail przed P3.3) — nie zuzywa budzetu.
+				// Dyspozytor akcji: change_status (mutacja) / notify (mail P3.3).
+				// Nieznana akcja = ignoruj (nie zuzywa budzetu).
+				if ( Rules::ACTION_CHANGE_STATUS !== $action && Rules::ACTION_NOTIFY !== $action ) {
 					continue;
 				}
 
@@ -236,8 +236,12 @@ final class RuleEngine {
 					break;
 				}
 
-				if ( self::do_change_status( $case_id, $ctx, $rule, $depth ) ) {
-					$mutated = true;
+				if ( Rules::ACTION_CHANGE_STATUS === $action ) {
+					if ( self::do_change_status( $case_id, $ctx, $rule, $depth ) ) {
+						$mutated = true;
+					}
+				} else {
+					self::do_notify( $case_id, $ctx, $rule, $depth );
 				}
 			}
 		} finally {
@@ -301,6 +305,106 @@ final class RuleEngine {
 		$log( $ok ? 'success' : 'failed' );
 
 		return $ok;
+	}
+
+	/**
+	 * Akcja notify (P3.3): renderuje szablon i wysyla mail przez Mailer (jedyna
+	 * brama egress). Odbiorca bez adresu (klient zanonimizowany / agent
+	 * nieprzydzielony) = LEGALNE pominiecie (MAIL_SKIPPED_NO_RECIPIENT, nie awaria).
+	 * Log NO-PII: {template_key, recipient_ref=kategoria} — NIGDY adres ani tresc.
+	 *
+	 * @param int                  $case_id ID sprawy.
+	 * @param array<string, mixed> $ctx     Kontekst sprawy.
+	 * @param array<string, mixed> $rule    Wiersz reguły.
+	 * @param int                  $depth   Glebokosc (do logu).
+	 * @return void
+	 */
+	private static function do_notify( int $case_id, array $ctx, array $rule, int $depth ): void {
+		$config       = json_decode( (string) $rule['action_config_json'], true );
+		$template_key = is_array( $config ) && isset( $config['template_key'] ) ? (string) $config['template_key'] : '';
+		$recipient    = is_array( $config ) && isset( $config['recipient'] ) ? (string) $config['recipient'] : 'client';
+
+		$resolved = self::resolve_recipient( $recipient, $ctx );
+		$addr     = $resolved[0];
+		$ref      = $resolved[1];
+
+		if ( '' === $addr ) {
+			WorkflowEvents::log(
+				WorkflowEvents::MAIL_SKIPPED_NO_RECIPIENT,
+				array(
+					'template_key'  => $template_key,
+					'recipient_ref' => $ref,
+				),
+				$case_id
+			);
+
+			return;
+		}
+
+		$rendered = MailTemplates::render( $template_key, $ctx );
+		$result   = 'failed_template_missing';
+
+		if ( null !== $rendered ) {
+			$result = Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ? 'success' : 'failed';
+		}
+
+		WorkflowEvents::log(
+			WorkflowEvents::RULE_EXECUTED,
+			array(
+				'rule_id'       => (int) $rule['id'],
+				'trigger'       => Rules::TRIGGER_STATUS_CHANGED,
+				'action'        => Rules::ACTION_NOTIFY,
+				'template_key'  => $template_key,
+				'recipient_ref' => $ref,
+				'result'        => $result,
+				'depth'         => $depth,
+			),
+			$case_id
+		);
+	}
+
+	/**
+	 * Rozwiazuje adres odbiorcy z kategorii (client/agent/coordinator). Zwraca
+	 * [adres, recipient_ref] gdzie recipient_ref = KATEGORIA (NO-PII do logu,
+	 * nigdy adres). Brak adresu => pierwszy element ''.
+	 *
+	 * @param string               $recipient Kategoria odbiorcy.
+	 * @param array<string, mixed> $ctx       Kontekst sprawy.
+	 * @return array{0: string, 1: string}
+	 */
+	private static function resolve_recipient( string $recipient, array $ctx ): array {
+		if ( 'client' === $recipient ) {
+			$email = isset( $ctx['kontakt']['email'] ) ? (string) $ctx['kontakt']['email'] : '';
+
+			return array( $email, 'client' );
+		}
+
+		if ( 'agent' === $recipient ) {
+			$uid = isset( $ctx['assigned_to'] ) ? $ctx['assigned_to'] : null;
+
+			if ( null === $uid ) {
+				return array( '', 'agent' );
+			}
+
+			$user = get_userdata( (int) $uid );
+
+			return array( $user ? (string) $user->user_email : '', 'agent' );
+		}
+
+		if ( 'coordinator' === $recipient ) {
+			$users = get_users(
+				array(
+					'role'   => 'mp_coordinator',
+					'number' => 1,
+					'fields' => array( 'user_email' ),
+				)
+			);
+			$email = ! empty( $users ) && isset( $users[0]->user_email ) ? (string) $users[0]->user_email : '';
+
+			return array( $email, 'coordinator' );
+		}
+
+		return array( '', $recipient );
 	}
 
 	/**

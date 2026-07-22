@@ -19,3 +19,9 @@ add_action(
 		$phpmailer->SMTPAuth = false;
 	}
 );
+
+// Domyslny From WP na poligonie = wordpress@localhost (bez TLD) — PHPMailer
+// ODRZUCA taki adres ("Invalid address (From)") i mail NIGDY nie dolatuje do
+// Mailpita. Dev-only: ustawiamy poprawny nadawca, zeby demo maili dzialalo.
+add_filter( 'wp_mail_from', static fn( $email ) => 'serwis@mp-demo.example' );
+add_filter( 'wp_mail_from_name', static fn( $name ) => 'MP Serwis (DEMO)' );
