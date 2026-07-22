@@ -61,8 +61,7 @@ final class RateLimit {
 		 *
 		 * @param array $defaults Domyslne limity.
 		 */
-		/** @var array<string, int> $limits */
-		$limits = apply_filters( 'mp_intake_rate_limits', $defaults );
+		$limits = (array) apply_filters( 'mp_intake_rate_limits', $defaults );
 
 		return array_merge( $defaults, $limits );
 	}
