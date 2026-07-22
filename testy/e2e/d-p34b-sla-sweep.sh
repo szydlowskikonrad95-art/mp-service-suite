@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# ZYWY DOWOD P3.4 SLA-2 (sweep): cron wybiera sprawy wymagalne i wola Sla::notify.
-# warning_at liczone przy provision. Miniony prog => przypomnienie; miniony termin =>
-# eskalacja. Markery daja IDEMPOTENCJE (2. sweep = 0 maili). GET_LOCK = jeden przebieg
-# naraz (drugi wychodzi). Niewymagalne / terminalne => pominiete. pre_wp_mail=true =>
+# ZYWY DOWOD P3.4 SLA-2/SLA-3 (sweep): cron wybiera sprawy wymagalne i wola Sla::notify.
+# warning_at liczone przy provision. Miniony prog (deadline JESZCZE w przyszlosci) =>
+# przypomnienie; miniony TERMIN => eskalacja. UWAGA (naprawa flagi #8, SLA-3): sprawa
+# RETROAKTYWNA (deadline juz po terminie) dostaje DOKLADNIE 1 powiadomienie — sama
+# eskalacje; przypomnienie jest TLUMIONE (marker reminder_sent_at zajety BEZ maila i
+# BEZ eventu osi C). Dlatego sekcje z overdue() (oba czasy w przeszlosci) asertuja
+# 1 mail i SC=1 (SLA_ESCALATED) — WCZESNIEJ asertowaly 2 (bug #8: podwojne
+# powiadomienie). Normalna sciezka reminder->eskalacja w 2 sweepach: sekcja 8.
+# Markery daja IDEMPOTENCJE (2. sweep = 0 maili). GET_LOCK = jeden przebieg naraz
+# (drugi wychodzi). Niewymagalne / terminalne => pominiete. pre_wp_mail=true =>
 # transport env-niezalezny (capture i tak zapisuje). Exit 0 = OK.
 set -u
 
@@ -41,14 +47,20 @@ WH=$(q "SELECT TIMESTAMPDIFF(HOUR, warning_at, deadline_at) FROM wp_mp_case_sla 
 capclear; sweep
 [ "$(capcount)" = "0" ] && ok "sprawa niewymagalna (termin w przyszlosci) => sweep nic nie wysyla" || bad "sweep wyslal dla niewymagalnej!"
 
-# ── 3. Miniony termin => przypomnienie + eskalacja + markery + SLA_* na osi ───
+# ── 3. Sprawa RETROAKTYWNA (oba czasy w przeszlosci) => DOKLADNIE 1 powiadomienie ─
+# NAPRAWA FLAGI #8 (SLA-3): overdue() ustawia deadline I warning w przeszlosci =>
+# scenariusz retroaktywny. Fix TLUMI przypomnienie (marker zajety bez maila/eventu),
+# idzie SAMA eskalacja. Asercje ponizej WCZESNIEJ oczekiwaly 2 maili i SC=2 —
+# kodowaly buga #8 (podwojne powiadomienie); po fixie retroaktywna = 1 mail, SC=1.
 overdue "$CID"
 capclear; sweep
-[ "$(capcount)" = "2" ] && ok "miniony termin => 2 maile (przypomnienie + eskalacja)" || bad "sweep wyslal $(capcount) (oczek 2)"
+[ "$(capcount)" = "1" ] && ok "retroaktywna => 1 mail (sama eskalacja; przypomnienie stlumione — flaga #8)" || bad "sweep wyslal $(capcount) (oczek 1)"
 RE=$(q "SELECT CONCAT(reminder_sent_at IS NOT NULL, escalated_at IS NOT NULL) FROM wp_mp_case_sla WHERE case_id=$CID")
-[ "$RE" = "11" ] && ok "markery reminder_sent_at + escalated_at ustawione (send-then-claim)" || bad "markery nie ustawione ($RE)"
+[ "$RE" = "11" ] && ok "OBA markery ustawione (reminder zajety BEZ maila = idempotencja; escalated = send-then-claim)" || bad "markery nie ustawione ($RE)"
+SR_MAIL=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type='SLA_REMINDER_SENT'")
+[ "$SR_MAIL" = "0" ] && ok "ZERO SLA_REMINDER_SENT na osi C (os=audyt nie klamie: przypomnienie nie poszlo)" || bad "os C klamie: SLA_REMINDER_SENT mimo tlumienia ($SR_MAIL)"
 SC=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type IN ('SLA_REMINDER_SENT','SLA_ESCALATED')")
-[ "$SC" = "2" ] && ok "SLA_REMINDER_SENT + SLA_ESCALATED na osi sprawy (C)" || bad "brak eventow SLA na osi ($SC)"
+[ "$SC" = "1" ] && ok "os C retroaktywnej = 1 zdarzenie (samo SLA_ESCALATED)" || bad "zle zdarzenia SLA na osi ($SC, oczek 1)"
 SR=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='SWEEP_RUN'")
 [ "$SR" -ge 1 ] 2>/dev/null && ok "SWEEP_RUN zaksiegowany (audyt przebiegu)" || bad "brak SWEEP_RUN"
 
@@ -67,9 +79,9 @@ sweep    # ten przebieg powinien wyjsc od razu (zamek zajety)
 LOCKED=$(capcount)
 wait "$BG" 2>/dev/null
 [ "$LOCKED" = "0" ] && ok "sweep przy zajetym GET_LOCK => WYCHODZI (0 maili, brak dubla przebiegu)" || bad "sweep dzialal mimo zajetego zamka! ($LOCKED)"
-# po zwolnieniu zamka kolejny sweep obsluguje sprawe
+# po zwolnieniu zamka kolejny sweep obsluguje sprawe (retroaktywna => 1 eskalacja, flaga #8)
 capclear; sweep
-[ "$(capcount)" = "2" ] && ok "po zwolnieniu zamka nastepny sweep obsluguje zalegla sprawe" || bad "sprawa nieobsluzona po zwolnieniu zamka ($(capcount))"
+[ "$(capcount)" = "1" ] && ok "po zwolnieniu zamka nastepny sweep obsluguje zalegla sprawe (1 eskalacja)" || bad "sprawa nieobsluzona po zwolnieniu zamka ($(capcount), oczek 1)"
 
 # ── 6. Terminalna (deadline NULL) => sweep pomija ────────────────────────────
 CID3=$(mkcase sw3@example.com SWP-3)
@@ -87,7 +99,29 @@ NX=$(wp eval 'echo wp_next_scheduled("mp_automator_sla_sweep") ? "1":"0";' 2>/de
 CID4=$(mkcase sw4@example.com SWP-4); overdue "$CID4"
 capclear
 wp eval "add_filter('pre_wp_mail','__return_true'); do_action('mp_automator_sla_sweep');" >/dev/null 2>&1
-[ "$(capcount)" = "2" ] && ok "hak crona mp_automator_sla_sweep odpala Sweep::run (obsluga zaleglej)" || bad "hak crona nie zadzialal ($(capcount))"
+# retroaktywna (overdue) => 1 eskalacja (flaga #8: przypomnienie stlumione)
+[ "$(capcount)" = "1" ] && ok "hak crona mp_automator_sla_sweep odpala Sweep::run (zalegla retroaktywna = 1 eskalacja)" || bad "hak crona nie zadzialal ($(capcount), oczek 1)"
+
+# ── 8. NORMALNA sciezka: fix flagi #8 NIE zabija prawidlowego przypomnienia ──────
+# warning minal ALE deadline w PRZYSZLOSCI => sweep #1: DOKLADNIE 1 przypomnienie,
+# 0 eskalacji, SLA_REMINDER_SENT NA osi C (os mowi prawde: przypomnienie NAPRAWDE
+# poszlo). Potem deadline w przeszlosc => sweep #2: 1 eskalacja. Dowod ze fix tlumi
+# przypomnienie TYLKO retroaktywnie, a normalny reminder-przed-terminem dziala.
+CIDN=$(mkcase swn@example.com SWP-N)
+wp db query "UPDATE wp_mp_case_sla SET warning_at=NOW()-INTERVAL 1 HOUR, deadline_at=NOW()+INTERVAL 2 HOUR WHERE case_id=$CIDN" >/dev/null 2>&1
+capclear; sweep
+[ "$(capcount)" = "1" ] && ok "normalna: warning minal, deadline w przyszlosci => 1 przypomnienie (0 eskalacji)" || bad "normalna: oczek 1 przypomnienie, jest $(capcount)"
+NRE=$(q "SELECT CONCAT(reminder_sent_at IS NOT NULL, escalated_at IS NOT NULL) FROM wp_mp_case_sla WHERE case_id=$CIDN")
+[ "$NRE" = "10" ] && ok "normalna: marker reminder ustawiony, escalated NADAL NULL (nie eskalowano przed terminem)" || bad "normalna: zle markery ($NRE, oczek 10)"
+NR=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CIDN AND event_type='SLA_REMINDER_SENT'")
+NE=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CIDN AND event_type='SLA_ESCALATED'")
+[ "$NR" = "1" ] && [ "$NE" = "0" ] && ok "normalna: os C = SLA_REMINDER_SENT(1), SLA_ESCALATED(0) — os mowi prawde w obie strony" || bad "normalna: zle zdarzenia osi (R=$NR E=$NE, oczek 1/0)"
+# termin mija => nastepny sweep obsluguje eskalacje (osobne powiadomienie, nie dubel)
+wp db query "UPDATE wp_mp_case_sla SET deadline_at=NOW()-INTERVAL 1 HOUR WHERE case_id=$CIDN" >/dev/null 2>&1
+capclear; sweep
+[ "$(capcount)" = "1" ] && ok "normalna: po minieciu terminu => 1 eskalacja (osobny sweep)" || bad "normalna: oczek 1 eskalacja, jest $(capcount)"
+NE2=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CIDN AND event_type='SLA_ESCALATED'")
+[ "$NE2" = "1" ] && ok "normalna: SLA_ESCALATED pojawil sie na osi dopiero po terminie" || bad "normalna: brak SLA_ESCALATED po terminie ($NE2)"
 
 # ── Sprzatanie ────────────────────────────────────────────────────────────────
 capclear; wp user delete "$COORD" --yes >/dev/null 2>&1

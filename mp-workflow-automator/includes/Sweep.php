@@ -97,15 +97,19 @@ final class Sweep {
 
 		try {
 			$table = Tables::full( Tables::CASE_SLA );
+			$now   = gmdate( 'Y-m-d H:i:s' );
 
-			// PRZYPOMNIENIA: prog warning minal, jeszcze niewyslane, termin aktywny.
+			// PRZYPOMNIENIA (mail): prog warning minal, niewyslane, ale termin JESZCZE
+			// aktywny (deadline w PRZYSZLOSCI). Sprawy juz po terminie NIE dostaja
+			// przypomnienia — i tak eskaluja (flaga #8); ich marker zajmuje krok nizej.
 			$reminders = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT case_id FROM {$table}
 					WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL
-						AND warning_at <= %s AND reminder_sent_at IS NULL
+						AND warning_at <= %s AND reminder_sent_at IS NULL AND deadline_at > %s
 					ORDER BY warning_at ASC LIMIT %d",
-					gmdate( 'Y-m-d H:i:s' ),
+					$now,
+					$now,
 					self::BATCH
 				)
 			);
@@ -114,26 +118,32 @@ final class Sweep {
 				Sla::notify( (int) $case_id, Sla::KIND_REMINDER );
 			}
 
-			// ESKALACJE: termin minal, jeszcze nieeskalowane.
+			// TLUMIENIE flagi #8: sprawy po terminie z niewyslanym przypomnieniem —
+			// zajmij marker reminder_sent_at BEZ maila i BEZ eventu osi C (dostana
+			// eskalacje nizej, nie podwojne powiadomienie). Zamierzony rozjazd marker
+			// (stan wewnetrzny) vs event (audyt) — patrz Sla::claim_suppressed_reminders.
+			$suppressed = Sla::claim_suppressed_reminders();
+
+			// ESKALACJE: termin minal, nieeskalowane. Masa (>DIGEST_THRESHOLD) => JEDEN
+			// digest zamiast lawiny osobnych maili (SLA-3). Idempotencja przez escalated_at.
 			$escalations = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT case_id FROM {$table}
 					WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
 					ORDER BY deadline_at ASC LIMIT %d",
-					gmdate( 'Y-m-d H:i:s' ),
+					$now,
 					self::BATCH
 				)
 			);
 
-			foreach ( $escalations as $case_id ) {
-				Sla::notify( (int) $case_id, Sla::KIND_ESCALATION );
-			}
+			Sla::escalate( $escalations );
 
 			WorkflowEvents::log(
 				WorkflowEvents::SWEEP_RUN,
 				array(
-					'reminders'   => count( $reminders ),
-					'escalations' => count( $escalations ),
+					'reminders'            => count( $reminders ),
+					'reminders_suppressed' => (int) $suppressed,
+					'escalations'          => count( $escalations ),
 				)
 			);
 		} finally {

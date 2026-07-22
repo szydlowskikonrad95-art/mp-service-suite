@@ -57,6 +57,13 @@ final class MailTemplates {
 				'subject' => 'ESKALACJA: przekroczony termin zgłoszenia {{numer_sprawy}}',
 				'body'    => "Dzień dobry,\n\nUpłynął termin obsługi zgłoszenia {{numer_sprawy}} (status: {{status}}).\n\nSprawa wymaga interwencji koordynatora.\n\nData: {{data}}",
 			),
+			// Digest SLA-3 („bez lawiny"): JEDEN mail do koordynatora przy MASIE spraw
+			// po terminie (reaktywacja / pierwsza instalacja). {{liczba}} + {{lista}}
+			// (wieloliniowa, TYLKO w body) zamiast {{numer_sprawy}}. Render: Sla::render_digest.
+			'sla_escalation_digest' => array(
+				'subject' => 'ESKALACJA zbiorcza: {{liczba}} zgłoszeń po terminie',
+				'body'    => "Dzień dobry,\n\nPoniższe zgłoszenia przekroczyły termin obsługi ({{liczba}}):\n\n{{lista}}\n\nSprawy wymagają interwencji koordynatora.\n\nData: {{data}}",
+			),
 		);
 	}
 

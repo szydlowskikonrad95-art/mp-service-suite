@@ -37,6 +37,14 @@ final class Sla {
 	private const MAX_ATTEMPTS = 3;
 
 	/**
+	 * Prog digestu eskalacji (SLA-3, „bez lawiny"): gdy jeden sweep ma WIECEJ niz
+	 * tyle wymagalnych eskalacji (reaktywacja / pierwsza instalacja / masa zaleglosci)
+	 * — zamiast serii osobnych maili idzie JEDEN zbiorczy digest do koordynatora.
+	 * Konfigurowalny opcja w SLA-4 (jak BATCH w Sweep).
+	 */
+	public const DIGEST_THRESHOLD = 5;
+
+	/**
 	 * Flaga alarmu dla admina (mail nie doszedl po MAX_ATTEMPTS) — panel pokaze notice.
 	 */
 	public const ALERT_OPTION = 'mp_automator_mail_alert';
@@ -190,21 +198,7 @@ final class Sla {
 
 		if ( $ok ) {
 			// CLAIM po sukcesie (send-then-claim): marker + wpis na osi C + log D.
-			self::set_marker( $case_id, $kind );
-			do_action( 'mp_sla_notified', $case_id, $kind, $ref );
-			WorkflowEvents::log(
-				WorkflowEvents::RULE_EXECUTED,
-				array(
-					'rule_id'       => 0,
-					'trigger'       => 'sla',
-					'action'        => Rules::ACTION_NOTIFY,
-					'template_key'  => $template,
-					'recipient_ref' => $ref,
-					'result'        => 'success',
-					'depth'         => 0,
-				),
-				$case_id
-			);
+			self::announce_sent( $case_id, $kind, $ref, $template );
 
 			return;
 		}
@@ -236,6 +230,225 @@ final class Sla {
 				'attempts'     => $attempts,
 			),
 			$case_id
+		);
+	}
+
+	/**
+	 * Wspolna galaz sukcesu wysylki (send-then-claim): marker + zdarzenie osi C
+	 * (mp_sla_notified => SLA_*_SENT) + log D. Uzywana przez notify() (pojedynczo)
+	 * i escalate_digest() (wsadowo) — os C ma byc identyczna w obu sciezkach.
+	 *
+	 * @param int    $case_id  ID sprawy.
+	 * @param string $kind     Rodzaj.
+	 * @param string $ref      recipient_ref (NO-PII).
+	 * @param string $template template_key (do logu D).
+	 * @return void
+	 */
+	private static function announce_sent( int $case_id, string $kind, string $ref, string $template ): void {
+		self::set_marker( $case_id, $kind );
+		do_action( 'mp_sla_notified', $case_id, $kind, $ref );
+		WorkflowEvents::log(
+			WorkflowEvents::RULE_EXECUTED,
+			array(
+				'rule_id'       => 0,
+				'trigger'       => 'sla',
+				'action'        => Rules::ACTION_NOTIFY,
+				'template_key'  => $template,
+				'recipient_ref' => $ref,
+				'result'        => 'success',
+				'depth'         => 0,
+			),
+			$case_id
+		);
+	}
+
+	/**
+	 * TLUMIENIE flagi #8 (SLA-3): sprawy JUZ po terminie (deadline_at<=NOW) z
+	 * niewyslanym przypomnieniem i tak eskaluja — przypomnienie w tym samym sweepie
+	 * byloby DRUGIM powiadomieniem. Zajmujemy marker reminder_sent_at (ksiegowosc
+	 * wewnetrzna / idempotencja: kolejny sweep nie sprobuje przypomniec), ale BEZ
+	 * maila i BEZ mp_sla_notified => ZERO SLA_REMINDER_SENT na osi C. Os C = audyt
+	 * append-only (W3/RODO) i NIE moze klamac, ze przypomnienie poszlo. Marker =
+	 * stan wewnetrzny, event = audyt zewnetrzny — rozjazd ZAMIERZONY. Zwraca liczbe
+	 * zajetych markerow (SWEEP_RUN).
+	 *
+	 * @return int
+	 */
+	public static function claim_suppressed_reminders(): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASE_SLA );
+		$now   = gmdate( 'Y-m-d H:i:s' );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; zbiorczy claim markera (bez maila/eventu).
+		$affected = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET reminder_sent_at = %s, updated_at = %s
+				WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL
+					AND warning_at <= %s AND reminder_sent_at IS NULL AND deadline_at <= %s",
+				$now,
+				$now,
+				$now,
+				$now
+			)
+		);
+		// phpcs:enable
+
+		return (int) $affected;
+	}
+
+	/**
+	 * Wysyla eskalacje dla zestawu spraw. Ponizej progu (DIGEST_THRESHOLD) — per
+	 * sprawa (Sla::notify, pelny send-then-claim). Powyzej — JEDEN digest do
+	 * koordynatora (SLA-3 „bez lawiny"): reaktywacja / pierwsza instalacja / masa
+	 * zaleglosci nie wystrzeliwuje seria osobnych maili. Idempotentne (escalated_at).
+	 *
+	 * @param int[] $case_ids ID spraw wymagalnych do eskalacji.
+	 * @return void
+	 */
+	public static function escalate( array $case_ids ): void {
+		$case_ids = array_values( array_filter( array_map( 'intval', $case_ids ) ) );
+
+		if ( empty( $case_ids ) ) {
+			return;
+		}
+
+		if ( count( $case_ids ) <= self::DIGEST_THRESHOLD ) {
+			foreach ( $case_ids as $cid ) {
+				self::notify( $cid, self::KIND_ESCALATION );
+			}
+
+			return;
+		}
+
+		self::escalate_digest( $case_ids );
+	}
+
+	/**
+	 * Jeden zbiorczy mail eskalacji do koordynatora dla MASY spraw po terminie
+	 * (send-then-claim wsadowy): render digest -> 1 mail -> po sukcesie marker +
+	 * os C (SLA_ESCALATED) per sprawa (kazda NAPRAWDE eskalowana, os mowi prawde).
+	 * Brak koordynatora => marker + MAIL_SKIPPED per sprawa (bez retry-spamu). SMTP
+	 * padl => attempts+1 per sprawa; po MAX_ATTEMPTS marker na sile + alarm admina
+	 * (parytet ze sciezka pojedyncza), bez claimu retry nastepnym sweepem.
+	 *
+	 * @param int[] $case_ids ID spraw (>DIGEST_THRESHOLD).
+	 * @return void
+	 */
+	private static function escalate_digest( array $case_ids ): void {
+		// Re-verify: tylko istniejace sprawy w digescie (znikniete sprzata sweep osobno).
+		$cases = array();
+
+		foreach ( $case_ids as $cid ) {
+			$ctx = apply_filters( 'mp_case_get_context', 'not_found', $cid );
+
+			if ( is_array( $ctx ) ) {
+				$number        = (string) ( $ctx['case_number'] ?? ( '#' . $cid ) );
+				$cases[ $cid ] = Mailer::strip_crlf( $number );
+			}
+		}
+
+		if ( empty( $cases ) ) {
+			return;
+		}
+
+		$coord = self::coordinator();
+		$addr  = $coord[0];
+		$ref   = $coord[1];
+
+		// Brak koordynatora = stan legalny: marker per sprawa (bez retry-spamu) + MAIL_SKIPPED.
+		if ( '' === $addr ) {
+			foreach ( array_keys( $cases ) as $cid ) {
+				self::set_marker( $cid, self::KIND_ESCALATION );
+				WorkflowEvents::log(
+					WorkflowEvents::MAIL_SKIPPED_NO_RECIPIENT,
+					array(
+						'template_key'  => 'sla_escalation_digest',
+						'recipient_ref' => $ref,
+					),
+					$cid
+				);
+			}
+
+			return;
+		}
+
+		$rendered = self::render_digest( array_values( $cases ) );
+		$ok       = Mailer::send( $addr, $rendered['subject'], $rendered['body'] );
+
+		if ( $ok ) {
+			// CLAIM wsadowy: kazda sprawa marker + SLA_ESCALATED na osi C (naprawde eskalowana).
+			foreach ( array_keys( $cases ) as $cid ) {
+				self::announce_sent( $cid, self::KIND_ESCALATION, $ref, 'sla_escalation_digest' );
+			}
+
+			return;
+		}
+
+		// SMTP padl: attempts+1 per sprawa; po MAX_ATTEMPTS marker na sile + alarm (parytet z notify()).
+		foreach ( array_keys( $cases ) as $cid ) {
+			$attempts = self::bump_attempts( $cid, self::KIND_ESCALATION );
+
+			if ( $attempts >= self::MAX_ATTEMPTS ) {
+				self::set_marker( $cid, self::KIND_ESCALATION );
+				update_option( self::ALERT_OPTION, 1, false );
+				WorkflowEvents::log(
+					WorkflowEvents::MAIL_FAILED_FINAL,
+					array(
+						'template_key' => 'sla_escalation_digest',
+						'error_code'   => 'smtp_failed',
+						'attempts'     => $attempts,
+					),
+					$cid
+				);
+			}
+		}
+
+		WorkflowEvents::log(
+			WorkflowEvents::MAIL_FAILED,
+			array(
+				'template_key' => 'sla_escalation_digest',
+				'error_code'   => 'smtp_failed',
+				'count'        => count( $cases ),
+			)
+		);
+	}
+
+	/**
+	 * Sklada tresc digestu z szablonu sla_escalation_digest ({{liczba}}, {{lista}},
+	 * {{data}}). Numery spraw juz po strip_crlf; temat single-line (podmienia tylko
+	 * {{liczba}}=int, nigdy {{lista}} — brak CRLF w naglowku nawet gdy admin wklei
+	 * {{lista}} do tematu).
+	 *
+	 * @param string[] $numbers Numery spraw (bezpieczne, strip_crlf).
+	 * @return array{subject: string, body: string}
+	 */
+	private static function render_digest( array $numbers ): array {
+		$tpl = MailTemplates::get( 'sla_escalation_digest' );
+
+		// Defensywa: gdyby skasowano domyslny szablon (all() i tak bazuje na defaults()).
+		if ( null === $tpl ) {
+			$tpl = array(
+				'subject' => 'ESKALACJA zbiorcza: {{liczba}} zgłoszeń po terminie',
+				'body'    => "Dzień dobry,\n\nPo terminie ({{liczba}}):\n{{lista}}\n\nData: {{data}}",
+			);
+		}
+
+		$lines = array();
+
+		foreach ( $numbers as $n ) {
+			$lines[] = '- ' . $n;
+		}
+
+		$map = array(
+			'{{liczba}}' => (string) count( $numbers ),
+			'{{lista}}'  => implode( "\n", $lines ),
+			'{{data}}'   => (string) wp_date( 'Y-m-d H:i' ),
+		);
+
+		return array(
+			'subject' => strtr( $tpl['subject'], array( '{{liczba}}' => $map['{{liczba}}'] ) ),
+			'body'    => strtr( $tpl['body'], $map ),
 		);
 	}
 
