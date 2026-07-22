@@ -123,6 +123,34 @@ final class Consents {
 	}
 
 	/**
+	 * Redaguje e-mail (PII) w zgodach klienta przy anonimizacji RODO (FLAGA #6).
+	 *
+	 * ZOSTAJE: consent_text (zamrozony), consent_version, consented_at,
+	 * withdrawn_at — rozliczalnosc art. 7(1) (dowod udzielenia/wycofania).
+	 * ZNIKA: e-mail = jedyne PII w tabeli. Placeholder spojny z Customers::anonymize.
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @return int Liczba zredagowanych wierszy.
+	 */
+	public static function redact_email_for_customer( int $customer_id ): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CONSENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$affected = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET email = %s WHERE customer_id = %d",
+				'anon-' . $customer_id . '@removed.invalid',
+				$customer_id
+			)
+		);
+		// phpcs:enable
+
+		return (int) $affected;
+	}
+
+	/**
 	 * Zgody klienta (do panelu i eksportu).
 	 *
 	 * @param int $customer_id ID klienta.
