@@ -6,11 +6,11 @@
 # funkcja/listener D wejdzie. Cross-plugin B<->C (S7, S8) to najmocniejsze
 # niezmienniki — oba pluginy gotowe, testowane naprawde.
 #
-# S1 happy-path (ownership)        [LIVE]      S6  reaktywacja D po przestoju   [D-pending]
+# S1 happy-path (ownership)        [LIVE]      S6  reaktywacja D po przestoju   [D-pending P3.3+]
 # S2 unlink zalacznika (wiersz+plik)[LIVE]     S7  listener data_erased w B     [LIVE cross-plugin]
 # S3 RODO en-bloc (aktywna sprawa) [LIVE]      S8  trade-off snapshotu gwar.    [LIVE cross-plugin]
-# S4 fallback koordynator (wyjatek)[LIVE/D]    S9  "Przelicz SLA" bez markerow  [D-pending]
-# S5 wiadomosci-po-zamknieciu+reopen[D-pending] S10 reczny reassign+CASE_ASSIGNED[D-pending]
+# S4 fallback koordynator (wyjatek)[LIVE/D]    S9  "Przelicz SLA" bez markerow  [D-pending P3.3+]
+# S5 zamkniecie+wiadomosc+reopen   [LIVE P3.2] S10 reczny reassign+CASE_ASSIGNED[LIVE P3.1]
 #
 # Chodzi na poligonie (MP_BASE z env) i w CI. Exit 0 = zero FAIL (SKIP = jawna,
 # zaraportowana luka D-pending).
@@ -23,7 +23,7 @@ skip() { SKIP=$((SKIP+1)); echo "  SKIP $1"; }
 q()    { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 
 clean() {
-	wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_srv_counters; DELETE FROM wp_mp_product_registry; DELETE FROM wp_mp_warranty_exceptions; DELETE FROM wp_mp_attachments; DELETE FROM wp_mp_consents;" >/dev/null 2>&1
+	wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_srv_counters; DELETE FROM wp_mp_product_registry; DELETE FROM wp_mp_warranty_exceptions; DELETE FROM wp_mp_attachments; DELETE FROM wp_mp_consents; DELETE FROM wp_mp_workflow_rules;" >/dev/null 2>&1
 	wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'" >/dev/null 2>&1
 	wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
 	for u in $(wp user list --role=mp_client --field=ID 2>/dev/null); do wp user delete "$u" --yes >/dev/null 2>&1; done
@@ -112,9 +112,21 @@ fi
 skip "S4: mail fallback do koordynatora gdy sprawa nieprzydzielona — routing maila w D [D-pending]"
 
 # ── S5: wiadomosci po zamknieciu + reopen (personel) ───────────────────────
-echo "-- S5 wiadomosci-po-zamknieciu + reopen --"
-skip "S5: zamkniecie sprawy + reopen (zamknięte->w analizie) = mp_case_change_status niewystawiona [pending write-path]"
-skip "S5: wiadomosc na ZAMKNIETEJ sprawie dozwolona — wymaga stanu 'zamknięte' (zalezne od S5 wyzej) [pending]"
+echo "-- S5 wiadomosci-po-zamknieciu + reopen (P3.2) --"
+clean; CID5=$(mkcase 's5@example.com')
+# Zamkniecie: nowe -> zamknięte (slug z diakrytykiem, jak CORE w Statuses.php).
+wp eval "apply_filters('mp_case_change_status', null, $CID5, 'zamknięte', 'nowe', 1);" >/dev/null 2>&1
+ST5=$(q "SELECT status FROM wp_mp_service_cases WHERE id=$CID5")
+[ "$ST5" = "zamknięte" ] && ok "S5: sprawa zamknieta (nowe->zamknięte przez mp_case_change_status)" || bad "S5: nie zamknieto (status=$ST5)"
+# Wiadomosc klienta na ZAMKNIETEJ sprawie = DOZWOLONA (nie zmienia statusu).
+MID5=$(wp eval "echo MP\Intake\Messages::add($CID5, 'client', null, 'Pytanie juz po zamknieciu sprawy');" 2>/dev/null)
+ST5B=$(q "SELECT status FROM wp_mp_service_cases WHERE id=$CID5")
+{ [ -n "$MID5" ] && [ "$ST5B" = "zamknięte" ]; } && ok "S5: wiadomosc na ZAMKNIETEJ sprawie dozwolona (dodana, status bez zmian)" || bad "S5: wiadomosc odrzucona/zmienila status (mid=$MID5 st=$ST5B)"
+# REOPEN (personel): zamknięte -> w analizie (jedyny cel reopen wg STATE_MACHINE).
+wp eval "apply_filters('mp_case_change_status', null, $CID5, 'w analizie', 'zamknięte', 1);" >/dev/null 2>&1
+ST5C=$(q "SELECT status FROM wp_mp_service_cases WHERE id=$CID5")
+SCEV5=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID5 AND event_type='STATUS_CHANGED'")
+{ [ "$ST5C" = "wanalizie" ] && [ "${SCEV5:-0}" -ge 2 ]; } && ok "S5: REOPEN zamknięte->w analizie (personel) + 2× STATUS_CHANGED na osi" || bad "S5: reopen nie zadzialal (status=$ST5C, STATUS_CHANGED=$SCEV5)"
 
 # ── S6: reaktywacja D po przestoju (nadrabia SKUTKI regul) ──────────────────
 echo "-- S6 reaktywacja D po przestoju --"
@@ -156,8 +168,18 @@ echo "-- S9 Przelicz SLA bez ruszania markerow --"
 skip "S9: przeliczenie SLA aktywnych (deadline+wersja regul, markery reminderow nietkniete) = sweep D [D-pending]"
 
 # ── S10: reczny reassign => CASE_ASSIGNED + notify ─────────────────────────
-echo "-- S10 reczny reassign --"
-skip "S10: reczne przypisanie mp_case_assign => event CASE_ASSIGNED + mail do przypisanego = write-path/D [D-pending]"
+echo "-- S10 reczny reassign (P3.1: mp_case_assign) --"
+clean; CID10=$(mkcase 's10@example.com')
+A10=$(wp user get s10-agent@example.com --field=ID 2>/dev/null)
+[ -z "$A10" ] && A10=$(wp user create s10-agent s10-agent@example.com --role=mp_agent --user_pass=x --porcelain 2>/dev/null)
+wp user set-role "$A10" mp_agent >/dev/null 2>&1
+# Reczne przypisanie przez koordynatora (actor=1) — mp_case_assign waliduje role przydzielanego.
+R10=$(wp eval "\$r=apply_filters('mp_case_assign', null, $CID10, $A10, 1); echo !empty(\$r['success'])?'OK':('NIE:'.(\$r['error_code']??'?'));" 2>/dev/null)
+AS10=$(q "SELECT COALESCE(assigned_to,0) FROM wp_mp_service_cases WHERE id=$CID10")
+CAEV10=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID10 AND event_type='CASE_ASSIGNED'")
+{ [ "$R10" = "OK" ] && [ "$AS10" = "$A10" ] && [ "${CAEV10:-0}" -ge 1 ]; } \
+	&& ok "S10: reczne przypisanie mp_case_assign => assigned_to=$AS10 + event CASE_ASSIGNED (kazdy przydzial=event)" \
+	|| bad "S10: reczny assign nie zadzialal (r=$R10 assigned=$AS10/$A10 ev=$CAEV10)"
 
 echo
 echo "WYNIK BLOK-S TABLETOP: $PASS ok, $FAIL fail, $SKIP skip (D-pending — jawna luka, nie blad)"

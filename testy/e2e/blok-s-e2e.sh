@@ -53,6 +53,19 @@ wp db query "INSERT INTO wp_mp_product_registry
 PID=$(q "SELECT id FROM wp_mp_product_registry WHERE serial_normalized='$SERNORM'")
 [ -n "$PID" ] && ok "przygotowanie: produkt w rejestrze B ($SER, gwarancja do 2030) id=$PID" || bad "seed produktu B nie powiodl sie"
 
+# Agent + regula przydzialu (P3.1): auto-przydzial na mp_case_created wymaga reguly
+# ASSIGN z pula agentow (silnik filtruje pule po cap mp_agent). Ustawiamy PRZED
+# zgloszeniem, bo mp_case_created leci przy potwierdzeniu (krok 4). Agent przezywa
+# miedzy przebiegami (idempotencja); regule sialem od nowa.
+wp db query "DELETE FROM wp_mp_workflow_rules;" >/dev/null 2>&1
+AGENT_UID=$(wp user get e2e-agent@example.com --field=ID 2>/dev/null)
+[ -z "$AGENT_UID" ] && AGENT_UID=$(wp user create e2e-agent e2e-agent@example.com --role=mp_agent --user_pass=x --porcelain 2>/dev/null)
+wp user set-role "$AGENT_UID" mp_agent >/dev/null 2>&1
+wp eval "MP\Automator\Rules::insert(array('trigger_type'=>'case_created','condition_key'=>'','action_type'=>'assign','action_config'=>array('pool'=>array($AGENT_UID),'notify_agent'=>true),'priority'=>10,'enabled'=>1,'source'=>'system','system_key'=>'e2e_assign'));" >/dev/null 2>&1
+{ [ -n "$AGENT_UID" ] && [ "$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")" = "1" ]; } \
+	&& ok "przygotowanie: agent mp_agent (uid=$AGENT_UID) + regula auto-przydzialu ASSIGN (P3.1)" \
+	|| bad "przygotowanie: agent/regula nie ustawione (agent=$AGENT_UID)"
+
 # ── KROK 1+2: klient wypelnia formularz -> system waliduje (HTTP jak klient) ─
 PAGE_ID=$(wp option get mp_intake_form_page_id 2>/dev/null)
 PAGE_PATH=$(wp post url "$PAGE_ID" 2>/dev/null | sed 's#^https\?://[^/]*##')
@@ -107,17 +120,15 @@ SLA_ROW=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id=$CID")
 if [ "${SLA_ROW:-0}" -ge 1 ]; then
 	ok "KROK 4/8: D zalozyl wiersz SLA (termin pierwszej reakcji) na mp_case_created"
 else
-	skip "KROK 4/8: wiersz SLA nieutworzony — D (Automator) nie nasluchuje jeszcze mp_case_created [D-pending: zaswieci gdy D wejdzie]"
+	skip "KROK 4/8: wiersz case_sla nieutworzony — D nasluchuje mp_case_created (P3.1 auto-przydzial dziala), ale foundowanie SLA to P3.3+ [zaswieci gdy SLA wejdzie]"
 fi
 
 # ── KROK 5: silnik regul nadaje priorytet + przydziela (D) ─────────────────
 ASSIGNED=$(q "SELECT COALESCE(assigned_to,0) FROM wp_mp_service_cases WHERE id=$CID")
 CA_EV=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type='CASE_ASSIGNED'")
-if [ "${ASSIGNED:-0}" -gt 0 ] && [ "${CA_EV:-0}" -ge 1 ]; then
-	ok "KROK 5: silnik regul D przydzielil sprawe (assigned_to=$ASSIGNED) + event CASE_ASSIGNED"
-else
-	skip "KROK 5: brak auto-przydzialu/priorytetu — silnik regul D niezbudowany [D-pending: round-robin + CASE_ASSIGNED]"
-fi
+{ [ "${ASSIGNED:-0}" = "${AGENT_UID:-x}" ] && [ "${CA_EV:-0}" -ge 1 ]; } \
+	&& ok "KROK 5: silnik regul D (P3.1) auto-przydzielil sprawe do agenta z puli (assigned_to=$ASSIGNED) + event CASE_ASSIGNED" \
+	|| bad "KROK 5: auto-przydzial nie zadzialal (assigned_to=$ASSIGNED oczek=$AGENT_UID · CASE_ASSIGNED=$CA_EV)"
 
 # ── KROK 6: klient dostaje potwierdzenie (SRV mailem) + podglad statusu ─────
 sleep 1
