@@ -24,6 +24,11 @@ final class Schema {
 	public const VERSION_OPTION = 'mp_intake_schema_version';
 
 	/**
+	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
+	 */
+	public const LATEST = 1;
+
+	/**
 	 * Uruchamia zalegle migracje.
 	 *
 	 * @return void

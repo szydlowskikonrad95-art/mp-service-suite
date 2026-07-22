@@ -211,3 +211,44 @@ jobs:
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
       - name: Dirty-env test (prefiks + WP_DEBUG zero-notice + object-cache + degraded)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/dirty-env.sh
+
+  # DoD C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi (upgrade bez reaktywacji)
+  migration:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: wp
+          MARIADB_PASSWORD: wp
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mysqli, iconv, intl
+          tools: wp-cli
+      - name: Build v0.3.0 (glowny working tree — kopie Common)
+        run: bash build/build.sh
+      - name: Przygotuj v0.2.0 (worktree z tagu + build kopii Common)
+        run: |
+          git worktree add /tmp/v020 v0.2.0
+          cd /tmp/v020 && bash build/build.sh
+      - name: Instalacja WP 6.9.4
+        run: |
+          mkdir -p /tmp/wp && cd /tmp/wp
+          wp core download --version=6.9.4
+          wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
+          wp core install --url=http://127.0.0.1:8080 --title=Mig --admin_user=admin \
+            --admin_password=admin --admin_email=mig@example.com --skip-email
+      - name: Test migracji v0.2.0 -> v0.3.0 (dane+schemat+cron+role+opcje)
+        run: cd /tmp/wp && V020_SRC=/tmp/v020 V030_SRC="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE"/testy/e2e/migration.sh
