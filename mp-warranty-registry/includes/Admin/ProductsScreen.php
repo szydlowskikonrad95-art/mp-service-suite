@@ -38,6 +38,9 @@ final class ProductsScreen {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 		add_action( 'admin_post_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_mp_product_restore', array( self::class, 'handle_restore' ) );
+		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep DoD sekcja 3).
+		add_action( 'admin_post_nopriv_mp_product_archive', array( self::class, 'handle_archive' ) );
+		add_action( 'admin_post_nopriv_mp_product_restore', array( self::class, 'handle_restore' ) );
 	}
 
 	/**

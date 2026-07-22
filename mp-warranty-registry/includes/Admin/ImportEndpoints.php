@@ -34,6 +34,12 @@ final class ImportEndpoints {
 		add_action( 'admin_post_mp_import_report', array( self::class, 'handle_report' ) );
 		add_action( 'wp_ajax_mp_import_batch', array( self::class, 'ajax_batch' ) );
 		add_action( 'wp_ajax_mp_import_reclaim', array( self::class, 'ajax_reclaim' ) );
+		// nopriv -> ten sam handler: capability sprawdzana i tak => anon dostaje JAWNE 403
+		// (nie 400/200-empty z braku handlera). Security-sweep DoD sekcja 3.
+		add_action( 'admin_post_nopriv_mp_import_upload', array( self::class, 'handle_upload' ) );
+		add_action( 'admin_post_nopriv_mp_import_report', array( self::class, 'handle_report' ) );
+		add_action( 'wp_ajax_nopriv_mp_import_batch', array( self::class, 'ajax_batch' ) );
+		add_action( 'wp_ajax_nopriv_mp_import_reclaim', array( self::class, 'ajax_reclaim' ) );
 	}
 
 	/**
