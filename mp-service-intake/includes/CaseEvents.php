@@ -33,6 +33,12 @@ final class CaseEvents {
 	public const CASE_ASSIGNED = 'CASE_ASSIGNED';
 
 	/**
+	 * Zmiana statusu sprawy (po narodzinach). Payload: {from, to, actor,
+	 * rejection_reason_code?} — kod tylko przy wejsciu w 'odrzucone'.
+	 */
+	public const STATUS_CHANGED = 'STATUS_CHANGED';
+
+	/**
 	 * Zarejestrowanie zgody RODO.
 	 */
 	public const CONSENT_RECORDED = 'CONSENT_RECORDED';

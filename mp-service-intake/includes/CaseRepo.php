@@ -477,6 +477,149 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Zmienia status sprawy (funkcja kontraktowa `mp_case_change_status`).
+	 *
+	 * Walidacja wg STATE_MACHINE.md: status istnieje (rdzen 7 + filtr D),
+	 * optimistic-lock (WHERE status = expected), wymogi specjalne:
+	 * - wejscie w 'odrzucone' WYMAGA rejection_reason_code,
+	 * - z terminalnego wolno WYLACZNIE REOPEN do 'w analizie',
+	 * - miedzy nieterminalnymi: przejscia liberalne.
+	 * UPDATE + event STATUS_CHANGED w JEDNEJ transakcji; akcja
+	 * `mp_case_status_changed` emitowana PO COMMIT.
+	 *
+	 * @param int         $case_id                ID sprawy.
+	 * @param string      $new_status             Docelowy status.
+	 * @param string      $expected_status        Status oczekiwany (optimistic-lock).
+	 * @param int         $actor_id               Kto zmienia.
+	 * @param string|null $rejection_reason_code  Kod powodu (wymagany dla 'odrzucone').
+	 * @return array<string, mixed> {success, from, to} lub {success:false, error_code}.
+	 */
+	public static function change_status( int $case_id, string $new_status, string $expected_status, int $actor_id, ?string $rejection_reason_code = null ): array {
+		global $wpdb;
+
+		if ( ! Statuses::exists( $new_status ) ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'INVALID_STATUS',
+			);
+		}
+
+		$is_rejection = ( 'odrzucone' === $new_status );
+
+		if ( $is_rejection && ( null === $rejection_reason_code || '' === trim( $rejection_reason_code ) ) ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'REJECTION_REASON_REQUIRED',
+			);
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query( 'START TRANSACTION' );
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT status FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				$case_id
+			),
+			ARRAY_A
+		);
+
+		if ( null === $row ) {
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		$from = (string) $row['status'];
+
+		// Optimistic-lock: ktos zmienil status w miedzyczasie.
+		if ( $from !== $expected_status ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- rollback.
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'STATUS_CONFLICT',
+				'current'    => $from,
+			);
+		}
+
+		// Z terminalnego wolno WYLACZNIE reopen do 'w analizie' (STATE_MACHINE).
+		if ( Statuses::is_terminal( $from ) && Statuses::REOPEN_TARGET !== $new_status ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- rollback.
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'INVALID_TRANSITION',
+			);
+		}
+
+		$now = gmdate( 'Y-m-d H:i:s' );
+
+		// rejection_reason_code trzymamy tylko gdy sprawa jest 'odrzucone'
+		// (reopen/inne przejscie czysci — kolumna niesie POWOD BIEZACEGO odrzucenia).
+		$reason = $is_rejection ? $rejection_reason_code : null;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane; WHERE status=expected = optimistic-lock.
+		$affected = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$cases} SET status = %s, rejection_reason_code = %s, status_changed_at = %s, updated_at = %s
+				WHERE id = %d AND status = %s AND identity_status = 'verified'",
+				$new_status,
+				$reason,
+				$now,
+				$now,
+				$case_id,
+				$expected_status
+			)
+		);
+
+		if ( 1 !== (int) $affected ) {
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'STATUS_CONFLICT',
+			);
+		}
+
+		$payload = array(
+			'from'  => $from,
+			'to'    => $new_status,
+			'actor' => $actor_id,
+		);
+
+		if ( $is_rejection ) {
+			$payload['rejection_reason_code'] = $rejection_reason_code;
+		}
+
+		CaseEvents::log( $case_id, CaseEvents::STATUS_CHANGED, $payload, $actor_id );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- commit.
+		$wpdb->query( 'COMMIT' );
+		// phpcs:enable
+
+		// Akcja PO COMMIT — sluchacze (D: SLA/reguly) dostaja spojny stan.
+		do_action( 'mp_case_status_changed', $case_id, $from, $new_status, $actor_id );
+
+		return array(
+			'success' => true,
+			'from'    => $from,
+			'to'      => $new_status,
+		);
+	}
+
+	/**
 	 * Regeneruje token weryfikacji dla sprawy niepotwierdzonej (resend admina).
 	 *
 	 * KAZDY resend = swiezy token, stary uniewazniony (nadpisanie hasha). TYLKO

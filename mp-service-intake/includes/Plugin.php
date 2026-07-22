@@ -90,6 +90,25 @@ final class Plugin {
 			4
 		);
 
+		// Kontrakt D->C: zmiana statusu (walidacja STATE_MACHINE + optimistic-lock;
+		// emituje mp_case_status_changed PO COMMIT). assigned_to/status naleza do C.
+		add_filter(
+			'mp_case_change_status',
+			static function ( $result, $case_id, $new_status, $expected_status, $actor_id, $rejection_reason_code = null ) {
+				unset( $result );
+
+				return CaseRepo::change_status(
+					(int) $case_id,
+					(string) $new_status,
+					(string) $expected_status,
+					(int) $actor_id,
+					null === $rejection_reason_code ? null : (string) $rejection_reason_code
+				);
+			},
+			10,
+			6
+		);
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();
 		}
