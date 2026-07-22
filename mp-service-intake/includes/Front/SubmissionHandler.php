@@ -41,6 +41,8 @@ final class SubmissionHandler {
 		add_action( 'admin_post_mp_intake_submit', array( self::class, 'handle_submit' ) );
 		add_action( 'admin_post_nopriv_mp_intake_verify', array( self::class, 'handle_verify' ) );
 		add_action( 'admin_post_mp_intake_verify', array( self::class, 'handle_verify' ) );
+		add_action( 'admin_post_nopriv_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
+		add_action( 'admin_post_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
 		add_action( 'admin_post_mp_intake_attachment', array( self::class, 'handle_attachment' ) );
 	}
 
@@ -143,13 +145,39 @@ final class SubmissionHandler {
 	}
 
 	/**
-	 * Obsluga potwierdzenia magic-linkiem (GET) — neutralna strona.
+	 * Krok 1 potwierdzenia (GET): strona z przyciskiem POST „Potwierdzam".
+	 *
+	 * GET NIE potwierdza sprawy — skanery poczty prefetchuja linki (robia tylko
+	 * GET, nie POST), wiec sam GET nie moze mutowac (FLAGA #7). Weryfikacja =
+	 * POST przez handle_verify_confirm. Strona neutralna (zero danych/SRV).
 	 *
 	 * @return void
 	 */
 	public static function handle_verify(): void {
-		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- token jednorazowy z maila JEST poswiadczeniem; GET z linka nie moze niesc nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET z linka mailowego nie moze niesc nonce; renderujemy TYLKO formularz POST, nic nie mutuje.
+		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['token'] ) ) : '';
 
+		self::render_verify_form( $token );
+	}
+
+	/**
+	 * Krok 2 potwierdzenia (POST): weryfikacja ATOMOWA + 2. mail + neutralna strona.
+	 *
+	 * Podwojny POST bezpieczny: CaseRepo::verify jest warunkowy (rows=1 albo
+	 * „juz potwierdzone" / „wygaslo") — W1.
+	 *
+	 * @return void
+	 */
+	public static function handle_verify_confirm(): void {
+		if ( ! isset( $_POST['_mp_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['_mp_nonce'] ) ), 'mp_intake_verify_confirm' ) ) {
+			self::render_landing(
+				__( 'Sesja wygasła', 'mp-service-intake' ),
+				__( 'Sesja potwierdzenia wygasła. Otwórz link z e-maila ponownie i kliknij „Potwierdzam".', 'mp-service-intake' ),
+				403
+			);
+		}
+
+		$token  = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['token'] ) ) : '';
 		$result = CaseRepo::verify( $token );
 
 		if ( isset( $result['case_id'] ) ) {
@@ -172,6 +200,44 @@ final class SubmissionHandler {
 			(string) $result['error'],
 			$already ? 200 : 410
 		);
+	}
+
+	/**
+	 * Renderuje neutralna strone z przyciskiem POST „Potwierdzam" (krok 1 GET).
+	 *
+	 * Naglowki jak render_landing (no-store/no-referrer/nosniff); ZERO danych
+	 * sprawy i ZERO numeru SRV (wszystko idzie mailem).
+	 *
+	 * @param string $token Surowy token (ukryte pole formularza; kto ma URL, ma token).
+	 * @return never
+	 */
+	private static function render_verify_form( string $token ): void {
+		if ( ! headers_sent() ) {
+			status_header( 200 );
+			header( 'Cache-Control: no-store, max-age=0' );
+			header( 'Referrer-Policy: no-referrer' );
+			header( 'X-Content-Type-Options: nosniff' );
+			header( 'X-Frame-Options: SAMEORIGIN' );
+			header( 'Content-Type: text/html; charset=utf-8' );
+		}
+
+		$title = __( 'Potwierdź zgłoszenie', 'mp-service-intake' );
+
+		echo '<!doctype html><html lang="pl"><head><meta charset="utf-8" />';
+		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
+		echo '<meta name="robots" content="noindex, nofollow" />';
+		echo '<title>' . esc_html( $title ) . '</title>';
+		echo '<style>body{font-family:system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}button{font-size:1rem;padding:.7rem 1.4rem;cursor:pointer}</style>';
+		echo '</head><body>';
+		echo '<h1>' . esc_html( $title ) . '</h1>';
+		echo '<p>' . esc_html__( 'Aby potwierdzić swoje zgłoszenie serwisowe i uruchomić obsługę, kliknij przycisk poniżej.', 'mp-service-intake' ) . '</p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="mp_intake_verify_confirm" />';
+		echo '<input type="hidden" name="token" value="' . esc_attr( $token ) . '" />';
+		wp_nonce_field( 'mp_intake_verify_confirm', '_mp_nonce' );
+		echo '<button type="submit">' . esc_html__( 'Potwierdzam', 'mp-service-intake' ) . '</button>';
+		echo '</form></body></html>';
+		exit;
 	}
 
 	/**
