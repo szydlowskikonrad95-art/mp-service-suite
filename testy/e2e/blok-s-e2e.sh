@@ -146,7 +146,8 @@ if [ "${HAS_CHG:-0}" = "1" ]; then
 	# Personel przenosi sprawe nowe -> w analizie (optimistic-lock).
 	wp eval "apply_filters('mp_case_change_status', null, $CID, 'w analizie', 'nowe', 1);" >/dev/null 2>&1
 	ST2=$(q "SELECT status FROM wp_mp_service_cases WHERE id=$CID")
-	[ "$ST2" = "w analizie" ] && ok "KROK 7: personel zmienil status (nowe->w analizie) przez mp_case_change_status" || bad "KROK 7: zmiana statusu nie zadzialala (status=$ST2)"
+	# UWAGA: q() robi tr -d [:space:] => "w analizie" czytany jako "wanalizie".
+	[ "$ST2" = "wanalizie" ] && ok "KROK 7: personel zmienil status (nowe->w analizie) przez mp_case_change_status" || bad "KROK 7: zmiana statusu nie zadzialala (status=$ST2)"
 	SC2=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type='STATUS_CHANGED'")
 	[ "${SC2:-0}" -ge 1 ] && ok "KROK 7: zmiana statusu zapisana w historii (STATUS_CHANGED)" || bad "KROK 7: brak eventu STATUS_CHANGED"
 else
