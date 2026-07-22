@@ -31,6 +31,21 @@ final class Rules {
 	public const OPERATORS = array( 'equals', 'not_equals', 'in_list', 'is_empty', 'is_not_empty' );
 
 	/**
+	 * Wersja zestawu seedow (podbicie = dosiew nowych; dosiew przy upgrade -> NEXT).
+	 */
+	public const SEED_VERSION = 1;
+
+	/**
+	 * Opcja sterujaca sianiem (warstwa ii uninstalla — pelny uninstall = swiezy siew).
+	 */
+	public const SEED_VERSION_OPTION = 'mp_automator_seed_version';
+
+	/**
+	 * Klucz systemowy domyslnej reguly przydzialu (rozpoznanie seeda).
+	 */
+	public const SYSTEM_KEY_DEFAULT_ASSIGN = 'default_assign';
+
+	/**
 	 * Reguly WLACZONE dla triggera, posortowane: priority ASC, remis -> id ASC.
 	 *
 	 * Czytane RAZ na zdarzenie (jedna lista w pamieci — edycja w trakcie nie psuje
@@ -132,5 +147,40 @@ final class Rules {
 		// phpcs:enable
 
 		return (int) $wpdb->insert_id;
+	}
+
+	/**
+	 * Sieje reguly domyslne — TYLKO gdy jeszcze nie zasiane (bramka SEED_VERSION).
+	 *
+	 * Idempotentne i JEDNORAZOWE per instalacja: skasowana regula NIE wraca przy
+	 * kolejnej aktywacji (bramka wersji, nie sprawdzanie istnienia). Pelny uninstall
+	 * (opt-in) kasuje SEED_VERSION_OPTION => reinstalacja sieje swiezo. Domyslna
+	 * regula przydzialu ma PUSTA pule (admin/demo ja wypelnia) — do czasu sprawy
+	 * ida ASSIGNMENT_UNMATCHED (swiadomy stan, nie cicha magia).
+	 *
+	 * @return void
+	 */
+	public static function maybe_seed_defaults(): void {
+		if ( (int) get_option( self::SEED_VERSION_OPTION, 0 ) >= self::SEED_VERSION ) {
+			return;
+		}
+
+		self::insert(
+			array(
+				'trigger_type'  => self::TRIGGER_CASE_CREATED,
+				'condition_key' => '',
+				'action_type'   => self::ACTION_ASSIGN,
+				'action_config' => array(
+					'pool'         => array(),
+					'notify_agent' => true,
+				),
+				'priority'      => 10,
+				'enabled'       => 1,
+				'source'        => 'system',
+				'system_key'    => self::SYSTEM_KEY_DEFAULT_ASSIGN,
+			)
+		);
+
+		update_option( self::SEED_VERSION_OPTION, self::SEED_VERSION, false );
 	}
 }

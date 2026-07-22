@@ -48,6 +48,7 @@ final class Lifecycle {
 		}
 
 		Schema::migrate();
+		Rules::maybe_seed_defaults();
 	}
 
 	/**
@@ -67,6 +68,7 @@ final class Lifecycle {
 
 		Roles::ensure();
 		Schema::migrate();
+		Rules::maybe_seed_defaults();
 	}
 
 	/**
