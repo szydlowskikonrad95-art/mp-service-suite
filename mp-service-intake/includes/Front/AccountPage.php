@@ -368,7 +368,7 @@ final class AccountPage {
 		$messages = Messages::for_case( $case_id );
 
 		if ( array() === $messages ) {
-			return '<p class="mp-account__empty" style="color:#777">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
+			return '<p class="mp-account__empty" style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
 		}
 
 		$labels = array(
@@ -386,7 +386,7 @@ final class AccountPage {
 
 			$out .= '<li style="margin:.4rem 0;padding:.5rem .7rem;background:#f6f6f6;border-radius:4px">';
 			$out .= '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
-			$out .= '<span style="color:#888;font-size:.85em">' . esc_html( $when ) . '</span><br />';
+			$out .= '<span style="color:#666;font-size:.85em">' . esc_html( $when ) . '</span><br />';
 			$out .= nl2br( esc_html( (string) ( $msg['body'] ?? '' ) ) );
 			$out .= '</li>';
 		}
@@ -412,7 +412,7 @@ final class AccountPage {
 		$out .= wp_nonce_field( 'mp_intake_message', '_mp_nonce', true, false );
 
 		if ( $closed ) {
-			$out .= '<p style="color:#7a5;margin:.3rem 0">' . esc_html__( 'Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy.', 'mp-service-intake' ) . '</p>';
+			$out .= '<p style="color:#2e7d32;margin:.3rem 0">' . esc_html__( 'Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy.', 'mp-service-intake' ) . '</p>';
 		}
 
 		$out .= '<p><label for="mp-msg-' . esc_attr( (string) $case_id ) . '">' . esc_html__( 'Napisz wiadomość do serwisu', 'mp-service-intake' ) . '</label><br />';
