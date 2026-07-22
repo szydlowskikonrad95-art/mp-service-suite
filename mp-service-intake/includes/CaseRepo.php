@@ -318,6 +318,93 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Regeneruje token weryfikacji dla sprawy niepotwierdzonej (resend admina).
+	 *
+	 * KAZDY resend = swiezy token, stary uniewazniony (nadpisanie hasha). TYLKO
+	 * sprawy `pending` (zweryfikowanej nie ruszamy). Zwraca surowy token albo null.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string|null Surowy token do magic-linka albo null (nie pending).
+	 */
+	public static function regenerate_token( int $case_id ): ?string {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+		$token = wp_generate_password( 48, false, false );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$affected = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				SET verify_token_hash = %s, verify_token_expires_at = %s, verify_token_used_at = NULL, updated_at = %s
+				WHERE id = %d AND identity_status = 'pending'",
+				self::hash_token( $token ),
+				gmdate( 'Y-m-d H:i:s', time() + self::TOKEN_TTL_HOURS * HOUR_IN_SECONDS ),
+				gmdate( 'Y-m-d H:i:s' ),
+				$case_id
+			)
+		);
+		// phpcs:enable
+
+		return 1 === (int) $affected ? $token : null;
+	}
+
+	/**
+	 * Sprawy niepotwierdzone (admin — zarzadzanie unverified).
+	 *
+	 * @param int $limit Limit wierszy.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function unverified_cases( int $limit = 100 ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, case_number, kind, created_at, verify_token_expires_at
+				FROM {$table} WHERE identity_status = 'pending' ORDER BY created_at DESC LIMIT %d",
+				$limit
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * E-mail sprawy niepotwierdzonej (z zapamietanych danych kontaktowych).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string
+	 */
+	public static function pending_email( int $case_id ): string {
+		$pending = get_option( 'mp_pending_contact_' . $case_id, array() );
+
+		return is_array( $pending ) ? (string) ( $pending['email'] ?? '' ) : '';
+	}
+
+	/**
+	 * Poprawia e-mail sprawy niepotwierdzonej (admin: „popraw mail + resend").
+	 *
+	 * @param int    $case_id ID sprawy.
+	 * @param string $email   Nowy e-mail.
+	 * @return void
+	 */
+	public static function set_pending_email( int $case_id, string $email ): void {
+		$pending = get_option( 'mp_pending_contact_' . $case_id, array() );
+
+		if ( ! is_array( $pending ) ) {
+			$pending = array();
+		}
+
+		$pending['email'] = sanitize_email( $email );
+		update_option( 'mp_pending_contact_' . $case_id, $pending, false );
+	}
+
+	/**
 	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w ostatnich 30 dniach.
 	 *
 	 * @param int $product_id ID produktu w rejestrze.
