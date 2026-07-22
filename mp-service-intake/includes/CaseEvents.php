@@ -54,6 +54,18 @@ final class CaseEvents {
 	public const PII_REDACTION = 'PII_REDACTION';
 
 	/**
+	 * Wyjatek gwarancyjny NADANY na sprawe (listener mp_warranty_exception_changed,
+	 * stan 'active'). Payload: {exception_id} — NO-PII, bez reason (EVENT_MODEL.md).
+	 */
+	public const EXCEPTION_APPLIED = 'EXCEPTION_APPLIED';
+
+	/**
+	 * Wyjatek gwarancyjny COFNIETY na sprawie (listener mp_warranty_exception_changed,
+	 * stan 'revoked'). Payload: {exception_id} — NO-PII (EVENT_MODEL.md).
+	 */
+	public const EXCEPTION_REVOKED = 'EXCEPTION_REVOKED';
+
+	/**
 	 * Dopisuje zdarzenie do osi czasu sprawy (append-only).
 	 *
 	 * @param int                  $case_id    ID sprawy.
