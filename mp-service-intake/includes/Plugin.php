@@ -146,6 +146,40 @@ final class Plugin {
 			4
 		);
 
+		// Kontrakt D->C: powiadomienie SLA (przypomnienie/eskalacja) tworzy wpis na
+		// osi sprawy (kartka relacja 3). D emituje mp_sla_notified PO wyslaniu maila;
+		// wzorzec 1:1 jak listener wyjatkow. NO-PII (kind + recipient_ref, bez adresu).
+		add_action(
+			'mp_sla_notified',
+			static function ( $case_id, $kind, $recipient_ref ) {
+				$case_id = (int) $case_id;
+
+				if ( $case_id <= 0 ) {
+					return;
+				}
+
+				if ( 'reminder' === $kind ) {
+					$event_type = CaseEvents::SLA_REMINDER_SENT;
+				} elseif ( 'escalation' === $kind ) {
+					$event_type = CaseEvents::SLA_ESCALATED;
+				} else {
+					return; // nieznany rodzaj — nie logujemy smieci na osi.
+				}
+
+				CaseEvents::log(
+					$case_id,
+					$event_type,
+					array(
+						'kind'          => (string) $kind,
+						'recipient_ref' => (string) $recipient_ref,
+					),
+					null
+				);
+			},
+			10,
+			3
+		);
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();
 		}

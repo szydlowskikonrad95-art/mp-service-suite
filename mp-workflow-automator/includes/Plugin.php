@@ -46,6 +46,9 @@ final class Plugin {
 
 		// Silnik regul: nasluch triggerow C/B (P3.1 = auto-przydzial na case_created).
 		RuleEngine::register();
+
+		// Ksiega SLA (P3.4): wiersz terminu na created + przeliczenie przy zmianie statusu.
+		Sla::register();
 	}
 
 	/**
