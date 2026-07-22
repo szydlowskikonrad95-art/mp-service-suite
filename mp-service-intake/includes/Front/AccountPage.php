@@ -47,8 +47,9 @@ final class AccountPage {
 	public static function register(): void {
 		add_shortcode( 'mp_account', array( self::class, 'render' ) );
 		add_action( 'template_redirect', array( self::class, 'maybe_headers' ) );
-		// Wysylka wiadomosci wymaga zalogowania (tylko priv — klient).
+		// Wysylka wiadomosci + edycja danych wymagaja zalogowania (tylko priv — klient).
 		add_action( 'admin_post_mp_intake_message', array( self::class, 'handle_send_message' ) );
+		add_action( 'admin_post_mp_intake_update_contact', array( self::class, 'handle_update_contact' ) );
 	}
 
 	/**
@@ -150,11 +151,15 @@ final class AccountPage {
 			$out .= '<p class="mp-account__notice" role="status">' . esc_html( $notice ) . '</p>';
 		}
 
+		$out .= self::render_contact_form( $wp_user_id );
+
 		if ( array() === $cases ) {
 			$out .= '<p>' . esc_html__( 'Nie znaleźliśmy zgłoszeń przypisanych do tego konta.', 'mp-service-intake' ) . '</p></div>';
 
 			return $out;
 		}
+
+		$out .= '<h3>' . esc_html__( 'Twoje zgłoszenia', 'mp-service-intake' ) . '</h3>';
 
 		foreach ( $cases as $case ) {
 			$out .= self::render_case_block( $case );
@@ -163,6 +168,82 @@ final class AccountPage {
 		$out .= '</div>';
 
 		return $out;
+	}
+
+	/**
+	 * Formularz edycji danych kontaktowych (art. 16 — sprostowanie).
+	 *
+	 * E-mail pokazany tylko do odczytu (klucz tozsamosci). Prefill z rekordu klienta.
+	 *
+	 * @param int $wp_user_id ID biezacego uzytkownika.
+	 * @return string HTML.
+	 */
+	private static function render_contact_form( int $wp_user_id ): string {
+		$customer = self::primary_customer( $wp_user_id );
+
+		if ( null === $customer ) {
+			return '';
+		}
+
+		$name  = (string) ( $customer['name'] ?? '' );
+		$phone = (string) ( $customer['phone'] ?? '' );
+		$email = (string) ( $customer['email'] ?? '' );
+
+		$out  = '<section class="mp-account__contact" style="margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:6px">';
+		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Twoje dane kontaktowe', 'mp-service-intake' ) . '</h3>';
+		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'E-mail:', 'mp-service-intake' ) . ' ' . esc_html( $email ) . '</p>';
+		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__contact-form">';
+		$out .= '<input type="hidden" name="action" value="mp_intake_update_contact" />';
+		$out .= wp_nonce_field( 'mp_intake_update_contact', '_mp_nonce', true, false );
+		$out .= '<p><label for="mp-name">' . esc_html__( 'Imię i nazwisko', 'mp-service-intake' ) . '</label><br />';
+		$out .= '<input type="text" id="mp-name" name="name" value="' . esc_attr( $name ) . '" style="width:100%;box-sizing:border-box;padding:.5rem" /></p>';
+		$out .= '<p><label for="mp-phone">' . esc_html__( 'Telefon', 'mp-service-intake' ) . '</label><br />';
+		$out .= '<input type="text" id="mp-phone" name="phone" value="' . esc_attr( $phone ) . '" style="width:100%;box-sizing:border-box;padding:.5rem" /></p>';
+		$out .= '<p><button type="submit" style="padding:.5rem 1rem;cursor:pointer">' . esc_html__( 'Zapisz dane', 'mp-service-intake' ) . '</button></p>';
+		$out .= '</form></section>';
+
+		return $out;
+	}
+
+	/**
+	 * Obsluga zapisu danych kontaktowych (POST) — art. 16.
+	 *
+	 * @return void
+	 */
+	public static function handle_update_contact(): void {
+		$user_id = get_current_user_id();
+
+		if ( 0 === $user_id
+			|| ! isset( $_POST['_mp_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['_mp_nonce'] ) ), 'mp_intake_update_contact' )
+		) {
+			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
+		}
+
+		$name  = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['name'] ) ) : '';
+		$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['phone'] ) ) : '';
+
+		foreach ( Customers::ids_by_wp_user( $user_id ) as $customer_id ) {
+			Customers::update_contact( $customer_id, $name, $phone );
+		}
+
+		self::redirect_notice( __( 'Dane kontaktowe zostały zapisane.', 'mp-service-intake' ) );
+	}
+
+	/**
+	 * Podstawowy (najstarszy) rekord klienta biezacego uzytkownika — do prefillu.
+	 *
+	 * @param int $wp_user_id ID uzytkownika WP.
+	 * @return array<string, mixed>|null
+	 */
+	private static function primary_customer( int $wp_user_id ): ?array {
+		$ids = Customers::ids_by_wp_user( $wp_user_id );
+
+		if ( array() === $ids ) {
+			return null;
+		}
+
+		return Customers::get( (int) $ids[0] );
 	}
 
 	/**
