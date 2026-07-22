@@ -33,6 +33,18 @@ final class FormRenderer {
 			? (string) $values['kind']
 			: 'reklamacja';
 
+		// Warstwa kliencka: skrypt dynamicznego formularza + config pol per rodzaj.
+		self::enqueue_assets();
+
+		// Klucze WYMAGANE dla wybranego rodzaju (reszta unii pol renderowana bez
+		// `required` — JS ukrywa je i toggluje `required` przy zmianie rodzaju).
+		$required_keys = array();
+		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+			if ( $field['required'] ) {
+				$required_keys[] = $field['key'];
+			}
+		}
+
 		$out  = '<div class="mp-intake">';
 		$out .= '<h2>' . esc_html__( 'Zgłoszenie serwisowe', 'mp-service-intake' ) . '</h2>';
 
@@ -73,9 +85,11 @@ final class FormRenderer {
 			$errors
 		);
 
-		// Pola per rodzaj z FormConfig.
-		foreach ( FormConfig::fields_for( $kind ) as $field ) {
-			$out .= self::render_field( $field, $values, $errors );
+		// UNIA pol wszystkich rodzajow — kazde pole raz. `required` tylko dla pol
+		// wybranego rodzaju; JS pokazuje wlasciwe i toggluje `required` na zmianie.
+		// Serwer waliduje fields_for(kind) na submit (JS = progressive enhancement).
+		foreach ( FormConfig::union_fields() as $field ) {
+			$out .= self::render_field( $field, $values, $errors, $required_keys );
 		}
 
 		// Zalaczniki (opcjonalne): JPG/PNG/WebP/PDF, do 5 plikow.
@@ -104,18 +118,62 @@ final class FormRenderer {
 	}
 
 	/**
+	 * Rejestruje i wpina skrypt dynamicznego formularza (raz na render).
+	 *
+	 * Config pol per rodzaj idzie czysto przez wp_localize_script (JSON w
+	 * `window.mpIntakeForm`); JS TYLKO pokazuje/ukrywa pola i toggluje
+	 * `required` — zero oslabienia walidacji serwerowej (fields_for(kind)
+	 * waliduje na submit niezaleznie). Wersjonowanie po MP_INTAKE_VERSION
+	 * (bump wersji = nowy ?ver — uniknij starego cache).
+	 *
+	 * @return void
+	 */
+	private static function enqueue_assets(): void {
+		static $done = false;
+
+		if ( $done ) {
+			return;
+		}
+
+		$done = true;
+
+		wp_enqueue_script(
+			'mp-intake-form',
+			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/js/intake-form.js',
+			array(),
+			MP_INTAKE_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'mp-intake-form',
+			'mpIntakeForm',
+			array(
+				'kinds'     => FormConfig::kind_field_map(),
+				'allFields' => array_map(
+					static function ( array $field ): string {
+						return $field['key'];
+					},
+					FormConfig::union_fields()
+				),
+			)
+		);
+	}
+
+	/**
 	 * Render pojedynczego pola wg definicji FormConfig.
 	 *
-	 * @param array{key: string, label: string, type: string, required: bool, pii_sensitive: bool} $field Definicja.
-	 * @param array<string, mixed>                                                                 $values Wartosci.
-	 * @param array<string, string>                                                                $errors Kody bledow per pole.
+	 * @param array{key: string, label: string, type: string, required: bool, pii_sensitive: bool} $field         Definicja.
+	 * @param array<string, mixed>                                                                 $values        Wartosci.
+	 * @param array<string, string>                                                                $errors        Kody bledow per pole.
+	 * @param array<int, string>                                                                   $required_keys Klucze wymagane dla WYBRANEGO rodzaju (reszta bez `required`).
 	 * @return string
 	 */
-	private static function render_field( array $field, array $values, array $errors ): string {
+	private static function render_field( array $field, array $values, array $errors, array $required_keys ): string {
 		$key      = $field['key'];
 		$id       = 'mp-f-' . preg_replace( '/[^a-z0-9_]/', '', $key );
 		$value    = (string) ( $values[ $key ] ?? '' );
-		$required = $field['required'] ? ' required' : '';
+		$required = in_array( $key, $required_keys, true ) ? ' required' : '';
 		$descr    = ' aria-describedby="' . self::err_id( $key ) . '"';
 
 		if ( 'textarea' === $field['type'] ) {
@@ -140,7 +198,7 @@ final class FormRenderer {
 	 */
 	private static function field_wrap( string $key, string $label, string $control, array $errors, string $for_id = '' ): string {
 		$for_id = '' === $for_id ? 'mp-f-' . preg_replace( '/[^a-z0-9_]/', '', $key ) : $for_id;
-		$out    = '<p class="mp-intake-field mp-intake-field-' . esc_attr( $key ) . '">';
+		$out    = '<p class="mp-intake-field mp-intake-field-' . esc_attr( $key ) . '" data-mp-field="' . esc_attr( $key ) . '">';
 		$out   .= '<label for="' . esc_attr( $for_id ) . '">' . $label . '</label>';
 		$out   .= $control;
 
