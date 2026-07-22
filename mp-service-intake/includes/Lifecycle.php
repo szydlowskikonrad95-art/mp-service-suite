@@ -66,6 +66,29 @@ final class Lifecycle {
 	}
 
 	/**
+	 * Upgrade bez reaktywacji (WP updater podmienia pliki, NIE reaktywuje).
+	 *
+	 * Wolane na admin_init; gated wersja schematu => odpala zalegle migracje
+	 * RAZ po podniesieniu wtyczki, potem no-op. Idempotentne (Migrations::run
+	 * i Roles::ensure same sie pilnuja). Bez tego update v0.2.0->v0.3.0 nie
+	 * utworzylby tabel intake (schemat pojawil sie dopiero w C, po v0.2.0).
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade(): void {
+		if ( (int) get_option( Schema::VERSION_OPTION, 0 ) >= Schema::LATEST ) {
+			return;
+		}
+
+		Roles::ensure();
+		Schema::migrate();
+
+		if ( ! wp_next_scheduled( self::RETENTION_CRON ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::RETENTION_CRON );
+		}
+	}
+
+	/**
 	 * Admin notice: brak ext-fileinfo (upload zalacznikow odmawia MIME po tresci).
 	 *
 	 * @return void

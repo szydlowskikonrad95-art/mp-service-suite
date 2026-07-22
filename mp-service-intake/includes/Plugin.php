@@ -47,6 +47,9 @@ final class Plugin {
 		Lifecycle::register_cron();
 		Privacy::register();
 
+		// Upgrade bez reaktywacji (WP updater podmienia pliki): odpal zalegle migracje.
+		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
+
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
 		}
