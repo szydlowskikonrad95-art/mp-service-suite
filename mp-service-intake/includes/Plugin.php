@@ -109,6 +109,43 @@ final class Plugin {
 			6
 		);
 
+		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
+		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
+		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =
+		// wyjatek globalny na produkt (brak sprawy) => no-op (EVENT_MODEL.md). Flaga #11.
+		add_action(
+			'mp_warranty_exception_changed',
+			static function ( $exception_id, $product_registry_id, $case_id, $state ) {
+				unset( $product_registry_id );
+
+				$case_id = (int) $case_id;
+
+				if ( $case_id <= 0 ) {
+					return; // wyjatek globalny — brak sprawy do opisania.
+				}
+
+				if ( 'active' === $state ) {
+					$event_type = CaseEvents::EXCEPTION_APPLIED;
+				} elseif ( 'revoked' === $state ) {
+					$event_type = CaseEvents::EXCEPTION_REVOKED;
+				} else {
+					return; // nieznany stan — nie logujemy smieci na osi.
+				}
+
+				$actor_id = get_current_user_id();
+
+				// Payload STRUKTURALNY {exception_id} — bez reason/PII (EVENT_MODEL.md).
+				CaseEvents::log(
+					$case_id,
+					$event_type,
+					array( 'exception_id' => (int) $exception_id ),
+					$actor_id > 0 ? $actor_id : null
+				);
+			},
+			10,
+			4
+		);
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();
 		}

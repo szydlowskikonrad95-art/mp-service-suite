@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C): wyjątki gwarancyjne na osi zdarzeń sprawy — listener `mp_warranty_exception_changed`
+  (B→C) zapisuje `EXCEPTION_APPLIED` (stan `active`) / `EXCEPTION_REVOKED` (stan `revoked`) do
+  `wp_mp_case_events`; payload strukturalny `{exception_id}` (NO-PII, bez `reason`), `case_id=NULL`
+  (wyjątek globalny) → no-op (EVENT_MODEL.md). Wcześniej decyzja gwarancyjna nie zostawiała śladu na
+  osi czasu sprawy. Test c11 + blok-S S4. Flaga #11.
 - Intake (C): rate-limit po REALNYM IP klienta — nowy filtr `mp_intake_client_ip`
   (`RateLimit::client_ip()`, domyślnie `REMOTE_ADDR`). Za reverse-proxy/Cloudflare wszyscy klienci
   mieli IP proxy = 1 adres → rate-limit blokował wszystkich; wdrożeniowiec podpina zaufane źródło IP
