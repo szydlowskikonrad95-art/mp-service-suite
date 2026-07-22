@@ -32,7 +32,7 @@ final class Lifecycle {
 	public const CRON_HOOKS = array();
 
 	/**
-	 * Aktywacja: role wspolne (idempotentnie), marker modulu, wersja schematu.
+	 * Aktywacja: role wspolne (idempotentnie), marker modulu, migracje schematu.
 	 *
 	 * @return void
 	 */
@@ -46,6 +46,27 @@ final class Lifecycle {
 		if ( false === get_option( self::SCHEMA_OPTION, false ) ) {
 			add_option( self::SCHEMA_OPTION, '0', '', false );
 		}
+
+		Schema::migrate();
+	}
+
+	/**
+	 * Upgrade bez reaktywacji (WP updater podmienia pliki, NIE reaktywuje).
+	 *
+	 * Wolane na admin_init; gated wersja schematu => odpala zalegle migracje
+	 * RAZ po podniesieniu wtyczki, potem no-op. Idempotentne (Migrations::run
+	 * i Roles::ensure same sie pilnuja). Bez tego update nie utworzylby tabel D
+	 * (schemat pojawil sie dopiero teraz, po v0.1.0-szkielecie).
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade(): void {
+		if ( (int) get_option( Schema::VERSION_OPTION, 0 ) >= Schema::LATEST ) {
+			return;
+		}
+
+		Roles::ensure();
+		Schema::migrate();
 	}
 
 	/**

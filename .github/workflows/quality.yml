@@ -168,6 +168,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-dod-security-matrix.sh
       - name: DoD §7 — a11y/WCAG (labelki + role=alert + aria-describedby na formularzach)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/a11y-forms.sh
+      - name: Testy D1 (schemat Automatora — 4 tabele + append-only + idempotencja migracji)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d1-schema.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 
