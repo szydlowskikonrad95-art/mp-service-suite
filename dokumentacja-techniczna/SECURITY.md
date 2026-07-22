@@ -74,3 +74,20 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 - SQL: `$wpdb->prepare` wszędzie; `esc_like` na wyszukiwarce; ZERO twardych prefiksów `wp_` (linter tabel w CI = 0).
 - Wejścia: `sanitize_*` / `absint` przy każdym `$_POST/$_GET`. Wyjścia: `esc_html/esc_attr/esc_url` przy każdym echo (WPCS w CI).
 - Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem anty-spamu P1.6).
+
+## 7. Rate-limit — źródło IP za reverse-proxy (flaga #10)
+
+- Rate-limit po IP liczy **domyślnie `$_SERVER['REMOTE_ADDR']`** — bezpieczna domyślka (`RateLimit::client_ip()`).
+- **Za reverse-proxy / Cloudflare** wszyscy klienci mają IP proxy = **jeden adres** → domyślny rate-limit po IP zablokowałby wszystkich naraz. (Warstwy e-mail/serial działają dalej niezależnie od IP.)
+- **Nota dla wdrożenia za proxy** — podłącz filtr `mp_intake_client_ip` do **ZAUFANEGO** źródła IP. Kod celowo **nie ufa ślepo `X-Forwarded-For`** (nagłówek spoofowalny) — to decyzja wdrożenia, nie domyślka kodu. Przykład (odczyt tylko z zaufanego proxy, ostatni hop):
+  ```php
+  // mu-plugin / theme functions.php — TYLKO gdy przed WP stoi ZAUFANY proxy.
+  add_filter( 'mp_intake_client_ip', function ( $ip ) {
+      // Cloudflare podaje realny IP w CF-Connecting-IP; XFF bierz OSTATNI wpis
+      // (dopisany przez własny proxy), nie pierwszy (podany przez klienta).
+      if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+          return sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) );
+      }
+      return $ip; // brak zaufanego nagłówka → REMOTE_ADDR (domyślka).
+  } );
+  ```

@@ -85,8 +85,10 @@ final class SubmissionHandler {
 
 		// Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy. Po honeypocie,
 		// przed tworzeniem sprawy. Marker dedup dopiero po sukcesie (mark_submitted).
+		// IP klienta z RateLimit::client_ip() (filtr mp_intake_client_ip; domyslnie
+		// REMOTE_ADDR) — za reverse-proxy wszyscy = 1 IP proxy = blok wszystkich (flaga #10).
 		$serial  = (string) ( $values['serial'] ?? '' );
-		$ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$ip      = RateLimit::client_ip();
 		$blocked = RateLimit::check( $ip, $email, $serial, $kind );
 
 		if ( null !== $blocked ) {
