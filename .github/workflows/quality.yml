@@ -176,6 +176,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p31-przydzial.sh
       - name: Testy P3.2 (mp_case_change_status — STATE_MACHINE + optimistic-lock + reopen)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p32-status.sh
+      - name: Testy seed reguł domyślnych (aktywacja sieje raz; skasowana nie wraca; uninstall→świeży siew)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-seed-regul.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-e2e.sh
       - name: BLOK-S tabletop (S1-S10 niezmienniki, cross-plugin B↔C, SKIP D-pending)
