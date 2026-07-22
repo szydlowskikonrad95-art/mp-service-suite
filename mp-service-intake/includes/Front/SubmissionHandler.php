@@ -15,6 +15,7 @@ use MP\Intake\Attachments;
 use MP\Intake\CaseRepo;
 use MP\Intake\Consents;
 use MP\Intake\FormConfig;
+use MP\Intake\RateLimit;
 
 /**
  * Handlery admin-post frontu Intake.
@@ -82,6 +83,19 @@ final class SubmissionHandler {
 		$consent = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
 		$values  = self::collect_values( $kind );
 
+		// Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy. Po honeypocie,
+		// przed tworzeniem sprawy. Marker dedup dopiero po sukcesie (mark_submitted).
+		$serial  = (string) ( $values['serial'] ?? '' );
+		$ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$blocked = RateLimit::check( $ip, $email, $serial, $kind );
+
+		if ( null !== $blocked ) {
+			$notice = RateLimit::BLOCK_DUPLICATE === $blocked
+				? __( 'To zgłoszenie właśnie przyjęliśmy — sprawdź swoją skrzynkę e-mail.', 'mp-service-intake' )
+				: __( 'Zbyt wiele zgłoszeń w krótkim czasie. Spróbuj ponownie za jakiś czas.', 'mp-service-intake' );
+			self::redirect_back( array( 'notice' => $notice ) );
+		}
+
 		// Zgoda RODO wymagana PRZED przyjeciem zgloszenia.
 		if ( ! $consent ) {
 			self::redirect_back(
@@ -137,6 +151,9 @@ final class SubmissionHandler {
 			Consents::VERSION,
 			Consents::processing_text()
 		);
+
+		// Dedup: dopiero teraz (udane zgloszenie) — retry po odrzuceniu nie jest duplikatem.
+		RateLimit::mark_submitted( $email, $serial, $kind );
 
 		Mailer::send_magic_link( $email, (string) $result['token'] );
 
