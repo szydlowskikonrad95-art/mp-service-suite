@@ -252,3 +252,41 @@ jobs:
             --admin_password=admin --admin_email=mig@example.com --skip-email
       - name: Test migracji v0.2.0 -> v0.3.0 (dane+schemat+cron+role+opcje)
         run: cd /tmp/wp && V020_SRC=/tmp/v020 V030_SRC="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE"/testy/e2e/migration.sh
+
+  # DoD C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev
+  release-smoke:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: wp
+          MARIADB_PASSWORD: wp
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mysqli, iconv, intl
+          tools: wp-cli
+      - name: Build ZIP-y (artefakt z build.sh)
+        run: bash build/build.sh
+      - name: Instalacja WP 6.9.4 + WP_DEBUG
+        run: |
+          mkdir -p /tmp/wp && cd /tmp/wp
+          wp core download --version=6.9.4
+          wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
+          wp config set WP_DEBUG true --raw --type=constant
+          wp config set WP_DEBUG_LOG true --raw --type=constant
+          wp config set WP_DEBUG_DISPLAY false --raw --type=constant
+          wp core install --url=http://127.0.0.1:8080 --title=Rel --admin_user=admin \
+            --admin_password=admin --admin_email=rel@example.com --skip-email
+      - name: Release-smoke na ZIP (install z artefaktu + WP_DEBUG + uninstall grep-zero)
+        run: cd /tmp/wp && DIST_DIR="$GITHUB_WORKSPACE/build/dist" bash "$GITHUB_WORKSPACE"/testy/e2e/release-smoke.sh

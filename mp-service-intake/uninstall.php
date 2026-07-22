@@ -102,6 +102,14 @@ if ( $mp_intake_delete_data ) {
 	}
 
 	delete_option( MP\Intake\Schema::VERSION_OPTION );
+
+	// Osierocone opcje kontaktu (unverified) + transienty (rate-limit/resend) — grep-zero.
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall sciezka ON: sprzatanie WLASNYCH opcji/transientow.
+	$wpdb->query(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'mp\\_pending\\_contact\\_%'"
+		. " OR option_name LIKE '\\_transient\\_mp\\_rl\\_%' OR option_name LIKE '\\_transient\\_timeout\\_mp\\_rl\\_%'"
+		. " OR option_name LIKE '\\_transient\\_mp\\_resend\\_throttle\\_%' OR option_name LIKE '\\_transient\\_timeout\\_mp\\_resend\\_throttle\\_%'"
+	);
 }
 
 MP\Intake\Common\Uninstall::run(
