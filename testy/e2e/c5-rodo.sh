@@ -53,8 +53,11 @@ echo "$RES" | grep -q "RETAINED" && ! echo "$RES" | grep -q "REMOVED" && ok "spr
 ANON_STILL=$(q "SELECT anonymized_at FROM wp_mp_customers WHERE id=$CUSTID")
 [ -z "$ANON_STILL" ] || [ "$ANON_STILL" = "NULL" ] && ok "dane klienta NIETKNIETE przy odroczeniu" || bad "klient zanonimizowany mimo aktywnej sprawy!"
 
-# ── 5. Zamknij sprawe -> eraser wykonuje pelna anonimizacje ────────────────
-wp db query "UPDATE wp_mp_service_cases SET status='zamkniete' WHERE id=$CID" >/dev/null 2>&1
+# ── 5. Zamknij sprawe REALNA droga (change_status, nie seed!) -> eraser anonimizuje ─
+# ANTY-DRIFT #14: seed statusu omijal walidacje i zaszywal literowke; realny slug
+# to 'zamknięte' (z ę) — test MUSI iść przez change_status, inaczej zielone klamie.
+CLOSE=$(wp eval "echo wp_json_encode( apply_filters('mp_case_change_status', null, $CID, 'zamknięte', 'nowe', 1) );" 2>/dev/null)
+echo "$CLOSE" | grep -q '"success":true' && ok "sprawa zamknieta REALNA droga (change_status nowe->zamknięte)" || bad "change_status nie zamknal sprawy ($CLOSE)"
 RES2=$(wp eval "\$r = MP\Intake\Privacy::erase('rodo@example.com'); echo (\$r['items_removed']?'REMOVED':'NIE');" 2>/dev/null)
 [ "$RES2" = "REMOVED" ] && ok "sprawa zamknieta => eraser anonimizuje (items_removed)" || bad "eraser nie zadzialal: $RES2"
 

@@ -66,7 +66,8 @@ wp db query "UPDATE wp_mp_consents SET customer_id=$CUSTB WHERE case_id=$CIDB" >
 
 NB=$(login_and_withdraw_nonce 'zam@example.com' "$UIDB" /tmp/mp-b-jar)
 # Zamknij sprawe PO zalogowaniu (nonce juz pobrany), przed POST-em.
-wp db query "UPDATE wp_mp_service_cases SET status='zamkniete' WHERE id=$CIDB" >/dev/null 2>&1
+# REALNA droga (change_status, nie seed) — anty-drift #14 (slug 'zamknięte' z ę).
+wp eval "apply_filters('mp_case_change_status', null, $CIDB, 'zamknięte', 'nowe', 1);" >/dev/null 2>&1
 curl -s -b /tmp/mp-b-jar -o /dev/null --data-urlencode "action=mp_intake_withdraw" --data-urlencode "_mp_nonce=$NB" "$MP_BASE/wp-admin/admin-post.php"
 
 EVB=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CIDB AND event_type='CONSENT_WITHDRAWN'")

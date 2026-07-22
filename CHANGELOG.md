@@ -4,6 +4,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Fixed
+- Intake (C): RODO — poprawny terminalny status „zamknięte" (był bez ogonka `zamkniete` w
+  `TERMINAL_STATUSES` → `has_active_case()` nigdy nie widziała zamkniętej sprawy jako terminalnej →
+  eraser odraczał anonimizację klienta w nieskończoność, łamiąc §4 kartki). Realny slug to `zamknięte`
+  (z ę, jedyna droga zapisu = `change_status`). Testy c5-rodo/c6b/c6b2b przepięte na REALNĄ
+  `change_status` (seed literówki maskował błąd — zielone kłamały). Flaga #14. (pre-release v0.3.0)
+
 ### Added
 - Intake (C): zgody RODO + wiadomości + eraser/exporter (P1.5 + RODO) — `wp_mp_consents` z PEŁNYM
   TEKSTEM zgody zamrożonym przy zbieraniu (rozliczalność art. 7) + wycofanie self-service
