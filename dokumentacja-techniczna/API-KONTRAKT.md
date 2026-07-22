@@ -135,8 +135,9 @@ array( 'gwarancja_wygasla' => 'Gwarancja wygasła', 'duplikat' => 'Zgłoszenie z
 ### `mp_registered_statuses( $statuses )` — oddaje D
 Definicje statusów WŁASNYCH (D = źródło definicji, C = walidator przejść). Bez D → rdzeń 7.
 ```php
-array( 'ekspertyza_zewnetrzna' => array( 'label' => 'Ekspertyza zewnętrzna', 'terminal' => false ) );
+array( 'ekspertyza_zew' => array( 'label' => 'Ekspertyza zewnętrzna', 'terminal' => false ) );
 ```
+**Limit sluga: ≤ 20 znaków** — `wp_mp_service_cases.status` = `VARCHAR(20)`. Slug to KLUCZ MASZYNOWY (po `sanitize_key`); długą nazwę ludzką niesie `label` (bez limitu). Slug > 20 znaków jest **odrzucany przy rejestracji** (`StatusDefs::SLUG_MAX=20` → `continue`/`return ''`, NIE ucina — zero kolizji). C jest chroniony **przechodnio**: `mp_case_change_status` puszcza tylko `Statuses::exists()`, a slug > 20 nigdy się nie zarejestruje → dostałby `INVALID_STATUS`; dlatego osobny check długości w C jest zbędny. *(Poprzednia wersja przykładu — `ekspertyza_zewnetrzna`, 21 zn — łamała ten limit i była cicho ucinana; złapane samo-kontrolą buildera + strażnik, 22.07.)*
 
 ### `mp_case_card_sections( $sections, $case_id )` — renderuje C, dokłada D
 ```php
