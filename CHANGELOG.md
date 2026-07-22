@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C): formularz zgłoszenia dynamiczny wg rodzaju po stronie klienta (kartka wymóg #1). Render
+  UNII pól wszystkich rodzajów (każde pole raz, `data-mp-field`) — m.in. `return_reason` (zwrot) jest w
+  DOM od razu, więc zwrot składa się za 1. razem (wcześniej pole renderowane dopiero PO błędzie). Nowy
+  skrypt `assets/js/intake-form.js` (enqueue wersjonowany, config przez `wp_localize_script`) pokazuje/
+  ukrywa pola i toggluje `required` przy zmianie „Rodzaj". Serwer pozostaje źródłem prawdy —
+  `FormConfig::fields_for(kind)` waliduje na submit bez zmian (JS = progressive enhancement; no-JS też
+  wyśle). Test c-form-dynamic + dowód w przeglądarce. Flaga #15.
 - Intake (C): wyjątki gwarancyjne na osi zdarzeń sprawy — listener `mp_warranty_exception_changed`
   (B→C) zapisuje `EXCEPTION_APPLIED` (stan `active`) / `EXCEPTION_REVOKED` (stan `revoked`) do
   `wp_mp_case_events`; payload strukturalny `{exception_id}` (NO-PII, bez `reason`), `case_id=NULL`

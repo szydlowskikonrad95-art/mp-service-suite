@@ -115,6 +115,60 @@ final class FormConfig {
 	}
 
 	/**
+	 * Mapa rodzaj => lista {key, required} dla WSZYSTKICH rodzajow.
+	 *
+	 * Config dla warstwy klienckiej (JS): mowi ktore pola nalezą do rodzaju i
+	 * ktore sa wymagane. JS pokazuje/ukrywa pola i toggluje `required` wg tej
+	 * mapy; serwer NIEZALEZNIE waliduje fields_for(kind) na submit (JS = tylko UX).
+	 *
+	 * @return array<string, array<int, array{key: string, required: bool}>>
+	 */
+	public static function kind_field_map(): array {
+		$map = array();
+
+		foreach ( self::KINDS as $kind ) {
+			$fields = array();
+
+			foreach ( self::fields_for( $kind ) as $field ) {
+				$fields[] = array(
+					'key'      => $field['key'],
+					'required' => $field['required'],
+				);
+			}
+
+			$map[ $kind ] = $fields;
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Unia definicji pol po WSZYSTKICH rodzajach (dedup po kluczu — pierwsza
+	 * definicja wygrywa). Formularz renderuje KAZDE mozliwe pole raz; JS
+	 * pokazuje wlasciwe dla wybranego rodzaju. Dzieki temu np. `return_reason`
+	 * (tylko zwrot) istnieje w DOM od poczatku — brak dwuetapowego "wyslij->blad".
+	 *
+	 * @return array<int, array{key: string, label: string, type: string, required: bool, pii_sensitive: bool}>
+	 */
+	public static function union_fields(): array {
+		$seen = array();
+		$out  = array();
+
+		foreach ( self::KINDS as $kind ) {
+			foreach ( self::fields_for( $kind ) as $field ) {
+				if ( isset( $seen[ $field['key'] ] ) ) {
+					continue;
+				}
+
+				$seen[ $field['key'] ] = true;
+				$out[]                 = $field;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Czysci wiersz pol z opcji (obrona przed smieciem/zmiana schematu).
 	 *
 	 * @param array<int, mixed> $fields Surowe pola z opcji.
