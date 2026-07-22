@@ -211,8 +211,9 @@ final class Rules {
 				'condition_key' => '',
 				'action_type'   => self::ACTION_ASSIGN,
 				'action_config' => array(
-					'pool'         => array(),
-					'notify_agent' => true,
+					// Notyfikacja przydzielonego pracownika = stale zachowanie na
+					// hooku mp_case_assigned (kazdy przydzial), NIE flaga w regule.
+					'pool' => array(),
 				),
 				'priority'      => 10,
 				'enabled'       => 1,

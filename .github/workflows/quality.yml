@@ -182,6 +182,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p32c-guard-petli.sh
       - name: Testy P3.3 maile (notify klient — render markerów, sanityzacja odbiorcy, NO-PII, MAIL_SKIPPED, mail z depth1)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33-maile.sh
+      - name: Testy P3.3 notyfikacja przydziału (hook mp_case_assigned — każdy przydział→mail agenta, bulletproof, NO-PII)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33b-assign-notify.sh
       - name: Testy seed reguł domyślnych (aktywacja sieje raz; skasowana nie wraca; uninstall→świeży siew)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-seed-regul.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
