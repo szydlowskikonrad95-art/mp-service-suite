@@ -29,15 +29,17 @@ final class Statuses {
 	 *
 	 * @var array<string, bool>
 	 */
+	// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze z diakrytykami (ą/ę) mylą liczenie kolumn sniffa (bajty vs znaki); wyrownanie i tak nieosiagalne mb-poprawnie.
 	private const CORE = array(
-		'nowe'             => false,
+		'nowe'            => false,
 		'do uzupełnienia' => false,
-		'w analizie'       => false,
-		'zaakceptowane'    => false,
-		'w naprawie'       => false,
-		'odrzucone'        => true,
+		'w analizie'      => false,
+		'zaakceptowane'   => false,
+		'w naprawie'      => false,
+		'odrzucone'       => true,
 		'zamknięte'       => true,
 	);
+	// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 
 	/**
 	 * Pelna mapa statusow: slug => array{label:string, terminal:bool}.
