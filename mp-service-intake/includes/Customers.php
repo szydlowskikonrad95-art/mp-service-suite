@@ -135,6 +135,35 @@ final class Customers {
 	}
 
 	/**
+	 * Aktualizuje dane kontaktowe klienta (art. 16 — sprostowanie z panelu).
+	 *
+	 * E-mail NIE jest ruszany (klucz tozsamosci; korekty danych sprawy przez
+	 * wiadomosci). Anonimizowanych klientow nie tyka.
+	 *
+	 * @param int    $customer_id ID klienta.
+	 * @param string $name        Nazwa/imie.
+	 * @param string $phone       Telefon.
+	 * @return void
+	 */
+	public static function update_contact( int $customer_id, string $name, string $phone ): void {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET name = %s, phone = %s, updated_at = %s WHERE id = %d AND anonymized_at IS NULL",
+				$name,
+				$phone,
+				gmdate( 'Y-m-d H:i:s' ),
+				$customer_id
+			)
+		);
+		// phpcs:enable
+	}
+
+	/**
 	 * Odczyt klienta po ID.
 	 *
 	 * @param int $customer_id ID klienta.

@@ -52,7 +52,8 @@ PAGE_ID=$(wp option get mp_account_page_id 2>/dev/null)
 PAGE_PATH=$(wp post url "$PAGE_ID" 2>/dev/null | sed 's#^https\?://[^/]*##')
 PANEL_HTTP=$(curl -s -b "$JAR" "$MP_BASE$PAGE_PATH")
 FORM_CID=$(echo "$PANEL_HTTP" | grep -o 'name="case_id" value="[0-9]*"' | head -1 | grep -oE '[0-9]+')
-RNONCE=$(echo "$PANEL_HTTP" | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+# Nonce formularza WYSYLKI (nie danych kontaktowych) — kotwica na akcji mp_intake_message.
+RNONCE=$(echo "$PANEL_HTTP" | grep -o 'value="mp_intake_message".*' | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
 { [ "$FORM_CID" = "$CID1" ] && [ -n "$RNONCE" ]; } && ok "panel HTTP c1: formularz wlasnej sprawy + realny nonce" || bad "panel HTTP: form_cid=$FORM_CID nonce=$RNONCE"
 
 curl -s -b "$JAR" -o /dev/null \
