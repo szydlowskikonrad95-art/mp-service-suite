@@ -194,9 +194,13 @@ final class CaseRepo {
 			return array( 'error' => __( 'Sprawa zniknęła w trakcie potwierdzania.', 'mp-service-intake' ) );
 		}
 
-		$case_id = (int) $row['id'];
+		$case_id     = (int) $row['id'];
+		$customer_id = self::attach_customer_on_verify( $case_id );
 
-		self::attach_customer_on_verify( $case_id );
+		if ( $customer_id > 0 && Consents::attach_case_to_customer( $case_id, $customer_id ) > 0 ) {
+			// Event CONSENT_RECORDED tylko gdy realnie zebrano zgode (front); CLI/bez zgody = brak.
+			CaseEvents::log( $case_id, CaseEvents::CONSENT_RECORDED, array( 'consent_key' => Consents::KEY_PROCESSING ), null );
+		}
 
 		// Narodziny sprawy: event + akcja DOPIERO TERAZ (Automator nie widzial sierot).
 		CaseEvents::log(
@@ -276,6 +280,118 @@ final class CaseRepo {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Statusy TERMINALNE (sprawa zamknieta — RODO nie odracza).
+	 */
+	public const TERMINAL_STATUSES = array( 'zamkniete', 'odrzucone' );
+
+	/**
+	 * Sprawy klienta: [id, case_number, status, kind] (panel/eksport/RODO).
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function for_customer( int $customer_id ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, case_number, status, kind, form_data, created_at FROM {$table} WHERE customer_id = %d ORDER BY id DESC",
+				$customer_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Czy klient ma sprawe AKTYWNA (nie-terminalna) — RODO odracza EN BLOC.
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @return bool
+	 */
+	public static function has_active_case( int $customer_id ): bool {
+		global $wpdb;
+
+		$table    = Tables::full( Tables::CASES );
+		$terminal = self::TERMINAL_STATUSES;
+		$in       = implode( ',', array_fill( 0, count( $terminal ), '%s' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; lista %s z count(), sprawa aktywna = status poza terminalnymi.
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE customer_id = %d AND ( status IS NULL OR status NOT IN ({$in}) )",
+				array_merge( array( $customer_id ), $terminal )
+			)
+		);
+		// phpcs:enable
+
+		return $count > 0;
+	}
+
+	/**
+	 * Redaguje wartosci pol pii_sensitive w form_data spraw (RODO).
+	 *
+	 * @param array<int> $case_ids Sprawy.
+	 * @return int Liczba zredagowanych spraw.
+	 */
+	public static function redact_pii_for_cases( array $case_ids ): int {
+		global $wpdb;
+
+		$table   = Tables::full( Tables::CASES );
+		$changed = 0;
+
+		foreach ( $case_ids as $case_id ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$raw = $wpdb->get_var( $wpdb->prepare( "SELECT form_data FROM {$table} WHERE id = %d", (int) $case_id ) );
+			// phpcs:enable
+
+			$data = json_decode( (string) $raw, true );
+
+			if ( ! is_array( $data ) ) {
+				continue;
+			}
+
+			$data = self::redact_pii_fields( $data );
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$table} SET form_data = %s, updated_at = %s WHERE id = %d",
+					(string) wp_json_encode( $data ),
+					gmdate( 'Y-m-d H:i:s' ),
+					(int) $case_id
+				)
+			);
+			// phpcs:enable
+
+			++$changed;
+		}
+
+		return $changed;
+	}
+
+	/**
+	 * Zamienia wartosci pol pii_sensitive na marker (czysta funkcja).
+	 *
+	 * @param array<string, mixed> $form_data Mapa pol.
+	 * @return array<string, mixed>
+	 */
+	public static function redact_pii_fields( array $form_data ): array {
+		foreach ( $form_data as $key => $field ) {
+			if ( is_array( $field ) && ! empty( $field['pii_sensitive'] ) ) {
+				$form_data[ $key ]['value'] = Messages::REDACTED;
+			}
+		}
+
+		return $form_data;
 	}
 
 	/**
@@ -365,15 +481,15 @@ final class CaseRepo {
 	 * Przy weryfikacji: tworzy/podpina klienta z zapamietanych danych kontaktowych.
 	 *
 	 * @param int $case_id ID sprawy.
-	 * @return void
+	 * @return int ID klienta (0 gdy brak danych kontaktowych).
 	 */
-	private static function attach_customer_on_verify( int $case_id ): void {
+	private static function attach_customer_on_verify( int $case_id ): int {
 		global $wpdb;
 
 		$pending = get_option( 'mp_pending_contact_' . $case_id, array() );
 
 		if ( ! is_array( $pending ) || '' === (string) ( $pending['email'] ?? '' ) ) {
-			return;
+			return 0;
 		}
 
 		$customer_id = Customers::upsert_by_email(
@@ -396,5 +512,7 @@ final class CaseRepo {
 		// phpcs:enable
 
 		delete_option( 'mp_pending_contact_' . $case_id );
+
+		return $customer_id;
 	}
 }

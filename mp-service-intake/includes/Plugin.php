@@ -43,6 +43,19 @@ final class Plugin {
 		Front\Frontend::register();
 		Front\SubmissionHandler::register();
 		Lifecycle::register_cron();
+		Privacy::register();
+
+		// Listener kontraktowy: wiadomosc systemowa od D (np. raport koncowy).
+		add_filter(
+			'mp_case_add_system_message',
+			static function ( $result, $case_id, $content ) {
+				unset( $result );
+
+				return Messages::add_system_message( (int) $case_id, (string) $content );
+			},
+			10,
+			3
+		);
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();

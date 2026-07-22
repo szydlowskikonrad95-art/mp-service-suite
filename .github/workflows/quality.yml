@@ -148,5 +148,7 @@ jobs:
           MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c3-front.sh
       - name: Testy C4 (załączniki twardo — finfo, EXIF-strip, deny-ALL, IDOR, retencja)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c4-zalaczniki.sh
+      - name: Testy C5 (RODO — zgody, wiadomości, eraser/exporter, anonimizacja)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c5-rodo.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh

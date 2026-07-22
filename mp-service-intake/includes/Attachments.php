@@ -459,6 +459,64 @@ final class Attachments {
 	}
 
 	/**
+	 * Kasuje wszystkie zywe zalaczniki podanych spraw (wiersz + PLIK) — RODO.
+	 *
+	 * @param array<int> $case_ids Sprawy.
+	 * @return int Liczba skasowanych.
+	 */
+	public static function delete_for_cases( array $case_ids ): int {
+		global $wpdb;
+
+		$ids = array_values( array_filter( array_map( 'absint', $case_ids ) ) );
+
+		if ( array() === $ids ) {
+			return 0;
+		}
+
+		$att_table    = Tables::full( Tables::ATTACHMENTS );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; lista %d w IN() z count().
+		$att_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$att_table} WHERE deleted_at IS NULL AND case_id IN ({$placeholders})",
+				$ids
+			)
+		);
+		// phpcs:enable
+
+		foreach ( $att_ids as $att_id ) {
+			self::delete( (int) $att_id );
+		}
+
+		return count( (array) $att_ids );
+	}
+
+	/**
+	 * Metadane zalacznikow sprawy (eksport RODO — bez binarki, link przez konto).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function metadata_for_case( int $case_id ): array {
+		global $wpdb;
+
+		$att_table = Tables::full( Tables::ATTACHMENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, mime, size_bytes, original_name, created_at FROM {$att_table} WHERE case_id = %d AND deleted_at IS NULL",
+				$case_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Cron retencji: kasuje zalaczniki po retention_until (wiersz + plik).
 	 *
 	 * @return int Liczba skasowanych.

@@ -13,6 +13,7 @@ namespace MP\Intake\Front;
 
 use MP\Intake\Attachments;
 use MP\Intake\CaseRepo;
+use MP\Intake\Consents;
 use MP\Intake\FormConfig;
 
 /**
@@ -74,9 +75,26 @@ final class SubmissionHandler {
 			self::redirect_back( array( 'notice' => self::neutral_message() ) );
 		}
 
-		$kind   = isset( $_POST['kind'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['kind'] ) ) : '';
-		$email  = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
-		$values = self::collect_values( $kind );
+		$kind    = isset( $_POST['kind'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['kind'] ) ) : '';
+		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
+		$consent = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
+		$values  = self::collect_values( $kind );
+
+		// Zgoda RODO wymagana PRZED przyjeciem zgloszenia.
+		if ( ! $consent ) {
+			self::redirect_back(
+				array(
+					'errors' => array( 'mp_consent' => 'REQUIRED' ),
+					'values' => array_merge(
+						$values,
+						array(
+							'kind'  => $kind,
+							'email' => $email,
+						)
+					),
+				)
+			);
+		}
 
 		$result = CaseRepo::create(
 			array(
@@ -108,6 +126,15 @@ final class SubmissionHandler {
 		if ( array() !== $files ) {
 			Attachments::store_for_case( (int) $result['case_id'], $kind, $files );
 		}
+
+		// Zgoda RODO: pelny tekst zamrozony, spieta ze sprawa (podpiecie do klienta przy weryfikacji).
+		Consents::record(
+			$email,
+			(int) $result['case_id'],
+			Consents::KEY_PROCESSING,
+			Consents::VERSION,
+			Consents::processing_text()
+		);
 
 		Mailer::send_magic_link( $email, (string) $result['token'] );
 

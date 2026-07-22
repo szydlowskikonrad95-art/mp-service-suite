@@ -57,7 +57,7 @@ cget -c "$JAR" -b "$JAR" -o /dev/null \
 	-F "mp_ts=$(( $(date +%s) - 30 ))" \
 	-F "kind=reklamacja" -F "email=foto@example.com" \
 	-F "serial=FOTO-1" -F "purchase_document=FV/2026/5" \
-	-F "purchase_date=2026-03-15" -F "issue_description=Zdjecie usterki" \
+	-F "purchase_date=2026-03-15" -F "issue_description=Zdjecie usterki" -F "mp_consent=1" \
 	-F "mp_files[]=@$IMG;type=image/jpeg" \
 	"$BASE/wp-admin/admin-post.php"
 

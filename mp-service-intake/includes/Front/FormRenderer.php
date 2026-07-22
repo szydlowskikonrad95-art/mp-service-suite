@@ -87,6 +87,15 @@ final class FormRenderer {
 			'mp-f-mp_files'
 		);
 
+		// Zgoda RODO (wymagana) — pelny tekst zamrazany przy zapisie.
+		$consent_err = isset( $errors['mp_consent'] )
+			? '<span class="mp-intake-error" id="' . self::err_id( 'mp_consent' ) . '" role="alert">' . esc_html__( 'Zgoda jest wymagana, aby przyjąć zgłoszenie.', 'mp-service-intake' ) . '</span>'
+			: '';
+		$out        .= '<p class="mp-intake-field mp-intake-consent">';
+		$out        .= '<label for="mp-f-consent"><input type="checkbox" id="mp-f-consent" name="mp_consent" value="1" required aria-describedby="' . self::err_id( 'mp_consent' ) . '" /> '
+			. esc_html( \MP\Intake\Consents::processing_text() ) . '</label>' . $consent_err;
+		$out        .= '</p>';
+
 		$out .= '<p class="mp-intake-hint">' . esc_html__( 'Wskazówka: nie podawaj w opisie danych osobowych innych osób.', 'mp-service-intake' ) . '</p>';
 		$out .= '<button type="submit" class="mp-intake-submit">' . esc_html__( 'Wyślij zgłoszenie', 'mp-service-intake' ) . '</button>';
 		$out .= '</form></div>';

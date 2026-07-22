@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Intake (C): zgody RODO + wiadomości + eraser/exporter (P1.5 + RODO) — `wp_mp_consents` z PEŁNYM
+  TEKSTEM zgody zamrożonym przy zbieraniu (rozliczalność art. 7) + wycofanie self-service
+  (`CONSENT_WITHDRAWN`, art. 7(3)); zgoda wymagana w formularzu, podpinana do klienta po weryfikacji
+  (`CONSENT_RECORDED`); `wp_mp_messages` — historia wiadomości klient↔serwis (redagowalne przy RODO,
+  event `mp_case_message_added` bez treści; listener `mp_case_add_system_message` dla D); eraser i
+  exporter wpięte w natywne narzędzia WP (Narzędzia → Dane osobowe): eraser szuka PO EMAILU,
+  anonimizuje klienta (pola czyszczone, `anonymized_at`, odpięcie konta WP, wiersz zostaje), redaguje
+  messages + form_data-PII + `warranty_exceptions.reason` (B przez filter), kasuje załączniki, emituje
+  `PII_REDACTION`/`CUSTOMER_ANONYMIZED`; **sprawa aktywna/okno roszczeń → odroczenie EN BLOC**
+  (`items_retained`); exporter: dane klienta + sprawy + wiadomości + metadane załączników; test C5 w CI.
 - Intake (C): załączniki twardo (spec T5) — MIME PO TREŚCI (finfo; brak ext-fileinfo = admin
   notice + odmowa), limity 8 MB/plik + 5/zgłoszenie + globalny CAP przestrzeni pending 2 GB;
   katalog `uploads/mp-attachments/` z deny-ALL + losowe nazwy UUID BEZ rozszerzenia; strip EXIF/GPS
