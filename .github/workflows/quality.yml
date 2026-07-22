@@ -196,6 +196,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33d-dedup.sh
       - name: Testy P3.4 SLA-1 księga (wiersz na created + reprovision + terminal→NULL + warning 25% + notify send-then-claim + SLA_* na osi C)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34a-sla-ksiega.sh
+      - name: Testy P3.4 SLA-2 sweep (cron 5-min + GET_LOCK + przypomnienie/eskalacja po terminie + idempotencja markerów)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34b-sla-sweep.sh
       - name: Testy seed reguł domyślnych (aktywacja sieje raz; skasowana nie wraca; uninstall→świeży siew)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-seed-regul.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)

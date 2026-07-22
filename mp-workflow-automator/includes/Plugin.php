@@ -49,6 +49,9 @@ final class Plugin {
 
 		// Ksiega SLA (P3.4): wiersz terminu na created + przeliczenie przy zmianie statusu.
 		Sla::register();
+
+		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
+		Sweep::register();
 	}
 
 	/**

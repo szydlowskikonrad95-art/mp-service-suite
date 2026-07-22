@@ -58,5 +58,5 @@ if ( $mp_automator_delete_data ) {
 MP\Automator\Common\Uninstall::run(
 	'mp_module_automator',
 	array( 'mp_automator_schema_version', 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
-	array()
+	array( MP\Automator\Sweep::CRON_HOOK )
 );
