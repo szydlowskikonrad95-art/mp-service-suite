@@ -82,27 +82,39 @@ grep -q "klient@example.com" "$CAPTURE" 2>/dev/null && ok "mail magic-link zaadr
 TOKEN=$(grep 'mp_intake_verify' "$CAPTURE" 2>/dev/null | grep -oE 'token=[^" \\]+' | head -1 | sed 's/token=//')
 [ -n "$TOKEN" ] && ok "magic-link niesie token weryfikacji" || bad "brak tokenu w mailu"
 
-# ── 5. Klik magic-linka (GET): potwierdzenie + naglowki bezp. + neutralnosc ─
-VHEAD=$(cget -D - -o /tmp/mp-verify.html "$BASE/wp-admin/admin-post.php?action=mp_intake_verify&token=$TOKEN")
-echo "$VHEAD" | grep -qi "Referrer-Policy: no-referrer" && ok "strona potwierdzenia: Referrer-Policy no-referrer" || bad "brak no-referrer"
-echo "$VHEAD" | grep -qi "Cache-Control: no-store" && ok "strona potwierdzenia: Cache-Control no-store" || bad "brak no-store"
-echo "$VHEAD" | grep -qi "X-Content-Type-Options: nosniff" && ok "strona potwierdzenia: nosniff" || bad "brak nosniff"
-# Neutralnosc: strona NIE ujawnia numeru SRV (idzie mailem).
-grep -q "SRV/" /tmp/mp-verify.html && bad "strona potwierdzenia ZDRADZA numer SRV!" || ok "strona potwierdzenia neutralna (SRV tylko mailem)"
+# ── 5. Klik magic-linka (GET): NIE potwierdza — renderuje formularz POST (FLAGA #7) ─
+VHEAD=$(cget -c "$JAR" -D - -o /tmp/mp-verify.html "$BASE/wp-admin/admin-post.php?action=mp_intake_verify&token=$TOKEN")
+echo "$VHEAD" | grep -qi "Referrer-Policy: no-referrer" && ok "strona GET: Referrer-Policy no-referrer" || bad "brak no-referrer"
+echo "$VHEAD" | grep -qi "Cache-Control: no-store" && ok "strona GET: Cache-Control no-store" || bad "brak no-store"
+echo "$VHEAD" | grep -qi "X-Content-Type-Options: nosniff" && ok "strona GET: nosniff" || bad "brak nosniff"
+grep -q 'name="action" value="mp_intake_verify_confirm"' /tmp/mp-verify.html && ok "GET renderuje formularz POST (przycisk Potwierdzam)" || bad "GET nie renderuje formularza POST"
+grep -q "SRV/" /tmp/mp-verify.html && bad "strona GET ZDRADZA numer SRV!" || ok "strona GET neutralna (SRV tylko mailem)"
+# KLUCZOWE #7: sam GET (prefetch skanera poczty) NIE potwierdza sprawy.
+NOTVER=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE identity_status='verified'")
+[ "$NOTVER" = "0" ] && ok "sam GET NIE potwierdza sprawy (anti-prefetch #7)" || bad "GET potwierdzil sprawe! verified=$NOTVER"
 
+# ── 6. POST Potwierdzam: weryfikacja atomowa + status + event + 2. mail ──────
+VNONCE=$(grep -o 'name="_mp_nonce" value="[^"]*"' /tmp/mp-verify.html | head -1 | sed 's/.*value="//;s/"//')
+[ -n "$VNONCE" ] && ok "formularz GET niesie nonce potwierdzenia" || bad "brak nonce w formularzu"
+cget -c "$JAR" -b "$JAR" -o /tmp/mp-confirm.html \
+	--data-urlencode "action=mp_intake_verify_confirm" --data-urlencode "_mp_nonce=$VNONCE" \
+	--data-urlencode "token=$TOKEN" \
+	"$BASE/wp-admin/admin-post.php"
+grep -q "SRV/" /tmp/mp-confirm.html && bad "strona POST ZDRADZA numer SRV!" || ok "strona POST neutralna (SRV tylko mailem)"
 ST=$(q "SELECT status FROM wp_mp_service_cases WHERE identity_status='verified'")
-[ "$ST" = "nowe" ] && ok "po kliku: sprawa verified, status=nowe" || bad "status po weryfikacji: $ST"
+[ "$ST" = "nowe" ] && ok "po POST: sprawa verified, status=nowe" || bad "status po weryfikacji: $ST"
 EV=$(q "SELECT event_type FROM wp_mp_case_events LIMIT 1")
-[ "$EV" = "CASE_CREATED" ] && ok "event CASE_CREATED zapisany po weryfikacji" || bad "event: $EV"
-
-# ── 6. 2. mail z NUMEREM SRV po weryfikacji ────────────────────────────────
+[ "$EV" = "CASE_CREATED" ] && ok "event CASE_CREATED zapisany po POST" || bad "event: $EV"
 sleep 1
 CNUM=$(q "SELECT case_number FROM wp_mp_service_cases WHERE identity_status='verified'")
 grep -q "$CNUM" "$CAPTURE" 2>/dev/null && ok "2. mail potwierdzajacy niesie numer SRV ($CNUM)" || bad "brak maila z SRV"
 
-# ── 7. Ponowny klik tym samym tokenem: HTTP 410 (nieaktualny) ──────────────
-CODE=$(cget -o /dev/null -w '%{http_code}' "$BASE/wp-admin/admin-post.php?action=mp_intake_verify&token=$TOKEN")
-{ [ "$CODE" = "200" ] || [ "$CODE" = "410" ]; } && ok "ponowny klik obsluzony (HTTP $CODE, token jednorazowy)" || bad "ponowny klik: HTTP $CODE"
+# ── 7. Ponowny POST tym samym tokenem: token jednorazowy (W1) ──────────────
+CODE=$(cget -c "$JAR" -b "$JAR" -o /dev/null -w '%{http_code}' \
+	--data-urlencode "action=mp_intake_verify_confirm" --data-urlencode "_mp_nonce=$VNONCE" \
+	--data-urlencode "token=$TOKEN" \
+	"$BASE/wp-admin/admin-post.php")
+{ [ "$CODE" = "200" ] || [ "$CODE" = "410" ]; } && ok "ponowny POST obsluzony (HTTP $CODE, token jednorazowy W1)" || bad "ponowny POST: HTTP $CODE"
 
 echo
 echo "WYNIK C3: $PASS ok, $FAIL fail"
