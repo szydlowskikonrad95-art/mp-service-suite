@@ -184,6 +184,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33-maile.sh
       - name: Testy P3.3 notyfikacja przydziału (hook mp_case_assigned — każdy przydział→mail agenta, bulletproof, NO-PII)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33b-assign-notify.sh
+      - name: Testy P3.3 reguły wiadomości (message_added — klient→agent, staff→klient, system=nic, guard from===to)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33c-message.sh
       - name: Testy seed reguł domyślnych (aktywacja sieje raz; skasowana nie wraca; uninstall→świeży siew)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-seed-regul.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)

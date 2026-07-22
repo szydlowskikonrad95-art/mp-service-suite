@@ -11,7 +11,9 @@ bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
 q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 cs()  { wp eval "echo wp_json_encode( apply_filters('mp_case_change_status', null, $1, '$2', '$3', 1, $4) );" 2>/dev/null; }
 
-wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_srv_counters;" >/dev/null 2>&1
+# Czyscimy TEZ reguly D: test C-side change_status nie moze zalezec od regul
+# (status_changed odpala sluchacza D; mutujaca regula z innego testu = kaskada).
+wp db query "DELETE FROM wp_mp_workflow_rules; DELETE FROM wp_mp_workflow_events; DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_srv_counters;" >/dev/null 2>&1
 wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
 
 # ── Zweryfikowana sprawa (status='nowe') ─────────────────────────────────────

@@ -48,6 +48,7 @@ final class RuleEngine {
 	public static function register(): void {
 		add_action( 'mp_case_created', array( self::class, 'on_case_created' ), 10, 1 );
 		add_action( 'mp_case_status_changed', array( self::class, 'on_status_changed' ), 10, 4 );
+		add_action( 'mp_case_message_added', array( self::class, 'on_message_added' ), 10, 3 );
 		add_action( 'mp_case_assigned', array( self::class, 'on_case_assigned' ), 10, 4 );
 	}
 
@@ -64,7 +65,14 @@ final class RuleEngine {
 	 * @return void
 	 */
 	public static function on_case_assigned( $case_id, $from, $to, $actor_id ): void {
-		unset( $from, $actor_id );
+		unset( $actor_id );
+
+		// Re-assign do TEGO SAMEGO agenta = brak realnej zmiany => zero redundantnego
+		// maila (auto-sciezka bezpieczna: from=null; guard chroni reczny re-assign).
+		if ( null !== $from && (int) $from === (int) $to ) {
+			return;
+		}
+
 		self::notify_assignment( (int) $case_id, (int) $to );
 	}
 
@@ -171,22 +179,45 @@ final class RuleEngine {
 	 */
 	public static function on_status_changed( $case_id, $old_status, $new_status, $actor_id ): void {
 		unset( $old_status, $new_status, $actor_id );
-		self::run_status_rules( (int) $case_id );
+		self::run_rules( (int) $case_id, Rules::TRIGGER_STATUS_CHANGED );
 	}
 
 	/**
-	 * Ewaluacja regul triggera status_changed ze STRAŻNIKIEM PETLI.
+	 * Trigger `mp_case_message_added` (C): reguly po dodaniu wiadomosci, warunki po
+	 * `author_type` (client/staff/system — wstrzykiwany do kontekstu, bo get_context
+	 * go nie zna). Domyslnie: wiadomosc KLIENTA => mail do przypisanego agenta;
+	 * wiadomosc STAFF => mail do klienta (C sam nie maili — domena D).
+	 *
+	 * @param int    $case_id     ID sprawy.
+	 * @param int    $message_id  ID wiadomosci (nieuzywany — NO-PII, bez tresci).
+	 * @param string $author_type Typ autora: client|staff|system.
+	 * @return void
+	 */
+	public static function on_message_added( $case_id, $message_id, $author_type ): void {
+		unset( $message_id );
+		self::run_rules(
+			(int) $case_id,
+			Rules::TRIGGER_MESSAGE_ADDED,
+			array( 'author_type' => (string) $author_type )
+		);
+	}
+
+	/**
+	 * Ewaluacja regul danego triggera ze STRAŻNIKIEM PETLI (wspolna dla
+	 * status_changed i message_added).
 	 *
 	 * Glebokosc per case_id: 0 = zdarzenie zewnetrzne (mutacje dozwolone),
 	 * >=1 = re-entrant z akcji reguły (mutacje ZABLOKOWANE + RULE_LOOP_BLOCKED;
-	 * akcje mailowe — P3.3 — przechodza na kazdej glebokosci). Pierwsza pasujaca
-	 * mutacja wygrywa. Pas bezpieczenstwa: limit akcji na zdarzenie zewnetrzne.
-	 * Ksiegowanie zdarzen dzieje sie ZAWSZE (guard dotyczy tylko akcji reguł).
+	 * akcje mailowe przechodza na kazdej glebokosci). Pierwsza pasujaca mutacja
+	 * wygrywa. Pas bezpieczenstwa: limit akcji na zdarzenie zewnetrzne. Ksiegowanie
+	 * dzieje sie ZAWSZE (guard dotyczy tylko akcji reguł).
 	 *
-	 * @param int $case_id ID sprawy.
+	 * @param int                  $case_id   ID sprawy.
+	 * @param string               $trigger   Stala Rules::TRIGGER_*.
+	 * @param array<string, mixed> $extra_ctx Fakty zdarzenia doklejane do kontekstu.
 	 * @return void
 	 */
-	public static function run_status_rules( int $case_id ): void {
+	public static function run_rules( int $case_id, string $trigger, array $extra_ctx = array() ): void {
 		$depth = self::$depth[ $case_id ] ?? 0;
 
 		self::$depth[ $case_id ] = $depth + 1;
@@ -203,7 +234,13 @@ final class RuleEngine {
 				return;
 			}
 
-			$rules   = Rules::enabled_for_trigger( Rules::TRIGGER_STATUS_CHANGED );
+			// Fakty zdarzenia niedostepne w kontekscie sprawy (np. author_type dla
+			// message_added) — wstrzykiwane do dopasowania warunkow.
+			if ( array() !== $extra_ctx ) {
+				$ctx = array_merge( $ctx, $extra_ctx );
+			}
+
+			$rules   = Rules::enabled_for_trigger( $trigger );
 			$mutated = false;
 
 			foreach ( $rules as $rule ) {
@@ -255,11 +292,11 @@ final class RuleEngine {
 				}
 
 				if ( Rules::ACTION_CHANGE_STATUS === $action ) {
-					if ( self::do_change_status( $case_id, $ctx, $rule, $depth ) ) {
+					if ( self::do_change_status( $case_id, $ctx, $rule, $depth, $trigger ) ) {
 						$mutated = true;
 					}
 				} else {
-					self::do_notify( $case_id, $ctx, $rule, $depth );
+					self::do_notify( $case_id, $ctx, $rule, $depth, $trigger );
 				}
 			}
 		} finally {
@@ -281,19 +318,20 @@ final class RuleEngine {
 	 * @param array<string, mixed> $ctx     Kontekst sprawy (z mp_case_get_context).
 	 * @param array<string, mixed> $rule    Wiersz reguły.
 	 * @param int                  $depth   Glebokosc (do logu).
+	 * @param string               $trigger Trigger, ktory odpalil regule (do logu).
 	 * @return bool True gdy status faktycznie zmieniony.
 	 */
-	private static function do_change_status( int $case_id, array $ctx, array $rule, int $depth ): bool {
+	private static function do_change_status( int $case_id, array $ctx, array $rule, int $depth, string $trigger ): bool {
 		$config = json_decode( (string) $rule['action_config_json'], true );
 		$new    = is_array( $config ) && isset( $config['new_status'] ) ? (string) $config['new_status'] : '';
 		$code   = is_array( $config ) && isset( $config['rejection_reason_code'] ) ? (string) $config['rejection_reason_code'] : null;
 
-		$log = static function ( string $result ) use ( $rule, $case_id, $new, $depth ): void {
+		$log = static function ( string $result ) use ( $rule, $case_id, $new, $depth, $trigger ): void {
 			WorkflowEvents::log(
 				WorkflowEvents::RULE_EXECUTED,
 				array(
 					'rule_id' => (int) $rule['id'],
-					'trigger' => Rules::TRIGGER_STATUS_CHANGED,
+					'trigger' => $trigger,
 					'action'  => Rules::ACTION_CHANGE_STATUS,
 					'to'      => $new,
 					'result'  => $result,
@@ -335,9 +373,10 @@ final class RuleEngine {
 	 * @param array<string, mixed> $ctx     Kontekst sprawy.
 	 * @param array<string, mixed> $rule    Wiersz reguły.
 	 * @param int                  $depth   Glebokosc (do logu).
+	 * @param string               $trigger Trigger, ktory odpalil regule (do logu).
 	 * @return void
 	 */
-	private static function do_notify( int $case_id, array $ctx, array $rule, int $depth ): void {
+	private static function do_notify( int $case_id, array $ctx, array $rule, int $depth, string $trigger ): void {
 		$config       = json_decode( (string) $rule['action_config_json'], true );
 		$template_key = is_array( $config ) && isset( $config['template_key'] ) ? (string) $config['template_key'] : '';
 		$recipient    = is_array( $config ) && isset( $config['recipient'] ) ? (string) $config['recipient'] : 'client';
@@ -370,7 +409,7 @@ final class RuleEngine {
 			WorkflowEvents::RULE_EXECUTED,
 			array(
 				'rule_id'       => (int) $rule['id'],
-				'trigger'       => Rules::TRIGGER_STATUS_CHANGED,
+				'trigger'       => $trigger,
 				'action'        => Rules::ACTION_NOTIFY,
 				'template_key'  => $template_key,
 				'recipient_ref' => $ref,
