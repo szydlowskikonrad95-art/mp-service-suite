@@ -197,8 +197,8 @@ final class CaseRepo {
 		$case_id     = (int) $row['id'];
 		$customer_id = self::attach_customer_on_verify( $case_id );
 
-		if ( $customer_id > 0 ) {
-			Consents::attach_case_to_customer( $case_id, $customer_id );
+		if ( $customer_id > 0 && Consents::attach_case_to_customer( $case_id, $customer_id ) > 0 ) {
+			// Event CONSENT_RECORDED tylko gdy realnie zebrano zgode (front); CLI/bez zgody = brak.
 			CaseEvents::log( $case_id, CaseEvents::CONSENT_RECORDED, array( 'consent_key' => Consents::KEY_PROCESSING ), null );
 		}
 

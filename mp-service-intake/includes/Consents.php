@@ -76,15 +76,15 @@ final class Consents {
 	 *
 	 * @param int $case_id     ID sprawy.
 	 * @param int $customer_id ID klienta.
-	 * @return void
+	 * @return int Liczba podpietych zgod (0 = brak zgody dla tej sprawy).
 	 */
-	public static function attach_case_to_customer( int $case_id, int $customer_id ): void {
+	public static function attach_case_to_customer( int $case_id, int $customer_id ): int {
 		global $wpdb;
 
 		$table = Tables::full( Tables::CONSENTS );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
-		$wpdb->query(
+		$affected = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$table} SET customer_id = %d WHERE case_id = %d AND customer_id IS NULL",
 				$customer_id,
@@ -92,6 +92,8 @@ final class Consents {
 			)
 		);
 		// phpcs:enable
+
+		return (int) $affected;
 	}
 
 	/**
