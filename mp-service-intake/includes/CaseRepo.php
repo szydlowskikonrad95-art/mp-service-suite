@@ -318,6 +318,165 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Kontekst sprawy dla D (funkcja kontraktowa `mp_case_get_context`).
+	 *
+	 * Zwraca FAKTY do dopasowania regul i maili. `kontakt` = runtime do maili,
+	 * NIGDY do logow (NO-PII-IN-LOG). `kategoria` = kategoria PRODUKTU z B
+	 * (runtime-fetch przez filter `mp_product_category`; brak produktu / brak
+	 * listenera B => null — frozen zasada: brak danej -> warunek NIE-PASUJE).
+	 * Sprawa nieistniejaca / niezweryfikowana (D nie widzi sierot) => string
+	 * `'not_found'` (kontrakt API-KONTRAKT.md sekcja C).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return array<string, mixed>|string Kontekst albo 'not_found'.
+	 */
+	public static function get_context( int $case_id ) {
+		global $wpdb;
+
+		$cases     = Tables::full( Tables::CASES );
+		$customers = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne, zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT c.status, c.kind, c.priority, c.assigned_to, c.product_registry_id,
+					c.country, c.lang, c.verified_at, c.status_changed_at, c.case_number,
+					c.rejection_reason_code,
+					cu.email AS contact_email, cu.name AS contact_name,
+					cu.phone AS contact_phone, cu.anonymized_at AS contact_anonymized_at
+				FROM {$cases} c
+				LEFT JOIN {$customers} cu ON cu.id = c.customer_id
+				WHERE c.id = %d AND c.identity_status = 'verified'",
+				$case_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		if ( null === $row ) {
+			return 'not_found';
+		}
+
+		// kategoria = kategoria produktu z B (P1.2); brak produktu -> null.
+		$kategoria = null;
+
+		if ( ! empty( $row['product_registry_id'] ) ) {
+			$fetched = apply_filters( 'mp_product_category', null, (int) $row['product_registry_id'] );
+
+			if ( is_string( $fetched ) && '' !== $fetched ) {
+				$kategoria = $fetched;
+			}
+		}
+
+		$anonymized = ! empty( $row['contact_anonymized_at'] );
+
+		return array(
+			'status'                => (string) $row['status'],
+			'rodzaj'                => (string) $row['kind'],
+			'priority'              => (string) $row['priority'],
+			'assigned_to'           => null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null,
+			'kategoria'             => $kategoria,
+			'kraj'                  => (string) $row['country'],
+			'jezyk'                 => (string) $row['lang'],
+			'verified_at'           => $row['verified_at'],
+			'status_changed_at'     => $row['status_changed_at'],
+			'case_number'           => (string) $row['case_number'],
+			'rejection_reason_code' => $row['rejection_reason_code'],
+			'kontakt'               => $anonymized
+				? array(
+					'email' => '',
+					'name'  => '',
+					'phone' => '',
+				)
+				: array(
+					'email' => (string) $row['contact_email'],
+					'name'  => (string) $row['contact_name'],
+					'phone' => (string) $row['contact_phone'],
+				),
+			'schema_version'        => 1,
+		);
+	}
+
+	/**
+	 * Przydziela sprawe pracownikowi (funkcja kontraktowa `mp_case_assign`).
+	 *
+	 * OWNERSHIP: `assigned_to` siedzi w tabeli C, wiec D przydziela WYLACZNIE tu
+	 * (round-robin liczy D u siebie i WOLA te funkcje z wynikiem). Walidacja:
+	 * przydzielany user ma cap personelu (mp_agent), sprawa istnieje i jest
+	 * verified. UPDATE + event `CASE_ASSIGNED {from,to,actor}` w JEDNEJ transakcji.
+	 *
+	 * @param int $case_id  ID sprawy.
+	 * @param int $user_id  Pracownik (musi miec cap mp_agent).
+	 * @param int $actor_id Kto przydziela (system/koordynator).
+	 * @return array<string, mixed> {success, ...} lub {success:false, error_code}.
+	 */
+	public static function assign( int $case_id, int $user_id, int $actor_id ): array {
+		global $wpdb;
+
+		if ( ! user_can( $user_id, 'mp_agent' ) ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'INVALID_ASSIGNEE',
+			);
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query( 'START TRANSACTION' );
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT assigned_to FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				$case_id
+			),
+			ARRAY_A
+		);
+
+		if ( null === $row ) {
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		$from = null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$cases} SET assigned_to = %d, updated_at = %s WHERE id = %d AND identity_status = 'verified'",
+				$user_id,
+				gmdate( 'Y-m-d H:i:s' ),
+				$case_id
+			)
+		);
+
+		CaseEvents::log(
+			$case_id,
+			CaseEvents::CASE_ASSIGNED,
+			array(
+				'from'  => $from,
+				'to'    => $user_id,
+				'actor' => $actor_id,
+			),
+			$actor_id
+		);
+
+		$wpdb->query( 'COMMIT' );
+		// phpcs:enable
+
+		return array(
+			'success'     => true,
+			'assigned_to' => $user_id,
+			'from'        => $from,
+		);
+	}
+
+	/**
 	 * Regeneruje token weryfikacji dla sprawy niepotwierdzonej (resend admina).
 	 *
 	 * KAZDY resend = swiezy token, stary uniewazniony (nadpisanie hasha). TYLKO

@@ -66,6 +66,30 @@ final class Plugin {
 			3
 		);
 
+		// Kontrakt D->C: kontekst sprawy (fakty do regul/maili; 'not_found' gdy brak).
+		add_filter(
+			'mp_case_get_context',
+			static function ( $result, $case_id ) {
+				unset( $result );
+
+				return CaseRepo::get_context( (int) $case_id );
+			},
+			10,
+			2
+		);
+
+		// Kontrakt D->C: przydzial sprawy (assigned_to nalezy do C — D wola te funkcje).
+		add_filter(
+			'mp_case_assign',
+			static function ( $result, $case_id, $user_id, $actor_id ) {
+				unset( $result );
+
+				return CaseRepo::assign( (int) $case_id, (int) $user_id, (int) $actor_id );
+			},
+			10,
+			4
+		);
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();
 		}

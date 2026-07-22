@@ -27,6 +27,12 @@ final class CaseEvents {
 	public const CASE_CREATED = 'CASE_CREATED';
 
 	/**
+	 * Przydzial sprawy pracownikowi (auto round-robin D lub reczny koordynatora).
+	 * Payload: {from, to, actor} — KAZDY przydzial tworzy wpis (EVENT_MODEL.md).
+	 */
+	public const CASE_ASSIGNED = 'CASE_ASSIGNED';
+
+	/**
 	 * Zarejestrowanie zgody RODO.
 	 */
 	public const CONSENT_RECORDED = 'CONSENT_RECORDED';
