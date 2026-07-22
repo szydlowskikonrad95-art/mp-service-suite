@@ -49,6 +49,14 @@ final class MailTemplates {
 				'subject' => 'Odpowiedź serwisu w zgłoszeniu {{numer_sprawy}}',
 				'body'    => "Dzień dobry,\n\nSerwis dodał odpowiedź w Twoim zgłoszeniu {{numer_sprawy}}.\n\nTreść zobaczysz po zalogowaniu na swoje konto.\n\nData: {{data}}",
 			),
+			'sla_reminder'          => array(
+				'subject' => 'Przypomnienie: zbliża się termin zgłoszenia {{numer_sprawy}}',
+				'body'    => "Dzień dobry,\n\nZbliża się termin obsługi zgłoszenia {{numer_sprawy}} (status: {{status}}).\n\nZajmij się sprawą w panelu, zanim upłynie termin.\n\nData: {{data}}",
+			),
+			'sla_escalation'        => array(
+				'subject' => 'ESKALACJA: przekroczony termin zgłoszenia {{numer_sprawy}}',
+				'body'    => "Dzień dobry,\n\nUpłynął termin obsługi zgłoszenia {{numer_sprawy}} (status: {{status}}).\n\nSprawa wymaga interwencji koordynatora.\n\nData: {{data}}",
+			),
 		);
 	}
 

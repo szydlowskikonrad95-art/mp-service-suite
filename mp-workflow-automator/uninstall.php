@@ -46,6 +46,9 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\StatusDefs::OPTION );
 	// Szablony maili (opcja-tresc warstwy ii — przezywaja RAZEM z regulami).
 	delete_option( MP\Automator\MailTemplates::OPTION );
+	// Konfiguracja SLA rdzenia + wersja polityki (opcje-tresc warstwy ii).
+	delete_option( MP\Automator\SlaConfig::CORE_OPTION );
+	delete_option( MP\Automator\SlaConfig::POLICY_OPTION );
 	// Konfiguracja okien dedupu + jej transienty (zero sladu na sciezce ON).
 	delete_option( MP\Automator\MailDedup::OPTION );
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall: sprzatanie wlasnych transientow (prefiks stały, nie z inputu).
@@ -54,6 +57,6 @@ if ( $mp_automator_delete_data ) {
 
 MP\Automator\Common\Uninstall::run(
 	'mp_module_automator',
-	array( 'mp_automator_schema_version', 'mp_automator_delete_data' ),
+	array( 'mp_automator_schema_version', 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
 	array()
 );

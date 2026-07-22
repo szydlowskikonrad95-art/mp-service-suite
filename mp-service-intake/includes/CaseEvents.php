@@ -66,6 +66,18 @@ final class CaseEvents {
 	public const EXCEPTION_REVOKED = 'EXCEPTION_REVOKED';
 
 	/**
+	 * Przypomnienie SLA wyslane (listener mp_sla_notified od D, kind 'reminder').
+	 * Payload: {kind, recipient_ref} — NO-PII, nigdy adres (EVENT_MODEL.md).
+	 */
+	public const SLA_REMINDER_SENT = 'SLA_REMINDER_SENT';
+
+	/**
+	 * Eskalacja SLA wyslana (listener mp_sla_notified od D, kind 'escalation').
+	 * Payload: {kind, recipient_ref} — NO-PII (EVENT_MODEL.md).
+	 */
+	public const SLA_ESCALATED = 'SLA_ESCALATED';
+
+	/**
 	 * Dopisuje zdarzenie do osi czasu sprawy (append-only).
 	 *
 	 * @param int                  $case_id    ID sprawy.
