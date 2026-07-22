@@ -46,6 +46,10 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\StatusDefs::OPTION );
 	// Szablony maili (opcja-tresc warstwy ii — przezywaja RAZEM z regulami).
 	delete_option( MP\Automator\MailTemplates::OPTION );
+	// Konfiguracja okien dedupu + jej transienty (zero sladu na sciezce ON).
+	delete_option( MP\Automator\MailDedup::OPTION );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall: sprzatanie wlasnych transientow (prefiks stały, nie z inputu).
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_mp\\_adedup\\_%' OR option_name LIKE '\\_transient\\_timeout\\_mp\\_adedup\\_%'" );
 }
 
 MP\Automator\Common\Uninstall::run(
