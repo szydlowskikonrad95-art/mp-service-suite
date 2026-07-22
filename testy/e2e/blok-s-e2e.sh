@@ -161,13 +161,13 @@ fi
 
 # ── KROK 8: przypomnienia + eskalacje + raport koncowy (D) ──────────────────
 # Raport koncowy = D wola mp_case_add_system_message (author_type=system) przy
-# przejsciu w 'zamkniete'. Ta funkcja C JEST wystawiona — sprawdzamy, ze dziala
+# przejsciu w 'zamknięte'. Ta funkcja C JEST wystawiona — sprawdzamy, ze dziala
 # jako listener (sam raport wygeneruje D). Reminder/eskalacja = sweep D.
 HAS_SYS=$(wp eval 'echo has_filter("mp_case_add_system_message")?1:0;' 2>/dev/null)
 [ "${HAS_SYS:-0}" = "1" ] && ok "KROK 8: listener raportu koncowego (mp_case_add_system_message) wystawiony przez C" || bad "KROK 8: brak listenera mp_case_add_system_message"
 # Realna eskalacja/reminder wychodzi ze sweepa D (wiersz SLA + termin) — D-pending.
 skip "KROK 8: przypomnienia/eskalacje SLA — sweep D niezbudowany [D-pending: mp_sla_notified -> eventy SLA_* na osi]"
-skip "KROK 8: raport koncowy przy zamknieciu — generuje D po przejsciu w 'zamkniete' [D-pending]"
+skip "KROK 8: raport koncowy przy zamknieciu — generuje D po przejsciu w 'zamknięte' [D-pending]"
 
 echo
 echo "WYNIK BLOK-S E2E: $PASS ok, $FAIL fail, $SKIP skip (D-pending — jawna luka, nie blad)"

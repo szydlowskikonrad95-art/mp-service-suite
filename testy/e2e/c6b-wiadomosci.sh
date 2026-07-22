@@ -73,7 +73,8 @@ IDOR=$(q "SELECT COUNT(*) FROM wp_mp_messages WHERE case_id=$CID2 AND author_typ
 [ "$IDOR" = "0" ] && ok "cross-case POST blokowany (c1 nie dopisze do sprawy c2)" || bad "IDOR! c1 dopisal do sprawy c2 ($IDOR)"
 
 # ── 4. Sprawa zamknieta: nota widoczna + wysylka nadal dozwolona ────────────
-wp db query "UPDATE wp_mp_service_cases SET status='zamkniete' WHERE id=$CID1" >/dev/null 2>&1
+# REALNA droga (change_status, nie seed) — anty-drift #14 (slug 'zamknięte' z ę).
+wp eval "apply_filters('mp_case_change_status', null, $CID1, 'zamknięte', 'nowe', 1);" >/dev/null 2>&1
 PANELC=$(wp eval "wp_set_current_user($UID1); echo MP\Intake\Front\AccountPage::render();" 2>/dev/null)
 echo "$PANELC" | grep -qi "zamkni" && ok "sprawa zamknieta: nota widoczna w panelu" || bad "brak noty zamkniecia"
 echo "$PANELC" | grep -q 'name="action" value="mp_intake_message"' && ok "sprawa zamknieta: formularz wysylki nadal jest (S5)" || bad "brak formularza przy zamknietej"

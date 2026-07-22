@@ -291,7 +291,7 @@ final class CaseRepo {
 	/**
 	 * Statusy TERMINALNE (sprawa zamknieta — RODO nie odracza).
 	 */
-	public const TERMINAL_STATUSES = array( 'zamkniete', 'odrzucone' );
+	public const TERMINAL_STATUSES = array( 'zamknięte', 'odrzucone' );
 
 	/**
 	 * Sprawy klienta: [id, case_number, status, kind] (panel/eksport/RODO).

@@ -113,8 +113,8 @@ skip "S4: mail fallback do koordynatora gdy sprawa nieprzydzielona — routing m
 
 # ── S5: wiadomosci po zamknieciu + reopen (personel) ───────────────────────
 echo "-- S5 wiadomosci-po-zamknieciu + reopen --"
-skip "S5: zamkniecie sprawy + reopen (zamkniete->w analizie) = mp_case_change_status niewystawiona [pending write-path]"
-skip "S5: wiadomosc na ZAMKNIETEJ sprawie dozwolona — wymaga stanu 'zamkniete' (zalezne od S5 wyzej) [pending]"
+skip "S5: zamkniecie sprawy + reopen (zamknięte->w analizie) = mp_case_change_status niewystawiona [pending write-path]"
+skip "S5: wiadomosc na ZAMKNIETEJ sprawie dozwolona — wymaga stanu 'zamknięte' (zalezne od S5 wyzej) [pending]"
 
 # ── S6: reaktywacja D po przestoju (nadrabia SKUTKI regul) ──────────────────
 echo "-- S6 reaktywacja D po przestoju --"
