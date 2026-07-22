@@ -70,6 +70,11 @@ final class CaseRepo {
 			$product_id = (int) $snapshot['product_id'];
 		}
 
+		// Serial-reuse P2.3: ten sam produkt ma ZWERYFIKOWANA sprawe w 30 dni =>
+		// flaga possible_duplicate dla operatora (FLAGA, nie blokada — inaczej niz
+		// twardy dedup 15 min z RateLimit). Dotyczy tylko seriali w rejestrze.
+		$possible_duplicate = ( null !== $product_id && self::has_recent_verified_case_for_product( $product_id ) ) ? 1 : 0;
+
 		$table = Tables::full( Tables::CASES );
 
 		// Retry na wypadek kolizji case_number (UNIQUE) albo verify_token_hash.
@@ -89,6 +94,7 @@ final class CaseRepo {
 					'verify_token_hash'                => self::hash_token( $token ),
 					'verify_token_expires_at'          => gmdate( 'Y-m-d H:i:s', time() + self::TOKEN_TTL_HOURS * HOUR_IN_SECONDS ),
 					'verify_token_used_at'             => null,
+					'possible_duplicate'               => $possible_duplicate,
 					'form_data'                        => (string) wp_json_encode( self::form_data_from_values( $kind, $values ) ),
 					'form_schema_version'              => 1,
 					'warranty_snapshot'                => null === $snapshot ? null : (string) wp_json_encode( $snapshot ),
@@ -309,6 +315,52 @@ final class CaseRepo {
 		// phpcs:enable
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w ostatnich 30 dniach.
+	 *
+	 * @param int $product_id ID produktu w rejestrze.
+	 * @return bool
+	 */
+	private static function has_recent_verified_case_for_product( int $product_id ): bool {
+		global $wpdb;
+
+		$table  = Tables::full( Tables::CASES );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d AND identity_status = 'verified' AND verified_at >= %s",
+				$product_id,
+				$cutoff
+			)
+		);
+		// phpcs:enable
+
+		return $count > 0;
+	}
+
+	/**
+	 * Liczba ZWERYFIKOWANYCH spraw dla produktu (serial-reuse — admin/registry P2.3).
+	 *
+	 * @param int $product_id ID produktu w rejestrze.
+	 * @return int
+	 */
+	public static function verified_case_count_for_product( int $product_id ): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d AND identity_status = 'verified'",
+				$product_id
+			)
+		);
+		// phpcs:enable
 	}
 
 	/**
