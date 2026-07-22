@@ -38,10 +38,10 @@ REASON_PII="Klient Jan Kowalski reklamuje - poufny powod wyjatku"
 
 # ── 1. Wyjatek NA SPRAWE (active) => EXCEPTION_APPLIED + payload {exception_id} ──
 clean
-PID=$(seed_product "EX-SER-1"); CID=$(mkcase 'exc@example.com' 'EX-SER-1')
+PID=$(seed_product "EXSER1"); CID=$(mkcase 'exc@example.com' 'EXSER1')
 [ -n "$CID" ] && [ "$CID" -gt 0 ] 2>/dev/null && ok "scena: sprawa #$CID utworzona i potwierdzona" || bad "scena: sprawa nie powstala (CID=$CID)"
 
-wp mp exception-add "EX-SER-1" --reason="$REASON_PII" --case="$CID" --until='2027-01-01' --user=1 >/dev/null 2>&1
+wp mp exception-add "EXSER1" --reason="$REASON_PII" --case="$CID" --until='2027-01-01' --user=1 >/dev/null 2>&1
 EXC_ID=$(q "SELECT id FROM wp_mp_warranty_exceptions WHERE case_id=$CID AND status='active' ORDER BY id DESC LIMIT 1")
 [ -n "$EXC_ID" ] && [ "$EXC_ID" -gt 0 ] 2>/dev/null && ok "B: wyjatek #$EXC_ID przyznany (emisja mp_warranty_exception_changed active)" || bad "B: wyjatek nie przyznany (EXC_ID=$EXC_ID)"
 
@@ -72,8 +72,8 @@ APPLIED2=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND even
 
 # ── 3. Wyjatek GLOBALNY (case_id=NULL) => NO-OP na osi spraw ────────────────
 clean
-PID_G=$(seed_product "EX-GLOB")
-wp mp exception-add "EX-GLOB" --reason='globalny na produkt' --until='2027-01-01' --user=1 >/dev/null 2>&1
+PID_G=$(seed_product "EXGLOB")
+wp mp exception-add "EXGLOB" --reason='globalny na produkt' --until='2027-01-01' --user=1 >/dev/null 2>&1
 GEXC=$(q "SELECT COUNT(*) FROM wp_mp_warranty_exceptions WHERE case_id IS NULL AND status='active'")
 [ "${GEXC:-0}" -ge 1 ] && ok "B: wyjatek globalny przyznany (case_id NULL, emisja active)" || bad "B: wyjatek globalny nie przyznany (=$GEXC)"
 GEV=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE event_type IN ('EXCEPTION_APPLIED','EXCEPTION_REVOKED')")
