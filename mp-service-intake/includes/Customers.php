@@ -88,6 +88,53 @@ final class Customers {
 	}
 
 	/**
+	 * ID nieanonimizowanych klientow o danym emailu (eraser szuka po EMAILU).
+	 *
+	 * @param string $email E-mail.
+	 * @return array<int, int>
+	 */
+	public static function ids_by_email( string $email ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE email = %s AND anonymized_at IS NULL", $email )
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
+	 * Anonimizuje klienta: czysci pola PII, flaga anonymized_at, odpina konto WP.
+	 * Wiersz i relacje ZOSTAJA (bez DELETE) — historia spraw przezywa.
+	 *
+	 * @param int $customer_id ID klienta.
+	 * @return void
+	 */
+	public static function anonymize( int $customer_id ): void {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				SET email = %s, name = '', phone = '', wp_user_id = NULL, anonymized_at = %s, updated_at = %s
+				WHERE id = %d",
+				'anon-' . $customer_id . '@removed.invalid',
+				gmdate( 'Y-m-d H:i:s' ),
+				gmdate( 'Y-m-d H:i:s' ),
+				$customer_id
+			)
+		);
+		// phpcs:enable
+	}
+
+	/**
 	 * Odczyt klienta po ID.
 	 *
 	 * @param int $customer_id ID klienta.
