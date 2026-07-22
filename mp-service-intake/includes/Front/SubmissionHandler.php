@@ -208,7 +208,9 @@ final class SubmissionHandler {
 
 			self::render_landing(
 				__( 'Zgłoszenie potwierdzone', 'mp-service-intake' ),
-				__( 'Dziękujemy. Twoje zgłoszenie zostało potwierdzone — szczegóły i numer sprawy wysłaliśmy na Twój adres e-mail.', 'mp-service-intake' )
+				__( 'Dziękujemy. Twoje zgłoszenie zostało potwierdzone — szczegóły i numer sprawy wysłaliśmy na Twój adres e-mail.', 'mp-service-intake' ),
+				200,
+				true
 			);
 		}
 
@@ -217,7 +219,8 @@ final class SubmissionHandler {
 		self::render_landing(
 			$already ? __( 'Zgłoszenie już potwierdzone', 'mp-service-intake' ) : __( 'Link nieaktualny', 'mp-service-intake' ),
 			(string) $result['error'],
-			$already ? 200 : 410
+			$already ? 200 : 410,
+			$already
 		);
 	}
 
@@ -435,12 +438,13 @@ final class SubmissionHandler {
 	 * Naglowki: no-store (token nie w cache), Referrer-Policy: no-referrer
 	 * (token nie wycieka referer-em), nosniff + SAMEORIGIN.
 	 *
-	 * @param string $title   Tytul.
-	 * @param string $message Tresc.
-	 * @param int    $status  Kod HTTP.
+	 * @param string $title          Tytul.
+	 * @param string $message        Tresc.
+	 * @param int    $status         Kod HTTP.
+	 * @param bool   $with_panel_cta Czy dolaczyc CTA "Przejdz do panelu zgloszen" (tylko po sukcesie).
 	 * @return never
 	 */
-	private static function render_landing( string $title, string $message, int $status = 200 ): void {
+	private static function render_landing( string $title, string $message, int $status = 200, bool $with_panel_cta = false ): void {
 		if ( ! headers_sent() ) {
 			status_header( $status );
 			header( 'Cache-Control: no-store, max-age=0' );
@@ -454,8 +458,17 @@ final class SubmissionHandler {
 		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
 		echo '<meta name="robots" content="noindex, nofollow" />';
 		echo '<title>' . esc_html( $title ) . '</title>';
-		echo '<style>body{font-family:system-ui,sans-serif;max-width:38rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}h1{font-size:1.4rem}</style>';
-		echo '</head><body><h1>' . esc_html( $title ) . '</h1><p>' . esc_html( $message ) . '</p></body></html>';
+		echo '<style>body{font-family:system-ui,sans-serif;max-width:38rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}h1{font-size:1.4rem}'
+			. 'a.mp-cta{display:inline-block;margin-top:1.2rem;padding:.65rem 1.3rem;background:#1a3d5c;color:#fff;text-decoration:none;border-radius:.35rem}</style>';
+		echo '</head><body><h1>' . esc_html( $title ) . '</h1><p>' . esc_html( $message ) . '</p>';
+
+		// CTA: droga dalej do panelu zgloszen (tylko po sukcesie potwierdzenia).
+		if ( $with_panel_cta ) {
+			echo '<p><a class="mp-cta" href="' . esc_url( AccountPage::url() ) . '">'
+				. esc_html__( 'Przejdź do panelu zgłoszeń', 'mp-service-intake' ) . '</a></p>';
+		}
+
+		echo '</body></html>';
 		exit;
 	}
 }

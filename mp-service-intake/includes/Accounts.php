@@ -24,6 +24,28 @@ final class Accounts {
 	public const CLIENT_ROLE = 'mp_client';
 
 	/**
+	 * Czy uzytkownik ma WYLACZNIE role klienta (mp_client) — bez uprawnien
+	 * personelu ani admina. Baza decyzji "ukryj pasek admina WP klientowi":
+	 * pasek chowamy TYLKO czystemu klientowi; personel/admin widza go dalej.
+	 *
+	 * @param \WP_User $user Uzytkownik.
+	 * @return bool
+	 */
+	public static function is_client_only( \WP_User $user ): bool {
+		if ( user_can( $user, 'manage_options' ) ) {
+			return false;
+		}
+
+		foreach ( Common\Roles::STAFF_CAPS as $staff_cap ) {
+			if ( user_can( $user, $staff_cap ) ) {
+				return false;
+			}
+		}
+
+		return user_can( $user, self::CLIENT_ROLE );
+	}
+
+	/**
 	 * Zapewnia konto WP dla klienta i ustawia `customers.wp_user_id`.
 	 *
 	 * Idempotentne: gdy klient ma juz `wp_user_id`, zwraca je bez zmian.

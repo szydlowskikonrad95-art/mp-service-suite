@@ -100,6 +100,9 @@ final class AccountPage {
 	 * @return string HTML.
 	 */
 	public static function render(): string {
+		// Wspolny arkusz stylu frontu (formularz + panel) — polerka #16.
+		FormRenderer::enqueue_style();
+
 		if ( ! is_user_logged_in() ) {
 			return self::render_login_form();
 		}

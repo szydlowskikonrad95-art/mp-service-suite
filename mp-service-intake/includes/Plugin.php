@@ -146,6 +146,19 @@ final class Plugin {
 			4
 		);
 
+		// Pasek admina WP: ukryty klientowi (mp_client bez uprawnien personelu) —
+		// klient nie ma po co widziec kokpitu WP; personel/admin widza dalej.
+		add_filter(
+			'show_admin_bar',
+			static function ( $show ) {
+				if ( is_user_logged_in() && Accounts::is_client_only( wp_get_current_user() ) ) {
+					return false;
+				}
+
+				return $show;
+			}
+		);
+
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			Cli::register();
 		}

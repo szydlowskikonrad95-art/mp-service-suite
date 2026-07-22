@@ -162,6 +162,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-form-dynamic.sh
+      - name: Testy szlif Intake (#16 — pasek admina wg roli + CSS frontu + CTA do panelu)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c16-szlif.sh
       - name: Testy C11 (wyjatek gwarancyjny B => EXCEPTION_APPLIED/REVOKED na osi C, NO-PII, global=no-op)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c11-exception-event.sh
       - name: Testy C7a (serial-reuse P2.3 — flaga possible_duplicate)
