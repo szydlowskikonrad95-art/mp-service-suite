@@ -4,7 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-23
+
+Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
+checklisty + szablony, eksport CSV, panel admina — spięte z Intake (C) i Registry (B)
+kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
+
 ### Fixed
+- Automator (D): flaga #8 SLA (retroaktywność sweepa) — pierwszy przebieg po reaktywacji /
+  instalacji nie zalewa lawiną: sprawy już po terminie dostają JEDNO powiadomienie (eskalacja),
+  przypomnienie tłumione = marker `reminder_sent_at` zajęty BEZ maila i BEZ `mp_sla_notified`
+  (zero `SLA_REMINDER_SENT` na osi C); przy masie po terminie — 1 zbiorczy digest. Test d-p34b/c.
+- Intake (C): kontrast WCAG panelu klienta #13 (`AccountPage`) — kolory podniesione do ≥ 4.5:1.
 - Intake (C): szlif frontu klienta (polerka, bez zmian logiki). (1) Pasek admina WP **ukryty** klientowi
   `mp_client` (filtr `show_admin_bar` + `Accounts::is_client_only`), personel/admin widzą go dalej.
   (2) Arkusz `assets/css/intake.css` (enqueue wersjonowany) — etykiety nad polami, pola pełnej szerokości,
@@ -33,6 +44,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   `change_status` (seed literówki maskował błąd — zielone kłamały). Flaga #14. (pre-release v0.3.0)
 
 ### Added
+- Automator (D): schemat D — 4 tabele (`wp_mp_workflow_rules`, `wp_mp_case_sla`,
+  `wp_mp_case_checklists`, `wp_mp_workflow_events` = rejestr operacji APPEND-ONLY, NO-PII);
+  migracje bez reaktywacji (`maybe_upgrade`), uninstall opt-in kasuje wszystkie artefakty D
+  i nic cudzego (kanarki + role współdzielone nietknięte). Test d1-schema + DoD D.
+- Automator (D): P3.1 silnik reguł + auto-przydział round-robin — reguły STRUKTURALNE
+  (trigger/warunek/akcja, zero eval), kursor RR per reguła, nasłuch `mp_case_created`;
+  seed reguły domyślnej przydziału przy aktywacji (jednorazowo, skasowana nie wraca).
+- Automator (D): P3.2 statusy własne D — provider `mp_registered_statuses` (rdzeń 7 + własne,
+  guard długości sluga ≤20 = `VARCHAR(20)`), akcja `change_status` przez kontrakt C oraz
+  **guard pętli reguł** (`RULE_LOOP_BLOCKED`, mutacja przy depth≥1 zablokowana, zero lawiny).
+- Automator (D): P3.3 maile powiadomień — `Mailer` (bezpieczny egress: strip CRLF, sanityzacja
+  odbiorcy, NO-PII w rejestrze), szablony `MailTemplates` z markerami, powiadomienia klient/
+  pracownik po ważnej zmianie; notyfikacja przydziału (`mp_case_assigned` → mail agenta),
+  reguły `message_added` (klient→agent, staff→klient, guard `from===to`), dedup-okno
+  identycznych maili zdarzeniowych (best-effort, per typ).
+- Automator (D): P3.4 SLA — księgowość `wp_mp_case_sla` (termin liczony od `status_changed_at`)
+  + `SlaConfig` + notify send-then-claim (SLA-1); sweep cron 5-min (`GET_LOCK`, przypomnienia
+  przed / eskalacje po terminie, SLA-2); resync po reaktywacji + digest bez lawiny
+  (>próg = 1 zbiorczy mail do koordynatora, SLA-3); akcja admina „Przelicz SLA"
+  (backend-handler-only, nieretroaktywność, audyt `SLA_RECALCULATED`, SLA-4).
+- Automator (D): P3.5 checklisty per typ + szablony odpowiedzi (backend-handler-only) —
+  checklisty konfigurowalne per rodzaj, **toggle przez hook `mp_case_checklist_authorize`**
+  (własność/rolę egzekwuje C), stan w `wp_mp_case_checklists` (`step_label` zamrożony);
+  szablony odpowiedzi per typ z markerami i WHITELIST markerów widoczną adminowi;
+  konfiguracja przez `admin_post` (capability system-admin + nonce + audyt `CONFIG_CHANGED`).
+- Automator (D): P3.6 eksport CSV spraw + zestawienia (backend-handler-only) — capability
+  koordynator/system-admin + nonce + audyt `EXPORT_GENERATED`; **anti-formula-injection**
+  (pola `=+-@`/TAB/CR → apostrof), nagłówki `text/csv`+`nosniff`+`Content-Disposition`,
+  BOM UTF-8; dane WYŁĄCZNIE przez kontrakt `mp_cases_query` (minimalizacja PII — bez kontaktu);
+  zestawienie: liczba per status, czas obsługi, rozkład powodów odrzuceń.
+- Automator (D): panel admina D — menu `mp-automator` (widoczne koordynator/system-admin;
+  klient/pracownik/anon nie widzą), spina handlery Przelicz SLA + Eksport CSV + konfigurację
+  checklist/szablonów, listy read-only (reguły, statusy przez `mp_all_statuses`, rejestr
+  zdarzeń paginowany), obrona warstwowa (capability na stronie ORAZ per-przycisk), a11y-lite.
+- Kontrakt C↔D: funkcje kontraktowe spraw (jedyna droga D po dane/zapis C — D nigdy nie
+  dotyka tabel C, pilnuje linter): `mp_case_get_context`, `mp_case_assign`,
+  `mp_case_change_status` (optimistic-lock + STATE_MACHINE), `mp_cases_query` (paginowane
+  chunk 500, respekt roli, pola zminimalizowane), `mp_case_checklist_authorize`
+  (ownership + event `CHECKLIST_ITEM_TOGGLED`), `mp_all_statuses` (read-only lista statusów
+  C→D, degrade gdy Intake OFF).
+- Testy klocka D w CI: seria `d-*` (schemat, hooki, P3.1–P3.6), DoD D (uninstall zero-śladu +
+  kanarki + tryb degraded C/B OFF + macierz uprawnień NEGATYWNA anon/subscriber/klient/agent),
+  panel admina (widoczność per rola); odślepione niezmienniki BLOK-S (E2E/tabletop/bug-hunt/
+  a11y) na P3.1/P3.2.
 - Intake (C): zgody RODO + wiadomości + eraser/exporter (P1.5 + RODO) — `wp_mp_consents` z PEŁNYM
   TEKSTEM zgody zamrożonym przy zbieraniu (rozliczalność art. 7) + wycofanie self-service
   (`CONSENT_WITHDRAWN`, art. 7(3)); zgoda wymagana w formularzu, podpinana do klienta po weryfikacji
