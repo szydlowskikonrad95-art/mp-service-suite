@@ -86,6 +86,34 @@ final class CaseEvents {
 	public const CHECKLIST_ITEM_TOGGLED = 'CHECKLIST_ITEM_TOGGLED';
 
 	/**
+	 * Os czasu sprawy (append-only) — chronologicznie. Do karty sprawy personelu.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @param int $limit   Max wierszy (1..500).
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function for_case( int $case_id, int $limit = 200 ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASE_EVENTS );
+		$limit = max( 1, min( 500, $limit ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna append-only, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT event_type, payload, actor_id, created_at
+				FROM {$table} WHERE case_id = %d ORDER BY id ASC LIMIT %d",
+				$case_id,
+				$limit
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Dopisuje zdarzenie do osi czasu sprawy (append-only).
 	 *
 	 * @param int                  $case_id    ID sprawy.

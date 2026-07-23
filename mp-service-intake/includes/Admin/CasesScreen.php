@@ -111,19 +111,12 @@ final class CasesScreen {
 	}
 
 	/**
-	 * Karta sprawy (szczegoly + akcje personelu) — DOCHODZI w kolejnym kroku.
-	 * Na razie: nawigacja powrotna + potwierdzenie ze case_id dotarl.
+	 * Karta sprawy — szczegoly + praca personelu (delegacja do CaseCard).
 	 *
 	 * @param int $case_id ID sprawy.
 	 * @return void
 	 */
 	private static function render_card( int $case_id ): void {
-		$back = add_query_arg( array( 'page' => self::PAGE_SLUG ), admin_url( 'admin.php' ) );
-
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Karta sprawy', 'mp-service-intake' ) . '</h1>';
-		echo '<p><a href="' . esc_url( $back ) . '">&laquo; ' . esc_html__( 'Wróć do listy spraw', 'mp-service-intake' ) . '</a></p>';
-		echo '<p>' . esc_html( sprintf( /* translators: %d: ID sprawy. */ __( 'Karta sprawy #%d — sekcje i akcje w budowie.', 'mp-service-intake' ), $case_id ) ) . '</p>';
-		echo '</div>';
+		CaseCard::render( $case_id, self::PAGE_SLUG );
 	}
 }

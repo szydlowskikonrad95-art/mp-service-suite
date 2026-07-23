@@ -1,0 +1,340 @@
+<?php
+/**
+ * Karta sprawy dla PERSONELU (kartka krok 7) — szczegoly + praca nad sprawa.
+ * Render sekcji: naglowek (status/rodzaj/priorytet/przydzielony/deadline) · klient ·
+ * opis zgloszenia (form_data) · zalaczniki · os czasu (case_events) · wiadomosci ·
+ * checklista (interaktywna — toggle przez istniejacy handler D). Akcje personelu
+ * (zmiana statusu / odpowiedz / przydzial) dochodza w CaseActions (kolejny krok).
+ *
+ * BEZPIECZENSTWO: WSZYSTKIE dane od klienta (opis, wiadomosci, nazwy plikow,
+ * payloady zdarzen) przez esc_html/esc_attr — to jedyna nowa powierzchnia XSS.
+ *
+ * @package MP\Intake\Admin
+ */
+
+namespace MP\Intake\Admin;
+
+use MP\Intake\Attachments;
+use MP\Intake\CaseEvents;
+use MP\Intake\CaseRepo;
+use MP\Intake\Messages;
+use MP\Intake\Statuses;
+
+/**
+ * Render karty sprawy (read + checklista) w ekranie MP: Sprawy.
+ */
+final class CaseCard {
+
+	/**
+	 * Etykiety typow zdarzen osi czasu (fallback = surowy typ).
+	 *
+	 * @return array<string, string>
+	 */
+	private static function event_labels(): array {
+		return array(
+			'STATUS_CHANGED'         => __( 'Zmiana statusu', 'mp-service-intake' ),
+			'CASE_ASSIGNED'          => __( 'Przydział sprawy', 'mp-service-intake' ),
+			'MESSAGE_ADDED'          => __( 'Wiadomość', 'mp-service-intake' ),
+			'CHECKLIST_ITEM_TOGGLED' => __( 'Checklista', 'mp-service-intake' ),
+			'CONSENT_WITHDRAWN'      => __( 'Wycofanie zgody (RODO)', 'mp-service-intake' ),
+			'EXCEPTION_APPLIED'      => __( 'Wyjątek gwarancyjny', 'mp-service-intake' ),
+			'EXCEPTION_REVOKED'      => __( 'Cofnięcie wyjątku gwarancyjnego', 'mp-service-intake' ),
+		);
+	}
+
+	/**
+	 * Render calej karty sprawy. Sprawa nieznana/niezweryfikowana => komunikat.
+	 *
+	 * @param int    $case_id   ID sprawy.
+	 * @param string $page_slug Slug strony (link powrotny).
+	 * @return void
+	 */
+	public static function render( int $case_id, string $page_slug ): void {
+		$ctx = apply_filters( 'mp_case_get_context', null, $case_id );
+
+		$back = add_query_arg( array( 'page' => $page_slug ), admin_url( 'admin.php' ) );
+
+		echo '<div class="wrap">';
+		echo '<a href="' . esc_url( $back ) . '">&laquo; ' . esc_html__( 'Wróć do listy spraw', 'mp-service-intake' ) . '</a>';
+
+		if ( ! is_array( $ctx ) ) {
+			echo '<h1>' . esc_html__( 'Sprawa niedostępna', 'mp-service-intake' ) . '</h1>';
+			echo '<p>' . esc_html__( 'Sprawa nie istnieje lub nie została jeszcze potwierdzona przez klienta.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		// Komunikat PRG (np. po toggle checklisty).
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG, tresc escapowana.
+		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
+		if ( '' !== $notice ) {
+			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html( $notice ) . '</p></div>';
+		}
+
+		echo '<h1>' . esc_html( sprintf( /* translators: %s: numer sprawy. */ __( 'Sprawa %s', 'mp-service-intake' ), (string) ( $ctx['case_number'] ?? ( '#' . $case_id ) ) ) ) . '</h1>';
+
+		echo '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">';
+		echo '<div style="flex:2 1 460px;min-width:320px">';
+		self::section_header( $case_id, $ctx );
+		self::section_description( $case_id );
+		self::section_attachments( $case_id );
+		self::section_messages( $case_id );
+		echo '</div>';
+		echo '<div style="flex:1 1 300px;min-width:280px">';
+		self::section_client( $ctx );
+		self::section_checklist( $case_id );
+		self::section_timeline( $case_id );
+		echo '</div>';
+		echo '</div>';
+
+		echo '</div>';
+	}
+
+	/**
+	 * Sekcja pomocnicza: ramka z tytulem.
+	 *
+	 * @param string $title Tytul sekcji.
+	 * @return void
+	 */
+	private static function open_box( string $title ): void {
+		echo '<div style="background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:1rem;margin:0 0 1.2rem">';
+		echo '<h2 style="margin-top:0;font-size:1.05rem">' . esc_html( $title ) . '</h2>';
+	}
+
+	/**
+	 * Naglowek sprawy: status/rodzaj/priorytet/przydzielony/kategoria/daty/deadline.
+	 *
+	 * @param int                  $case_id ID sprawy.
+	 * @param array<string, mixed> $ctx     Kontekst sprawy.
+	 * @return void
+	 */
+	private static function section_header( int $case_id, array $ctx ): void {
+		$assigned = isset( $ctx['assigned_to'] ) && null !== $ctx['assigned_to'] ? (int) $ctx['assigned_to'] : 0;
+		$user     = $assigned > 0 ? get_userdata( $assigned ) : null;
+		$sla      = apply_filters( 'mp_case_deadline', null, $case_id );
+		$deadline = is_array( $sla ) && ! empty( $sla['deadline_at'] ) ? (string) $sla['deadline_at'] : '';
+
+		$rows = array(
+			__( 'Status', 'mp-service-intake' )        => Statuses::label( (string) ( $ctx['status'] ?? '' ) ),
+			__( 'Rodzaj', 'mp-service-intake' )        => (string) ( $ctx['rodzaj'] ?? '' ),
+			__( 'Kategoria', 'mp-service-intake' )     => (string) ( $ctx['kategoria'] ?? '' ),
+			__( 'Priorytet', 'mp-service-intake' )     => (string) ( $ctx['priority'] ?? '' ),
+			__( 'Przydzielony', 'mp-service-intake' )  => $user ? (string) $user->display_name : __( 'nieprzydzielona', 'mp-service-intake' ),
+			__( 'Kraj / język', 'mp-service-intake' ) => trim( (string) ( $ctx['kraj'] ?? '' ) . ' / ' . (string) ( $ctx['jezyk'] ?? '' ), ' /' ),
+			__( 'Potwierdzono', 'mp-service-intake' )  => self::fmt_date( (string) ( $ctx['verified_at'] ?? '' ) ),
+			__( 'Termin SLA', 'mp-service-intake' )    => '' !== $deadline ? self::fmt_date( $deadline ) : '—',
+		);
+
+		self::open_box( __( 'Sprawa', 'mp-service-intake' ) );
+		echo '<table class="widefat striped" style="border:0"><tbody>';
+		foreach ( $rows as $label => $value ) {
+			echo '<tr><th style="width:38%">' . esc_html( (string) $label ) . '</th><td>' . esc_html( '' !== (string) $value ? (string) $value : '—' ) . '</td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * Klient + dane kontaktowe (z kontekstu — anonimizacja RODO respektowana w C).
+	 *
+	 * @param array<string, mixed> $ctx Kontekst sprawy.
+	 * @return void
+	 */
+	private static function section_client( array $ctx ): void {
+		$kontakt = isset( $ctx['kontakt'] ) && is_array( $ctx['kontakt'] ) ? $ctx['kontakt'] : array();
+
+		self::open_box( __( 'Klient', 'mp-service-intake' ) );
+		echo '<p style="margin:.2rem 0"><strong>' . esc_html( (string) ( $kontakt['name'] ?? '' ) ) . '</strong></p>';
+		echo '<p style="margin:.2rem 0;color:#555">' . esc_html( (string) ( $kontakt['email'] ?? '' ) ) . '</p>';
+		if ( '' !== (string) ( $kontakt['phone'] ?? '' ) ) {
+			echo '<p style="margin:.2rem 0;color:#555">' . esc_html( (string) $kontakt['phone'] ) . '</p>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * Opis zgloszenia — pola z form_data (etykieta + wartosc; esc_html twardo).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function section_description( int $case_id ): void {
+		$fields = CaseRepo::form_data_for_case( $case_id );
+
+		self::open_box( __( 'Opis zgłoszenia', 'mp-service-intake' ) );
+
+		if ( array() === $fields ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak dodatkowych pól opisu.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		echo '<table class="widefat striped" style="border:0"><tbody>';
+		foreach ( $fields as $field ) {
+			$label = (string) ( $field['label'] ?? '' );
+			$value = (string) ( $field['value'] ?? '' );
+			echo '<tr><th style="width:35%">' . esc_html( $label ) . '</th><td>' . nl2br( esc_html( $value ) ) . '</td></tr>';
+		}
+		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * Zalaczniki — metadane + pobranie przez endpoint (kontrola dostepu w C).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function section_attachments( int $case_id ): void {
+		$atts = Attachments::metadata_for_case( $case_id );
+
+		self::open_box( __( 'Załączniki', 'mp-service-intake' ) );
+
+		if ( array() === $atts ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak załączników.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		echo '<ul style="margin:0;padding-left:1.1rem">';
+		foreach ( $atts as $att ) {
+			$id   = (int) ( $att['id'] ?? 0 );
+			$name = (string) ( $att['original_name'] ?? ( 'zalacznik-' . $id ) );
+			$size = isset( $att['size_bytes'] ) ? size_format( (int) $att['size_bytes'] ) : '';
+			$url  = wp_nonce_url(
+				add_query_arg(
+					array(
+						'action' => 'mp_intake_attachment',
+						'id'     => $id,
+					),
+					admin_url( 'admin-post.php' )
+				),
+				'mp_intake_attachment_' . $id
+			);
+			echo '<li style="margin:.3rem 0"><a href="' . esc_url( $url ) . '">' . esc_html( $name ) . '</a>'
+				. ( '' !== $size ? ' <span style="color:#777">(' . esc_html( $size ) . ')</span>' : '' ) . '</li>';
+		}
+		echo '</ul></div>';
+	}
+
+	/**
+	 * Historia wiadomosci klient<->serwis (autor + tresc; esc_html).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function section_messages( int $case_id ): void {
+		$messages = Messages::for_case( $case_id );
+
+		self::open_box( __( 'Wiadomości', 'mp-service-intake' ) );
+
+		if ( array() === $messages ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		$labels = array(
+			'client' => __( 'Klient', 'mp-service-intake' ),
+			'staff'  => __( 'Serwis', 'mp-service-intake' ),
+			'system' => __( 'System', 'mp-service-intake' ),
+		);
+
+		echo '<ul style="list-style:none;margin:0;padding:0">';
+		foreach ( $messages as $msg ) {
+			$author = (string) ( $msg['author_type'] ?? 'system' );
+			$label  = $labels[ $author ] ?? $labels['system'];
+			$when   = self::fmt_date( (string) ( $msg['created_at'] ?? '' ) );
+			$bg     = 'staff' === $author ? '#eef6ec' : ( 'client' === $author ? '#eef2f7' : '#f4f4f4' );
+
+			echo '<li style="margin:.4rem 0;padding:.5rem .7rem;background:' . esc_attr( $bg ) . ';border-radius:4px">';
+			echo '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
+			echo '<span style="color:#666;font-size:.85em">' . esc_html( $when ) . '</span><br />';
+			echo nl2br( esc_html( (string) ( $msg['body'] ?? '' ) ) );
+			echo '</li>';
+		}
+		echo '</ul></div>';
+	}
+
+	/**
+	 * Checklista sprawy — kroki z hooka D (definicja + stan). INTERAKTYWNA:
+	 * kazdy krok = przycisk toggle POST-ujacy na istniejacy handler D
+	 * (`mp_automator_checklist_toggle`, nonce + autoryzacja C).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function section_checklist( int $case_id ): void {
+		$steps = apply_filters( 'mp_case_checklist_state', null, $case_id );
+		$steps = is_array( $steps ) ? $steps : array();
+
+		self::open_box( __( 'Checklista', 'mp-service-intake' ) );
+
+		if ( array() === $steps ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak checklisty dla tego rodzaju sprawy.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		$action = admin_url( 'admin-post.php' );
+
+		echo '<ul style="list-style:none;margin:0;padding:0">';
+		foreach ( $steps as $step ) {
+			$key       = (string) ( $step['step_key'] ?? '' );
+			$label     = (string) ( $step['label'] ?? $key );
+			$completed = ! empty( $step['completed'] );
+			$by        = isset( $step['completed_by'] ) && null !== $step['completed_by'] ? (int) $step['completed_by'] : 0;
+			$who       = $by > 0 ? get_userdata( $by ) : null;
+			$meta      = $completed && $who ? ' — ' . $who->display_name . ' ' . self::fmt_date( (string) ( $step['completed_at'] ?? '' ) ) : '';
+
+			echo '<li style="margin:.35rem 0;display:flex;gap:.5rem;align-items:flex-start">';
+			echo '<form method="post" action="' . esc_url( $action ) . '" style="margin:0">';
+			echo '<input type="hidden" name="action" value="mp_automator_checklist_toggle" />';
+			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
+			echo '<input type="hidden" name="step_key" value="' . esc_attr( $key ) . '" />';
+			echo '<input type="hidden" name="completed" value="' . ( $completed ? '0' : '1' ) . '" />';
+			wp_nonce_field( 'mp_automator_checklist_toggle' );
+			echo '<button type="submit" class="button button-small" style="min-width:2.2rem">' . ( $completed ? '✓' : '☐' ) . '</button>';
+			echo '</form>';
+			echo '<span style="line-height:2">' . ( $completed ? '<s>' . esc_html( $label ) . '</s>' : esc_html( $label ) ) . '<span style="color:#777;font-size:.85em">' . esc_html( $meta ) . '</span></span>';
+			echo '</li>';
+		}
+		echo '</ul></div>';
+	}
+
+	/**
+	 * Os czasu sprawy (append-only) — typ zdarzenia + wykonawca + data.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function section_timeline( int $case_id ): void {
+		$events = CaseEvents::for_case( $case_id );
+		$labels = self::event_labels();
+
+		self::open_box( __( 'Historia sprawy', 'mp-service-intake' ) );
+
+		if ( array() === $events ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak zdarzeń.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		echo '<ul style="list-style:none;margin:0;padding:0;font-size:.9em">';
+		foreach ( $events as $ev ) {
+			$type  = (string) ( $ev['event_type'] ?? '' );
+			$label = $labels[ $type ] ?? $type;
+			$aid   = isset( $ev['actor_id'] ) && null !== $ev['actor_id'] ? (int) $ev['actor_id'] : 0;
+			$actor = $aid > 0 ? get_userdata( $aid ) : null;
+			$who   = $actor ? (string) $actor->display_name : __( 'system', 'mp-service-intake' );
+			$when  = self::fmt_date( (string) ( $ev['created_at'] ?? '' ) );
+
+			echo '<li style="margin:.3rem 0;padding:.3rem .5rem;border-left:3px solid #c3c4c7">';
+			echo '<strong>' . esc_html( $label ) . '</strong> · ' . esc_html( $who ) . '<br /><span style="color:#777">' . esc_html( $when ) . '</span>';
+			echo '</li>';
+		}
+		echo '</ul></div>';
+	}
+
+	/**
+	 * Data UTC => lokalna czytelna (puste => '—').
+	 *
+	 * @param string $gmt Data 'Y-m-d H:i:s' UTC.
+	 * @return string
+	 */
+	private static function fmt_date( string $gmt ): string {
+		return '' !== $gmt ? get_date_from_gmt( $gmt, 'Y-m-d H:i' ) : '—';
+	}
+}

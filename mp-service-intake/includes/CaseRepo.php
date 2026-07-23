@@ -1390,6 +1390,30 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Odczyt opisu zgloszenia (form_data) dla karty sprawy — znormalizowany
+	 * {klucz: {label, value, pii_sensitive}}. Personel widzi opis (obsluguje sprawe);
+	 * escaping robi warstwa render (esc_html). Pusta gdy sprawa/opis brak.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 */
+	public static function form_data_for_case( int $case_id ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$json = (string) $wpdb->get_var(
+			$wpdb->prepare( "SELECT form_data FROM {$table} WHERE id = %d", $case_id )
+		);
+		// phpcs:enable
+
+		$decoded = json_decode( $json, true );
+
+		return self::normalize_form_data( is_array( $decoded ) ? $decoded : array() );
+	}
+
+	/**
 	 * Haszuje token weryfikacji (w bazie WYLACZNIE hash).
 	 *
 	 * @param string $token Surowy token.
