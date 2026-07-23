@@ -202,6 +202,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34c-sla3-digest-resync.sh
       - name: Testy PR-A mp_cases_query (paginacja+cap500 · minimalizacja PII · pola terminalne · filtry · scoping ról admin/agent/subscriber/anon)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-cases-query.sh
+      - name: Testy hook mp_all_statuses (kontrakt C->D — pełna lista rdzeń 7 + własne; terminalność wg flagi; rdzeń nieusuwalny)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-all-statuses.sh
       - name: Testy P3.5 C-hook mp_case_checklist_authorize (ownership agent=tylko swoje/koordynator=dowolna · event CHECKLIST_ITEM_TOGGLED · FORBIDDEN/NOT_CASE_OWNER/CASE_NOT_FOUND/INVALID_STEP)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-checklist-authorize.sh
       - name: Testy P3.4 SLA-4 Przelicz SLA (admin_post+nonce+capability system-admin; nieretroaktywnosc — markery nietkniete, terminalne pominiete, nowo-przeterminowana=1 powiadomienie, audyt SLA_RECALCULATED)
@@ -210,6 +212,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-seed-regul.sh
       - name: Testy P3.6 eksport CSV + zestawienie (handler admin-post · BOM · anti-injection =SUM · audyt EXPORT_GENERATED · bramka role/nonce)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p36-eksport.sh
+      - name: Testy P3.5 checklisty per typ + szablony (toggle przez hook C · ownership · event · stan case_checklists · konfig admin · whitelist markerów · bramka)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p35-checklisty.sh
       - name: Testy panel admina D (menu · widoczność per rola · przyciski per-cap Przelicz-SLA/Eksport · listy reguł/statusów/rejestr · slot P3.5 · 403 bez cap)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-panel-admina.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)

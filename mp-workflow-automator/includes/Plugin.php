@@ -60,6 +60,12 @@ final class Plugin {
 		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
 		Admin\SlaRecalcAction::register();
 
+		// Checklisty per typ + szablony odpowiedzi (P3.5): handlery admin-post
+		// (bez menu — przycisk podepnie panel admina D). Toggle idzie przez hook C.
+		ChecklistTemplates::register();
+		Checklists::register();
+		ResponseTemplates::register();
+
 		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
 		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
 		Admin\PanelScreen::register();
