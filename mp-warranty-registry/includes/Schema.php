@@ -24,6 +24,12 @@ final class Schema {
 	public const VERSION_OPTION = 'mp_registry_schema_version';
 
 	/**
+	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade —
+	 * BUMP przy dodaniu nowej migracji do migrate().
+	 */
+	public const LATEST = 2;
+
+	/**
 	 * Uruchamia zalegle migracje.
 	 *
 	 * @return void

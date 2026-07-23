@@ -23,6 +23,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (soft-delete: `archived=1` + `deleted_at`). Test e2e `b5-usuwanie-produktu` (blok / OK / fail-closed).
 
 ### Fixed
+- Registry (B): **brak auto-migracji przy AKTUALIZACJI** — `mp-warranty-registry` nie miał `maybe_upgrade`
+  na `admin_init` (wzorzec obecny w Intake i Automator), więc update dodający migrację (v1→v2 kolumna
+  `category`) NIE stosował jej bez deaktywacji+aktywacji → schemat zostawał stary → `SELECT category`
+  sypał błędem DB. Dodano `Lifecycle::maybe_upgrade` (gated `Schema::LATEST`) + hook `admin_init` +
+  `Schema::LATEST` — spójność 3 wtyczek. Regresja: `testy/e2e/registry-maybe-upgrade.sh` (migracja
+  bez reaktywacji). Złapane audytem adwersaryjnym 2026-07-24.
 - Automator (D): **flaky dedup maili `d-p33d`** — `MailDedup` kluczował po WYRENDEROWANYM body, a body niesie
   `{{data}}` (`wp_date('Y-m-d H:i')`, granica minuty). Dwie IDENTYCZNE notyfikacje sekundy od siebie na granicy
   minuty → różny body → różny hash → dedup gubił duplikat (~1/60 runów). Fix W PRZYCZYNIE: `MailTemplates::render`

@@ -51,6 +51,27 @@ final class Lifecycle {
 	}
 
 	/**
+	 * Migracja przy AKTUALIZACJI wtyczki (BEZ reaktywacji).
+	 *
+	 * Wolane na admin_init; gated wersja schematu => odpala zalegle migracje RAZ
+	 * po podniesieniu wtyczki, potem no-op. Idempotentne (Migrations::run i
+	 * Roles::ensure same sie pilnuja). Bez tego update dodajacy migracje (np.
+	 * v1->v2 kolumna `category`) nie zastosowalby jej bez deaktywacji+aktywacji —
+	 * schemat zostawalby stary i odczyty `SELECT category` sypalyby bledem.
+	 * Spojnosc z Intake/Automator, ktore maja identyczny maybe_upgrade.
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade(): void {
+		if ( (int) get_option( self::SCHEMA_OPTION, 0 ) >= Schema::LATEST ) {
+			return;
+		}
+
+		Roles::ensure();
+		Schema::migrate();
+	}
+
+	/**
 	 * Deaktywacja: wylacza crony pluginu; NICZEGO nie kasuje.
 	 *
 	 * @return void

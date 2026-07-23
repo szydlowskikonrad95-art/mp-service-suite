@@ -50,6 +50,10 @@ final class Plugin {
 		add_filter( 'mp_privacy_redact_for_customer', array( WarrantyExceptions::class, 'privacy_redact' ), 10, 3 );
 		add_filter( 'mp_product_category', array( Repo::class, 'category_for' ), 10, 2 );
 
+		// Auto-migracja przy AKTUALIZACJI wtyczki (bez reaktywacji) — spojnosc z
+		// Intake/Automator. Bez tego update dodajacy migracje zostawia stary schemat.
+		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
+
 		if ( is_admin() ) {
 			Admin\ProductsScreen::register();
 			Admin\ImportScreen::register();
