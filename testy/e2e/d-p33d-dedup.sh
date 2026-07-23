@@ -42,6 +42,11 @@ K2=$(wp eval 'echo MP\Automator\MailDedup::claim("z@b.com","body1",60) ? "1":"0"
 K3=$(wp eval 'echo MP\Automator\MailDedup::claim("z@b.com","body2",60) ? "1":"0";' 2>/dev/null)
 { [ "$K1" = "1" ] && [ "$K2" = "0" ] && [ "$K3" = "1" ]; } && ok "claim: 1. wolno, 2. identyczny=BLOK, inny body=wolno" || bad "claim zle dziala ($K1$K2$K3)"
 
+# dedup_key POMIJA zmienny {{data}} (H:i) — fix flaky granicy minuty. Body do wyslania
+# niesie prawdziwa date; klucz dedupu zostawia {{data}} literalne => stabilny w czasie.
+DKS=$(wp eval '$r = MP\Automator\MailTemplates::render("status_changed_client", array("case_number"=>"SRV/2026/9999","status"=>"w analizie")); echo ( is_array($r) && false !== strpos($r["dedup_key"], "{{data}}") && false === strpos($r["body"], "{{data}}") ) ? "OK" : "NO";' 2>/dev/null)
+[ "$DKS" = "OK" ] && ok "dedup_key stabilny: body niesie date, dedup_key pomija {{data}} (fix flaky d-p33d)" || bad "dedup_key nie pomija {{data}} ($DKS)"
+
 # ── 1. Integracja: ten sam status_changed 2x w oknie => 1 mail + MAIL_DEDUPED ─
 wp db query "DELETE FROM wp_mp_workflow_rules; DELETE FROM wp_mp_workflow_events; DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_srv_counters;" >/dev/null 2>&1
 wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
