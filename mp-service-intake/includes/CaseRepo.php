@@ -693,6 +693,166 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D (funkcja kontraktowa
+	 * `mp_cases_query`, API-KONTRAKT.md §C). Zwraca WYLACZNIE pola ZMINIMALIZOWANE
+	 * (RODO/T5: surowy kontakt — e-mail/imie/telefon — NIGDY nie wychodzi ta droga;
+	 * korelacja sprawy po numerze SRV). Respektuje ROLE wolajacego: koordynator /
+	 * administrator systemu => wszystkie sprawy; `mp_agent` => tylko przydzielone
+	 * jemu; brak uprawnien => pusto. Tylko sprawy ZWERYFIKOWANE (status istnieje
+	 * dopiero po weryfikacji). Paginacja: chunk max 500 (kontrakt).
+	 *
+	 * @param array<string, mixed> $filters  Opcjonalne {status?, kind?, date_from?, date_to?}.
+	 * @param int                  $page     Strona (>= 1).
+	 * @param int                  $per_page Rozmiar strony (1..500).
+	 * @return array{rows: array<int, array<string, mixed>>, total: int, page: int, per_page: int}
+	 */
+	public static function query( array $filters = array(), int $page = 1, int $per_page = 500 ): array {
+		global $wpdb;
+
+		$per_page = max( 1, min( 500, $per_page ) );
+		$page     = max( 1, $page );
+		$offset   = ( $page - 1 ) * $per_page;
+
+		// Widocznosc wg roli (kontrakt: mp_agent => tylko swoje; kod sprawdza CAP, nie nazwe roli).
+		$scope_all = current_user_can( 'mp_coordinator' ) || current_user_can( 'mp_system_admin' );
+		$scope_own = ! $scope_all && current_user_can( 'mp_agent' );
+
+		if ( ! $scope_all && ! $scope_own ) {
+			return array(
+				'rows'     => array(),
+				'total'    => 0,
+				'page'     => $page,
+				'per_page' => $per_page,
+			);
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// WHERE budowane z placeholderow => ZAWSZE przez $wpdb->prepare (stala baza
+		// 'verified' tez jako %s, zeby lista placeholderow nigdy nie byla pusta).
+		$where  = array( 'identity_status = %s' );
+		$params = array( 'verified' );
+
+		if ( $scope_own ) {
+			$where[]  = 'assigned_to = %d';
+			$params[] = get_current_user_id();
+		}
+
+		$status = isset( $filters['status'] ) ? sanitize_text_field( (string) $filters['status'] ) : '';
+		if ( '' !== $status ) {
+			$where[]  = 'status = %s';
+			$params[] = $status;
+		}
+
+		$kind = isset( $filters['kind'] ) ? sanitize_text_field( (string) $filters['kind'] ) : '';
+		if ( '' !== $kind ) {
+			$where[]  = 'kind = %s';
+			$params[] = $kind;
+		}
+
+		$date_from = isset( $filters['date_from'] ) ? self::normalize_date_boundary( (string) $filters['date_from'], false ) : '';
+		if ( '' !== $date_from ) {
+			$where[]  = 'created_at >= %s';
+			$params[] = $date_from;
+		}
+
+		$date_to = isset( $filters['date_to'] ) ? self::normalize_date_boundary( (string) $filters['date_to'], true ) : '';
+		if ( '' !== $date_to ) {
+			$where[]  = 'created_at <= %s';
+			$params[] = $date_to;
+		}
+
+		$where_sql = implode( ' AND ', $where );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- tabela wlasna; WHERE i LIMIT skladane z placeholderow, wartosci w $params.
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$cases} WHERE {$where_sql}", $params )
+		);
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT case_number, status, kind, country, lang, created_at, verified_at,
+					status_changed_at, rejection_reason_code
+				FROM {$cases} WHERE {$where_sql} ORDER BY created_at ASC, id ASC LIMIT %d OFFSET %d",
+				array_merge( $params, array( $per_page, $offset ) )
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		$rows = is_array( $rows ) ? $rows : array();
+
+		// Zbior statusow terminalnych (rdzen 7 + wlasne z D) — policzony RAZ.
+		$terminal = array();
+		foreach ( Statuses::all() as $slug => $def ) {
+			if ( ! empty( $def['terminal'] ) ) {
+				$terminal[ $slug ] = true;
+			}
+		}
+
+		$out = array();
+		foreach ( $rows as $row ) {
+			$status_val = (string) $row['status'];
+			$closed_at  = isset( $terminal[ $status_val ] ) ? ( $row['status_changed_at'] ?? null ) : null;
+
+			$handling = null;
+			if ( null !== $closed_at ) {
+				$closed_ts  = strtotime( (string) $closed_at );
+				$created_ts = strtotime( (string) $row['created_at'] );
+				if ( false !== $closed_ts && false !== $created_ts && $closed_ts >= $created_ts ) {
+					$handling = $closed_ts - $created_ts;
+				}
+			}
+
+			$out[] = array(
+				'case_number'           => (string) $row['case_number'],
+				'status'                => $status_val,
+				'kind'                  => (string) $row['kind'],
+				'country'               => (string) $row['country'],
+				'lang'                  => (string) $row['lang'],
+				'created_at'            => (string) $row['created_at'],
+				'verified_at'           => null !== $row['verified_at'] ? (string) $row['verified_at'] : null,
+				'closed_at'             => null !== $closed_at ? (string) $closed_at : null,
+				'handling_seconds'      => $handling,
+				'rejection_reason_code' => null !== $row['rejection_reason_code'] ? (string) $row['rejection_reason_code'] : null,
+			);
+		}
+
+		return array(
+			'rows'     => $out,
+			'total'    => $total,
+			'page'     => $page,
+			'per_page' => $per_page,
+		);
+	}
+
+	/**
+	 * Normalizuje granice daty filtra do 'Y-m-d H:i:s'. Pusty/niepoprawny format => ''.
+	 * Sama data 'Y-m-d' rozwijana do poczatku (00:00:00) lub konca dnia (23:59:59).
+	 *
+	 * @param string $raw    Wejscie ('Y-m-d' lub pelny 'Y-m-d H:i:s').
+	 * @param bool   $is_end Gorna granica => koniec dnia.
+	 * @return string
+	 */
+	private static function normalize_date_boundary( string $raw, bool $is_end ): string {
+		$raw = trim( $raw );
+
+		if ( '' === $raw ) {
+			return '';
+		}
+
+		if ( 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $raw ) ) {
+			return $raw . ( $is_end ? ' 23:59:59' : ' 00:00:00' );
+		}
+
+		if ( 1 === preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $raw ) ) {
+			return $raw;
+		}
+
+		return '';
+	}
+
+	/**
 	 * E-mail sprawy niepotwierdzonej (z zapamietanych danych kontaktowych).
 	 *
 	 * @param int $case_id ID sprawy.
