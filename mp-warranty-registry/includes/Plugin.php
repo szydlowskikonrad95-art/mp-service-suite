@@ -48,6 +48,7 @@ final class Plugin {
 			}
 		);
 		add_filter( 'mp_privacy_redact_for_customer', array( WarrantyExceptions::class, 'privacy_redact' ), 10, 3 );
+		add_filter( 'mp_product_category', array( Repo::class, 'category_for' ), 10, 2 );
 
 		if ( is_admin() ) {
 			Admin\ProductsScreen::register();

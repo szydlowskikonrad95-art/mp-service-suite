@@ -33,6 +33,7 @@ final class Schema {
 			self::VERSION_OPTION,
 			array(
 				1 => array( self::class, 'migration_1_tables' ),
+				2 => array( self::class, 'migration_2_product_category' ),
 			)
 		);
 	}
@@ -126,6 +127,48 @@ final class Schema {
 				finished_at DATETIME NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY lock_key (lock_key)
+			) {$charset};"
+		);
+	}
+
+	/**
+	 * V2: kolumna `category` w product_registry (kartka P1.2/P3.1 — os przydzialu).
+	 *
+	 * ADDYTYWNA. dbDelta na istniejacej tabeli dodaje TYLKO brakujaca kolumne
+	 * (nie tyka danych/innych kolumn). Istniejace wiersze dostaja DEFAULT 'inne'.
+	 *
+	 * @return void
+	 */
+	public static function migration_2_product_category(): void {
+		global $wpdb;
+
+		$charset  = $wpdb->get_charset_collate();
+		$registry = Tables::full( Tables::REGISTRY );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$registry} (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				serial_display VARCHAR(100) NOT NULL,
+				serial_normalized VARCHAR(100) NOT NULL,
+				model VARCHAR(190) NOT NULL DEFAULT '',
+				batch VARCHAR(100) NOT NULL DEFAULT '',
+				category VARCHAR(32) NOT NULL DEFAULT 'inne',
+				purchase_document VARCHAR(190) NOT NULL DEFAULT '',
+				purchase_date DATE NULL,
+				warranty_until DATE NULL,
+				source VARCHAR(20) NOT NULL DEFAULT 'manual',
+				import_job_id BIGINT UNSIGNED NULL,
+				archived TINYINT(1) NOT NULL DEFAULT 0,
+				deleted_at DATETIME NULL,
+				deleted_by BIGINT UNSIGNED NULL,
+				created_at DATETIME NOT NULL,
+				updated_at DATETIME NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY serial_norm (serial_normalized),
+				KEY warranty_until (warranty_until),
+				KEY model (model),
+				KEY invoice (purchase_document),
+				KEY category (category)
 			) {$charset};"
 		);
 	}

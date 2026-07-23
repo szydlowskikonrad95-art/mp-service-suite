@@ -174,6 +174,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-dod-security-matrix.sh
       - name: DoD §7 — a11y/WCAG (labelki + role=alert + aria-describedby na formularzach)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/a11y-forms.sh
+      - name: Testy B-kategoria (kartka P1.2/P3.1 — kolumna category + slownik + parser + hak mp_product_category)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-kategoria.sh
       - name: Testy D1 (schemat Automatora — 4 tabele + append-only + idempotencja migracji)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d1-schema.sh
       - name: Testy C-hooki dla D (mp_case_get_context + mp_case_assign + CASE_ASSIGNED)

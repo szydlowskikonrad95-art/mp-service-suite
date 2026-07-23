@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Added
+- Registry (B): **kategoria produktu** (domkniecie kartki P1.2/P3.1 po stronie danych) — kolumna `category`
+  (migracja v2 `maybe_upgrade`, BEZ reaktywacji; istniejace wiersze => `inne`), slownik 4 kategorii
+  (audio / agd / elektronarzedzia / inne; konfigurowalny filtrem `mp_product_categories`), import CSV z kolumna
+  `kategoria` (WSTECZNIE ZGODNY — stary CSV bez niej => `inne`; nieznana => `inne`, bez przerwania importu),
+  oraz hak kontraktowy `mp_product_category` (Intake `get_context.kategoria` => os przydzialu w Automatorze).
+  Test e2e `b-kategoria`. (Etap 1 rdzen; panel admina + pola formularza wg kategorii = kolejne etapy.)
+
 ## [0.4.0] - 2026-07-23
 
 Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),

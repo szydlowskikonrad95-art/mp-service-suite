@@ -95,4 +95,33 @@ final class Repo {
 
 		return is_array( $row ) ? $row : null;
 	}
+
+	/**
+	 * Kategoria produktu po ID — dla haka kontraktowego `mp_product_category`
+	 * (Intake `get_context.kategoria` => os przydzialu w Automatorze).
+	 *
+	 * Read-only. Brak produktu / brak kategorii => zwraca przekazany $default_value
+	 * (kontrakt „brak danej = default, nie blad").
+	 *
+	 * @param mixed $default_value             Wartosc domyslna (zwykle null).
+	 * @param int   $product_registry_id ID produktu.
+	 * @return mixed Slug kategorii (string) albo $default_value.
+	 */
+	public static function category_for( $default_value, int $product_registry_id ) {
+		global $wpdb;
+
+		if ( $product_registry_id <= 0 ) {
+			return $default_value;
+		}
+
+		$table = Tables::full( Tables::REGISTRY );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna przez Tables::full(), zapytanie przygotowane.
+		$category = $wpdb->get_var(
+			$wpdb->prepare( "SELECT category FROM {$table} WHERE id = %d", $product_registry_id )
+		);
+		// phpcs:enable
+
+		return ( is_string( $category ) && '' !== $category ) ? $category : $default_value;
+	}
 }

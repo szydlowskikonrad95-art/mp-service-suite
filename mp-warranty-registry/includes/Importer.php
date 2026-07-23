@@ -222,6 +222,7 @@ final class Importer {
 					'serial_normalized' => $normalized,
 					'model'             => $row['model'],
 					'batch'             => $row['batch'],
+					'category'          => $row['category'],
 					'purchase_document' => $row['purchase_doc'],
 					'purchase_date'     => $row['purchase_date'],
 					'warranty_until'    => $row['warranty_until'],

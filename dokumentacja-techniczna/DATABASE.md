@@ -84,7 +84,10 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   wersja zgody · **PEŁNY TEKST zgody zamrożony w wierszu** (rozliczalność art. 7).
 - **`wp_mp_srv_counters`**: `year` PK · `value`.
 - **`wp_mp_product_registry`**: `serial_display` + `serial_normalized` UNIQUE (wielkie litery, bez
-  spacji/myślników — `MP\Common\Str::normalize_serial()`) · model · partia · `warranty_until`
+  spacji/myślników — `MP\Common\Str::normalize_serial()`) · model · partia · `category`
+  (VARCHAR(32) NOT NULL DEFAULT 'inne', KEY category; dodana migracją v2 addytywnie — istniejące
+  wiersze => 'inne'; słownik audio/agd/elektronarzedzia/inne konfigurowalny filtrem
+  `mp_product_categories`; oś przydziału P3.1 przez hak `mp_product_category`) · `warranty_until`
   (INDEKS — filtry statusu SARGABLE: warunek na kolumnie, wartość z PHP w UTC) · `purchase_document`
   (pii_sensitive; indeks „invoice") · `purchase_date` · `source` (csv_import/manual) ·
   `import_job_id` · `archived` + `deleted_at/by` (soft delete; archived ORTOGONALNE do statusu
