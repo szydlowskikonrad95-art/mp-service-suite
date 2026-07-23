@@ -78,6 +78,18 @@ final class Plugin {
 			2
 		);
 
+		// Kontrakt C->D (read-only): pelna lista statusow = rdzen 7 (nieusuwalny) +
+		// wlasne z mp_registered_statuses. C = kanoniczne zrodlo (Statuses::all);
+		// panel admina D konsumuje przez ten hook, bez siegania w klase C.
+		add_filter(
+			'mp_all_statuses',
+			static function ( $result ) {
+				unset( $result );
+
+				return Statuses::all();
+			}
+		);
+
 		// Kontrakt D->C: przydzial sprawy (assigned_to nalezy do C — D wola te funkcje).
 		add_filter(
 			'mp_case_assign',
