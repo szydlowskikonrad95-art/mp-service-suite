@@ -47,3 +47,9 @@
 	outline: 2px solid #2271b1;
 	outline-offset: 1px;
 }
+/* Konfiguracja P3.5 (checklisty/szablony) — sekcje + formularze JSON. */
+.mp-automator-h3 { margin-top: 1.6em; color: #1d2327; }
+.mp-automator-h4 { margin-top: 1.2em; color: #1d2327; }
+.mp-automator-config { max-width: 60em; margin: .5em 0 1.5em; }
+.mp-automator-config label { display: block; margin-bottom: .35em; color: #1d2327; font-weight: 600; }
+.mp-automator-config textarea { margin-bottom: .6em; }
