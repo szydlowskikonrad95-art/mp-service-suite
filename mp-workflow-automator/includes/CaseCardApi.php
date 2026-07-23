@@ -10,7 +10,7 @@
  *    `mp_automator_checklist_toggle` + `mp_case_checklist_authorize`).
  *  - `mp_response_templates($kind)` => lista {key,label,body} (dropdown odpowiedzi).
  *  - `mp_render_response_template($key,$case_id)` => string (body z podmienionymi markerami; '' gdy brak).
- *  - `mp_case_sla_deadline($case_id)` => {deadline_at,warning_at,status}|null (termin z tabeli case_sla D).
+ *  - `mp_case_deadline($case_id)` => {deadline_at,warning_at,status}|null (termin z tabeli case_sla D).
  *
  * NO-PII: żaden z tych odczytów nie loguje. Kontekst sprawy bierzemy przez
  * `mp_case_get_context` (kontrakt C) — D nie czyta tabel C literałem.
@@ -34,7 +34,7 @@ final class CaseCardApi {
 		add_filter( 'mp_case_checklist_state', array( self::class, 'checklist_state' ), 10, 2 );
 		add_filter( 'mp_response_templates', array( self::class, 'response_templates' ), 10, 2 );
 		add_filter( 'mp_render_response_template', array( self::class, 'render_template' ), 10, 3 );
-		add_filter( 'mp_case_sla_deadline', array( self::class, 'sla_deadline' ), 10, 2 );
+		add_filter( 'mp_case_deadline', array( self::class, 'sla_deadline' ), 10, 2 );
 	}
 
 	/**

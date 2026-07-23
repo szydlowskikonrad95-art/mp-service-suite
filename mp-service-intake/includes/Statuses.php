@@ -79,6 +79,18 @@ final class Statuses {
 	}
 
 	/**
+	 * Etykieta statusu (rdzen: label = slug; wlasny: z filtra). Slug gdy nieznany.
+	 *
+	 * @param string $slug Status.
+	 * @return string
+	 */
+	public static function label( string $slug ): string {
+		$all = self::all();
+
+		return isset( $all[ $slug ]['label'] ) ? (string) $all[ $slug ]['label'] : $slug;
+	}
+
+	/**
 	 * Czy status istnieje (rdzen lub wlasny).
 	 *
 	 * @param string $slug Status.

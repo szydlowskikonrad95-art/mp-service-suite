@@ -52,6 +52,8 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
+			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
+			Admin\CasesScreen::register();
 		}
 
 		// Listener kontraktowy: wiadomosc systemowa od D (np. raport koncowy).
