@@ -178,6 +178,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/a11y-forms.sh
       - name: Testy B-kategoria (kartka P1.2/P3.1 — kolumna category + slownik + parser + hak mp_product_category)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-kategoria.sh
+      - name: Testy B5 (kartka l.50 — brak usuniecia produktu z aktywna sprawa; Archive + listener mp_product_active_cases_count)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b5-usuwanie-produktu.sh
       - name: Testy D1 (schemat Automatora — 4 tabele + append-only + idempotencja migracji)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d1-schema.sh
       - name: Testy C-hooki dla D (mp_case_get_context + mp_case_assign + CASE_ASSIGNED)

@@ -1019,6 +1019,36 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Liczba AKTYWNYCH (nie-terminalnych) spraw wskazujacych na produkt.
+	 *
+	 * Kontrakt B->C (`mp_product_active_cases_count`): Registry pyta PRZED
+	 * archiwizacja produktu (Archive.php) — >0 => B odmawia (fail-closed). Aktywna
+	 * = status poza TERMINAL_STATUSES (lub NULL). Sprawy bez produktu
+	 * (product_registry_id NULL) NIE licza sie. Zwraca int (hak wymaga is_numeric).
+	 *
+	 * @param int $product_id ID produktu w rejestrze.
+	 * @return int
+	 */
+	public static function active_cases_count_for_product( int $product_id ): int {
+		global $wpdb;
+
+		$table    = Tables::full( Tables::CASES );
+		$terminal = self::TERMINAL_STATUSES;
+		$in       = implode( ',', array_fill( 0, count( $terminal ), '%s' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; lista %s z count(), sprawa aktywna = status poza terminalnymi.
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d AND ( status IS NULL OR status NOT IN ({$in}) )",
+				array_merge( array( $product_id ), $terminal )
+			)
+		);
+		// phpcs:enable
+
+		return $count;
+	}
+
+	/**
 	 * Czy klient ma sprawe AKTYWNA (nie-terminalna) — RODO odracza EN BLOC.
 	 *
 	 * @param int $customer_id ID klienta.
