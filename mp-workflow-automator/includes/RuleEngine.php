@@ -402,7 +402,7 @@ final class RuleEngine {
 
 		// DEDUP-OKNO (best-effort): identyczny mail (adresat+tresc) w oknie => pomin.
 		if ( null !== $rendered
-			&& ! MailDedup::claim( $addr, $rendered['body'], MailDedup::window_for( $template_key ) )
+			&& ! MailDedup::claim( $addr, $rendered['dedup_key'], MailDedup::window_for( $template_key ) )
 		) {
 			WorkflowEvents::log(
 				WorkflowEvents::MAIL_DEDUPED,
@@ -516,7 +516,7 @@ final class RuleEngine {
 
 		// DEDUP-OKNO (best-effort): identyczny mail przydzialu w oknie => pomin.
 		if ( null !== $rendered
-			&& ! MailDedup::claim( $addr, $rendered['body'], MailDedup::window_for( 'assignment_notify' ) )
+			&& ! MailDedup::claim( $addr, $rendered['dedup_key'], MailDedup::window_for( 'assignment_notify' ) )
 		) {
 			WorkflowEvents::log(
 				WorkflowEvents::MAIL_DEDUPED,

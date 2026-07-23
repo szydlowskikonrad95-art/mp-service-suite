@@ -108,7 +108,7 @@ final class MailTemplates {
 	 *
 	 * @param string               $key template_key.
 	 * @param array<string, mixed> $ctx Kontekst sprawy (mp_case_get_context).
-	 * @return array{subject: string, body: string}|null
+	 * @return array{subject: string, body: string, dedup_key: string}|null
 	 */
 	public static function render( string $key, array $ctx ): ?array {
 		$tpl = self::get( $key );
@@ -119,9 +119,18 @@ final class MailTemplates {
 
 		$map = self::markers( $ctx );
 
+		// Klucz dedupu = tresc BEZ zmiennego znacznika czasu {{data}} (H:i z minuta).
+		// Dwie IDENTYCZNE notyfikacje sekundy od siebie — nawet na granicy minuty —
+		// daja TEN SAM klucz, wiec dedup je sklei (fix flaky d-p33d: body z minuta
+		// gubil duplikat gdy tyknela minuta). Marker {{data}} zostaje literalny =
+		// stabilny; body do WYSLANIA dalej niesie prawdziwa date.
+		$stable = $map;
+		unset( $stable['{{data}}'] );
+
 		return array(
-			'subject' => strtr( $tpl['subject'], $map ),
-			'body'    => strtr( $tpl['body'], $map ),
+			'subject'   => strtr( $tpl['subject'], $map ),
+			'body'      => strtr( $tpl['body'], $map ),
+			'dedup_key' => strtr( $tpl['body'], $stable ),
 		);
 	}
 

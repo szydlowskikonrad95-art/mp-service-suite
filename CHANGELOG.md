@@ -22,6 +22,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (`CaseRepo::active_cases_count_for_product`); >0 => Registry odmawia z komunikatem, 0 => archiwizuje
   (soft-delete: `archived=1` + `deleted_at`). Test e2e `b5-usuwanie-produktu` (blok / OK / fail-closed).
 
+### Fixed
+- Automator (D): **flaky dedup maili `d-p33d`** — `MailDedup` kluczował po WYRENDEROWANYM body, a body niesie
+  `{{data}}` (`wp_date('Y-m-d H:i')`, granica minuty). Dwie IDENTYCZNE notyfikacje sekundy od siebie na granicy
+  minuty → różny body → różny hash → dedup gubił duplikat (~1/60 runów). Fix W PRZYCZYNIE: `MailTemplates::render`
+  zwraca dodatkowo `dedup_key` = treść BEZ zmiennego `{{data}}` (numer/status/rodzaj podstawione, data pominięta);
+  `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-strażnik
+  w `d-p33d-dedup`.
+
 ## [0.4.0] - 2026-07-23
 
 Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
