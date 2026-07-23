@@ -214,7 +214,9 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p36-eksport.sh
       - name: Testy P3.5 checklisty per typ + szablony (toggle przez hook C · ownership · event · stan case_checklists · konfig admin · whitelist markerów · bramka)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p35-checklisty.sh
-      - name: DoD D (uninstall zero-śladu + kanarki · degraded C/B OFF · macierz negatywna mp_agent/anon)
+      - name: Testy panel admina D (menu · widoczność per rola · przyciski per-cap Przelicz-SLA/Eksport · listy reguł/statusów/rejestr · slot P3.5 · 403 bez cap)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-panel-admina.sh
+      - name: DoD D (uninstall zero-śladu + kanarki · degraded C/B OFF · macierz negatywna mp_agent/anon · widoczność menu panelu per rola)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-dod.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-e2e.sh

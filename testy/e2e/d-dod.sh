@@ -138,6 +138,24 @@ TW=$(q "SELECT COUNT(*) FROM ${PFX}mp_case_checklists WHERE case_id=$CID")
 OUT2=$(wp eval "\$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('mp_automator_export_csv'); MP\\Automator\\CsvExport::handle();" 2>/dev/null)
 echo "$OUT2" | grep -q "Nr sprawy" && bad "export_csv anon: WYCIEKL CSV!" || ok "export_csv anon => brak eksportu"
 
+# ── SEKCJA 4: WIDOCZNOSC MENU PANELU per rola (panel admina D #62, slug mp-automator) ──
+# Menu widoczne WYLACZNIE koordynator/system-admin; mp_agent/subscriber/klient/anon NIE.
+if wp eval 'exit(class_exists("MP\\Automator\\Admin\\PanelScreen") ? 0 : 1);' 2>/dev/null; then
+	CO=$(wp user get dod_coord --field=ID 2>/dev/null); [ -z "$CO" ] && CO=$(wp user create dod_coord dod_co@example.com --role=mp_coordinator --user_pass=x --porcelain 2>/dev/null)
+	SUB=$(wp user get dod_sub --field=ID 2>/dev/null); [ -z "$SUB" ] && SUB=$(wp user create dod_sub dod_su@example.com --role=subscriber --user_pass=x --porcelain 2>/dev/null)
+	CL=$(wp user get dod_client --field=ID 2>/dev/null); [ -z "$CL" ] && CL=$(wp user create dod_client dod_cl@example.com --role=mp_client --user_pass=x --porcelain 2>/dev/null)
+	menu_vis() { wp eval --user="$1" 'do_action("admin_menu"); $v="HIDDEN"; foreach((array)($GLOBALS["menu"]??array()) as $m){ if(isset($m[2]) && $m[2]==="mp-automator"){ $v=current_user_can($m[1])?"VISIBLE":"HIDDEN"; } } echo $v;' 2>/dev/null; }
+	menu_vis_anon() { wp eval 'do_action("admin_menu"); $v="HIDDEN"; foreach((array)($GLOBALS["menu"]??array()) as $m){ if(isset($m[2]) && $m[2]==="mp-automator"){ $v=current_user_can($m[1])?"VISIBLE":"HIDDEN"; } } echo $v;' 2>/dev/null; }
+	[ "$(menu_vis 1)" = "VISIBLE" ]     && ok "menu panelu: system-admin => WIDZI" || bad "sysadmin nie widzi menu"
+	[ "$(menu_vis "$CO")" = "VISIBLE" ] && ok "menu panelu: koordynator => WIDZI" || bad "koordynator nie widzi menu"
+	[ "$(menu_vis "$AG")" = "HIDDEN" ]  && ok "menu panelu: mp_agent => UKRYTE (brak coord/sysadmin)" || bad "mp_agent WIDZI menu!"
+	[ "$(menu_vis "$SUB")" = "HIDDEN" ] && ok "menu panelu: subscriber => UKRYTE" || bad "subscriber WIDZI menu!"
+	[ "$(menu_vis "$CL")" = "HIDDEN" ]  && ok "menu panelu: mp_client => UKRYTE" || bad "klient WIDZI menu!"
+	[ "$(menu_vis_anon)" = "HIDDEN" ]   && ok "menu panelu: anon => UKRYTE" || bad "anon WIDZI menu!"
+else
+	echo "  SKIP panel admina D (PanelScreen) nieobecny — sekcja menu pominieta"
+fi
+
 # WP_DEBUG zero-notice: brak nowych Fatal/Warning/Notice/Deprecated Z KODU D w logu.
 if [ -n "$LOG" ] && [ -f "$LOG" ]; then
 	NEW=$(tail -n "+$((LOG0+1))" "$LOG" 2>/dev/null | grep -iE "Fatal|Warning|Notice|Deprecated" | grep -iE "mp-workflow-automator|MP\\\\Automator" | head -3)
