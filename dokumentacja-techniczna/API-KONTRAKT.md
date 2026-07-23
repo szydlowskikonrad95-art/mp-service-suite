@@ -113,6 +113,11 @@ array(
 Ile spraw używa serialu (zasilany przez `mp_case_count_by_product` z C; bez C → „brak danych",
 nie zero).
 
+### `mp_product_category( $default, $product_registry_id )` — odpowiada B
+Kategoria produktu po ID (slug ze słownika: audio/agd/elektronarzedzia/inne). Read-only; brak
+produktu / brak kategorii → zwraca `$default` (zwykle `null`), nigdy błąd. Zasila
+`get_context.kategoria` w C → oś przydziału (P3.1) w D. Implementacja: `MP\Registry\Repo::category_for`.
+
 ### `mp_customer_find_products( $result, $query )` — pyta B, odpowiada C
 Wyszukiwarka „po kliencie" w B mechaniką odwróconą (C zna mapping klient→sprawy→produkty).
 ```php

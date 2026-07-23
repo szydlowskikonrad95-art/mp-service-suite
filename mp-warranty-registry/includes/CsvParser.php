@@ -26,6 +26,7 @@ final class CsvParser {
 		'purchase_doc'   => array( 'dokument_zakupu', 'faktura', 'invoice', 'purchase_document' ),
 		'purchase_date'  => array( 'data_zakupu', 'purchase_date' ),
 		'warranty_until' => array( 'gwarancja_do', 'warranty_until', 'koniec_gwarancji' ),
+		'category'       => array( 'kategoria', 'category', 'kategoria_produktu' ),
 	);
 
 	/**
@@ -159,6 +160,7 @@ final class CsvParser {
 				'purchase_doc'   => $get( 'purchase_doc' ),
 				'purchase_date'  => $purchase_date,
 				'warranty_until' => $warranty_until,
+				'category'       => Categories::sanitize( $get( 'category' ) ),
 			),
 		);
 	}
