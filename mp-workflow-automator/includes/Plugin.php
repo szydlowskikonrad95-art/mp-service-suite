@@ -59,6 +59,10 @@ final class Plugin {
 
 		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
 		Admin\SlaRecalcAction::register();
+
+		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
+		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
+		Admin\PanelScreen::register();
 	}
 
 	/**
