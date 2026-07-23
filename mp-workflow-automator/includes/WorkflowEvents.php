@@ -74,9 +74,15 @@ final class WorkflowEvents {
 	public const CONFIG_CHANGED = 'CONFIG_CHANGED';
 
 	/**
-	 * Przebieg sweepa / resyncu / "Przelicz SLA" ({statystyki przebiegu}).
+	 * Przebieg sweepa / resyncu ({statystyki przebiegu: reminders/escalations...}).
 	 */
 	public const SWEEP_RUN = 'SWEEP_RUN';
+
+	/**
+	 * „Przelicz SLA" (SLA-4): admin przeliczyl terminy otwartych spraw wg biezacego
+	 * SlaConfig. Payload {cases_touched}; actor_id = kto, created_at = kiedy (audyt).
+	 */
+	public const SLA_RECALCULATED = 'SLA_RECALCULATED';
 
 	/**
 	 * Dopisuje zdarzenie do rejestru operacji D (append-only).
