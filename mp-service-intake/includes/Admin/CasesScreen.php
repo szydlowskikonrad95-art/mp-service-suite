@@ -30,6 +30,8 @@ final class CasesScreen {
 	 */
 	public static function register(): void {
 		add_action( 'admin_menu', array( self::class, 'add_menu' ) );
+		// Handlery akcji karty (status / odpowiedz / przydzial) — admin-post.
+		CaseActions::register();
 	}
 
 	/**

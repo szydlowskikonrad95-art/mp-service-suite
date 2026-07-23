@@ -75,9 +75,10 @@ final class CaseCard {
 		echo '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">';
 		echo '<div style="flex:2 1 460px;min-width:320px">';
 		self::section_header( $case_id, $ctx );
+		self::section_actions( $case_id, $ctx );
 		self::section_description( $case_id );
 		self::section_attachments( $case_id );
-		self::section_messages( $case_id );
+		self::section_messages( $case_id, $ctx );
 		echo '</div>';
 		echo '<div style="flex:1 1 300px;min-width:280px">';
 		self::section_client( $ctx );
@@ -130,6 +131,71 @@ final class CaseCard {
 			echo '<tr><th style="width:38%">' . esc_html( (string) $label ) . '</th><td>' . esc_html( '' !== (string) $value ? (string) $value : '—' ) . '</td></tr>';
 		}
 		echo '</tbody></table></div>';
+	}
+
+	/**
+	 * Panel akcji personelu: zmiana statusu (+powod przy odrzuceniu) i przydzial
+	 * (koordynator/admin). Handlery = CaseActions (admin-post, cap+nonce+audyt).
+	 * expected_status = biezacy status (optimistic-lock w change_status).
+	 *
+	 * @param int                  $case_id ID sprawy.
+	 * @param array<string, mixed> $ctx     Kontekst sprawy.
+	 * @return void
+	 */
+	private static function section_actions( int $case_id, array $ctx ): void {
+		$current = (string) ( $ctx['status'] ?? '' );
+		$action  = admin_url( 'admin-post.php' );
+		$reasons = apply_filters( 'mp_rejection_reasons', array() );
+		$reasons = is_array( $reasons ) ? $reasons : array();
+
+		self::open_box( __( 'Akcje', 'mp-service-intake' ) );
+
+		echo '<form method="post" action="' . esc_url( $action ) . '" style="margin:0 0 1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">';
+		echo '<input type="hidden" name="action" value="mp_intake_case_status" />';
+		echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
+		echo '<input type="hidden" name="expected_status" value="' . esc_attr( $current ) . '" />';
+		wp_nonce_field( 'mp_intake_case_status' );
+		echo '<label>' . esc_html__( 'Status:', 'mp-service-intake' ) . ' <select name="new_status">';
+		foreach ( Statuses::all() as $slug => $def ) {
+			$label = is_array( $def ) && isset( $def['label'] ) ? (string) $def['label'] : (string) $slug;
+			printf( '<option value="%s"%s>%s</option>', esc_attr( (string) $slug ), selected( $current, (string) $slug, false ), esc_html( $label ) );
+		}
+		echo '</select></label>';
+		if ( array() !== $reasons ) {
+			echo '<label>' . esc_html__( 'Powód (odrzucenie):', 'mp-service-intake' ) . ' <select name="rejection_reason_code"><option value="">—</option>';
+			foreach ( $reasons as $code => $rlabel ) {
+				printf( '<option value="%s">%s</option>', esc_attr( (string) $code ), esc_html( (string) $rlabel ) );
+			}
+			echo '</select></label>';
+		}
+		submit_button( __( 'Zmień status', 'mp-service-intake' ), 'primary', 'mp_status_submit', false );
+		echo '</form>';
+
+		if ( current_user_can( 'mp_coordinator' ) || current_user_can( 'mp_system_admin' ) ) {
+			$assigned = isset( $ctx['assigned_to'] ) && null !== $ctx['assigned_to'] ? (int) $ctx['assigned_to'] : 0;
+			$staff    = get_users(
+				array(
+					'role__in' => array( 'mp_agent', 'mp_coordinator', 'mp_system_admin' ),
+					'orderby'  => 'display_name',
+					'number'   => 200,
+					'fields'   => array( 'ID', 'display_name' ),
+				)
+			);
+
+			echo '<form method="post" action="' . esc_url( $action ) . '" style="margin:0;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">';
+			echo '<input type="hidden" name="action" value="mp_intake_case_assign" />';
+			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
+			wp_nonce_field( 'mp_intake_case_assign' );
+			echo '<label>' . esc_html__( 'Przydziel do:', 'mp-service-intake' ) . ' <select name="assignee"><option value="">—</option>';
+			foreach ( $staff as $u ) {
+				printf( '<option value="%d"%s>%s</option>', (int) $u->ID, selected( $assigned, (int) $u->ID, false ), esc_html( (string) $u->display_name ) );
+			}
+			echo '</select></label>';
+			submit_button( __( 'Przydziel', 'mp-service-intake' ), 'secondary', 'mp_assign_submit', false );
+			echo '</form>';
+		}
+
+		echo '</div>';
 	}
 
 	/**
@@ -213,41 +279,81 @@ final class CaseCard {
 	}
 
 	/**
-	 * Historia wiadomosci klient<->serwis (autor + tresc; esc_html).
+	 * Historia wiadomosci klient<->serwis + FORMULARZ ODPOWIEDZI personelu.
+	 * Odpowiedz => Messages::add('staff') (mp_case_message_added => mail do klienta).
+	 * Szablony (hook D) wypelniaja pole przez data-body (esc_attr — bez XSS).
 	 *
-	 * @param int $case_id ID sprawy.
+	 * @param int                  $case_id ID sprawy.
+	 * @param array<string, mixed> $ctx     Kontekst (rodzaj => szablony odpowiedzi).
 	 * @return void
 	 */
-	private static function section_messages( int $case_id ): void {
+	private static function section_messages( int $case_id, array $ctx ): void {
 		$messages = Messages::for_case( $case_id );
 
 		self::open_box( __( 'Wiadomości', 'mp-service-intake' ) );
 
 		if ( array() === $messages ) {
-			echo '<p style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p></div>';
-			return;
+			echo '<p style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
+		} else {
+			$labels = array(
+				'client' => __( 'Klient', 'mp-service-intake' ),
+				'staff'  => __( 'Serwis', 'mp-service-intake' ),
+				'system' => __( 'System', 'mp-service-intake' ),
+			);
+
+			echo '<ul style="list-style:none;margin:0 0 1rem;padding:0">';
+			foreach ( $messages as $msg ) {
+				$author = (string) ( $msg['author_type'] ?? 'system' );
+				$label  = $labels[ $author ] ?? $labels['system'];
+				$when   = self::fmt_date( (string) ( $msg['created_at'] ?? '' ) );
+				$bg     = 'staff' === $author ? '#eef6ec' : ( 'client' === $author ? '#eef2f7' : '#f4f4f4' );
+
+				echo '<li style="margin:.4rem 0;padding:.5rem .7rem;background:' . esc_attr( $bg ) . ';border-radius:4px">';
+				echo '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
+				echo '<span style="color:#666;font-size:.85em">' . esc_html( $when ) . '</span><br />';
+				echo nl2br( esc_html( (string) ( $msg['body'] ?? '' ) ) );
+				echo '</li>';
+			}
+			echo '</ul>';
 		}
 
-		$labels = array(
-			'client' => __( 'Klient', 'mp-service-intake' ),
-			'staff'  => __( 'Serwis', 'mp-service-intake' ),
-			'system' => __( 'System', 'mp-service-intake' ),
-		);
+		$kind      = (string) ( $ctx['rodzaj'] ?? '' );
+		$templates = apply_filters( 'mp_response_templates', null, $kind );
+		$templates = is_array( $templates ) ? $templates : array();
+		$action    = admin_url( 'admin-post.php' );
+		$tpl_id    = 'mp-reply-tpl-' . $case_id;
+		$body_id   = 'mp-reply-body-' . $case_id;
 
-		echo '<ul style="list-style:none;margin:0;padding:0">';
-		foreach ( $messages as $msg ) {
-			$author = (string) ( $msg['author_type'] ?? 'system' );
-			$label  = $labels[ $author ] ?? $labels['system'];
-			$when   = self::fmt_date( (string) ( $msg['created_at'] ?? '' ) );
-			$bg     = 'staff' === $author ? '#eef6ec' : ( 'client' === $author ? '#eef2f7' : '#f4f4f4' );
+		echo '<form method="post" action="' . esc_url( $action ) . '" style="border-top:1px solid #eee;padding-top:.8rem">';
+		echo '<input type="hidden" name="action" value="mp_intake_case_reply" />';
+		echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
+		wp_nonce_field( 'mp_intake_case_reply' );
 
-			echo '<li style="margin:.4rem 0;padding:.5rem .7rem;background:' . esc_attr( $bg ) . ';border-radius:4px">';
-			echo '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
-			echo '<span style="color:#666;font-size:.85em">' . esc_html( $when ) . '</span><br />';
-			echo nl2br( esc_html( (string) ( $msg['body'] ?? '' ) ) );
-			echo '</li>';
+		if ( array() !== $templates ) {
+			echo '<p style="margin:.2rem 0"><label>' . esc_html__( 'Szablon odpowiedzi:', 'mp-service-intake' ) . ' ';
+			echo '<select id="' . esc_attr( $tpl_id ) . '"><option value="">—</option>';
+			foreach ( $templates as $t ) {
+				$key  = (string) ( $t['key'] ?? '' );
+				$body = (string) apply_filters( 'mp_render_response_template', null, $key, $case_id );
+				printf(
+					'<option value="%s" data-body="%s">%s</option>',
+					esc_attr( $key ),
+					esc_attr( $body ),
+					esc_html( (string) ( $t['label'] ?? $key ) )
+				);
+			}
+			echo '</select></label></p>';
 		}
-		echo '</ul></div>';
+
+		echo '<p style="margin:.2rem 0"><textarea id="' . esc_attr( $body_id ) . '" name="body" rows="4" required style="width:100%;box-sizing:border-box"></textarea></p>';
+		submit_button( __( 'Wyślij odpowiedź do klienta', 'mp-service-intake' ), 'primary', 'mp_reply_submit', false );
+		echo '</form>';
+
+		if ( array() !== $templates ) {
+			echo '<script>(function(){var s=document.getElementById(' . wp_json_encode( $tpl_id ) . '),t=document.getElementById(' . wp_json_encode( $body_id ) . ');if(s&&t){s.addEventListener("change",function(){var o=this.options[this.selectedIndex];if(o&&typeof o.dataset.body!=="undefined"){t.value=o.dataset.body;}});}})();</script>';
+		}
+
+		echo '</div>';
 	}
 
 	/**
