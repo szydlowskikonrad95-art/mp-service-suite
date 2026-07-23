@@ -99,21 +99,12 @@ final class Sla {
 			return;
 		}
 
-		$status   = isset( $ctx['status'] ) ? (string) $ctx['status'] : '';
-		$priority = isset( $ctx['priority'] ) ? (string) $ctx['priority'] : 'normal';
-		$base     = isset( $ctx['status_changed_at'] ) ? $ctx['status_changed_at'] : null;
-		$deadline = SlaConfig::deadline_for( $status, is_string( $base ) ? $base : null, $priority );
-
-		// Prog przypomnienia = deadline − warning_hours (SARGABLE dla sweepa SLA-2).
-		$warning_at = null;
-
-		if ( null !== $deadline ) {
-			$warn_h = SlaConfig::for_status( $status )['warning_hours'];
-
-			if ( $warn_h > 0 ) {
-				$warning_at = gmdate( 'Y-m-d H:i:s', (int) strtotime( $deadline . ' UTC' ) - $warn_h * HOUR_IN_SECONDS );
-			}
-		}
+		// Kotwica + terminy z BIEZACEGO SlaConfig (wspolne z recompute_open — DRY
+		// gwarantuje ze przeliczenie „Przelicz SLA" uzywa TEJ SAMEJ kotwicy co provision).
+		$terms      = self::compute_terms( $ctx );
+		$status     = $terms['status'];
+		$deadline   = $terms['deadline'];
+		$warning_at = $terms['warning'];
 
 		$table = Tables::full( Tables::CASE_SLA );
 
@@ -135,6 +126,111 @@ final class Sla {
 			array( '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s' )
 		);
 		// phpcs:enable
+	}
+
+	/**
+	 * Liczy terminy SLA z kontekstu sprawy wg BIEZACEGO SlaConfig: kotwica =
+	 * status_changed_at (moment provision), deadline = kotwica + sla_hours×modyfikator,
+	 * warning = deadline − warning_hours. Terminal / sla_hours=0 => deadline NULL.
+	 * Wspolne dla provision() (REPLACE) i recompute_open() (UPDATE) — jedno zrodlo
+	 * kotwicy (nieretroaktywnosc: przeliczenie liczy tak samo jak pierwsze zalozenie).
+	 *
+	 * @param array<string, mixed> $ctx Kontekst sprawy (mp_case_get_context).
+	 * @return array{status: string, deadline: string|null, warning: string|null}
+	 */
+	private static function compute_terms( array $ctx ): array {
+		$status   = isset( $ctx['status'] ) ? (string) $ctx['status'] : '';
+		$priority = isset( $ctx['priority'] ) ? (string) $ctx['priority'] : 'normal';
+		$base     = isset( $ctx['status_changed_at'] ) ? $ctx['status_changed_at'] : null;
+		$deadline = SlaConfig::deadline_for( $status, is_string( $base ) ? $base : null, $priority );
+
+		// Prog przypomnienia = deadline − warning_hours (SARGABLE dla sweepa SLA-2).
+		$warning = null;
+
+		if ( null !== $deadline ) {
+			$warn_h = SlaConfig::for_status( $status )['warning_hours'];
+
+			if ( $warn_h > 0 ) {
+				$warning = gmdate( 'Y-m-d H:i:s', (int) strtotime( $deadline . ' UTC' ) - $warn_h * HOUR_IN_SECONDS );
+			}
+		}
+
+		return array(
+			'status'   => $status,
+			'deadline' => $deadline,
+			'warning'  => $warning,
+		);
+	}
+
+	/**
+	 * „PRZELICZ SLA" (SLA-4): dla WSZYSTKICH otwartych (nieterminalnych) spraw
+	 * przelicza deadline_at/warning_at wg BIEZACEGO SlaConfig i stempluje wersje
+	 * polityki. NIERETROAKTYWNOSC (twardy warunek):
+	 *  - UPDATE (nie REPLACE) => markery reminder_sent_at/escalated_at + liczniki
+	 *    attempts NIETKNIETE: etap juz przebyty NIE odpali ponownie (oś audytu bez
+	 *    dubla; spojne z resync SLA-3).
+	 *  - kotwica z compute_terms (status_changed_at) — nie „teraz wstecz".
+	 *  - TERMINALNE sprawy pomijane w calosci.
+	 *  - sprawa ktora PO przeliczeniu staje sie przeterminowana integruje sie ze
+	 *    sweepem (flaga #8: tlumienie przypomnienia) => 1 powiadomienie, nie dubel.
+	 * Iteruje WLASNA tabele case_sla (case_id) + kontekst per sprawa hookiem C —
+	 * bez literalu cudzej tabeli. Zwraca liczbe DOTKNIETYCH (otwartych) spraw.
+	 *
+	 * @return int
+	 */
+	public static function recompute_open(): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASE_SLA );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; zbior case_id do przeliczenia.
+		$case_ids = $wpdb->get_col( "SELECT case_id FROM {$table}" );
+		// phpcs:enable
+
+		$policy  = SlaConfig::policy_version();
+		$now     = gmdate( 'Y-m-d H:i:s' );
+		$touched = 0;
+
+		foreach ( $case_ids as $cid ) {
+			$cid = (int) $cid;
+			$ctx = apply_filters( 'mp_case_get_context', 'not_found', $cid );
+
+			// Sprawa zniknela => sierota; nie ruszamy (sweep sprzata osobno).
+			if ( ! is_array( $ctx ) ) {
+				continue;
+			}
+
+			$status = isset( $ctx['status'] ) ? (string) $ctx['status'] : '';
+
+			// TERMINALNE (zamkniete/odrzucone) NIETKNIETE (twardy warunek odbioru).
+			if ( SlaConfig::for_status( $status )['terminal'] ) {
+				continue;
+			}
+
+			$terms = self::compute_terms( $ctx );
+
+			// UPDATE: TYLKO terminy + wersja polityki + status + updated_at. Markery i
+			// liczniki (reminder_sent_at/escalated_at/*_attempts) POZA setem => nietkniete.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna; obsluguje NULL deadline/warning.
+			$wpdb->update(
+				$table,
+				array(
+					'status'             => $terms['status'],
+					'sla_policy_version' => $policy,
+					'deadline_at'        => $terms['deadline'],
+					'warning_at'         => $terms['warning'],
+					'updated_at'         => $now,
+				),
+				array( 'case_id' => $cid ),
+				array( '%s', '%d', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
+			// phpcs:enable
+
+			++$touched;
+		}
+
+		return $touched;
 	}
 
 	/**

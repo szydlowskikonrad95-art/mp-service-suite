@@ -52,6 +52,9 @@ final class Plugin {
 
 		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
 		Sweep::register();
+
+		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
+		Admin\SlaRecalcAction::register();
 	}
 
 	/**
