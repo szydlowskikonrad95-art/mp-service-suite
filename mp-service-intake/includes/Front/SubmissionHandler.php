@@ -78,10 +78,16 @@ final class SubmissionHandler {
 			self::redirect_back( array( 'notice' => self::neutral_message() ) );
 		}
 
-		$kind    = isset( $_POST['kind'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['kind'] ) ) : '';
+		$kind     = isset( $_POST['kind'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['kind'] ) ) : '';
+		$category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( (string) $_POST['category'] ) ) : '';
+
+		if ( ! FormConfig::is_valid_category( $category ) ) {
+			$category = '';
+		}
+
 		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
 		$consent = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
-		$values  = self::collect_values( $kind );
+		$values  = self::collect_values( $kind, $category );
 
 		// Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy. Po honeypocie,
 		// przed tworzeniem sprawy. Marker dedup dopiero po sukcesie (mark_submitted).
@@ -116,9 +122,10 @@ final class SubmissionHandler {
 
 		$result = CaseRepo::create(
 			array(
-				'kind'   => $kind,
-				'email'  => $email,
-				'values' => $values,
+				'kind'     => $kind,
+				'category' => $category,
+				'email'    => $email,
+				'values'   => $values,
 			)
 		);
 
@@ -263,19 +270,20 @@ final class SubmissionHandler {
 	}
 
 	/**
-	 * Zbiera wartosci pol wg schematu rodzaju (tylko znane pola — anty-smiec).
+	 * Zbiera wartosci pol wg schematu rodzaju + kategorii (tylko znane pola — anty-smiec).
 	 *
-	 * @param string $kind Rodzaj sprawy.
+	 * @param string $kind     Rodzaj sprawy.
+	 * @param string $category Slug kategorii (pusty = tylko pola rodzaju).
 	 * @return array<string, string>
 	 */
-	private static function collect_values( string $kind ): array {
+	private static function collect_values( string $kind, string $category = '' ): array {
 		$values = array();
 
 		if ( ! FormConfig::is_valid_kind( $kind ) ) {
 			return $values;
 		}
 
-		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+		foreach ( FormConfig::fields_for( $kind, $category ) as $field ) {
 			$key = $field['key'];
 
 			if ( ! isset( $_POST[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce zweryfikowany w handle_submit przed wywolaniem.

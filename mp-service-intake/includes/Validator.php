@@ -27,10 +27,11 @@ final class Validator {
 	 *
 	 * @param string                $kind   Rodzaj sprawy.
 	 * @param array<string, string> $values Wartosci pol (klucz => surowa wartosc).
-	 * @param string                $today  Dzis w 'Y-m-d' (UTC) — wstrzykiwane dla testow.
+	 * @param string                $today    Dzis w 'Y-m-d' (UTC) — wstrzykiwane dla testow.
+	 * @param string                $category Slug kategorii (pusty = tylko pola rodzaju).
 	 * @return array<int, array{field: string, reason_code: string}> Lista bledow (pusta = OK).
 	 */
-	public static function validate( string $kind, array $values, string $today ): array {
+	public static function validate( string $kind, array $values, string $today, string $category = '' ): array {
 		$errors = array();
 
 		if ( ! FormConfig::is_valid_kind( $kind ) ) {
@@ -42,7 +43,7 @@ final class Validator {
 			);
 		}
 
-		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+		foreach ( FormConfig::fields_for( $kind, $category ) as $field ) {
 			$key   = $field['key'];
 			$value = trim( (string) ( $values[ $key ] ?? '' ) );
 

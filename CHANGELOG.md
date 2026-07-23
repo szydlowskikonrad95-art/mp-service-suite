@@ -10,7 +10,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (audio / agd / elektronarzedzia / inne; konfigurowalny filtrem `mp_product_categories`), import CSV z kolumna
   `kategoria` (WSTECZNIE ZGODNY — stary CSV bez niej => `inne`; nieznana => `inne`, bez przerwania importu),
   oraz hak kontraktowy `mp_product_category` (Intake `get_context.kategoria` => os przydzialu w Automatorze).
-  Test e2e `b-kategoria`. (Etap 1 rdzen; panel admina + pola formularza wg kategorii = kolejne etapy.)
+  Test e2e `b-kategoria`. Przydzial wg kategorii udowodniony end-to-end (test `d-p31-kategoria`).
+- Intake (C): **formularz P1.2 — pola wg kategorii produktu**. Dropdown kategorii na formularzu; dodatkowe pola per
+  kategoria (sensowne domyslne + konfigurowalne filtrem `mp_intake_category_fields`); `fields_for($kind, $category)`
+  ADDYTYWNIE (bez kategorii = pola rodzaju, ZERO regresji #15); zapis pol kategorii do `form_data`; walidacja serwera
+  + JS-dynamika (pokazuje pola wg rodzaju ORAZ kategorii). Test e2e `c-kategoria-formularz`.
 
 ## [0.4.0] - 2026-07-23
 

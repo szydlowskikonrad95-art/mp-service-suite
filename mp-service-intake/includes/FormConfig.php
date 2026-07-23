@@ -33,6 +33,12 @@ final class FormConfig {
 	public const FIELD_TYPES = array( 'text', 'textarea', 'serial', 'document', 'date', 'email', 'tel' );
 
 	/**
+	 * Dozwolone kategorie produktu (spojne z Registry\Categories — slownik klepniety 21.07).
+	 * Formularz P1.2: pola zaleza od WYBRANEJ kategorii (kartka). Pusta = brak kategorii (fallback).
+	 */
+	public const CATEGORY_SLUGS = array( 'audio', 'agd', 'elektronarzedzia', 'inne' );
+
+	/**
 	 * Domyslna mapa pol per rodzaj (uzywana gdy brak nadpisania w opcji).
 	 *
 	 * @return array<string, array<int, array{key: string, label: string, type: string, required: bool, pii_sensitive: bool}>>
@@ -87,21 +93,41 @@ final class FormConfig {
 	}
 
 	/**
-	 * Zwraca liste pol dla rodzaju (z nadpisania w opcji albo domyslna).
+	 * Zwraca liste pol dla rodzaju (z nadpisania w opcji albo domyslna), plus
+	 * dodatkowe pola kategorii gdy $category niepuste (P1.2).
 	 *
-	 * @param string $kind Rodzaj sprawy.
+	 * @param string $kind     Rodzaj sprawy.
+	 * @param string $category Slug kategorii (pusty = tylko pola rodzaju).
 	 * @return array<int, array{key: string, label: string, type: string, required: bool, pii_sensitive: bool}>
 	 */
-	public static function fields_for( string $kind ): array {
+	public static function fields_for( string $kind, string $category = '' ): array {
 		$config = get_option( self::OPTION, array() );
 
 		if ( is_array( $config ) && isset( $config[ $kind ] ) && is_array( $config[ $kind ] ) ) {
-			return self::sanitize_kind_fields( $config[ $kind ] );
+			$base = self::sanitize_kind_fields( $config[ $kind ] );
+		} else {
+			$defaults = self::defaults();
+			$base     = $defaults[ $kind ] ?? array();
 		}
 
-		$defaults = self::defaults();
+		if ( '' === $category ) {
+			return $base;
+		}
 
-		return $defaults[ $kind ] ?? array();
+		// Pola kategorii dopisane PO polach rodzaju (dedup po kluczu — rodzaj wygrywa).
+		$seen = array();
+		foreach ( $base as $field ) {
+			$seen[ $field['key'] ] = true;
+		}
+
+		foreach ( self::category_fields( $category ) as $field ) {
+			if ( ! isset( $seen[ $field['key'] ] ) ) {
+				$seen[ $field['key'] ] = true;
+				$base[]                = $field;
+			}
+		}
+
+		return $base;
 	}
 
 	/**
@@ -165,7 +191,130 @@ final class FormConfig {
 			}
 		}
 
+		foreach ( self::CATEGORY_SLUGS as $category ) {
+			foreach ( self::category_fields( $category ) as $field ) {
+				if ( isset( $seen[ $field['key'] ] ) ) {
+					continue;
+				}
+
+				$seen[ $field['key'] ] = true;
+				$out[]                 = $field;
+			}
+		}
+
 		return $out;
+	}
+
+	/**
+	 * Kategorie produktu (slug => etykieta PL). Spojne z Registry\Categories.
+	 * Konfigurowalne filtrem `mp_intake_categories`.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function categories(): array {
+		$map = array(
+			'audio'            => __( 'Elektronika audio', 'mp-service-intake' ),
+			'agd'              => __( 'AGD drobne', 'mp-service-intake' ),
+			'elektronarzedzia' => __( 'Elektronarzędzia', 'mp-service-intake' ),
+			'inne'             => __( 'Inne', 'mp-service-intake' ),
+		);
+
+		$filtered = apply_filters( 'mp_intake_categories', $map );
+
+		return ( is_array( $filtered ) && array() !== $filtered ) ? $filtered : $map;
+	}
+
+	/**
+	 * Czy kategoria dozwolona (pusta = brak wyboru, dozwolona jako fallback).
+	 *
+	 * @param string $category Slug kategorii.
+	 * @return bool
+	 */
+	public static function is_valid_category( string $category ): bool {
+		return '' === $category || in_array( $category, self::CATEGORY_SLUGS, true );
+	}
+
+	/**
+	 * Domyslne dodatkowe pola per kategoria (P1.2 — sensowne domyslne, konfigurowalne).
+	 * PLASKI schemat jak pola rodzaju, ZERO logiki warunkowej.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>
+	 */
+	private static function category_fields_defaults(): array {
+		return array(
+			'audio'            => array(
+				array(
+					'key'           => 'cat_audio_objaw',
+					'label'         => __( 'Objaw dźwięku (np. brak dźwięku, trzaski, jeden kanał)', 'mp-service-intake' ),
+					'type'          => 'text',
+					'required'      => false,
+					'pii_sensitive' => false,
+				),
+			),
+			'agd'              => array(
+				array(
+					'key'           => 'cat_agd_model',
+					'label'         => __( 'Model / moc z tabliczki znamionowej', 'mp-service-intake' ),
+					'type'          => 'text',
+					'required'      => false,
+					'pii_sensitive' => false,
+				),
+			),
+			'elektronarzedzia' => array(
+				array(
+					'key'           => 'cat_et_partia',
+					'label'         => __( 'Nr partii / seria produktu', 'mp-service-intake' ),
+					'type'          => 'text',
+					'required'      => false,
+					'pii_sensitive' => false,
+				),
+			),
+			'inne'             => array(),
+		);
+	}
+
+	/**
+	 * Dodatkowe pola dla kategorii (z filtra konfiguracyjnego + sanityzacja).
+	 *
+	 * @param string $category Slug kategorii.
+	 * @return array<int, array{key: string, label: string, type: string, required: bool, pii_sensitive: bool}>
+	 */
+	public static function category_fields( string $category ): array {
+		if ( '' === $category ) {
+			return array();
+		}
+
+		$map = apply_filters( 'mp_intake_category_fields', self::category_fields_defaults() );
+
+		$fields = ( is_array( $map ) && isset( $map[ $category ] ) && is_array( $map[ $category ] ) )
+			? $map[ $category ]
+			: array();
+
+		return self::sanitize_kind_fields( $fields );
+	}
+
+	/**
+	 * Mapa kategoria => lista {key, required} dla warstwy klienckiej (JS).
+	 *
+	 * @return array<string, array<int, array{key: string, required: bool}>>
+	 */
+	public static function category_field_map(): array {
+		$map = array();
+
+		foreach ( self::CATEGORY_SLUGS as $category ) {
+			$fields = array();
+
+			foreach ( self::category_fields( $category ) as $field ) {
+				$fields[] = array(
+					'key'      => $field['key'],
+					'required' => $field['required'],
+				);
+			}
+
+			$map[ $category ] = $fields;
+		}
+
+		return $map;
 	}
 
 	/**
