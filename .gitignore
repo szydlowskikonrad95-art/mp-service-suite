@@ -35,3 +35,6 @@ build/dist/
 mp-service-intake/includes/Common/
 mp-warranty-registry/includes/Common/
 mp-workflow-automator/includes/Common/
+
+# plik warsztatowy — nie trafia do repo klienta
+CLAUDE.md
