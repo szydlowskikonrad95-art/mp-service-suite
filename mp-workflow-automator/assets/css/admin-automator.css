@@ -1,0 +1,49 @@
+/* Panel admina automatora — styl a11y-lite (kontrast >=4.5:1, wyrazny focus). */
+.mp-automator-panel .mp-automator-intro { max-width: 60em; color: #1d2327; }
+.mp-automator-h2 {
+	margin-top: 2em;
+	padding-bottom: .4em;
+	border-bottom: 1px solid #c3c4c7;
+}
+.mp-automator-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5em;
+	align-items: flex-start;
+	margin: 1em 0;
+}
+.mp-automator-action {
+	display: flex;
+	flex-direction: column;
+	gap: .5em;
+	padding: 1em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+.mp-automator-action .description { max-width: 26em; color: #50575e; }
+.mp-automator-table { margin-top: .6em; max-width: 100%; }
+.mp-automator-table caption { text-align: left; }
+.mp-automator-payload { font-size: 12px; color: #1d2327; word-break: break-word; }
+.mp-automator-slot {
+	max-width: 60em;
+	padding: 1em 1.2em;
+	color: #1d2327;
+	background: #f0f6fc;
+	border: 1px dashed #2271b1;
+	border-radius: 4px;
+}
+.mp-automator-pagination {
+	display: flex;
+	align-items: center;
+	gap: 1em;
+	margin: 1em 0;
+}
+.mp-automator-pagination .mp-automator-page-of { color: #1d2327; }
+/* Wyrazny focus klawiatury (WCAG 2.4.7) — nie polegaj tylko na domyslnym WP. */
+.mp-automator-panel a:focus,
+.mp-automator-panel .button:focus,
+.mp-automator-panel input:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}

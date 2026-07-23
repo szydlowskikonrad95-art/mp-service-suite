@@ -65,6 +65,10 @@ final class Plugin {
 		ChecklistTemplates::register();
 		Checklists::register();
 		ResponseTemplates::register();
+
+		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
+		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
+		Admin\PanelScreen::register();
 	}
 
 	/**
