@@ -112,6 +112,9 @@ AUD_AFTER=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='EXPO
 [ "$AUD_AFTER" = "$AUD_BEFORE" ] && ok "zablokowane proby NIE zapisaly audytu" || bad "audyt przyrosl mimo blokady ($AUD_BEFORE->$AUD_AFTER)"
 
 rm -f "$CSV" "$CSV.f"
+# Sprzatanie userow — inaczej coord36 (mp_coordinator) zostaje i truje testy
+# zakladajace BRAK koordynatora, jesli zmieni sie kolejnosc uruchamiania (np. d-p34a).
+for u in "$COORD" "$AGENT" "$SUB"; do [ -n "$u" ] && wp user delete "$u" --yes >/dev/null 2>&1; done
 echo ""
 echo "WYNIK P3.6-eksport: PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
