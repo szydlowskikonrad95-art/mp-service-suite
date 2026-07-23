@@ -15,6 +15,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   kategoria (sensowne domyslne + konfigurowalne filtrem `mp_intake_category_fields`); `fields_for($kind, $category)`
   ADDYTYWNIE (bez kategorii = pola rodzaju, ZERO regresji #15); zapis pol kategorii do `form_data`; walidacja serwera
   + JS-dynamika (pokazuje pola wg rodzaju ORAZ kategorii). Test e2e `c-kategoria-formularz`.
+- Intake (C): **listener `mp_product_active_cases_count`** — domkniecie kartki l.50 (B5: „brak mozliwosci
+  usuniecia produktu powiazanego z aktywna sprawa"). Registry (B) mial juz blokade (`Archive.php`) + akcje
+  w adminie, ale brakowalo strony C odpowiadajacej liczba spraw => archiwizacja ODMAWIALA ZAWSZE (fail-closed
+  bez listenera, nawet dla produktu bez spraw). Teraz Intake liczy sprawy NIE-TERMINALNE produktu
+  (`CaseRepo::active_cases_count_for_product`); >0 => Registry odmawia z komunikatem, 0 => archiwizuje
+  (soft-delete: `archived=1` + `deleted_at`). Test e2e `b5-usuwanie-produktu` (blok / OK / fail-closed).
 
 ## [0.4.0] - 2026-07-23
 

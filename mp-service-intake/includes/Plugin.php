@@ -158,6 +158,21 @@ final class Plugin {
 			5
 		);
 
+		// Kontrakt B->C: liczba AKTYWNYCH (nie-terminalnych) spraw produktu. Registry
+		// (Archive.php) pyta PRZED archiwizacja/usunieciem produktu — >0 => odmawia.
+		// FAIL-CLOSED: gdy Intake nieaktywny, listenera brak => has_filter() false =>
+		// Registry odmawia „na slowo". B5 (kartka: brak usuniecia produktu z aktywna sprawa).
+		add_filter(
+			'mp_product_active_cases_count',
+			static function ( $result, $product_registry_id ) {
+				unset( $result );
+
+				return CaseRepo::active_cases_count_for_product( (int) $product_registry_id );
+			},
+			10,
+			2
+		);
+
 		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
 		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
 		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =
