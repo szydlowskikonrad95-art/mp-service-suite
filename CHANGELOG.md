@@ -30,6 +30,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-strażnik
   w `d-p33d-dedup`.
 
+- Intake (C): **kolumna „Sprawy" i wyszukiwarka po kliencie w Rejestrze** — Intake nie rejestrował listenerów
+  kontraktowych `mp_case_count_by_product` i `mp_customer_find_products` → kolumna „Sprawy" pokazywała „moduł
+  spraw nieaktywny" mimo aktywnego Intake, a wyszukiwarka po kliencie (kartka **P2.6**) była WYŁĄCZONA. Dodane
+  `CaseRepo::case_count_by_product` (`{total,active,closed,rejected}`, unverified wykluczone) +
+  `find_products_for_customer` (`{ids,truncated,limit}`) + rejestracja obu filtrów. Test `c-count-search-hooki`.
+  Znalezione KLIKACZEM admina (bramka) — automaty testowały haki osobno, nie zintegrowany panel.
+
 ## [0.4.0] - 2026-07-23
 
 Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),

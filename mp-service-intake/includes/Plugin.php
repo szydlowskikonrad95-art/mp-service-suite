@@ -173,6 +173,33 @@ final class Plugin {
 			2
 		);
 
+		// Kontrakt B->C: rozbicie liczby spraw produktu {total,active,closed,rejected}.
+		// Zasila B-owy `mp_serial_usage_count` => kolumna „Sprawy" w rejestrze. Bez tego
+		// listenera kolumna pokazuje „modul spraw nieaktywny" mimo aktywnego Intake.
+		add_filter(
+			'mp_case_count_by_product',
+			static function ( $result, $product_registry_id ) {
+				unset( $result );
+
+				return CaseRepo::case_count_by_product( (int) $product_registry_id );
+			},
+			10,
+			2
+		);
+
+		// Kontrakt B->C: wyszukiwarka „po kliencie" (kartka P2.6) — C zna klient->sprawy
+		// ->produkty. Bez tego listenera search po kliencie w rejestrze jest wylaczony.
+		add_filter(
+			'mp_customer_find_products',
+			static function ( $result, $query ) {
+				unset( $result );
+
+				return CaseRepo::find_products_for_customer( (string) $query );
+			},
+			10,
+			2
+		);
+
 		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
 		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
 		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =
