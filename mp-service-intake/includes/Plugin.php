@@ -109,6 +109,24 @@ final class Plugin {
 			6
 		);
 
+		// Kontrakt D->C: paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D
+		// (mp_cases_query). Respektuje ROLE wolajacego (mp_agent => tylko swoje);
+		// zwraca pola ZMINIMALIZOWANE — surowy kontakt NIGDY nie wychodzi (RODO/T5).
+		add_filter(
+			'mp_cases_query',
+			static function ( $result, $filters = array(), $page = 1, $per_page = 500 ) {
+				unset( $result );
+
+				return CaseRepo::query(
+					is_array( $filters ) ? $filters : array(),
+					(int) $page,
+					(int) $per_page
+				);
+			},
+			10,
+			4
+		);
+
 		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
 		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
 		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =
