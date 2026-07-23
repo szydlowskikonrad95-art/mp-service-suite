@@ -43,12 +43,13 @@ final class CaseRepo {
 	public static function create( array $input ): array {
 		global $wpdb;
 
-		$kind   = (string) ( $input['kind'] ?? '' );
-		$email  = (string) ( $input['email'] ?? '' );
-		$values = is_array( $input['values'] ?? null ) ? $input['values'] : array();
-		$today  = gmdate( 'Y-m-d' );
+		$kind     = (string) ( $input['kind'] ?? '' );
+		$category = (string) ( $input['category'] ?? '' );
+		$email    = (string) ( $input['email'] ?? '' );
+		$values   = is_array( $input['values'] ?? null ) ? $input['values'] : array();
+		$today    = gmdate( 'Y-m-d' );
 
-		$errors = self::collect_validation_errors( $kind, $email, $values, $today );
+		$errors = self::collect_validation_errors( $kind, $email, $values, $today, $category );
 
 		if ( array() !== $errors ) {
 			return array(
@@ -95,7 +96,7 @@ final class CaseRepo {
 					'verify_token_expires_at'          => gmdate( 'Y-m-d H:i:s', time() + self::TOKEN_TTL_HOURS * HOUR_IN_SECONDS ),
 					'verify_token_used_at'             => null,
 					'possible_duplicate'               => $possible_duplicate,
-					'form_data'                        => (string) wp_json_encode( self::form_data_from_values( $kind, $values ) ),
+					'form_data'                        => (string) wp_json_encode( self::form_data_from_values( $kind, $values, $category ) ),
 					'form_schema_version'              => 1,
 					'warranty_snapshot'                => null === $snapshot ? null : (string) wp_json_encode( $snapshot ),
 					'warranty_snapshot_schema_version' => null === $snapshot ? null : (int) ( $snapshot['schema_version'] ?? 1 ),
@@ -236,10 +237,11 @@ final class CaseRepo {
 	 * @param string               $kind   Rodzaj sprawy.
 	 * @param string               $email  E-mail kontaktowy.
 	 * @param array<string, mixed> $values Wartosci pol.
-	 * @param string               $today  Dzis 'Y-m-d' (UTC).
+	 * @param string               $today    Dzis 'Y-m-d' (UTC).
+	 * @param string               $category Slug kategorii (pusty = tylko pola rodzaju).
 	 * @return array<int, array{field: string, reason_code: string}>
 	 */
-	public static function collect_validation_errors( string $kind, string $email, array $values, string $today ): array {
+	public static function collect_validation_errors( string $kind, string $email, array $values, string $today, string $category = '' ): array {
 		$errors = array();
 
 		if ( '' === trim( $email ) || ! Validator::is_email( trim( $email ) ) ) {
@@ -255,7 +257,7 @@ final class CaseRepo {
 			$flat[ (string) $key ] = is_scalar( $value ) ? (string) $value : '';
 		}
 
-		return array_merge( $errors, Validator::validate( $kind, $flat, $today ) );
+		return array_merge( $errors, Validator::validate( $kind, $flat, $today, $category ) );
 	}
 
 	/**
@@ -263,14 +265,15 @@ final class CaseRepo {
 	 * z wartosci + schematu rodzaju. Etykieta i flaga PII BIORA SIE ZE SCHEMATU
 	 * z chwili zlozenia -> render historyczny nie zalezy od biezacej mapy.
 	 *
-	 * @param string               $kind   Rodzaj sprawy.
-	 * @param array<string, mixed> $values Wartosci pol.
+	 * @param string               $kind     Rodzaj sprawy.
+	 * @param array<string, mixed> $values   Wartosci pol.
+	 * @param string               $category Slug kategorii (pusty = tylko pola rodzaju).
 	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
 	 */
-	public static function form_data_from_values( string $kind, array $values ): array {
+	public static function form_data_from_values( string $kind, array $values, string $category = '' ): array {
 		$out = array();
 
-		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+		foreach ( FormConfig::fields_for( $kind, $category ) as $field ) {
 			$key   = $field['key'];
 			$value = trim( (string) ( $values[ $key ] ?? '' ) );
 

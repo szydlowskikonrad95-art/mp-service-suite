@@ -33,13 +33,17 @@ final class FormRenderer {
 			? (string) $values['kind']
 			: 'reklamacja';
 
-		// Warstwa kliencka: skrypt dynamicznego formularza + config pol per rodzaj.
+		$category = FormConfig::is_valid_category( (string) ( $values['category'] ?? '' ) )
+			? (string) ( $values['category'] ?? '' )
+			: '';
+
+		// Warstwa kliencka: skrypt dynamicznego formularza + config pol per rodzaj/kategoria.
 		self::enqueue_assets();
 
-		// Klucze WYMAGANE dla wybranego rodzaju (reszta unii pol renderowana bez
-		// `required` — JS ukrywa je i toggluje `required` przy zmianie rodzaju).
+		// Klucze WYMAGANE dla wybranego rodzaju + kategorii (reszta unii renderowana bez
+		// `required` — JS ukrywa je i toggluje `required` przy zmianie rodzaju/kategorii).
 		$required_keys = array();
-		foreach ( FormConfig::fields_for( $kind ) as $field ) {
+		foreach ( FormConfig::fields_for( $kind, $category ) as $field ) {
 			if ( $field['required'] ) {
 				$required_keys[] = $field['key'];
 			}
@@ -74,6 +78,14 @@ final class FormRenderer {
 			'kind',
 			esc_html__( 'Rodzaj zgłoszenia', 'mp-service-intake' ),
 			self::kind_select( $kind ),
+			$errors
+		);
+
+		// Kategoria produktu (P1.2 — pola zaleza od wyboru; brak wyboru = pola bazowe).
+		$out .= self::field_wrap(
+			'category',
+			esc_html__( 'Kategoria produktu', 'mp-service-intake' ),
+			self::category_select( $category ),
 			$errors
 		);
 
@@ -151,8 +163,9 @@ final class FormRenderer {
 			'mp-intake-form',
 			'mpIntakeForm',
 			array(
-				'kinds'     => FormConfig::kind_field_map(),
-				'allFields' => array_map(
+				'kinds'      => FormConfig::kind_field_map(),
+				'categories' => FormConfig::category_field_map(),
+				'allFields'  => array_map(
 					static function ( array $field ): string {
 						return $field['key'];
 					},
@@ -251,6 +264,24 @@ final class FormRenderer {
 		foreach ( FormConfig::KINDS as $kind ) {
 			$out .= '<option value="' . esc_attr( $kind ) . '"' . selected( $selected, $kind, false ) . '>'
 				. esc_html( $labels[ $kind ] ) . '</option>';
+		}
+
+		return $out . '</select>';
+	}
+
+	/**
+	 * Select kategorii produktu (P1.2). Pusty wybor = pola bazowe (fallback).
+	 *
+	 * @param string $selected Wybrana kategoria (slug).
+	 * @return string
+	 */
+	private static function category_select( string $selected ): string {
+		$out  = '<select id="mp-f-category" name="category">';
+		$out .= '<option value="">' . esc_html__( '— wybierz kategorię —', 'mp-service-intake' ) . '</option>';
+
+		foreach ( FormConfig::categories() as $slug => $label ) {
+			$out .= '<option value="' . esc_attr( (string) $slug ) . '"' . selected( $selected, $slug, false ) . '>'
+				. esc_html( (string) $label ) . '</option>';
 		}
 
 		return $out . '</select>';

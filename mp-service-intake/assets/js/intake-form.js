@@ -1,10 +1,10 @@
 /**
- * Formularz zgłoszenia MP — dynamiczne pola wg rodzaju (flaga #15).
+ * Formularz zgłoszenia MP — dynamiczne pola wg rodzaju ORAZ kategorii (#15, P1.2).
  *
- * Progressive enhancement: formularz renderuje UNIĘ pól wszystkich rodzajów;
- * ten skrypt pokazuje pola właściwe dla wybranego rodzaju i toggluje atrybut
- * `required`. Bez JS formularz i tak działa — serwer waliduje fields_for(kind)
- * na submit (źródło prawdy). Config w window.mpIntakeForm (wp_localize_script).
+ * Progressive enhancement: formularz renderuje UNIĘ pól wszystkich rodzajów i
+ * kategorii; ten skrypt pokazuje pola właściwe dla wybranego rodzaju + kategorii
+ * i toggluje atrybut `required`. Bez JS formularz i tak działa — serwer waliduje
+ * fields_for(kind, category) na submit (źródło prawdy). Config w window.mpIntakeForm.
  */
 ( function () {
 	'use strict';
@@ -27,6 +27,8 @@
 		return;
 	}
 
+	var catSelect = form.querySelector( '#mp-f-category' );
+
 	/**
 	 * Opakowanie pola (<p data-mp-field="KEY">) w tym formularzu.
 	 *
@@ -48,17 +50,26 @@
 	}
 
 	/**
-	 * Ustawia widoczność i `required` pól dla danego rodzaju.
+	 * Ustawia widoczność i `required` pól dla rodzaju + kategorii.
+	 * Widoczne = pola rodzaju ∪ pola kategorii (rodzaj wygrywa przy kolizji klucza).
 	 *
-	 * @param {string} kind Wybrany rodzaj.
+	 * @param {string} kind     Wybrany rodzaj.
+	 * @param {string} category Wybrana kategoria (może być pusta).
 	 * @return {void}
 	 */
-	function apply( kind ) {
+	function apply( kind, category ) {
 		var spec = cfg.kinds[ kind ] || [];
+		var catSpec = ( cfg.categories && cfg.categories[ category ] ) || [];
 		var byKey = {};
 
 		spec.forEach( function ( field ) {
 			byKey[ field.key ] = field;
+		} );
+
+		catSpec.forEach( function ( field ) {
+			if ( ! Object.prototype.hasOwnProperty.call( byKey, field.key ) ) {
+				byKey[ field.key ] = field;
+			}
 		} );
 
 		cfg.allFields.forEach( function ( key ) {
@@ -69,9 +80,9 @@
 			}
 
 			var control = controlIn( wrap );
-			var inKind = Object.prototype.hasOwnProperty.call( byKey, key );
+			var inForm = Object.prototype.hasOwnProperty.call( byKey, key );
 
-			if ( inKind ) {
+			if ( inForm ) {
 				wrap.hidden = false;
 				wrap.style.display = '';
 
@@ -87,24 +98,34 @@
 				wrap.style.display = 'none';
 
 				// Ukryte pole nie może blokować ani nieść śmieci: bez `required`,
-				// bez wysyłki (serwer i tak ignoruje pola spoza fields_for(kind),
-				// ale disabled = czysty POST).
+				// disabled = czysty POST (serwer i tak ignoruje pola spoza fields_for).
 				if ( control ) {
 					control.removeAttribute( 'required' );
 					control.disabled = true;
 				}
 			}
 
-			// Pole wracające do rodzaju musi znów wysyłać wartość.
-			if ( inKind && control ) {
+			// Pole wracające do formularza musi znów wysyłać wartość.
+			if ( inForm && control ) {
 				control.disabled = false;
 			}
 		} );
 	}
 
-	apply( select.value );
+	/**
+	 * Przelicza formularz wg aktualnych wyborów rodzaju i kategorii.
+	 *
+	 * @return {void}
+	 */
+	function refresh() {
+		apply( select.value, catSelect ? catSelect.value : '' );
+	}
 
-	select.addEventListener( 'change', function () {
-		apply( select.value );
-	} );
+	refresh();
+
+	select.addEventListener( 'change', refresh );
+
+	if ( catSelect ) {
+		catSelect.addEventListener( 'change', refresh );
+	}
 }() );
