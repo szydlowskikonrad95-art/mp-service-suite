@@ -38,7 +38,7 @@ code() {
 
 # admin-post endpointy admina (kazdy: capability lub nonce-first => 403 dla nieuprawnionych).
 AP="$MP_BASE/wp-admin/admin-post.php"
-for ep in mp_intake_resend mp_import_upload mp_import_report mp_exception_add mp_exception_revoke mp_product_archive mp_product_restore; do
+for ep in mp_intake_resend mp_import_upload mp_import_report mp_exception_add mp_exception_revoke mp_product_archive mp_product_restore mp_automator_export_csv; do
 	A=$(code "" "$AP" "$ep")
 	S=$(code /tmp/mp-secsub-jar "$AP" "$ep")
 	C=$(code /tmp/mp-seccli-jar "$AP" "$ep")
