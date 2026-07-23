@@ -202,6 +202,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34c-sla3-digest-resync.sh
       - name: Testy PR-A mp_cases_query (paginacja+cap500 · minimalizacja PII · pola terminalne · filtry · scoping ról admin/agent/subscriber/anon)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-cases-query.sh
+      - name: Testy P3.5 C-hook mp_case_checklist_authorize (ownership agent=tylko swoje/koordynator=dowolna · event CHECKLIST_ITEM_TOGGLED · FORBIDDEN/NOT_CASE_OWNER/CASE_NOT_FOUND/INVALID_STEP)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-checklist-authorize.sh
       - name: Testy P3.4 SLA-4 Przelicz SLA (admin_post+nonce+capability system-admin; nieretroaktywnosc — markery nietkniete, terminalne pominiete, nowo-przeterminowana=1 powiadomienie, audyt SLA_RECALCULATED)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34d-przelicz.sh
       - name: Testy seed reguł domyślnych (aktywacja sieje raz; skasowana nie wraca; uninstall→świeży siew)

@@ -127,6 +127,25 @@ final class Plugin {
 			4
 		);
 
+		// Kontrakt D->C: autoryzacja toggle checklisty (mp_case_checklist_authorize).
+		// C egzekwuje WLASNOSC/ROLE + emituje CHECKLIST_ITEM_TOGGLED; PO OK D zapisuje
+		// stan u siebie (case_checklists nalezy do D).
+		add_filter(
+			'mp_case_checklist_authorize',
+			static function ( $result, $case_id, $step_key, $completed, $actor_id ) {
+				unset( $result );
+
+				return CaseRepo::checklist_authorize(
+					(int) $case_id,
+					(string) $step_key,
+					(bool) $completed,
+					(int) $actor_id
+				);
+			},
+			10,
+			5
+		);
+
 		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
 		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
 		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =

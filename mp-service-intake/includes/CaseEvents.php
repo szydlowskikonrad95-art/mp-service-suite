@@ -78,6 +78,14 @@ final class CaseEvents {
 	public const SLA_ESCALATED = 'SLA_ESCALATED';
 
 	/**
+	 * Odhaczenie/odznaczenie pozycji checklisty przez personel (funkcja
+	 * kontraktowa `mp_case_checklist_authorize` — C waliduje wlasnosc/role,
+	 * PO OK D zapisuje stan u siebie). Payload: {step_key, completed, actor_id}
+	 * — STRUKTURALNY, bez tresci (EVENT_MODEL.md).
+	 */
+	public const CHECKLIST_ITEM_TOGGLED = 'CHECKLIST_ITEM_TOGGLED';
+
+	/**
 	 * Dopisuje zdarzenie do osi czasu sprawy (append-only).
 	 *
 	 * @param int                  $case_id    ID sprawy.
