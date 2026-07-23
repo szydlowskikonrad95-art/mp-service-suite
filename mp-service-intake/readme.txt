@@ -22,7 +22,7 @@ Key features:
 * Staff screen for unverified submissions (fix e-mail + resend a fresh link, throttled) with an operation audit log.
 * GDPR eraser + exporter wired into WordPress privacy tools; consent text is frozen per row for accountability.
 
-Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are fully translatable (Polish translation included).
+Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
 
 == Installation ==
 
