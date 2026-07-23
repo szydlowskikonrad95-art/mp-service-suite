@@ -53,6 +53,10 @@ final class Plugin {
 		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
 		Sweep::register();
 
+		// Eksport CSV spraw + zestawienie (P3.6): handler admin-post (bez menu —
+		// przycisk podepnie panel admina D). Capability + nonce + audyt + anti-injection.
+		CsvExport::register();
+
 		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
 		Admin\SlaRecalcAction::register();
 	}
