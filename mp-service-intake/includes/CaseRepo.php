@@ -493,6 +493,93 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Autoryzuje toggle pozycji checklisty (funkcja kontraktowa
+	 * `mp_case_checklist_authorize`). C egzekwuje WLASNOSC/ROLE — D dopiero PO OK
+	 * zapisuje stan u siebie (case_checklists nalezy do D). Reguly:
+	 * - actor musi byc personelem (mp_agent / mp_coordinator / mp_system_admin),
+	 * - mp_agent bez roli koordynatora/admina toggluje TYLKO na SWOJEJ sprawie
+	 *   (assigned_to === actor); koordynator/admin — na dowolnej,
+	 * - sprawa musi istniec i byc ZWERYFIKOWANA.
+	 * Po autoryzacji: event `CHECKLIST_ITEM_TOGGLED {step_key, completed, actor_id}`
+	 * (append-only, NO-PII). NIE dotyka tabeli D — stan zapisuje D po OK.
+	 *
+	 * @param int    $case_id   ID sprawy.
+	 * @param string $step_key  Klucz kroku (maszynowy).
+	 * @param bool   $completed Docelowy stan odhaczenia.
+	 * @param int    $actor_id  Kto toggluje (personel).
+	 * @return array<string, mixed> {success:true, step_key} lub {success:false, error_code}.
+	 */
+	public static function checklist_authorize( int $case_id, string $step_key, bool $completed, int $actor_id ): array {
+		global $wpdb;
+
+		$step_key = sanitize_key( $step_key );
+
+		if ( '' === $step_key ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'INVALID_STEP',
+			);
+		}
+
+		$is_coord = user_can( $actor_id, 'mp_coordinator' ) || user_can( $actor_id, 'mp_system_admin' );
+		$is_agent = user_can( $actor_id, 'mp_agent' );
+
+		if ( ! $is_coord && ! $is_agent ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'FORBIDDEN',
+			);
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT assigned_to FROM {$cases} WHERE id = %d AND identity_status = 'verified'",
+				$case_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		if ( null === $row ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		// mp_agent bez roli koordynatora/admina: TYLKO wlasna sprawa (ownership).
+		if ( ! $is_coord ) {
+			$assigned = null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null;
+
+			if ( $assigned !== $actor_id ) {
+				return array(
+					'success'    => false,
+					'error_code' => 'NOT_CASE_OWNER',
+				);
+			}
+		}
+
+		CaseEvents::log(
+			$case_id,
+			CaseEvents::CHECKLIST_ITEM_TOGGLED,
+			array(
+				'step_key'  => $step_key,
+				'completed' => $completed,
+				'actor_id'  => $actor_id,
+			),
+			$actor_id
+		);
+
+		return array(
+			'success'  => true,
+			'step_key' => $step_key,
+		);
+	}
+
+	/**
 	 * Zmienia status sprawy (funkcja kontraktowa `mp_case_change_status`).
 	 *
 	 * Walidacja wg STATE_MACHINE.md: status istnieje (rdzen 7 + filtr D),
