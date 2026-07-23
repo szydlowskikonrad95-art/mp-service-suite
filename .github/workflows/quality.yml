@@ -220,7 +220,7 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-checklist-authorize.sh
       - name: Testy karta sprawy READ (CaseEvents::for_case os czasu · form_data_for_case · 4 hooki D->C mp_case_checklist_state/response_templates/render_template/case_deadline)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-case-card.sh
-      - name: Testy karta sprawy AKCJE (CaseActions admin-post: status+optimistic-lock / reply / assign; macierz capability+nonce, mp_agent NIE przydziela, kazda decyzja na osi)
+      - name: Testy karta sprawy AKCJE (CaseActions admin-post — status+optimistic-lock / reply / assign; macierz capability+nonce, mp_agent NIE przydziela, kazda decyzja na osi)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-case-actions.sh
       - name: Testy P3.4 SLA-4 Przelicz SLA (admin_post+nonce+capability system-admin; nieretroaktywnosc — markery nietkniete, terminalne pominiete, nowo-przeterminowana=1 powiadomienie, audyt SLA_RECALCULATED)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34d-przelicz.sh
