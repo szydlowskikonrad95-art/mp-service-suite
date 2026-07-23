@@ -182,6 +182,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-hooki-c.sh
       - name: Testy P3.1 (silnik reguł + auto-przydział round-robin + ASSIGNMENT_UNMATCHED)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p31-przydzial.sh
+      - name: Testy P3.1 wg KATEGORII (kartka — produkt->sprawa->get_context.kategoria->regula->przydzial)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p31-kategoria.sh
       - name: Testy P3.2 (mp_case_change_status — STATE_MACHINE + optimistic-lock + reopen)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p32-status.sh
       - name: Testy P3.2 D-side (statusy własne — filtr mp_registered_statuses + guard długości + round-trip)
