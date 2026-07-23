@@ -46,6 +46,9 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\StatusDefs::OPTION );
 	// Szablony maili (opcja-tresc warstwy ii — przezywaja RAZEM z regulami).
 	delete_option( MP\Automator\MailTemplates::OPTION );
+	// Szablony checklist + szablony odpowiedzi per typ (opcje-tresc warstwy ii, P3.5).
+	delete_option( MP\Automator\ChecklistTemplates::OPTION );
+	delete_option( MP\Automator\ResponseTemplates::OPTION );
 	// Konfiguracja SLA rdzenia + wersja polityki (opcje-tresc warstwy ii).
 	delete_option( MP\Automator\SlaConfig::CORE_OPTION );
 	delete_option( MP\Automator\SlaConfig::POLICY_OPTION );

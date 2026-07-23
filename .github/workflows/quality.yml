@@ -216,6 +216,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p35-checklisty.sh
       - name: Testy panel admina D (menu · widoczność per rola · przyciski per-cap Przelicz-SLA/Eksport · listy reguł/statusów/rejestr · slot P3.5 · 403 bez cap)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-panel-admina.sh
+      - name: DoD D (uninstall zero-śladu + kanarki · degraded C/B OFF · macierz negatywna mp_agent/anon · widoczność menu panelu per rola)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-dod.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-e2e.sh
       - name: BLOK-S tabletop (S1-S10 niezmienniki, cross-plugin B↔C, SKIP D-pending)
@@ -269,6 +271,8 @@ jobs:
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
       - name: Dirty-env test (prefiks + WP_DEBUG zero-notice + object-cache + degraded)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/dirty-env.sh
+      - name: DoD D na dirty-env (uninstall zero-śladu + degraded pod cms_x9_ + object-cache + WP_DEBUG zero-notice)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-dod.sh
 
   # DoD C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi (upgrade bez reaktywacji)
   migration:
