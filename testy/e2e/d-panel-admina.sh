@@ -86,8 +86,25 @@ POL_AFTER=$(q "SELECT sla_policy_version FROM wp_mp_case_sla WHERE case_id=$CID2
 RECALC_EV=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='SLA_RECALCULATED'")
 [ "$POL_AFTER" = "2" ] && [ "$RECALC_EV" -ge 1 ] 2>/dev/null && ok "(b) action panelu Przelicz SLA => realny recompute (policy $POL_BEFORE->$POL_AFTER, audyt zapisany)" || bad "(b) recompute przez panel nie zadzialal (policy=$POL_AFTER ev=$RECALC_EV)"
 
+# ── 6. (P3.5 follow-up) UI konfiguracji checklist+szablonow w slocie ──────────
+HTML_FU=$(render_as $SYS)
+echo "$HTML_FU" | grep -q 'mp_automator_checklist_config' && ok "(P3.5) formularz checklist (action config) dla system_admina" || bad "(P3.5) brak formularza checklist"
+echo "$HTML_FU" | grep -q 'mp_automator_response_config' && ok "(P3.5) formularz szablonow odpowiedzi dla system_admina" || bad "(P3.5) brak formularza szablonow"
+echo "$HTML_FU" | grep -q '_wpnonce' && ok "(P3.5) nonce w formularzach konfiguracji" || bad "(P3.5) brak nonce"
+echo "$HTML_FU" | grep -qF '{{numer_sprawy}}' && ok "(P3.5) WHITELIST markerow widoczna adminowi" || bad "(P3.5) brak whitelist markerow"
+# obrona warstwowa: koordynator (nie-sysadmin) NIE widzi formularzy config
+HTML_FU_C=$(render_as $COORD)
+echo "$HTML_FU_C" | grep -q 'mp_automator_checklist_config' && bad "(P3.5) koordynator WIDZI formularz config!" || ok "(P3.5) koordynator: formularze config UKRYTE (tylko system_admin)"
+# realny zapis konfiguracji przez handler (nonce zgodny z ACTION_CONFIG)
+NEW_JSON='{"reklamacja":[{"key":"test_krok","label":"Krok testowy"}]}'
+wp eval "wp_set_current_user($SYS); \$n=wp_create_nonce('mp_automator_checklist_config'); \$_REQUEST['_wpnonce']=\$n; \$_POST['_wpnonce']=\$n; \$_POST['payload']='$NEW_JSON'; \$_REQUEST['action']='mp_automator_checklist_config'; do_action('admin_post_mp_automator_checklist_config');" >/dev/null 2>&1
+SAVED=$(wp eval '$a=MP\Automator\ChecklistTemplates::all(); echo (isset($a["reklamacja"]) && in_array("test_krok", array_column($a["reklamacja"],"key"), true))?"1":"0";' 2>/dev/null | tr -d '[:space:]')
+[ "$SAVED" = "1" ] && ok "(P3.5) POST checklist z nonce => realny zapis configu przez handler" || bad "(P3.5) zapis configu nie zadzialal ($SAVED)"
+CFG_EV=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='CONFIG_CHANGED' AND payload LIKE '%checklist_templates%'")
+[ "$CFG_EV" -ge 1 ] 2>/dev/null && ok "(P3.5) audyt CONFIG_CHANGED (checklist) zapisany" || bad "(P3.5) brak audytu config"
+
 # ── Sprzatanie (przywroc domyslny config + kasuj userow) ─────────────────────
-wp eval 'delete_option("mp_automator_sla_policy_version"); delete_option("mp_automator_sla_core");' >/dev/null 2>&1
+wp eval 'delete_option("mp_automator_sla_policy_version"); delete_option("mp_automator_sla_core"); delete_option("mp_automator_checklist_templates"); delete_option("mp_automator_response_templates");' >/dev/null 2>&1
 for u in "$SYS" "$COORD" "$SUB"; do wp user delete "$u" --yes >/dev/null 2>&1; done
 echo ""
 echo "D-PANEL-ADMINA: PASS=$PASS FAIL=$FAIL"

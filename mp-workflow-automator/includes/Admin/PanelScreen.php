@@ -16,6 +16,8 @@
 
 namespace MP\Automator\Admin;
 
+use MP\Automator\ChecklistTemplates;
+use MP\Automator\ResponseTemplates;
 use MP\Automator\Tables;
 
 /**
@@ -453,10 +455,91 @@ final class PanelScreen {
 	 */
 	private static function render_p35_slot(): void {
 		?>
-		<h2 class="mp-automator-h2"><?php esc_html_e( 'Checklisty i szablony', 'mp-workflow-automator' ); ?></h2>
-		<div class="mp-automator-slot" role="note">
-			<p><?php esc_html_e( 'Zarządzanie checklistami i szablonami wiadomości pojawi się tutaj wkrótce (moduł P3.5).', 'mp-workflow-automator' ); ?></p>
-		</div>
+		<h2 class="mp-automator-h2"><?php esc_html_e( 'Checklisty i szablony odpowiedzi', 'mp-workflow-automator' ); ?></h2>
+		<?php
+		// Konfiguracja = poziom system-config (spojne z handlerami P3.5: cap mp_system_admin).
+		// Obrona warstwowa: sekcja UKRYTA dla nie-adminow, a handlery i tak maja wlasna bramke.
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			?>
+			<div class="notice notice-info inline"><p><?php esc_html_e( 'Konfiguracja checklist i szablonów odpowiedzi jest dostępna dla administratora systemu.', 'mp-workflow-automator' ); ?></p></div>
+			<?php
+			return;
+		}
+
+		self::render_config_form(
+			ChecklistTemplates::ACTION_CONFIG,
+			__( 'Checklisty per typ sprawy', 'mp-workflow-automator' ),
+			__( 'Konfiguracja (JSON): rodzaj sprawy → lista kroków, każdy { "key": "...", "label": "..." }.', 'mp-workflow-automator' ),
+			(string) wp_json_encode( ChecklistTemplates::all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
+			'mp-checklist-payload',
+			__( 'Zapisz checklisty', 'mp-workflow-automator' )
+		);
+
+		self::render_config_form(
+			ResponseTemplates::ACTION_CONFIG,
+			__( 'Szablony odpowiedzi', 'mp-workflow-automator' ),
+			__( 'Konfiguracja (JSON): rodzaj sprawy → lista szablonów, każdy { "key": "...", "label": "...", "body": "..." }.', 'mp-workflow-automator' ),
+			(string) wp_json_encode( ResponseTemplates::all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
+			'mp-templates-payload',
+			__( 'Zapisz szablony', 'mp-workflow-automator' )
+		);
+
+		self::render_markers_whitelist();
+	}
+
+	/**
+	 * Wspolny formularz konfiguracji P3.5 (checklisty/szablony) — payload JSON POST-owany
+	 * na handler admin-post danej akcji z nonce zgodnym z jego check_admin_referer.
+	 *
+	 * @param string $action    Nazwa akcji admin-post (= akcja nonce).
+	 * @param string $heading   Naglowek sekcji.
+	 * @param string $label     Opis pola (co wpisac).
+	 * @param string $json      Biezaca konfiguracja jako JSON (prefill).
+	 * @param string $field_id  Unikalne id textarea (a11y label-for).
+	 * @param string $submit    Etykieta przycisku zapisu.
+	 * @return void
+	 */
+	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit ): void {
+		?>
+		<h3 class="mp-automator-h3"><?php echo esc_html( $heading ); ?></h3>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-config">
+			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
+			<?php wp_nonce_field( $action ); ?>
+			<label for="<?php echo esc_attr( $field_id ); ?>"><?php echo esc_html( $label ); ?></label>
+			<textarea id="<?php echo esc_attr( $field_id ); ?>" name="payload" rows="10" class="large-text code" spellcheck="false"><?php echo esc_textarea( $json ); ?></textarea>
+			<?php submit_button( $submit, 'primary', $field_id . '_save', false ); ?>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Whitelist markerow szablonow (z ResponseTemplates) — admin musi wiedzieć CO wolno
+	 * wstawić, inaczej marker spoza listy zostaje pominięty (martwy `{{}}`).
+	 *
+	 * @return void
+	 */
+	private static function render_markers_whitelist(): void {
+		$markers = ResponseTemplates::markers_whitelist();
+		?>
+		<h4 class="mp-automator-h4"><?php esc_html_e( 'Dostępne markery szablonów (whitelist)', 'mp-workflow-automator' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Tylko poniższe markery są podstawiane w treści szablonu — inne zostają pominięte.', 'mp-workflow-automator' ); ?></p>
+		<table class="widefat striped mp-automator-table">
+			<caption class="screen-reader-text"><?php esc_html_e( 'Lista dostępnych markerów szablonów odpowiedzi', 'mp-workflow-automator' ); ?></caption>
+			<thead>
+				<tr>
+					<th scope="col"><?php esc_html_e( 'Marker', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Znaczenie', 'mp-workflow-automator' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $markers as $marker => $desc ) : ?>
+					<tr>
+						<td><code><?php echo esc_html( (string) $marker ); ?></code></td>
+						<td><?php echo esc_html( (string) $desc ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
 		<?php
 	}
 }
