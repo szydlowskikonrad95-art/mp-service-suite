@@ -167,19 +167,18 @@ final class PanelScreen {
 	 * @return void
 	 */
 	private static function render_actions(): void {
-		$post_url = esc_url( admin_url( 'admin-post.php' ) );
 		?>
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Akcje', 'mp-workflow-automator' ); ?></h2>
 		<div class="mp-automator-actions">
 			<?php if ( current_user_can( 'mp_system_admin' ) ) : ?>
-				<form method="post" action="<?php echo $post_url; ?>" class="mp-automator-action">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-action">
 					<?php echo SlaRecalcAction::form_fields(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- form_fields zwraca gotowy, bezpieczny HTML (hidden action + wp_nonce_field). ?>
 					<?php submit_button( __( 'Przelicz SLA', 'mp-workflow-automator' ), 'secondary', 'mp_recalc_submit', false ); ?>
 					<span class="description"><?php esc_html_e( 'Przelicza terminy otwartych spraw wg bieżącej konfiguracji (nie wysyła ponownie już wysłanych powiadomień).', 'mp-workflow-automator' ); ?></span>
 				</form>
 			<?php endif; ?>
 
-			<form method="post" action="<?php echo $post_url; ?>" class="mp-automator-action">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-action">
 				<input type="hidden" name="action" value="mp_automator_export_csv" />
 				<?php wp_nonce_field( 'mp_automator_export_csv' ); ?>
 				<?php submit_button( __( 'Eksport CSV', 'mp-workflow-automator' ), 'secondary', 'mp_export_submit', false ); ?>
@@ -253,8 +252,8 @@ final class PanelScreen {
 		$degraded = ! has_filter( 'mp_all_statuses' );
 
 		$statuses = $degraded
-			? apply_filters( 'mp_registered_statuses', array() ) // tylko wlasne D
-			: apply_filters( 'mp_all_statuses', array() );        // pelna: rdzen 7 + wlasne
+			? apply_filters( 'mp_registered_statuses', array() ) // Tylko wlasne D.
+			: apply_filters( 'mp_all_statuses', array() );        // Pelna: rdzen 7 + wlasne.
 
 		$statuses = is_array( $statuses ) ? $statuses : array();
 		?>
