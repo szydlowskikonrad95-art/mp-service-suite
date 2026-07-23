@@ -171,3 +171,22 @@ sprawach → duplikaty SRV po reinstalacji w tym samym roku).
 
 Erasery szukają po **EMAILU**, nie user_id (łapią sprawy bez konta). Sprawa aktywna / okno roszczeń →
 odroczenie EN BLOC z `items_retained` (żadnej częściowej anonimizacji). Pełna orkiestracja: OWNERSHIP.md.
+
+## 6. Kontrolowane usuwanie danych (kartka §2 „kontrolowane usuwanie" — B4)
+
+Dane NIE znikają twardo „z panelu jednym kliknięciem". Każda ścieżka usuwania jest kontrolowana:
+
+- **Produkty (Registry):** **miękkie usuwanie** — `archived=1` + `deleted_at`/`deleted_by` (nie DELETE). Bramka:
+  produktu z **aktywną sprawą NIE da się zarchiwizować** (hak `mp_product_active_cases_count`, FAIL‑CLOSED — B5).
+  Odczyty filtrują `archived=0`; usunięty serial wraca przy re‑imporcie (wskrzeszenie, nie duplikat).
+- **Załączniki (Intake):** **miękkie usuwanie** (`deleted_at`) + **retencja cronem** — po `retention_until` kasowany
+  wiersz **i** plik z dysku (twardo). Endpoint serwujący respektuje `deleted_at IS NULL`.
+- **RODO / anonimizacja klienta:** anonimizacja EN BLOC (odroczona przy aktywnej sprawie), redakcja PII w
+  `messages`/`form_data`/`consents`, kasacja załączników klienta — orkiestracja w OWNERSHIP.md (§5 wyżej).
+- **Oś zdarzeń (`case_events`, `workflow_events`):** **append‑only, nieusuwalna** (kartka relacja 3 — „nieusuwalny
+  wpis w osi czasu"). Zawiera wyłącznie zdarzenia NO‑PII / zredagowane.
+- **Odinstalowanie:** **opt‑in** — domyślnie dane ZOSTAJĄ (usuwane tylko role/opcje techniczne); tabele znikają
+  dopiero po jawnym `mp_<plugin>_delete_data=1`. Test symetrii aktywacja↔uninstall (grep‑zero) w CI.
+
+Twardego kasowania pojedynczych spraw/klientów „z UI" świadomie brak — usunięcie danych klienta idzie ścieżką RODO
+(kontrolowaną, z odroczeniem), a nie surowym DELETE. To realizuje wymóg „kontrolowane usuwanie".
