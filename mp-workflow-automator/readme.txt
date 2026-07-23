@@ -2,7 +2,7 @@
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,15 @@ Automates the service workflow: assigns cases to staff based on product category
 Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are fully translatable (Polish translation included).
 
 == Changelog ==
+
+= 0.4.0 =
+* Rules engine + round-robin auto-assignment on case creation (structural rules, loop guard).
+* Custom case statuses provider + status change action via the C contract.
+* Notification e-mails: assignment, status change, client/staff messages (safe egress, per-type dedup).
+* SLA: deadline bookkeeping, 5-minute sweep (reminders/escalations), resync + no-avalanche digest, admin "Recalculate SLA".
+* Per-type checklists (toggle authorized by Intake, ownership enforced) + per-type response templates with a visible marker whitelist.
+* CSV export of cases + summary (capability-gated, audited, anti-formula-injection, minimized data via the cases-query contract).
+* Admin panel wiring all backend handlers; all data read from Intake/Registry only through mp_* contract hooks.
 
 = 0.1.0 =
 * Plugin skeleton: OOP bootstrap, lifecycle (activation/deactivation/uninstall), shared mp_* roles, i18n.

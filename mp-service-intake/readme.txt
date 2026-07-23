@@ -2,7 +2,7 @@
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,14 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 0.4.0 =
+* Contract functions for the Workflow Automator: case context, assignment, status change (optimistic-lock), paginated cases query (role-aware, minimized), checklist authorization (ownership + event), read-only status list.
+* Submission form now dynamic by case type client-side (all fields in DOM; return-reason works first time).
+* Guarantee exceptions recorded on the case timeline (EXCEPTION_APPLIED/REVOKED, NO-PII).
+* Rate-limit by real client IP (mp_intake_client_ip filter) for reverse-proxy/Cloudflare setups.
+* GDPR fix: correct terminal status "zamknięte" so erasure is no longer deferred indefinitely.
+* Client front polish (admin bar hidden for clients, CSS, panel CTA) + panel WCAG contrast ≥ 4.5:1.
 
 = 0.3.0 =
 * Customer account + passwordless login + panel (live status, message history).
