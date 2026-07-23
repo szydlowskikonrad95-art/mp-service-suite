@@ -1049,6 +1049,107 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Rozbicie liczby spraw produktu: total/active/closed/rejected (kontrakt B->C
+	 * `mp_case_count_by_product`, API-KONTRAKT). Zasila kolumne „Sprawy" w rejestrze
+	 * (przez B-owy `mp_serial_usage_count`). Sprawy UNVERIFIED NIE licza sie
+	 * (anty-wektor „spamer blokuje produkty"). closed=TERMINAL[0], rejected=TERMINAL[1].
+	 *
+	 * @param int $product_id ID produktu w rejestrze.
+	 * @return array{total: int, active: int, closed: int, rejected: int}
+	 */
+	public static function case_count_by_product( int $product_id ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+		$t     = self::TERMINAL_STATUSES;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT COUNT(*) AS total,
+					SUM( CASE WHEN status IS NULL OR status NOT IN (%s, %s) THEN 1 ELSE 0 END ) AS active,
+					SUM( CASE WHEN status = %s THEN 1 ELSE 0 END ) AS closed,
+					SUM( CASE WHEN status = %s THEN 1 ELSE 0 END ) AS rejected
+				FROM {$table}
+				WHERE product_registry_id = %d AND identity_status = 'verified'",
+				$t[0],
+				$t[1],
+				$t[0],
+				$t[1],
+				$product_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return array(
+			'total'    => (int) ( $row['total'] ?? 0 ),
+			'active'   => (int) ( $row['active'] ?? 0 ),
+			'closed'   => (int) ( $row['closed'] ?? 0 ),
+			'rejected' => (int) ( $row['rejected'] ?? 0 ),
+		);
+	}
+
+	/**
+	 * Produkty powiazane z klientem (kontrakt B->C `mp_customer_find_products`):
+	 * B ma wyszukiwarke „po kliencie" mechanika ODWROCONA — to C zna
+	 * klient->sprawy->produkty. Dopasowanie po email LUB imieniu (LIKE); tylko sprawy
+	 * VERIFIED z produktem. Zwraca {ids, truncated, limit} wg API-KONTRAKT (limit 200).
+	 *
+	 * @param string $query Fraza (email lub imie klienta).
+	 * @return array{ids: array<int, int>, truncated: bool, limit: int}
+	 */
+	public static function find_products_for_customer( string $query ): array {
+		global $wpdb;
+
+		$limit = 200;
+		$query = trim( $query );
+
+		if ( '' === $query ) {
+			return array(
+				'ids'       => array(),
+				'truncated' => false,
+				'limit'     => $limit,
+			);
+		}
+
+		$cases     = Tables::full( Tables::CASES );
+		$customers = Tables::full( Tables::CUSTOMERS );
+		$like      = '%' . $wpdb->esc_like( $query ) . '%';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne; zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT c.product_registry_id
+				FROM {$cases} c
+				INNER JOIN {$customers} cu ON c.customer_id = cu.id
+				WHERE c.product_registry_id IS NOT NULL
+					AND c.identity_status = 'verified'
+					AND ( cu.email LIKE %s OR cu.name LIKE %s )
+				ORDER BY c.product_registry_id DESC
+				LIMIT %d",
+				$like,
+				$like,
+				$limit + 1
+			)
+		);
+		// phpcs:enable
+
+		$ids       = array_values( array_filter( array_map( 'intval', (array) $ids ) ) );
+		$truncated = count( $ids ) > $limit;
+
+		if ( $truncated ) {
+			$ids = array_slice( $ids, 0, $limit );
+		}
+
+		return array(
+			'ids'       => $ids,
+			'truncated' => $truncated,
+			'limit'     => $limit,
+		);
+	}
+
+	/**
 	 * Czy klient ma sprawe AKTYWNA (nie-terminalna) — RODO odracza EN BLOC.
 	 *
 	 * @param int $customer_id ID klienta.
