@@ -72,6 +72,11 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 ## 6. Dane / SQL / wyjścia
 
 - SQL: `$wpdb->prepare` wszędzie; `esc_like` na wyszukiwarce; ZERO twardych prefiksów `wp_` (linter tabel w CI = 0).
+- **Nazwy WŁASNYCH tabel** (`{$table}` z `Tables::full()` = prefiks + stała, ZERO wejścia użytkownika) są interpolowane —
+  WordPress nie pozwala przepuścić nazwy tabeli przez `prepare` (tylko wartości). To standardowy, bezpieczny wzorzec
+  z adnotacją `phpcs:disable … InterpolatedNotPrepared -- tabela wlasna`. ⚠️ Narzędzie **`plugin-check`** (osobne od PHPCS)
+  mimo to **zgłasza to jako ostrzeżenie** (nie honoruje `phpcs:disable`) — **znany false-positive, zero ryzyka SQL**.
+  Opcjonalna modernizacja gdyby wymagany był czysty plugin-check: placeholder `%i` na identyfikatory (`$wpdb->prepare`, WP 6.2+).
 - Wejścia: `sanitize_*` / `absint` przy każdym `$_POST/$_GET`. Wyjścia: `esc_html/esc_attr/esc_url` przy każdym echo (WPCS w CI).
 - Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem anty-spamu P1.6).
 
