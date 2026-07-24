@@ -1,11 +1,11 @@
 <?php
 /**
- * Numer sprawy SRV/RRRR/NNNN — licznik ATOMOWY per rok (spec P1.3, sekcja 4).
+ * Numer sprawy SRV/RRRR/NNNNN — licznik ATOMOWY per rok (spec klienta).
  *
  * Jedna kwerenda robi init roku I podbicie (bez add_option, bez read-modify-write):
  *   INSERT ... VALUES (year, 1) ON DUPLICATE KEY UPDATE value = LAST_INSERT_ID(value + 1)
  * -> LAST_INSERT_ID() zwraca NOWA wartosc licznika w tej samej sesji. Format:
- * SRV/RRRR/NNNN, NNNN = min. 4 cyfry z zerami do 9999, potem naturalnie 5+.
+ * SRV/RRRR/NNNNN, NNNNN = min. 5 cyfr z zerami do 99999, potem naturalnie 6+.
  * Unikalnosc twarda przez UNIQUE (case_number) w tabeli spraw (pas + retry).
  *
  * @package MP\Intake
@@ -22,7 +22,7 @@ final class SrvCounter {
 	 * Zwraca nastepny numer sprawy dla danego roku (atomowo).
 	 *
 	 * @param int $year Rok kalendarzowy (UTC — spojnie z created_at).
-	 * @return string Numer w formacie SRV/RRRR/NNNN.
+	 * @return string Numer w formacie SRV/RRRR/NNNNN.
 	 */
 	public static function next( int $year ): string {
 		global $wpdb;
@@ -52,9 +52,9 @@ final class SrvCounter {
 	 *
 	 * @param int $year  Rok.
 	 * @param int $value Kolejna wartosc licznika (>=1).
-	 * @return string SRV/RRRR/NNNN.
+	 * @return string SRV/RRRR/NNNNN.
 	 */
 	public static function format( int $year, int $value ): string {
-		return sprintf( 'SRV/%04d/%04d', $year, $value );
+		return sprintf( 'SRV/%04d/%05d', $year, $value );
 	}
 }

@@ -104,7 +104,7 @@ cget -c "$JAR" -b "$JAR" -o /tmp/mp-s-confirm.html \
 ST=$(q "SELECT status FROM wp_mp_service_cases WHERE id=$CID")
 [ "$ST" = "nowe" ] && ok "KROK 4: po potwierdzeniu sprawa verified, status='nowe'" || bad "KROK 4: status po weryfikacji='$ST' (oczek. nowe)"
 CNUM=$(q "SELECT case_number FROM wp_mp_service_cases WHERE id=$CID")
-echo "$CNUM" | grep -qE "^SRV/[0-9]{4}/[0-9]{4}$" && ok "KROK 4: nadany numer SRV: $CNUM (format SRV/RRRR/NNNN)" || bad "KROK 4: zly/brak numeru SRV: $CNUM"
+echo "$CNUM" | grep -qE "^SRV/[0-9]{4}/[0-9]{5,}$" && ok "KROK 4: nadany numer SRV: $CNUM (format SRV/RRRR/NNNNN)" || bad "KROK 4: zly/brak numeru SRV: $CNUM"
 # status_changed_at ustawiony przy weryfikacji = start zegara SLA (dziura K1 audytu)
 SCA=$(q "SELECT COALESCE(status_changed_at,'NULL') FROM wp_mp_service_cases WHERE id=$CID")
 VER=$(q "SELECT COALESCE(verified_at,'NULL') FROM wp_mp_service_cases WHERE id=$CID")
