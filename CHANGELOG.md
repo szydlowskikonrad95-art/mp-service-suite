@@ -4,6 +4,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Changed
+- Wymagania środowiska doprecyzowane wg specyfikacji klienta: `Requires at least` obniżone **6.9 → 6.0**
+  (kartka: „WordPress 6.x" = 6.0 i nowsze; kod używa tylko stabilnych API). Dodana sekcja **Requirements**
+  w readme (WordPress 6.x, PHP 8.1+, MySQL 8.0+/MariaDB 10.6+, **HTTPS** — passwordless login + dane klienta,
+  **WP-Cron** — SLA/przypomnienia/eskalacje, importy, retencja). `Tested up to` bez zmian (6.9).
+  Poprawka literówki formatu numeru w readme intake: `SRV/YYYY/NNNNN` (5 cyfr, spójnie z v0.5.0).
+
 ### Added
 - Automator (D) — **przebieg krok 5: silnik reguł NADAJE priorytet.** Nowa akcja reguły
   `set_priority` (na `case_created`) ustawia priorytet sprawy wg warunku (np. kategoria/rodzaj)

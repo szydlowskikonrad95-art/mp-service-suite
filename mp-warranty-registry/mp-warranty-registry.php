@@ -3,7 +3,7 @@
  * Plugin Name: MP Warranty & Serial Registry
  * Description: Rejestr produktow, numerow seryjnych, partii i okresow gwarancyjnych: import CSV, statusy gwarancji, wyjatki gwarancyjne, wyszukiwarka.
  * Version: 0.5.0
- * Requires at least: 6.9
+ * Requires at least: 6.0
  * Requires PHP: 8.1
  * Author: MP Service Suite
  * License: GPLv2 or later
