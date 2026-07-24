@@ -83,7 +83,61 @@ final class RuleEngine {
 	 * @return void
 	 */
 	public static function on_case_created( $case_id ): void {
+		// Priorytet PRZED przydzialem i PRZED wierszem SLA (RuleEngine hook=10 < Sla=20),
+		// zeby pierwszy termin liczyl sie z nadanego priorytetu.
+		self::run_priority( (int) $case_id );
 		self::run_assignment( (int) $case_id );
+	}
+
+	/**
+	 * Silnik NADAJE priorytet: dopasowuje reguly set_priority na case_created i wykonuje
+	 * PIERWSZA pasujaca (mutacja = pierwsza wygrywa; r.D1). Brak reguly => priorytet
+	 * domyslny sprawy ('normal') zostaje. Wola kontrakt C `mp_case_set_priority`.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	public static function run_priority( int $case_id ): void {
+		$ctx = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+
+		// Sprawa zniknela / niezweryfikowana (D nie widzi sierot) — nic nie robimy.
+		if ( ! is_array( $ctx ) ) {
+			return;
+		}
+
+		$rules = Rules::enabled_for_trigger( Rules::TRIGGER_CASE_CREATED );
+
+		foreach ( $rules as $rule ) {
+			if ( Rules::ACTION_SET_PRIORITY !== $rule['action_type'] ) {
+				continue;
+			}
+
+			if ( ! self::matches( $rule, $ctx ) ) {
+				continue;
+			}
+
+			$config   = json_decode( (string) $rule['action_config_json'], true );
+			$priority = is_array( $config ) && isset( $config['priority'] ) ? (string) $config['priority'] : '';
+
+			$result = apply_filters( 'mp_case_set_priority', null, $case_id, $priority, 0 );
+			$ok     = is_array( $result ) && ! empty( $result['success'] );
+
+			WorkflowEvents::log(
+				WorkflowEvents::RULE_EXECUTED,
+				array(
+					'rule_id'  => (int) $rule['id'],
+					'trigger'  => Rules::TRIGGER_CASE_CREATED,
+					'action'   => Rules::ACTION_SET_PRIORITY,
+					'priority' => $priority,
+					'result'   => $ok ? 'success' : 'failed',
+					'depth'    => 0,
+				),
+				$case_id
+			);
+
+			// Pierwsza pasujaca mutacja wygrywa — kolejne set_priority pomijamy.
+			return;
+		}
 	}
 
 	/**

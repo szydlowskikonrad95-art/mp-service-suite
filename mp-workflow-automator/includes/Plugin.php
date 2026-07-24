@@ -53,6 +53,9 @@ final class Plugin {
 		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
 		Sweep::register();
 
+		// Raport koncowy (przebieg krok 8): przy zamknieciu sprawy wpis systemowy w C.
+		ClosingReport::register();
+
 		// Eksport CSV spraw + zestawienie (P3.6): handler admin-post (bez menu —
 		// przycisk podepnie panel admina D). Capability + nonce + audyt + anti-injection.
 		CsvExport::register();
