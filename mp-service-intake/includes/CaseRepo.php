@@ -783,6 +783,112 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Lista spraw dla PERSONELU (ekran „MP: Sprawy" / karta sprawy — kartka krok 7).
+	 * Model B: CALY personel (agent/koordynator/admin) widzi WSZYSTKIE zweryfikowane
+	 * sprawy — BEZ scopingu per assigned_to (inaczej niz query() dla raportow/RODO).
+	 * Personel obsluguje sprawy, wiec widzi imie/e-mail klienta (to NIE eksport).
+	 * Sortowanie po WHITELIST kolumn (orderby/order NIGDY z inputu do SQL wprost — anty-SQLi).
+	 *
+	 * @param array<string, mixed> $filters  {status?, kind?, assigned? (id|'none'), q? (SRV/klient)}.
+	 * @param int                  $page     Strona (>= 1).
+	 * @param int                  $per_page 1..100.
+	 * @param string               $orderby  Klucz sortowania (whitelist; inne => created_at).
+	 * @param string               $order    ASC|DESC (inne => DESC).
+	 * @return array{rows: array<int, array<string, mixed>>, total: int, page: int, per_page: int}
+	 */
+	public static function query_for_staff( array $filters = array(), int $page = 1, int $per_page = 20, string $orderby = 'created_at', string $order = 'DESC' ): array {
+		global $wpdb;
+
+		// Model B: dowolny personel widzi wszystko; nie-personel => pusto (obrona warstwowa, ekran i tak bramkuje).
+		if ( ! current_user_can( 'mp_agent' ) && ! current_user_can( 'mp_coordinator' ) && ! current_user_can( 'mp_system_admin' ) ) {
+			return array(
+				'rows'     => array(),
+				'total'    => 0,
+				'page'     => $page,
+				'per_page' => $per_page,
+			);
+		}
+
+		$per_page = max( 1, min( 100, $per_page ) );
+		$page     = max( 1, $page );
+		$offset   = ( $page - 1 ) * $per_page;
+
+		// WHITELIST sortowania — jedyne dozwolone kolumny/kierunek do SQL (anty-SQLi).
+		$sortable  = array(
+			'created_at'  => 'c.created_at',
+			'status'      => 'c.status',
+			'kind'        => 'c.kind',
+			'case_number' => 'c.case_number',
+		);
+		$order_col = $sortable[ $orderby ] ?? 'c.created_at';
+		$order_dir = ( 'ASC' === strtoupper( $order ) ) ? 'ASC' : 'DESC';
+
+		$cases     = Tables::full( Tables::CASES );
+		$customers = Tables::full( Tables::CUSTOMERS );
+
+		$where  = array( 'c.identity_status = %s' );
+		$params = array( 'verified' );
+
+		$status = isset( $filters['status'] ) ? sanitize_text_field( (string) $filters['status'] ) : '';
+		if ( '' !== $status ) {
+			$where[]  = 'c.status = %s';
+			$params[] = $status;
+		}
+
+		$kind = isset( $filters['kind'] ) ? sanitize_text_field( (string) $filters['kind'] ) : '';
+		if ( '' !== $kind ) {
+			$where[]  = 'c.kind = %s';
+			$params[] = $kind;
+		}
+
+		$assigned = isset( $filters['assigned'] ) ? sanitize_text_field( (string) $filters['assigned'] ) : '';
+		if ( 'none' === $assigned ) {
+			$where[] = 'c.assigned_to IS NULL';
+		} elseif ( '' !== $assigned && ctype_digit( $assigned ) ) {
+			$where[]  = 'c.assigned_to = %d';
+			$params[] = (int) $assigned;
+		}
+
+		$q = isset( $filters['q'] ) ? trim( sanitize_text_field( (string) $filters['q'] ) ) : '';
+		if ( '' !== $q ) {
+			$like     = '%' . $wpdb->esc_like( $q ) . '%';
+			$where[]  = '( c.case_number LIKE %s OR cu.name LIKE %s OR cu.email LIKE %s )';
+			$params[] = $like;
+			$params[] = $like;
+			$params[] = $like;
+		}
+
+		$where_sql = implode( ' AND ', $where );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- tabele wlasne C; WHERE/LIMIT z placeholderow; ORDER BY z WHITELIST (nie z inputu).
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$cases} c LEFT JOIN {$customers} cu ON cu.id = c.customer_id WHERE {$where_sql}",
+				$params
+			)
+		);
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT c.id, c.case_number, c.kind, c.status, c.priority, c.assigned_to,
+					c.product_registry_id, c.created_at, cu.name AS customer_name, cu.email AS customer_email
+				FROM {$cases} c LEFT JOIN {$customers} cu ON cu.id = c.customer_id
+				WHERE {$where_sql} ORDER BY {$order_col} {$order_dir}, c.id DESC LIMIT %d OFFSET %d",
+				array_merge( $params, array( $per_page, $offset ) )
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return array(
+			'rows'     => is_array( $rows ) ? $rows : array(),
+			'total'    => (int) $total,
+			'page'     => $page,
+			'per_page' => $per_page,
+		);
+	}
+
+	/**
 	 * Paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D (funkcja kontraktowa
 	 * `mp_cases_query`, API-KONTRAKT.md §C). Zwraca WYLACZNIE pola ZMINIMALIZOWANE
 	 * (RODO/T5: surowy kontakt — e-mail/imie/telefon — NIGDY nie wychodzi ta droga;
@@ -1281,6 +1387,30 @@ final class CaseRepo {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Odczyt opisu zgloszenia (form_data) dla karty sprawy — znormalizowany
+	 * {klucz: {label, value, pii_sensitive}}. Personel widzi opis (obsluguje sprawe);
+	 * escaping robi warstwa render (esc_html). Pusta gdy sprawa/opis brak.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 */
+	public static function form_data_for_case( int $case_id ): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$json = (string) $wpdb->get_var(
+			$wpdb->prepare( "SELECT form_data FROM {$table} WHERE id = %d", $case_id )
+		);
+		// phpcs:enable
+
+		$decoded = json_decode( $json, true );
+
+		return self::normalize_form_data( is_array( $decoded ) ? $decoded : array() );
 	}
 
 	/**

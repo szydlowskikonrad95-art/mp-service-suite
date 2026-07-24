@@ -66,6 +66,10 @@ final class Plugin {
 		Checklists::register();
 		ResponseTemplates::register();
 
+		// READ-API D->C dla karty sprawy personelu (C): stan checklisty, szablony
+		// odpowiedzi, termin SLA jako filtry kontraktowe (kartka krok 7).
+		CaseCardApi::register();
+
 		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
 		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
 		Admin\PanelScreen::register();

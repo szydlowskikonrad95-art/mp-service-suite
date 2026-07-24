@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Intake (C): **ekran pracy personelu „MP: Sprawy" — karta sprawy (kartka krok 7)**. Domkniecie luki #1
+  audytu adwersaryjnego (2026-07-24): personel nie mial GDZIE obslugiwac potwierdzonej sprawy. Teraz:
+  **lista spraw** (`WP_List_Table`, kolumny nr/klient/rodzaj/status/przydzielony/termin-SLA/utworzono,
+  filtry status/rodzaj/przydzielony + „moje"/„nieprzydzielone", wyszukiwarka po nr/kliencie, sortowanie,
+  paginacja; model B — caly personel widzi wszystkie zweryfikowane sprawy) oraz **karta sprawy**
+  (opis zgloszenia z `form_data` · dane klienta · zalaczniki · wiadomosci · **oS czasu zdarzen** ·
+  **checklista interaktywna**). **Akcje personelu** (admin-post, KAZDA z capability + nonce): zmiana
+  statusu (optimistic-lock `expected_status` => `STATUS_CONFLICT`, powod przy odrzuceniu), odpowiedz do
+  klienta (szablony D wypelniaja pole), przydzial — **TYLKO koordynator/administrator** (pracownik `mp_agent`
+  nie przydziela: 403). Kazda decyzja ląduje na osi (`case_events`) + maile P3.3. Nowe kontraktowe filtry
+  **D->C** (`CaseCardApi`): `mp_case_checklist_state` / `mp_response_templates` / `mp_render_response_template`
+  / `mp_case_deadline` (karta nie siega w tabele D). Nowe metody read C: `CaseRepo::query_for_staff` /
+  `form_data_for_case`, `CaseEvents::for_case`. Testy e2e `c-case-card` (19) + `c-case-actions` (16, macierz
+  capability+nonce). Zweryfikowane na zywo: klikacz admin + `mp_agent` (panel przydzialu ukryty pracownikowi).
 - Registry (B): **kategoria produktu** (domkniecie kartki P1.2/P3.1 po stronie danych) — kolumna `category`
   (migracja v2 `maybe_upgrade`, BEZ reaktywacji; istniejace wiersze => `inne`), slownik 4 kategorii
   (audio / agd / elektronarzedzia / inne; konfigurowalny filtrem `mp_product_categories`), import CSV z kolumna
