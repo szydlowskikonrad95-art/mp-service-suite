@@ -54,15 +54,19 @@
 .mp-automator-config label { display: block; margin-bottom: .35em; color: #1d2327; font-weight: 600; }
 .mp-automator-config textarea { margin-bottom: .6em; }
 
-/* Builder checklist/szablonow (P3.5, poprawka #2: JSON -> formularz) */
-.mp-config-builder .mp-cfg-kind { border: 1px solid #dcdcde; border-radius: 4px; padding: .5rem .75rem; margin: 0 0 1rem; }
+/* Builder checklist/szablonow (P3.5, poprawka #2: JSON -> formularz; polish układu) */
+.mp-config-builder .mp-cfg-kind { border: 1px solid #dcdcde; border-radius: 4px; padding: .5rem .85rem .85rem; margin: 0 0 1.1rem; background: #fff; }
 .mp-config-builder .mp-cfg-kind legend { font-weight: 600; padding: 0 .4rem; }
-.mp-config-builder .mp-cfg-row { display: flex; gap: .5rem; align-items: flex-start; margin: 0 0 .4rem; }
-.mp-config-builder .mp-cfg-key { flex: 0 0 12rem; }
-.mp-config-builder .mp-cfg-label { flex: 1 1 16rem; }
-.mp-config-builder .mp-cfg-body { flex: 2 1 24rem; font-family: inherit; }
-.mp-config-builder .mp-cfg-remove { color: #b32d2e; text-decoration: none; font-size: 1.3rem; line-height: 1.6; padding: 0 .3rem; }
-.mp-config-builder .mp-cfg-remove:hover { color: #8a2424; }
-.mp-config-builder .mp-cfg-advanced { margin: .5rem 0 1rem; }
+/* Wiersz: [klucz] [etykieta] [× po prawej] w gornej linii; tresc (jesli jest) pelna szerokosc nizej. */
+.mp-config-builder .mp-cfg-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 0 0 .5rem; }
+.mp-config-builder .mp-cfg-key { flex: 0 0 14rem; order: 1; }
+.mp-config-builder .mp-cfg-label { flex: 1 1 16rem; order: 2; }
+.mp-config-builder .mp-cfg-remove { order: 3; margin-left: auto; color: #b32d2e; text-decoration: none; font-size: 1.4rem; line-height: 1; padding: .1rem .4rem; border-radius: 3px; }
+.mp-config-builder .mp-cfg-remove:hover { color: #fff; background: #b32d2e; }
+.mp-config-builder .mp-cfg-body { order: 4; flex: 1 1 100%; min-height: 4.5rem; font-family: inherit; margin-top: .1rem; }
+/* Szablony (z trescia) = wyrazna karta per szablon, zeby bylo widac gdzie sie konczy. */
+.mp-config-builder[data-has-body="1"] .mp-cfg-row { border: 1px solid #e0e0e5; border-left: 3px solid #2271b1; border-radius: 4px; padding: .6rem .7rem; margin: 0 0 .8rem; background: #fbfbfc; }
+.mp-config-builder .mp-cfg-add { margin-top: .3rem; }
+.mp-config-builder .mp-cfg-advanced { margin: .6rem 0 1rem; }
 .mp-config-builder .mp-cfg-advanced summary { cursor: pointer; color: #2271b1; }
-@media (max-width: 782px) { .mp-config-builder .mp-cfg-row { flex-wrap: wrap; } .mp-config-builder .mp-cfg-key, .mp-config-builder .mp-cfg-label { flex: 1 1 100%; } }
+@media (max-width: 782px) { .mp-config-builder .mp-cfg-key, .mp-config-builder .mp-cfg-label { flex: 1 1 100%; } }
