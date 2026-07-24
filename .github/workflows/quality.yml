@@ -180,6 +180,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-kategoria.sh
       - name: Testy B5 (kartka l.50 — brak usuniecia produktu z aktywna sprawa; Archive + listener mp_product_active_cases_count)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b5-usuwanie-produktu.sh
+      - name: Testy mp_product_details (kontrakt B->C sekcja Produkt+Gwarancja na karcie — pola, status gwarancji z daty, archived, id=0/nieistniejacy=null)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-product-details.sh
       - name: Testy Registry maybe_upgrade (kartka T2 — auto-migracja przy update BEZ reaktywacji; regresja bug 24.07)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/registry-maybe-upgrade.sh
       - name: Testy listenery C->B (kolumna Sprawy mp_case_count_by_product + wyszukiwarka po kliencie mp_customer_find_products P2.6)
@@ -232,6 +234,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p35-checklisty.sh
       - name: Testy panel admina D (menu · widoczność per rola · przyciski per-cap Przelicz-SLA/Eksport · listy reguł/statusów/rejestr · slot P3.5 · 403 bez cap)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-panel-admina.sh
+      - name: Testy walidacja JSON configu (hardening — bledny JSON checklist/szablonow NIE kasuje configu; puste pole = swiadome wyczyszczenie)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-config-json-guard.sh
       - name: DoD D (uninstall zero-śladu + kanarki · degraded C/B OFF · macierz negatywna mp_agent/anon · widoczność menu panelu per rola)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-dod.sh
       - name: BLOK-S E2E (pełny przebieg 8 kroków kartki — B+C+D, SKIP D-pending)

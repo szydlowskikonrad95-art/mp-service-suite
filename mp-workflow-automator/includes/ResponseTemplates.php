@@ -258,7 +258,16 @@ final class ResponseTemplates {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
 		$raw     = isset( $_POST['payload'] ) ? sanitize_textarea_field( wp_unslash( $_POST['payload'] ) ) : '';
 		$decoded = json_decode( $raw, true );
-		$out     = array();
+
+		// Bledny JSON przy NIEPUSTEJ tresci: NIE nadpisuj configu pustym (cicha utrata) —
+		// cofnij z komunikatem. Puste pole = swiadome wyczyszczenie (zapisuje pusty config).
+		if ( '' !== trim( $raw ) && ! is_array( $decoded ) ) {
+			$ref = wp_get_referer();
+			wp_safe_redirect( add_query_arg( 'mp_config_error', 'response', false !== $ref ? $ref : admin_url() ) );
+			exit;
+		}
+
+		$out = array();
 
 		if ( is_array( $decoded ) ) {
 			foreach ( $decoded as $kind => $tpls ) {

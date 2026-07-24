@@ -82,6 +82,7 @@ final class CaseCard {
 		echo '</div>';
 		echo '<div style="flex:1 1 300px;min-width:280px">';
 		self::section_client( $ctx );
+		self::section_product_warranty( $ctx );
 		self::section_checklist( $case_id );
 		self::section_timeline( $case_id );
 		echo '</div>';
@@ -215,6 +216,60 @@ final class CaseCard {
 		echo '<p style="margin:.2rem 0;color:#555">' . esc_html( (string) ( $kontakt['email'] ?? '' ) ) . '</p>';
 		if ( '' !== (string) ( $kontakt['phone'] ?? '' ) ) {
 			echo '<p style="margin:.2rem 0;color:#555">' . esc_html( (string) $kontakt['phone'] ) . '</p>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * Produkt + gwarancja z Rejestru (B) — kontrakt `mp_product_details` (B->C).
+	 * Degraduje: modul B nieaktywny (brak filtra) albo sprawa bez powiazanego produktu.
+	 *
+	 * @param array<string, mixed> $ctx Kontekst sprawy.
+	 * @return void
+	 */
+	private static function section_product_warranty( array $ctx ): void {
+		self::open_box( __( 'Produkt i gwarancja', 'mp-service-intake' ) );
+
+		if ( ! has_filter( 'mp_product_details' ) ) {
+			echo '<p style="color:#666">' . esc_html__( 'Moduł rejestru produktów nieaktywny.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		$pid = isset( $ctx['product_registry_id'] ) && $ctx['product_registry_id'] ? (int) $ctx['product_registry_id'] : 0;
+		$p   = $pid > 0 ? apply_filters( 'mp_product_details', null, $pid ) : null;
+
+		if ( ! is_array( $p ) ) {
+			echo '<p style="color:#666">' . esc_html__( 'Brak powiązanego produktu w rejestrze.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
+		$status_map = array(
+			'aktywna'     => array( __( 'aktywna', 'mp-service-intake' ), '#1a7f37' ),
+			'wygasla'     => array( __( 'wygasła', 'mp-service-intake' ), '#b32d2e' ),
+			'brak_danych' => array( __( 'brak danych', 'mp-service-intake' ), '#646970' ),
+			'weryfikacja' => array( __( 'do weryfikacji', 'mp-service-intake' ), '#996800' ),
+		);
+		$st         = (string) ( $p['warranty_status'] ?? 'brak_danych' );
+		$sm         = $status_map[ $st ] ?? $status_map['brak_danych'];
+
+		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze __() z multibyte; wyrownanie zalezne od wersji WPCS -> stale spacje.
+		$rows = array(
+			__( 'Model', 'mp-service-intake' ) => (string) ( $p['model'] ?? '' ),
+			__( 'Nr seryjny', 'mp-service-intake' ) => (string) ( $p['serial'] ?? '' ),
+			__( 'Dokument zakupu', 'mp-service-intake' ) => (string) ( $p['purchase_document'] ?? '' ),
+			__( 'Data zakupu', 'mp-service-intake' ) => self::fmt_date( (string) ( $p['purchase_date'] ?? '' ) ),
+			__( 'Gwarancja do', 'mp-service-intake' ) => self::fmt_date( (string) ( $p['warranty_until'] ?? '' ) ),
+		);
+		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
+
+		echo '<table class="widefat striped" style="border:0"><tbody>';
+		foreach ( $rows as $label => $value ) {
+			echo '<tr><th style="width:45%">' . esc_html( (string) $label ) . '</th><td>' . esc_html( '' !== (string) $value ? (string) $value : '—' ) . '</td></tr>';
+		}
+		echo '<tr><th style="width:45%">' . esc_html__( 'Status gwarancji', 'mp-service-intake' ) . '</th><td><strong style="color:' . esc_attr( (string) $sm[1] ) . '">' . esc_html( (string) $sm[0] ) . '</strong></td></tr>';
+		echo '</tbody></table>';
+		if ( ! empty( $p['archived'] ) ) {
+			echo '<p style="margin:.5rem 0 0;color:#b32d2e">' . esc_html__( '⚠ Produkt zarchiwizowany w rejestrze.', 'mp-service-intake' ) . '</p>';
 		}
 		echo '</div>';
 	}

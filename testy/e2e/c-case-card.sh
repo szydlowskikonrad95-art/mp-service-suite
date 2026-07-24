@@ -35,6 +35,11 @@ CID=$(mk reklamacja karta@example.com KART-1)
 [ -n "$CID" ] && ok "seed: sprawa utworzona i zweryfikowana (id=$CID)" || bad "seed: brak case_id"
 chs "$CID" "w analizie" "nowe" "null"
 
+# Kontrakt karty: mp_case_get_context MUSI wystawiac product_registry_id (sekcja Produkt
+# na karcie tego uzywa). Regresja gap 24.07: kontekst czytal id wewnetrznie, nie zwracal.
+CTXPID=$(wp eval "\$c=apply_filters('mp_case_get_context', null, $CID); echo array_key_exists('product_registry_id', \$c) ? 'MA' : 'BRAK';" 2>/dev/null)
+[ "$CTXPID" = "MA" ] && ok "get_context: wystawia klucz product_registry_id (dla sekcji Produkt karty)" || bad "get_context: BRAK product_registry_id ($CTXPID)"
+
 # ── 1. CaseEvents::for_case — os czasu ────────────────────────────────────────
 RAW=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID")
 CNT=$(wp eval "echo count(MP\\Intake\\CaseEvents::for_case($CID));" 2>/dev/null)
