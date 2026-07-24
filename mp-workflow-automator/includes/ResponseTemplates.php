@@ -35,7 +35,7 @@ final class ResponseTemplates {
 	 *
 	 * @var array<int, string>
 	 */
-	private const KINDS_ALLOWED = array( 'reklamacja', 'naprawa', 'zapytanie', 'zwrot' );
+	public const KINDS_ALLOWED = array( 'reklamacja', 'naprawa', 'zapytanie', 'zwrot' );
 
 	/**
 	 * Rejestruje handler konfiguracji (priv I nopriv => jawne 403).

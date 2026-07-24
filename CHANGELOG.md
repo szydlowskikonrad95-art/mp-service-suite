@@ -12,6 +12,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   `mp_intake_login_rate_limits`, źródło IP przez `mp_intake_client_ip`. Test `c17-rate-limit-login` (5/5).
 
 ### Changed
+- Automator (D) — **konfiguracja checklist i szablonów: surowy JSON → formularz** (poprawka #2 z audytu:
+  UX/profeska, poza kartką — kartka wymaga funkcji, nie sposobu konfiguracji). Panel „Automatyzacje MP"
+  renderuje **builder per rodzaj sprawy** (pola klucz/etykieta[/treść] + „+ dodaj" / „×" usuń) zamiast
+  wklejania JSON. **Kontrakt backendu NIETKNIĘTY** — JS składa te same dane do ukrytego pola `payload`,
+  ten sam handler + walidacja (zero regresji: `d-p35` 20/0). Surowy JSON zostaje jako fallback w sekcji
+  „Zaawansowane: edytuj jako JSON" (działa też bez JS). Testy: `c18-config-form-render` (14/0) + żywy test
+  serializacji JS (Playwright: edycja+dodanie wiersza → poprawny JSON, 4 rodzaje).
 - Wymagania środowiska doprecyzowane wg specyfikacji klienta: `Requires at least` obniżone **6.9 → 6.0**
   (kartka: „WordPress 6.x" = 6.0 i nowsze; kod używa tylko stabilnych API). Dodana sekcja **Requirements**
   w readme (WordPress 6.x, PHP 8.1+, MySQL 8.0+/MariaDB 10.6+, **HTTPS** — passwordless login + dane klienta,
