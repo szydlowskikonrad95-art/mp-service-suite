@@ -551,10 +551,10 @@ final class PanelScreen {
 	 * Wspolny formularz konfiguracji P3.5 (checklisty/szablony) — payload JSON POST-owany
 	 * na handler admin-post danej akcji z nonce zgodnym z jego check_admin_referer.
 	 *
-	 * @param string $action    Nazwa akcji admin-post (= akcja nonce).
-	 * @param string $heading   Naglowek sekcji.
-	 * @param string $label     Opis pola (co wpisac).
-	 * @param string $json      Biezaca konfiguracja jako JSON (prefill).
+	 * @param string             $action    Nazwa akcji admin-post (= akcja nonce).
+	 * @param string             $heading   Naglowek sekcji.
+	 * @param string             $label     Opis pola (co wpisac).
+	 * @param string             $json      Biezaca konfiguracja jako JSON (prefill).
 	 * @param string             $field_id Unikalne id textarea (a11y label-for).
 	 * @param string             $submit   Etykieta przycisku zapisu.
 	 * @param bool               $has_body Czy wiersz ma pole `body` (szablony=true, checklisty=false).
