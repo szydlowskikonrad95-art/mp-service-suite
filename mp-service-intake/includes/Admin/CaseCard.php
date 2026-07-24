@@ -159,7 +159,8 @@ final class CaseCard {
 		wp_nonce_field( 'mp_intake_case_status' );
 		echo '<label>' . esc_html__( 'Status:', 'mp-service-intake' ) . ' <select name="new_status">';
 		foreach ( Statuses::all() as $slug => $def ) {
-			$label = is_array( $def ) && isset( $def['label'] ) ? (string) $def['label'] : (string) $slug;
+			// Statuses::all() normalizuje kazdy wpis => 'label' zawsze obecny (rdzen i custom).
+			$label = (string) $def['label'];
 			printf( '<option value="%s"%s>%s</option>', esc_attr( (string) $slug ), selected( $current, (string) $slug, false ), esc_html( $label ) );
 		}
 		echo '</select></label>';
@@ -236,8 +237,9 @@ final class CaseCard {
 
 		echo '<table class="widefat striped" style="border:0"><tbody>';
 		foreach ( $fields as $field ) {
-			$label = (string) ( $field['label'] ?? '' );
-			$value = (string) ( $field['value'] ?? '' );
+			// form_data_for_case normalizuje pola => 'label'/'value' zawsze obecne.
+			$label = (string) $field['label'];
+			$value = (string) $field['value'];
 			echo '<tr><th style="width:35%">' . esc_html( $label ) . '</th><td>' . nl2br( esc_html( $value ) ) . '</td></tr>';
 		}
 		echo '</tbody></table></div>';

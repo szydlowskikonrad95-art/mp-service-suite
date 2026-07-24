@@ -248,7 +248,8 @@ final class CasesListTable extends \WP_List_Table {
 		echo '<label class="screen-reader-text" for="mp_status">' . esc_html__( 'Filtr statusu', 'mp-service-intake' ) . '</label>';
 		echo '<select name="mp_status" id="mp_status"><option value="">' . esc_html__( 'Status: wszystkie', 'mp-service-intake' ) . '</option>';
 		foreach ( Statuses::all() as $slug => $def ) {
-			$label = is_array( $def ) && isset( $def['label'] ) ? (string) $def['label'] : (string) $slug;
+			// Statuses::all() normalizuje kazdy wpis => 'label' zawsze obecny (rdzen i custom).
+			$label = (string) $def['label'];
 			printf(
 				'<option value="%s"%s>%s</option>',
 				esc_attr( (string) $slug ),
