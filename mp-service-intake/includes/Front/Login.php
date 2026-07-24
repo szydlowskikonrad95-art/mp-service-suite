@@ -76,6 +76,12 @@ final class Login {
 
 		$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
 
+		// Rate-limit zadan linku (IP+email) — chroni skrzynki klientow i endpoint
+		// przed zalewem. Komunikat NEUTRALNY (nie zdradza czy konto istnieje).
+		if ( null !== \MP\Intake\RateLimit::check_login( \MP\Intake\RateLimit::client_ip(), $email ) ) {
+			self::back_with_notice( __( 'Zbyt wiele prób logowania — odczekaj kilka minut i spróbuj ponownie.', 'mp-service-intake' ) );
+		}
+
 		$issued = self::issue_for_email( $email );
 
 		if ( null !== $issued ) {

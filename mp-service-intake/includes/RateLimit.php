@@ -187,4 +187,58 @@ final class RateLimit {
 		$count = (int) get_transient( $key );
 		set_transient( $key, $count + 1, $window );
 	}
+
+	/**
+	 * Domyslne limity ZADAN LINKU LOGOWANIA (magic-link) — nadpisywalne filtrem.
+	 *
+	 * @return array{ip_max:int, ip_window:int, email_max:int, email_window:int}
+	 */
+	private static function login_limits(): array {
+		$defaults = array(
+			'ip_max'       => 5,
+			'ip_window'    => 15 * MINUTE_IN_SECONDS,
+			'email_max'    => 5,
+			'email_window' => HOUR_IN_SECONDS,
+		);
+
+		/**
+		 * Filtr limitow zadan linku logowania (wdrozeniowiec moze nadpisac).
+		 *
+		 * @param array $defaults Domyslne limity.
+		 */
+		return array_merge( $defaults, (array) apply_filters( 'mp_intake_login_rate_limits', $defaults ) );
+	}
+
+	/**
+	 * Rate-limit ZADAN LINKU LOGOWANIA (osobne liczniki od formularza zgloszen).
+	 *
+	 * Chroni skrzynki klientow przed zalewem linkami + endpoint przed naduzyciem.
+	 * Klucze rozlaczne z `check()` (prefiks `mp_rl_login_`). Przy przejsciu bumpuje
+	 * IP i email. NIE zdradza istnienia konta — wolajacy pokazuje neutralny komunikat.
+	 *
+	 * @param string $ip    Adres IP (z RateLimit::client_ip()).
+	 * @param string $email E-mail z formularza logowania.
+	 * @return string|null BLOCK_RATE gdy limit przekroczony, null gdy OK.
+	 */
+	public static function check_login( string $ip, string $email ): ?string {
+		$email  = strtolower( trim( $email ) );
+		$limits = self::login_limits();
+
+		if ( '' !== $ip && self::over_limit( 'mp_rl_login_ip_' . md5( $ip ), (int) $limits['ip_max'] ) ) {
+			return self::BLOCK_RATE;
+		}
+
+		if ( '' !== $email && self::over_limit( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_max'] ) ) {
+			return self::BLOCK_RATE;
+		}
+
+		if ( '' !== $ip ) {
+			self::bump( 'mp_rl_login_ip_' . md5( $ip ), (int) $limits['ip_window'] );
+		}
+		if ( '' !== $email ) {
+			self::bump( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_window'] );
+		}
+
+		return null;
+	}
 }

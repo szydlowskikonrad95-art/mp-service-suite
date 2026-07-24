@@ -83,6 +83,7 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 ## 7. Rate-limit — źródło IP za reverse-proxy (flaga #10)
 
 - Rate-limit po IP liczy **domyślnie `$_SERVER['REMOTE_ADDR']`** — bezpieczna domyślka (`RateLimit::client_ip()`).
+- **Żądania magic-linku (logowanie) też są rate-limitowane** (`RateLimit::check_login`, osobne liczniki od formularza): domyślnie **5 żądań / 15 min na IP** i **5 / godz. na e-mail** — chroni skrzynki klientów przed zalewem linkami i endpoint przed nadużyciem (OWASP anti-automation). Komunikat NEUTRALNY (zero enumeracji kont). Progi nadpisywalne filtrem `mp_intake_login_rate_limits`; źródło IP jak niżej (`mp_intake_client_ip`).
 - **Za reverse-proxy / Cloudflare** wszyscy klienci mają IP proxy = **jeden adres** → domyślny rate-limit po IP zablokowałby wszystkich naraz. (Warstwy e-mail/serial działają dalej niezależnie od IP.)
 - **Nota dla wdrożenia za proxy** — podłącz filtr `mp_intake_client_ip` do **ZAUFANEGO** źródła IP. Kod celowo **nie ufa ślepo `X-Forwarded-For`** (nagłówek spoofowalny) — to decyzja wdrożenia, nie domyślka kodu. Przykład (odczyt tylko z zaufanego proxy, ostatni hop):
   ```php
