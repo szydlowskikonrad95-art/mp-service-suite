@@ -15,6 +15,9 @@ use MP\Intake\CaseRepo;
 use MP\Intake\FormConfig;
 use MP\Intake\Statuses;
 
+// Bezposredni dostep zablokowany (plik rozszerza WP_List_Table => fatal bez zaladowanego WP).
+defined( 'ABSPATH' ) || exit;
+
 if ( ! class_exists( '\WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }

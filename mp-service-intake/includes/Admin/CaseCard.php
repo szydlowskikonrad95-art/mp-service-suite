@@ -114,16 +114,18 @@ final class CaseCard {
 		$sla      = apply_filters( 'mp_case_deadline', null, $case_id );
 		$deadline = is_array( $sla ) && ! empty( $sla['deadline_at'] ) ? (string) $sla['deadline_at'] : '';
 
+		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze __() z multibyte ('ę','ó'), docelowa kolumna wyrownania rozni sie miedzy wersjami WPCS (lokalna vs CI); stale pojedyncze spacje = wersjo-odporne.
 		$rows = array(
-			__( 'Status', 'mp-service-intake' )        => Statuses::label( (string) ( $ctx['status'] ?? '' ) ),
-			__( 'Rodzaj', 'mp-service-intake' )        => (string) ( $ctx['rodzaj'] ?? '' ),
-			__( 'Kategoria', 'mp-service-intake' )     => (string) ( $ctx['kategoria'] ?? '' ),
-			__( 'Priorytet', 'mp-service-intake' )     => (string) ( $ctx['priority'] ?? '' ),
-			__( 'Przydzielony', 'mp-service-intake' )  => $user ? (string) $user->display_name : __( 'nieprzydzielona', 'mp-service-intake' ),
+			__( 'Status', 'mp-service-intake' ) => Statuses::label( (string) ( $ctx['status'] ?? '' ) ),
+			__( 'Rodzaj', 'mp-service-intake' ) => (string) ( $ctx['rodzaj'] ?? '' ),
+			__( 'Kategoria', 'mp-service-intake' ) => (string) ( $ctx['kategoria'] ?? '' ),
+			__( 'Priorytet', 'mp-service-intake' ) => (string) ( $ctx['priority'] ?? '' ),
+			__( 'Przydzielony', 'mp-service-intake' ) => $user ? (string) $user->display_name : __( 'nieprzydzielona', 'mp-service-intake' ),
 			__( 'Kraj / język', 'mp-service-intake' ) => trim( (string) ( $ctx['kraj'] ?? '' ) . ' / ' . (string) ( $ctx['jezyk'] ?? '' ), ' /' ),
-			__( 'Potwierdzono', 'mp-service-intake' )  => self::fmt_date( (string) ( $ctx['verified_at'] ?? '' ) ),
-			__( 'Termin SLA', 'mp-service-intake' )    => '' !== $deadline ? self::fmt_date( $deadline ) : '—',
+			__( 'Potwierdzono', 'mp-service-intake' ) => self::fmt_date( (string) ( $ctx['verified_at'] ?? '' ) ),
+			__( 'Termin SLA', 'mp-service-intake' ) => '' !== $deadline ? self::fmt_date( $deadline ) : '—',
 		);
+		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 
 		self::open_box( __( 'Sprawa', 'mp-service-intake' ) );
 		echo '<table class="widefat striped" style="border:0"><tbody>';
