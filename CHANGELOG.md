@@ -4,6 +4,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-24
+
+Checkpoint „3 pluginy spec-complete" (pre-release). Weryfikacja specyfikacji klienta 1:1
+dla wszystkich 3 pluginów (6/6 każdy) + karta pracy personelu, drobne poprawki i domknięcia
+z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
+
 ### Added
 - Automator (D): **powiadomienie PRACOWNIKA przy zmianie statusu** (spec „powiadomienia dla klienta
   i pracownika po każdej ważnej zmianie") — dotąd zmiana statusu mailowała tylko klienta. Nowa domyślna
