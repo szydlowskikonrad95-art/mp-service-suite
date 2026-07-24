@@ -378,6 +378,7 @@ final class CaseRepo {
 			'rodzaj'                => (string) $row['kind'],
 			'priority'              => (string) $row['priority'],
 			'assigned_to'           => null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null,
+			'product_registry_id'   => null !== $row['product_registry_id'] ? (int) $row['product_registry_id'] : null,
 			'kategoria'             => $kategoria,
 			'kraj'                  => (string) $row['country'],
 			'jezyk'                 => (string) $row['lang'],

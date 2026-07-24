@@ -124,4 +124,52 @@ final class Repo {
 
 		return ( is_string( $category ) && '' !== $category ) ? $category : $default_value;
 	}
+
+	/**
+	 * Detale produktu po ID — kontrakt B->C `mp_product_details` (karta sprawy w C).
+	 * NIE weryfikuje dokumentu zakupu: status liczony z samej daty gwarancji
+	 * (WarrantyStatus::compute z doc/date = null). $default_value gdy brak produktu.
+	 *
+	 * @param mixed $default_value       Wartosc domyslna (zwykle null).
+	 * @param int   $product_registry_id ID produktu w rejestrze.
+	 * @return array{id: int, serial: string, model: string, batch: string, purchase_document: string, purchase_date: string, warranty_until: string, warranty_status: string, archived: bool}|mixed
+	 */
+	public static function details_for( $default_value, int $product_registry_id ) {
+		global $wpdb;
+
+		if ( $product_registry_id <= 0 ) {
+			return $default_value;
+		}
+
+		$table = Tables::full( Tables::REGISTRY );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna przez Tables::full(), zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, serial_display, model, batch, purchase_document, purchase_date, warranty_until, archived
+				FROM {$table} WHERE id = %d",
+				$product_registry_id
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		if ( ! is_array( $row ) ) {
+			return $default_value;
+		}
+
+		$warranty_until = null !== $row['warranty_until'] ? (string) $row['warranty_until'] : '';
+
+		return array(
+			'id'                => (int) $row['id'],
+			'serial'            => (string) $row['serial_display'],
+			'model'             => (string) $row['model'],
+			'batch'             => (string) $row['batch'],
+			'purchase_document' => (string) $row['purchase_document'],
+			'purchase_date'     => null !== $row['purchase_date'] ? (string) $row['purchase_date'] : '',
+			'warranty_until'    => $warranty_until,
+			'warranty_status'   => WarrantyStatus::compute( true, '' !== $warranty_until ? $warranty_until : null, null, null ),
+			'archived'          => ! empty( $row['archived'] ),
+		);
+	}
 }

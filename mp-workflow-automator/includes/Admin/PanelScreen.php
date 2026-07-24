@@ -19,6 +19,7 @@ namespace MP\Automator\Admin;
 use MP\Automator\ChecklistTemplates;
 use MP\Automator\ResponseTemplates;
 use MP\Automator\Tables;
+use MP\Automator\WorkflowEvents;
 
 /**
  * Rejestracja menu + render panelu automatyzacji.
@@ -138,6 +139,29 @@ final class PanelScreen {
 	 * @return void
 	 */
 	private static function render_notice(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z redirectu (bez zmiany stanu); handler zapisu mial nonce.
+		$config_error = isset( $_GET['mp_config_error'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_config_error'] ) ) : '';
+		if ( '' !== $config_error ) {
+			$what = 'response' === $config_error
+				? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
+				: __( 'checklisty', 'mp-workflow-automator' );
+			?>
+			<div class="notice notice-error is-dismissible">
+				<p>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %s = nazwa konfiguracji (checklisty / szablonow odpowiedzi) */
+							__( 'Nieprawidłowy JSON — konfiguracja %s NIE została zapisana (poprzednia zachowana). Popraw format i zapisz ponownie.', 'mp-workflow-automator' ),
+							$what
+						)
+					);
+					?>
+				</p>
+			</div>
+			<?php
+		}
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt licznika z redirectu (bez zmiany stanu); handler mial nonce.
 		if ( ! isset( $_GET['mp_sla_recalc'] ) ) {
 			return;
@@ -301,16 +325,22 @@ final class PanelScreen {
 
 		$table = Tables::full( Tables::WORKFLOW_EVENTS );
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- paginacja GET (odczyt, bez zmiany stanu).
-		$page   = isset( $_GET['ev_page'] ) ? max( 1, absint( $_GET['ev_page'] ) ) : 1;
-		$offset = ( $page - 1 ) * self::EVENTS_PER_PAGE;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- paginacja/toggle GET (odczyt, bez zmiany stanu).
+		$page = isset( $_GET['ev_page'] ) ? max( 1, absint( $_GET['ev_page'] ) ) : 1;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- toggle GET (odczyt, bez zmiany stanu).
+		$show_technical = isset( $_GET['mp_show_technical'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['mp_show_technical'] ) );
+		$offset         = ( $page - 1 ) * self::EVENTS_PER_PAGE;
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna D, read-only.
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		// Domyslnie ukrywamy techniczne SWEEP_RUN (cron co 5 min zalewa rejestr) — zdarzenia
+		// biznesowe na wierzchu; toggle pokazuje pelny log. SWEEP_RUN = stala, nie user-input.
+		$where = $show_technical ? '' : "WHERE event_type <> '" . esc_sql( WorkflowEvents::SWEEP_RUN ) . "'";
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna D, read-only; WHERE ze stalej przez esc_sql.
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} {$where}" );
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT id, case_id, event_type, actor_id, created_at, payload
-				FROM {$table} ORDER BY id DESC LIMIT %d OFFSET %d",
+				FROM {$table} {$where} ORDER BY id DESC LIMIT %d OFFSET %d",
 				self::EVENTS_PER_PAGE,
 				$offset
 			)
@@ -318,8 +348,22 @@ final class PanelScreen {
 		// phpcs:enable
 
 		$pages = (int) max( 1, (int) ceil( $total / self::EVENTS_PER_PAGE ) );
+
+		$toggle_url   = $show_technical
+			? remove_query_arg( array( 'mp_show_technical', 'ev_page' ) )
+			: add_query_arg(
+				array(
+					'mp_show_technical' => '1',
+					'ev_page'           => 1,
+				)
+			);
+		$toggle_label = $show_technical
+			? __( 'Ukryj techniczne (SWEEP_RUN)', 'mp-workflow-automator' )
+			: __( 'Pokaż techniczne (SWEEP_RUN)', 'mp-workflow-automator' );
 		?>
-		<h2 class="mp-automator-h2"><?php esc_html_e( 'Rejestr zdarzeń', 'mp-workflow-automator' ); ?></h2>
+		<h2 class="mp-automator-h2"><?php esc_html_e( 'Rejestr zdarzeń', 'mp-workflow-automator' ); ?>
+			<a class="page-title-action" style="margin-left:.5rem" href="<?php echo esc_url( $toggle_url ); ?>"><?php echo esc_html( $toggle_label ); ?></a>
+		</h2>
 		<table class="widefat striped mp-automator-table">
 			<caption class="screen-reader-text"><?php esc_html_e( 'Rejestr zdarzeń automatyzacji (tylko do odczytu)', 'mp-workflow-automator' ); ?></caption>
 			<thead>
@@ -350,7 +394,7 @@ final class PanelScreen {
 			</tbody>
 		</table>
 		<?php
-		self::render_pagination( $page, $pages, $total );
+		self::render_pagination( $page, $pages, $total, $show_technical );
 	}
 
 	/**
@@ -412,17 +456,21 @@ final class PanelScreen {
 	/**
 	 * Prosta paginacja rejestru (poprzednia/nastepna + „strona X z Y”).
 	 *
-	 * @param int $page  Biezaca strona.
-	 * @param int $pages Liczba stron.
-	 * @param int $total Laczna liczba zdarzen.
+	 * @param int  $page           Biezaca strona.
+	 * @param int  $pages          Liczba stron.
+	 * @param int  $total          Laczna liczba zdarzen.
+	 * @param bool $show_technical Czy pokazywac techniczne (SWEEP_RUN) — zachowanie toggle w linkach.
 	 * @return void
 	 */
-	private static function render_pagination( int $page, int $pages, int $total ): void {
+	private static function render_pagination( int $page, int $pages, int $total, bool $show_technical = false ): void {
 		if ( $pages <= 1 ) {
 			return;
 		}
 
 		$base = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+		if ( $show_technical ) {
+			$base = add_query_arg( 'mp_show_technical', '1', $base );
+		}
 		?>
 		<nav class="mp-automator-pagination" aria-label="<?php esc_attr_e( 'Paginacja rejestru zdarzeń', 'mp-workflow-automator' ); ?>">
 			<?php if ( $page > 1 ) : ?>

@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Karta sprawy (C): **sekcja „Produkt i gwarancja"** — kontrakt B->C `mp_product_details` (Registry
+  wystawia detale produktu po ID: model, nr seryjny, dokument+data zakupu, gwarancja do, **status
+  gwarancji liczony z daty** aktywna/wygasła/brak-danych, flaga zarchiwizowany). Karta nie siega w
+  tabele B (luzne wiazanie). `mp_case_get_context` wystawia teraz `product_registry_id` (bylo czytane
+  wewnetrznie, nie zwracane). Degraduje gdy modul B nieaktywny / sprawa bez produktu. Test `b-product-details`.
 - Intake (C): **ekran pracy personelu „MP: Sprawy" — karta sprawy (kartka krok 7)**. Domkniecie luki #1
   audytu adwersaryjnego (2026-07-24): personel nie mial GDZIE obslugiwac potwierdzonej sprawy. Teraz:
   **lista spraw** (`WP_List_Table`, kolumny nr/klient/rodzaj/status/przydzielony/termin-SLA/utworzono,
@@ -37,6 +42,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (soft-delete: `archived=1` + `deleted_at`). Test e2e `b5-usuwanie-produktu` (blok / OK / fail-closed).
 
 ### Fixed
+- Automator (D): **cicha utrata konfiguracji przy błędnym JSON** (znalezisko audytu 24.07) — panel zapisywał
+  config checklist/szablonów z surowego `<textarea>`; błędny JSON → `json_decode` null → zapis PUSTEGO
+  configu bez ostrzeżenia. Teraz błędny JSON (składnia albo nie-obiekt) przy niepustej treści NIE nadpisuje
+  (poprzednia konfiguracja zachowana) + komunikat błędu na panelu; puste pole = świadome wyczyszczenie.
+  Dotyczy `ChecklistTemplates`/`ResponseTemplates`. Test `d-config-json-guard`.
+- Automator (D): **rejestr zdarzeń zalewany `SWEEP_RUN`** (znalezisko audytu 24.07) — cron SLA co 5 min
+  logował `SWEEP_RUN`, przez co zdarzenia biznesowe tonęły. Domyślny widok panelu ukrywa teraz `SWEEP_RUN`
+  (`WHERE event_type <> 'SWEEP_RUN'`), a link „Pokaż techniczne" odsłania pełny log (toggle zachowany w paginacji).
 - Registry (B): **brak auto-migracji przy AKTUALIZACJI** — `mp-warranty-registry` nie miał `maybe_upgrade`
   na `admin_init` (wzorzec obecny w Intake i Automator), więc update dodający migrację (v1→v2 kolumna
   `category`) NIE stosował jej bez deaktywacji+aktywacji → schemat zostawał stary → `SELECT category`
