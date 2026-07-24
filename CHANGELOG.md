@@ -4,6 +4,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Added
+- Automator (D) — **przebieg krok 5: silnik reguł NADAJE priorytet.** Nowa akcja reguły
+  `set_priority` (na `case_created`) ustawia priorytet sprawy wg warunku (np. kategoria/rodzaj)
+  przez kontrakt C `mp_case_set_priority` (low/normal/high). Priorytet nadawany PRZED wierszem SLA
+  (RuleEngine hook 10 < Sla 20) → pierwszy termin liczy się z nadanego priorytetu (high = krótszy).
+  Idempotentny (ten sam priorytet = bez zdarzenia), waliduje (INVALID_PRIORITY), loguje `PRIORITY_CHANGED`.
+  Domyślnie brak reguły → priorytet `normal` (politykę konfiguruje admin, jak pulę auto-przydziału).
+  Test `d-p31-priorytet`.
+- Automator (D) — **przebieg krok 8: raport końcowy przy zamknięciu.** Przy przejściu sprawy w status
+  `zamknięte` D składa podsumowanie (numer SRV, rodzaj, data zamknięcia, czas obsługi, podziękowanie —
+  klient-friendly, NO-PII) i dopisuje **wpis systemowy** przez `mp_case_add_system_message` (widoczny w
+  panelu klienta i na karcie). Zdarzenie `CLOSING_REPORT_GENERATED` w rejestrze D. Zmiana nie-końcowa
+  nie generuje raportu. Zachowanie strukturalne (gwarancja, nie reguła). Test `d-raport-koncowy`.
+
 ## [0.5.0] - 2026-07-24
 
 Checkpoint „3 pluginy spec-complete" (pre-release). Weryfikacja specyfikacji klienta 1:1

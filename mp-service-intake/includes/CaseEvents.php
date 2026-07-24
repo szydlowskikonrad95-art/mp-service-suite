@@ -39,6 +39,11 @@ final class CaseEvents {
 	public const STATUS_CHANGED = 'STATUS_CHANGED';
 
 	/**
+	 * Zmiana priorytetu sprawy (silnik regul lub reczna). Payload: {from, to, actor}.
+	 */
+	public const PRIORITY_CHANGED = 'PRIORITY_CHANGED';
+
+	/**
 	 * Zarejestrowanie zgody RODO.
 	 */
 	public const CONSENT_RECORDED = 'CONSENT_RECORDED';

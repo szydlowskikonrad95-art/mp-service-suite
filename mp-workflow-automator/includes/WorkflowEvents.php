@@ -85,6 +85,13 @@ final class WorkflowEvents {
 	public const SLA_RECALCULATED = 'SLA_RECALCULATED';
 
 	/**
+	 * Raport koncowy wygenerowany przy zamknieciu sprawy (przebieg krok 8).
+	 * D sklada podsumowanie i wola mp_case_add_system_message (wpis systemowy w C).
+	 * Payload {case_number}; NO-PII.
+	 */
+	public const CLOSING_REPORT_GENERATED = 'CLOSING_REPORT_GENERATED';
+
+	/**
 	 * Dopisuje zdarzenie do rejestru operacji D (append-only).
 	 *
 	 * @param string               $event_type Typ (stala z tej klasy).

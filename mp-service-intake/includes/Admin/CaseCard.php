@@ -33,6 +33,7 @@ final class CaseCard {
 	private static function event_labels(): array {
 		return array(
 			'STATUS_CHANGED'         => __( 'Zmiana statusu', 'mp-service-intake' ),
+			'PRIORITY_CHANGED'       => __( 'Zmiana priorytetu', 'mp-service-intake' ),
 			'CASE_ASSIGNED'          => __( 'Przydział sprawy', 'mp-service-intake' ),
 			'MESSAGE_ADDED'          => __( 'Wiadomość', 'mp-service-intake' ),
 			'CHECKLIST_ITEM_TOGGLED' => __( 'Checklista', 'mp-service-intake' ),

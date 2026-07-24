@@ -297,6 +297,11 @@ final class CaseRepo {
 	public const TERMINAL_STATUSES = array( 'zamknięte', 'odrzucone' );
 
 	/**
+	 * Dozwolone priorytety sprawy (spojne z SlaConfig::PRIORITY_MODIFIER w D).
+	 */
+	public const PRIORITIES = array( 'low', 'normal', 'high' );
+
+	/**
 	 * Sprawy klienta: [id, case_number, status, kind] (panel/eksport/RODO).
 	 *
 	 * @param int $customer_id ID klienta.
@@ -493,6 +498,92 @@ final class CaseRepo {
 			'success'     => true,
 			'assigned_to' => $user_id,
 			'from'        => $from,
+		);
+	}
+
+	/**
+	 * Ustawia priorytet sprawy (funkcja kontraktowa `mp_case_set_priority` — `priority`
+	 * nalezy do C, D wola). Dozwolone: low/normal/high. IDEMPOTENTNA (ten sam priorytet
+	 * => success bez zdarzenia). Loguje PRIORITY_CHANGED. Tylko sprawa 'verified'.
+	 *
+	 * @param int    $case_id  ID sprawy.
+	 * @param string $priority Nowy priorytet (low|normal|high).
+	 * @param int    $actor_id Kto zmienil (0 = system / silnik regul).
+	 * @return array{success: bool, error_code?: string, from?: string, to?: string, unchanged?: bool}
+	 */
+	public static function set_priority( int $case_id, string $priority, int $actor_id ): array {
+		global $wpdb;
+
+		if ( ! in_array( $priority, self::PRIORITIES, true ) ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'INVALID_PRIORITY',
+			);
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytania przygotowane.
+		$wpdb->query( 'START TRANSACTION' );
+
+		$current = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT priority FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				$case_id
+			)
+		);
+
+		if ( null === $current ) {
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		$current = (string) $current;
+
+		if ( $current === $priority ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna.
+			$wpdb->query( 'COMMIT' );
+			// phpcs:enable
+
+			return array(
+				'success'   => true,
+				'unchanged' => true,
+			);
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$cases} SET priority = %s, updated_at = %s WHERE id = %d AND identity_status = 'verified'",
+				$priority,
+				gmdate( 'Y-m-d H:i:s' ),
+				$case_id
+			)
+		);
+
+		CaseEvents::log(
+			$case_id,
+			CaseEvents::PRIORITY_CHANGED,
+			array(
+				'from'  => $current,
+				'to'    => $priority,
+				'actor' => $actor_id,
+			),
+			$actor_id
+		);
+
+		$wpdb->query( 'COMMIT' );
+		// phpcs:enable
+
+		return array(
+			'success' => true,
+			'from'    => $current,
+			'to'      => $priority,
 		);
 	}
 

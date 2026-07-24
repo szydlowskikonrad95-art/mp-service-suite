@@ -104,6 +104,18 @@ final class Plugin {
 			4
 		);
 
+		// Kontrakt D->C: priorytet sprawy (`priority` nalezy do C — silnik regul D wola).
+		add_filter(
+			'mp_case_set_priority',
+			static function ( $result, $case_id, $priority, $actor_id ) {
+				unset( $result );
+
+				return CaseRepo::set_priority( (int) $case_id, (string) $priority, (int) $actor_id );
+			},
+			10,
+			4
+		);
+
 		// Kontrakt D->C: zmiana statusu (walidacja STATE_MACHINE + optimistic-lock;
 		// emituje mp_case_status_changed PO COMMIT). assigned_to/status naleza do C.
 		add_filter(

@@ -47,13 +47,19 @@ final class Rules {
 	public const ACTION_NOTIFY = 'notify';
 
 	/**
+	 * Akcja: ustawienie priorytetu sprawy (wola kontraktowa C mp_case_set_priority).
+	 * Silnik NADAJE priorytet wg regul (np. na case_created po kategorii/warunku).
+	 */
+	public const ACTION_SET_PRIORITY = 'set_priority';
+
+	/**
 	 * Akcje MUTUJACE stan sprawy — objete GUARDEM PETLI (mutacja tylko na
 	 * glebokosci 0). Akcje spoza tej listy (mailowe — P3.3) przechodza na kazdej
 	 * glebokosci. Zamknieta lista w kodzie (ZAKAZ eval).
 	 *
 	 * @var string[]
 	 */
-	public const MUTATING_ACTIONS = array( self::ACTION_ASSIGN, self::ACTION_CHANGE_STATUS );
+	public const MUTATING_ACTIONS = array( self::ACTION_ASSIGN, self::ACTION_CHANGE_STATUS, self::ACTION_SET_PRIORITY );
 
 	/**
 	 * Czy akcja mutuje stan sprawy (podlega guardowi petli).
