@@ -4,6 +4,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Added
+- Intake (C) — **rate-limit żądań magic-linku (logowanie)** (`RateLimit::check_login`, osobne liczniki od
+  formularza zgłoszeń): domyślnie 5 żądań/15 min na IP + 5/godz. na e-mail. Chroni skrzynki klientów przed
+  zalewem linkami i endpoint przed nadużyciem (OWASP anti-automation — hardening poza kartką, standard
+  bezpieczeństwa). Komunikat neutralny (zero enumeracji kont), progi nadpisywalne filtrem
+  `mp_intake_login_rate_limits`, źródło IP przez `mp_intake_client_ip`. Test `c17-rate-limit-login` (5/5).
+
 ### Changed
 - Wymagania środowiska doprecyzowane wg specyfikacji klienta: `Requires at least` obniżone **6.9 → 6.0**
   (kartka: „WordPress 6.x" = 6.0 i nowsze; kod używa tylko stabilnych API). Dodana sekcja **Requirements**
