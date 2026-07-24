@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Added
+- Automator (D): **powiadomienie PRACOWNIKA przy zmianie statusu** (spec „powiadomienia dla klienta
+  i pracownika po każdej ważnej zmianie") — dotąd zmiana statusu mailowała tylko klienta. Nowa domyślna
+  reguła `status_changed → agent` (szablon `status_changed_staff`) informuje **przypisanego** pracownika.
+  **SELF-SKIP:** gdy status zmienił SAM przypisany pracownik, nie dostaje maila o własnej akcji
+  (`recipient_ref=agent_self`); zmiana przez koordynatora/innego → mail dochodzi. Seed **idempotentny per
+  `system_key`** (bump `SEED_VERSION`→2 DOSIEWA nową regułę bez duplikowania na upgrade — bez reaktywacji).
+  Testy `d-p33e-mail-pracownik` + idempotencja w `d-seed-regul`.
 - Karta sprawy (C): **sekcja „Produkt i gwarancja"** — kontrakt B->C `mp_product_details` (Registry
   wystawia detale produktu po ID: model, nr seryjny, dokument+data zakupu, gwarancja do, **status
   gwarancji liczony z daty** aktywna/wygasła/brak-danych, flaga zarchiwizowany). Karta nie siega w

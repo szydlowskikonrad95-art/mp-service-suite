@@ -204,6 +204,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33-maile.sh
       - name: Testy P3.3 notyfikacja przydziału (hook mp_case_assigned — każdy przydział→mail agenta, bulletproof, NO-PII)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33b-assign-notify.sh
+      - name: Testy P3.3 mail do PRACOWNIKA przy zmianie statusu (spec „klient i pracownik" — przypisany agent dostaje mail; SELF-SKIP gdy sam zmienił, recipient_ref=agent_self)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33e-mail-pracownik.sh
       - name: Testy P3.3 reguły wiadomości (message_added — klient→agent, staff→klient, system=nic, guard from===to)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p33c-message.sh
       - name: Testy P3.3 dedup-okno (identyczny mail w oknie → MAIL_DEDUPED; różna treść przechodzi; okna per typ)

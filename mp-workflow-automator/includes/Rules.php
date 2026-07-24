@@ -73,7 +73,7 @@ final class Rules {
 	/**
 	 * Wersja zestawu seedow (podbicie = dosiew nowych; dosiew przy upgrade -> NEXT).
 	 */
-	public const SEED_VERSION = 1;
+	public const SEED_VERSION = 2;
 
 	/**
 	 * Opcja sterujaca sianiem (warstwa ii uninstalla — pelny uninstall = swiezy siew).
@@ -89,6 +89,13 @@ final class Rules {
 	 * Klucz systemowy domyslnej reguly: mail do klienta przy zmianie statusu (P3.3).
 	 */
 	public const SYSTEM_KEY_STATUS_MAIL_CLIENT = 'status_changed_client_mail';
+
+	/**
+	 * Klucz systemowy: mail do PRZYPISANEGO pracownika przy zmianie statusu
+	 * (P3.3 — spec „klient i pracownik po kazdej waznej zmianie"; self-skip gdy
+	 * pracownik sam zmienil status — nie mailuje o wlasnej akcji).
+	 */
+	public const SYSTEM_KEY_STATUS_MAIL_STAFF = 'status_changed_staff_mail';
 
 	/**
 	 * Klucz systemowy: wiadomosc KLIENTA => mail do przypisanego agenta (P3.3).
@@ -220,7 +227,7 @@ final class Rules {
 			return;
 		}
 
-		self::insert(
+		self::seed_if_absent(
 			array(
 				'trigger_type'  => self::TRIGGER_CASE_CREATED,
 				'condition_key' => '',
@@ -238,7 +245,7 @@ final class Rules {
 		);
 
 		// Domyslna: mail do KLIENTA przy KAZDEJ zmianie statusu (warunek pusty = zawsze).
-		self::insert(
+		self::seed_if_absent(
 			array(
 				'trigger_type'  => self::TRIGGER_STATUS_CHANGED,
 				'condition_key' => '',
@@ -254,8 +261,27 @@ final class Rules {
 			)
 		);
 
+		// Domyslna: mail do PRZYPISANEGO PRACOWNIKA przy zmianie statusu (spec „klient
+		// i pracownik"). Odbiorca 'agent' = przydzielony; brak przydzialu => pominiecie
+		// (MAIL_SKIPPED_NO_RECIPIENT). Self-skip (pracownik sam zmienil) w RuleEngine.
+		self::seed_if_absent(
+			array(
+				'trigger_type'  => self::TRIGGER_STATUS_CHANGED,
+				'condition_key' => '',
+				'action_type'   => self::ACTION_NOTIFY,
+				'action_config' => array(
+					'template_key' => 'status_changed_staff',
+					'recipient'    => 'agent',
+				),
+				'priority'      => 10,
+				'enabled'       => 1,
+				'source'        => 'system',
+				'system_key'    => self::SYSTEM_KEY_STATUS_MAIL_STAFF,
+			)
+		);
+
 		// Wiadomosc KLIENTA => mail do przypisanego AGENTA (klient odpowiedzial).
-		self::insert(
+		self::seed_if_absent(
 			array(
 				'trigger_type'       => self::TRIGGER_MESSAGE_ADDED,
 				'condition_key'      => 'author_type',
@@ -274,7 +300,7 @@ final class Rules {
 		);
 
 		// Wiadomosc STAFF => mail do KLIENTA (serwis odpowiedzial; C sam nie maili).
-		self::insert(
+		self::seed_if_absent(
 			array(
 				'trigger_type'       => self::TRIGGER_MESSAGE_ADDED,
 				'condition_key'      => 'author_type',
@@ -296,5 +322,43 @@ final class Rules {
 		MailTemplates::seed_defaults();
 
 		update_option( self::SEED_VERSION_OPTION, self::SEED_VERSION, false );
+	}
+
+	/**
+	 * Sieje regule TYLKO gdy reguly o tym system_key jeszcze nie ma — idempotentnie.
+	 * Dzieki temu podbicie SEED_VERSION DOSIEWA nowe reguly (docblock SEED_VERSION),
+	 * bez duplikowania istniejacych na instalacjach po upgrade (bez reaktywacji).
+	 *
+	 * @param array<string, mixed> $data Kolumny reguly (z system_key).
+	 * @return void
+	 */
+	private static function seed_if_absent( array $data ): void {
+		$key = isset( $data['system_key'] ) ? (string) $data['system_key'] : '';
+
+		if ( '' !== $key && self::has_system_key( $key ) ) {
+			return;
+		}
+
+		self::insert( $data );
+	}
+
+	/**
+	 * Czy istnieje regula o danym kluczu systemowym.
+	 *
+	 * @param string $system_key Klucz systemowy.
+	 * @return bool
+	 */
+	private static function has_system_key( string $system_key ): bool {
+		global $wpdb;
+
+		$table = Tables::full( Tables::WORKFLOW_RULES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna przez Tables::full(), wartosc przez %s.
+		$found = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE system_key = %s", $system_key )
+		);
+		// phpcs:enable
+
+		return $found > 0;
 	}
 }
