@@ -99,16 +99,31 @@ final class PanelScreen {
 			'mp-automator-admin',
 			plugin_dir_url( MP_AUTOMATOR_FILE ) . 'assets/css/admin-automator.css',
 			array(),
-			MP_AUTOMATOR_VERSION
+			self::asset_ver( 'assets/css/admin-automator.css' )
 		);
 
 		wp_enqueue_script(
 			'mp-automator-panel-config',
 			plugin_dir_url( MP_AUTOMATOR_FILE ) . 'assets/js/panel-config.js',
 			array(),
-			MP_AUTOMATOR_VERSION,
+			self::asset_ver( 'assets/js/panel-config.js' ),
 			true
 		);
+	}
+
+	/**
+	 * Wersja assetu do cache-bust: wersja wtyczki + mtime pliku. Dzieki temu KAZDA
+	 * zmiana CSS/JS daje nowy `?ver` (przegladarka pobiera swiezy plik) bez recznego
+	 * bumpu wersji — usuwa pulapke „zmienilem CSS, a user widzi stary z cache".
+	 *
+	 * @param string $rel_path Sciezka assetu wzgledem katalogu wtyczki.
+	 * @return string
+	 */
+	private static function asset_ver( string $rel_path ): string {
+		$file  = plugin_dir_path( MP_AUTOMATOR_FILE ) . $rel_path;
+		$mtime = file_exists( $file ) ? (int) filemtime( $file ) : 0;
+
+		return $mtime > 0 ? MP_AUTOMATOR_VERSION . '.' . $mtime : MP_AUTOMATOR_VERSION;
 	}
 
 	/**
