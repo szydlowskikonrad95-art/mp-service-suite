@@ -101,6 +101,14 @@ final class PanelScreen {
 			array(),
 			MP_AUTOMATOR_VERSION
 		);
+
+		wp_enqueue_script(
+			'mp-automator-panel-config',
+			plugin_dir_url( MP_AUTOMATOR_FILE ) . 'assets/js/panel-config.js',
+			array(),
+			MP_AUTOMATOR_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -517,19 +525,23 @@ final class PanelScreen {
 		self::render_config_form(
 			ChecklistTemplates::ACTION_CONFIG,
 			__( 'Checklisty per typ sprawy', 'mp-workflow-automator' ),
-			__( 'Konfiguracja (JSON): rodzaj sprawy → lista kroków, każdy { "key": "...", "label": "..." }.', 'mp-workflow-automator' ),
+			__( 'Dodaj kroki checklisty dla każdego rodzaju sprawy (klucz techniczny + etykieta widoczna dla personelu).', 'mp-workflow-automator' ),
 			(string) wp_json_encode( ChecklistTemplates::all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
 			'mp-checklist-payload',
-			__( 'Zapisz checklisty', 'mp-workflow-automator' )
+			__( 'Zapisz checklisty', 'mp-workflow-automator' ),
+			false,
+			ChecklistTemplates::KINDS_ALLOWED
 		);
 
 		self::render_config_form(
 			ResponseTemplates::ACTION_CONFIG,
 			__( 'Szablony odpowiedzi', 'mp-workflow-automator' ),
-			__( 'Konfiguracja (JSON): rodzaj sprawy → lista szablonów, każdy { "key": "...", "label": "...", "body": "..." }.', 'mp-workflow-automator' ),
+			__( 'Dodaj szablony odpowiedzi dla każdego rodzaju sprawy (klucz + etykieta + treść z markerami {{...}}).', 'mp-workflow-automator' ),
 			(string) wp_json_encode( ResponseTemplates::all(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
 			'mp-templates-payload',
-			__( 'Zapisz szablony', 'mp-workflow-automator' )
+			__( 'Zapisz szablony', 'mp-workflow-automator' ),
+			true,
+			ResponseTemplates::KINDS_ALLOWED
 		);
 
 		self::render_markers_whitelist();
@@ -543,21 +555,76 @@ final class PanelScreen {
 	 * @param string $heading   Naglowek sekcji.
 	 * @param string $label     Opis pola (co wpisac).
 	 * @param string $json      Biezaca konfiguracja jako JSON (prefill).
-	 * @param string $field_id  Unikalne id textarea (a11y label-for).
-	 * @param string $submit    Etykieta przycisku zapisu.
+	 * @param string             $field_id Unikalne id textarea (a11y label-for).
+	 * @param string             $submit   Etykieta przycisku zapisu.
+	 * @param bool               $has_body Czy wiersz ma pole `body` (szablony=true, checklisty=false).
+	 * @param array<int, string> $kinds    Dozwolone rodzaje spraw (sekcje formularza).
 	 * @return void
 	 */
-	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit ): void {
+	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit, bool $has_body, array $kinds ): void {
+		$data = json_decode( $json, true );
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
 		?>
 		<h3 class="mp-automator-h3"><?php echo esc_html( $heading ); ?></h3>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-config">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-config mp-config-builder" data-has-body="<?php echo $has_body ? '1' : '0'; ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
 			<?php wp_nonce_field( $action ); ?>
-			<label for="<?php echo esc_attr( $field_id ); ?>"><?php echo esc_html( $label ); ?></label>
-			<textarea id="<?php echo esc_attr( $field_id ); ?>" name="payload" rows="10" class="large-text code" spellcheck="false"><?php echo esc_textarea( $json ); ?></textarea>
+			<p class="description"><?php echo esc_html( $label ); ?></p>
+
+			<?php foreach ( $kinds as $kind ) : ?>
+				<?php $rows = isset( $data[ $kind ] ) && is_array( $data[ $kind ] ) ? $data[ $kind ] : array(); ?>
+				<fieldset class="mp-cfg-kind" data-kind="<?php echo esc_attr( (string) $kind ); ?>">
+					<legend><?php echo esc_html( self::kind_label( (string) $kind ) ); ?></legend>
+					<div class="mp-cfg-rows">
+						<?php foreach ( $rows as $row ) : ?>
+							<?php
+							$rk = is_array( $row ) && isset( $row['key'] ) ? (string) $row['key'] : '';
+							$rl = is_array( $row ) && isset( $row['label'] ) ? (string) $row['label'] : '';
+							$rb = is_array( $row ) && isset( $row['body'] ) ? (string) $row['body'] : '';
+							?>
+							<div class="mp-cfg-row">
+								<input type="text" class="mp-cfg-key regular-text" value="<?php echo esc_attr( $rk ); ?>" placeholder="<?php esc_attr_e( 'klucz', 'mp-workflow-automator' ); ?>" aria-label="<?php esc_attr_e( 'Klucz', 'mp-workflow-automator' ); ?>" />
+								<input type="text" class="mp-cfg-label regular-text" value="<?php echo esc_attr( $rl ); ?>" placeholder="<?php esc_attr_e( 'etykieta', 'mp-workflow-automator' ); ?>" aria-label="<?php esc_attr_e( 'Etykieta', 'mp-workflow-automator' ); ?>" />
+								<?php if ( $has_body ) : ?>
+									<textarea class="mp-cfg-body large-text" rows="2" placeholder="<?php esc_attr_e( 'treść (markery {{...}})', 'mp-workflow-automator' ); ?>" aria-label="<?php esc_attr_e( 'Treść szablonu', 'mp-workflow-automator' ); ?>"><?php echo esc_textarea( $rb ); ?></textarea>
+								<?php endif; ?>
+								<button type="button" class="button-link mp-cfg-remove" aria-label="<?php esc_attr_e( 'Usuń wiersz', 'mp-workflow-automator' ); ?>">&times;</button>
+							</div>
+						<?php endforeach; ?>
+					</div>
+					<button type="button" class="button mp-cfg-add"><?php esc_html_e( '+ dodaj', 'mp-workflow-automator' ); ?></button>
+				</fieldset>
+			<?php endforeach; ?>
+
+			<details class="mp-cfg-advanced">
+				<summary><?php esc_html_e( 'Zaawansowane: edytuj jako JSON', 'mp-workflow-automator' ); ?></summary>
+				<label for="<?php echo esc_attr( $field_id ); ?>" class="screen-reader-text"><?php echo esc_html( $label ); ?></label>
+				<textarea id="<?php echo esc_attr( $field_id ); ?>" name="payload" rows="10" class="large-text code mp-cfg-json" spellcheck="false"><?php echo esc_textarea( $json ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Formularz powyżej zapisuje ten JSON automatycznie. Edytuj tu ręcznie tylko gdy potrzebujesz.', 'mp-workflow-automator' ); ?></p>
+			</details>
+
 			<?php submit_button( $submit, 'primary', $field_id . '_save', false ); ?>
 		</form>
 		<?php
+	}
+
+	/**
+	 * Czytelna etykieta rodzaju sprawy dla naglowka sekcji formularza.
+	 *
+	 * @param string $kind Slug rodzaju.
+	 * @return string
+	 */
+	private static function kind_label( string $kind ): string {
+		$labels = array(
+			'reklamacja' => __( 'Reklamacja', 'mp-workflow-automator' ),
+			'naprawa'    => __( 'Naprawa', 'mp-workflow-automator' ),
+			'zapytanie'  => __( 'Zapytanie techniczne', 'mp-workflow-automator' ),
+			'zwrot'      => __( 'Zwrot', 'mp-workflow-automator' ),
+		);
+
+		return isset( $labels[ $kind ] ) ? $labels[ $kind ] : ucfirst( $kind );
 	}
 
 	/**

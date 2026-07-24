@@ -265,7 +265,7 @@ final class ChecklistTemplates {
 	 *
 	 * @var array<int, string>
 	 */
-	private const KINDS_ALLOWED = array( 'reklamacja', 'naprawa', 'zapytanie', 'zwrot' );
+	public const KINDS_ALLOWED = array( 'reklamacja', 'naprawa', 'zapytanie', 'zwrot' );
 
 	/**
 	 * Powrot po zapisie (PRG) — na referer albo panel admina.
