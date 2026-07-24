@@ -2,7 +2,7 @@
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Automates the service workflow: assigns cases to staff based on product category
 Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
 
 == Changelog ==
+
+= 0.5.0 =
+* Powiadomienie e-mail pracownika przy zmianie statusu (self-skip dla autora zmiany). Walidacja JSON konfiguracji (bez cichej utraty), filtr SWEEP_RUN w domyślnym widoku rejestru zdarzeń.
 
 = 0.4.0 =
 * Rules engine + round-robin auto-assignment on case creation (structural rules, loop guard).
