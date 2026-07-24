@@ -61,14 +61,15 @@ echo "$PAY" | grep -q '"recipient_ref":"client"' && ok "recipient_ref=client (ka
 echo "$PAY" | grep -q 'klient@example.com' && bad "ADRES w logu (wyciek PII!)" || ok "brak adresu w logu (NO-PII)"
 echo "$PAY" | grep -qi 'Dzień dobry' && bad "TRESC maila w logu (wyciek!)" || ok "brak tresci maila w logu (NO-PII)"
 
-# ── 4. Klient ZANONIMIZOWANY (RODO) => MAIL_SKIPPED_NO_RECIPIENT, nie awaria ──
+# ── 4. Klient ZANONIMIZOWANY (RODO) + sprawa NIEPRZYDZIELONA => 2x MAIL_SKIPPED,
+#       oba legalne (klient bez adresu + pracownik nieprzydzielony), zero awarii ──
 CID2=$(mkcase anon@example.com "Anon Klient" MAIL-2)
 wp db query "UPDATE wp_mp_customers SET anonymized_at=NOW() WHERE id=(SELECT customer_id FROM wp_mp_service_cases WHERE id=$CID2)" >/dev/null 2>&1
 capclear
 cs "$CID2" "w analizie" "nowe" "null" >/dev/null
-[ "$(capcount)" = "0" ] && ok "zanonimizowany klient: ZERO wyslanych maili" || bad "mail poszedl do zanonimizowanego klienta!"
+[ "$(capcount)" = "0" ] && ok "zanonimizowany klient + brak przydzialu: ZERO wyslanych maili" || bad "mail poszedl mimo braku odbiorcow!"
 SK=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE case_id=$CID2 AND event_type='MAIL_SKIPPED_NO_RECIPIENT'")
-[ "$SK" = "1" ] && ok "MAIL_SKIPPED_NO_RECIPIENT zaksiegowany (stan legalny, nie awaria)" || bad "brak MAIL_SKIPPED ($SK)"
+[ "$SK" = "2" ] && ok "2x MAIL_SKIPPED_NO_RECIPIENT (klient zanonimizowany + pracownik nieprzydzielony — oba legalne)" || bad "zla liczba MAIL_SKIPPED ($SK, oczekiwano 2)"
 
 # ── 5. SANITYZACJA (Mailer, brama egress) ────────────────────────────────────
 capclear

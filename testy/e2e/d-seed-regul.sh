@@ -18,13 +18,21 @@ wp option delete mp_automator_mail_templates >/dev/null 2>&1
 reactivate
 
 N=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
-[ "$N" = "4" ] && ok "aktywacja zasiala 4 reguly domyslne (przydzial + mail statusu + 2x wiadomosci)" || bad "regul po seedzie: $N (oczekiwano 4)"
+[ "$N" = "5" ] && ok "aktywacja zasiala 5 regul domyslnych (przydzial + mail statusu klient + mail statusu pracownik + 2x wiadomosci)" || bad "regul po seedzie: $N (oczekiwano 5)"
 
 ROWA=$(q "SELECT CONCAT(source,'|',system_key,'|',trigger_type,'|',action_type,'|',enabled) FROM wp_mp_workflow_rules WHERE system_key='default_assign'")
 [ "$ROWA" = "system|default_assign|case_created|assign|1" ] && ok "regula A: system/default_assign, case_created->assign ($ROWA)" || bad "zla regula przydzialu ($ROWA)"
 
 ROWM=$(q "SELECT CONCAT(source,'|',system_key,'|',trigger_type,'|',action_type,'|',enabled) FROM wp_mp_workflow_rules WHERE system_key='status_changed_client_mail'")
 [ "$ROWM" = "system|status_changed_client_mail|status_changed|notify|1" ] && ok "regula M: system/status_changed_client_mail, status_changed->notify ($ROWM)" || bad "zla regula mailowa ($ROWM)"
+
+# NOWA regula: mail do PRACOWNIKA przy zmianie statusu (spec „klient i pracownik").
+ROWS=$(q "SELECT CONCAT(source,'|',system_key,'|',trigger_type,'|',action_type,'|',enabled) FROM wp_mp_workflow_rules WHERE system_key='status_changed_staff_mail'")
+[ "$ROWS" = "system|status_changed_staff_mail|status_changed|notify|1" ] && ok "regula S: system/status_changed_staff_mail, status_changed->notify ($ROWS)" || bad "zla regula mail-pracownik ($ROWS)"
+SCFG=$(q "SELECT action_config_json FROM wp_mp_workflow_rules WHERE system_key='status_changed_staff_mail'")
+echo "$SCFG" | grep -q '"recipient":"agent"' && echo "$SCFG" | grep -q '"template_key":"status_changed_staff"' && ok "regula mail-pracownik: recipient=agent, template=status_changed_staff" || bad "zla konfiguracja mail-pracownik ($SCFG)"
+STPL=$(wp eval 'echo MP\Automator\MailTemplates::get("status_changed_staff") ? "1":"0";' 2>/dev/null)
+[ "$STPL" = "1" ] && ok "szablon status_changed_staff zasiany (nie sierota reguly)" || bad "brak szablonu status_changed_staff"
 
 POOL=$(q "SELECT action_config_json FROM wp_mp_workflow_rules WHERE system_key='default_assign'")
 echo "$POOL" | grep -qE '"pool":\[\]' && ok "pula PUSTA (admin/demo wypelnia; do tego czasu ASSIGNMENT_UNMATCHED)" || bad "pula nie pusta ($POOL)"
@@ -45,7 +53,7 @@ MS=$(q "SELECT CONCAT(trigger_type,'|',condition_key,'|',condition_value,'|',act
 [ "$MS" = "message_added|author_type|staff|notify" ] && ok "regula: wiadomosc staff->klient (message_added/author_type=staff)" || bad "zla regula msg-staff ($MS)"
 
 SV=$(q "SELECT option_value FROM wp_options WHERE option_name='mp_automator_seed_version'")
-[ "$SV" = "1" ] && ok "mp_automator_seed_version = 1 (bramka siewu)" || bad "seed_version = $SV"
+[ "$SV" = "2" ] && ok "mp_automator_seed_version = 2 (bramka siewu; v2 dosiewa mail-pracownik)" || bad "seed_version = $SV"
 
 # ── 2. Skasuj OBIE reguly + reaktywuj -> NIE wracaja (bramka wersji) ──────────
 wp db query "DELETE FROM wp_mp_workflow_rules WHERE source='system'" >/dev/null 2>&1
@@ -57,7 +65,17 @@ N2=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
 wp option delete mp_automator_seed_version >/dev/null 2>&1
 reactivate
 N3=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
-[ "$N3" = "4" ] && ok "po skasowaniu seed_version reinstalacja SIEJE swiezo (4 reguly)" || bad "reinstalacja nie zasiala ($N3)"
+[ "$N3" = "5" ] && ok "po skasowaniu seed_version reinstalacja SIEJE swiezo (5 regul)" || bad "reinstalacja nie zasiala ($N3)"
+
+# ── 4. IDEMPOTENCJA DOSIEWU (upgrade v1->v2): symuluj STARA instalacje (skasuj nowa
+#       regule + cofnij wersje do 1) -> dosiew dodaje TYLKO brakujaca, bez duplikatow ─
+wp db query "DELETE FROM wp_mp_workflow_rules WHERE system_key='status_changed_staff_mail'" >/dev/null 2>&1
+wp option update mp_automator_seed_version 1 >/dev/null 2>&1
+reactivate
+N4=$(q "SELECT COUNT(*) FROM wp_mp_workflow_rules")
+[ "$N4" = "5" ] && ok "dosiew v2: dodal brakujaca regule mail-pracownik bez duplikowania (5 regul)" || bad "dosiew zly ($N4)"
+DUPS=$(q "SELECT COUNT(*) FROM (SELECT system_key FROM wp_mp_workflow_rules WHERE source='system' GROUP BY system_key HAVING COUNT(*)>1) d")
+[ "$DUPS" = "0" ] && ok "ZERO duplikatow system_key po dosiewie (bezpieczny upgrade bez reaktywacji)" || bad "duplikaty regul po dosiewie! ($DUPS)"
 
 echo ""
 echo "D-SEED-REGUL: PASS=$PASS FAIL=$FAIL"

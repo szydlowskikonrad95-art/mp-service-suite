@@ -178,8 +178,10 @@ final class RuleEngine {
 	 * @return void
 	 */
 	public static function on_status_changed( $case_id, $old_status, $new_status, $actor_id ): void {
-		unset( $old_status, $new_status, $actor_id );
-		self::run_rules( (int) $case_id, Rules::TRIGGER_STATUS_CHANGED );
+		unset( $old_status, $new_status );
+		// actor_id do kontekstu: powiadomienie pracownika pomija AUTORA zmiany
+		// (nie mailuje pracownika o jego wlasnej akcji — self-skip w resolve_recipient).
+		self::run_rules( (int) $case_id, Rules::TRIGGER_STATUS_CHANGED, array( 'actor_id' => (int) $actor_id ) );
 	}
 
 	/**
@@ -454,13 +456,22 @@ final class RuleEngine {
 		}
 
 		if ( 'agent' === $recipient ) {
-			$uid = isset( $ctx['assigned_to'] ) ? $ctx['assigned_to'] : null;
+			$uid = isset( $ctx['assigned_to'] ) && null !== $ctx['assigned_to'] ? (int) $ctx['assigned_to'] : 0;
 
-			if ( null === $uid ) {
+			if ( 0 === $uid ) {
 				return array( '', 'agent' );
 			}
 
-			$user = get_userdata( (int) $uid );
+			// Self-skip: pracownik NIE dostaje maila o zmianie, ktora SAM wprowadzil
+			// (actor_id wstrzykiwany dla status_changed). Inni pracownicy/koordynator
+			// zmieniajacy jego sprawe => mail dochodzi normalnie.
+			$actor = isset( $ctx['actor_id'] ) ? (int) $ctx['actor_id'] : 0;
+
+			if ( $actor > 0 && $actor === $uid ) {
+				return array( '', 'agent_self' );
+			}
+
+			$user = get_userdata( $uid );
 
 			return array( $user ? (string) $user->user_email : '', 'agent' );
 		}

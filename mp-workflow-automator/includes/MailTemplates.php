@@ -37,6 +37,10 @@ final class MailTemplates {
 				'subject' => 'Zgłoszenie {{numer_sprawy}} — zmiana statusu',
 				'body'    => "Dzień dobry,\n\nStatus Twojego zgłoszenia {{numer_sprawy}} zmienił się na: {{status}}.\n\nSzczegóły sprawdzisz po zalogowaniu na swoje konto.\n\nData zmiany: {{data}}",
 			),
+			'status_changed_staff'  => array(
+				'subject' => 'Zgłoszenie {{numer_sprawy}} — zmiana statusu ({{status}})',
+				'body'    => "Dzień dobry,\n\nStatus przydzielonego Ci zgłoszenia {{numer_sprawy}} zmienił się na: {{status}} (rodzaj: {{rodzaj}}).\n\nSzczegóły w panelu sprawy.\n\nData zmiany: {{data}}",
+			),
 			'assignment_notify'     => array(
 				'subject' => 'Przydzielono Ci zgłoszenie {{numer_sprawy}}',
 				'body'    => "Dzień dobry,\n\nPrzydzielono Ci do obsługi zgłoszenie {{numer_sprawy}} (rodzaj: {{rodzaj}}, status: {{status}}).\n\nSzczegóły znajdziesz w panelu sprawy.\n\nData przydziału: {{data}}",

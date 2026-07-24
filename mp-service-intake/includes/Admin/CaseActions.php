@@ -92,7 +92,7 @@ final class CaseActions {
 	 */
 	private static function status_notice( array $result ): string {
 		if ( ! empty( $result['success'] ) ) {
-			return __( 'Status zmieniony (klient i pracownik powiadomieni).', 'mp-service-intake' );
+			return __( 'Status zmieniony (klient i przypisany pracownik powiadomieni).', 'mp-service-intake' );
 		}
 
 		$code = isset( $result['error_code'] ) ? (string) $result['error_code'] : '';
