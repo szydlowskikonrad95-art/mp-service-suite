@@ -49,8 +49,10 @@ capclear
 cs_actor "$CID" "w analizie" "nowe" "null" "$COORD"
 has_to "klient-p33e@example.com" && ok "A: KLIENT dostal mail o zmianie statusu" || bad "A: brak maila do klienta"
 has_to "$AGENT_MAIL" && ok "A: PRZYPISANY PRACOWNIK dostal mail (spec: klient i pracownik)" || bad "A: pracownik NIE dostal maila!"
-RE=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE case_id=$CID AND event_type='RULE_EXECUTED' AND payload LIKE '%\"recipient_ref\":\"agent\"%' AND payload LIKE '%success%'")
-[ "$RE" != "0" ] && ok "A: RULE_EXECUTED recipient_ref=agent success (audyt)" || bad "A: brak audytu maila do pracownika ($RE)"
+# Audyt: regula wykonala sie dla odbiorcy 'agent'. NIE asertujemy result=success —
+# transport (wp_mail) zalezy od srodowiska (CI bez MTA => failed; Mailpit => success).
+RE=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE case_id=$CID AND event_type='RULE_EXECUTED' AND payload LIKE '%\"recipient_ref\":\"agent\"%'")
+[ "$RE" != "0" ] && ok "A: RULE_EXECUTED recipient_ref=agent (audyt maila do pracownika; transport-agnostyczny)" || bad "A: brak audytu maila do pracownika ($RE)"
 
 # ── B. SAM przypisany pracownik zmienia status => SELF-SKIP (bez maila do siebie) ─
 capclear
