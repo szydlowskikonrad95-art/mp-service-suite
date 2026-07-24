@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MP Service Intake
  * Description: Przyjmowanie zgloszen serwisowych i reklamacyjnych: dynamiczny formularz, numer sprawy SRV, konto klienta, ochrona przed spamem.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires at least: 6.9
  * Requires PHP: 8.1
  * Author: MP Service Suite
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'MP_INTAKE_FILE', __FILE__ );
-define( 'MP_INTAKE_VERSION', '0.4.0' );
+define( 'MP_INTAKE_VERSION', '0.5.0' );
 
 if ( ! defined( 'MP_CONTRACT_VERSION' ) ) {
 	define( 'MP_CONTRACT_VERSION', 1 );
