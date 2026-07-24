@@ -191,7 +191,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   case-create` rozszerzona (--document/--date/--return-reason); test C2 w CI.
 - Intake (C): rdzen sprawy serwisowej — schemat 7 tabel (customers, service_cases, case_events,
   messages, attachments, consents, srv_counters) z migracjami; atomowy licznik numeru sprawy
-  SRV/RRRR/NNNN (`INSERT ... VALUES(year, LAST_INSERT_ID(1)) ON DUPLICATE KEY UPDATE ...` +
+  SRV/RRRR/NNNNN (`INSERT ... VALUES(year, LAST_INSERT_ID(1)) ON DUPLICATE KEY UPDATE ...` +
   UNIQUE na case_number — zero duplikatow przy zbieznosci); narodziny sprawy wg flow z krytyki:
   zgloszenie -> sprawa `unverified` (status NULL, SRV nadany od razu, snapshot gwarancji z chwili
   zgloszenia NIOSACY PARTIE, token jednorazowy = tylko HASH w bazie, TTL 24h) -> potwierdzenie

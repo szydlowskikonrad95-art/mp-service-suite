@@ -40,7 +40,7 @@ DUPES=$(cat /tmp/mp-srv-*.txt 2>/dev/null | sort | uniq -d | wc -l | tr -d ' ')
 [ "$DUPES" -eq 0 ] && ok "zaden numer nie powtorzony (uniq -d pusty)" || bad "powtorzone numery: $DUPES"
 
 FMT=$(cat /tmp/mp-srv-1.txt 2>/dev/null)
-echo "$FMT" | grep -qE "^SRV/$YEAR/[0-9]{4}" && ok "format numeru: $FMT (SRV/RRRR/NNNN)" || bad "zly format: $FMT"
+echo "$FMT" | grep -qE "^SRV/$YEAR/[0-9]{5}" && ok "format numeru: $FMT (SRV/RRRR/NNNNN)" || bad "zly format: $FMT"
 rm -f /tmp/mp-srv-*.txt
 wp db query "DELETE FROM wp_mp_srv_counters;" >/dev/null 2>&1
 

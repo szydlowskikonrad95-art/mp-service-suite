@@ -55,7 +55,7 @@ final class ResponseTemplates {
 	 */
 	public static function markers_whitelist(): array {
 		return array(
-			'{{numer_sprawy}}' => __( 'Numer sprawy (SRV/RRRR/NNNN)', 'mp-workflow-automator' ),
+			'{{numer_sprawy}}' => __( 'Numer sprawy (SRV/RRRR/NNNNN)', 'mp-workflow-automator' ),
 			'{{status}}'       => __( 'Aktualny status sprawy', 'mp-workflow-automator' ),
 			'{{rodzaj}}'       => __( 'Rodzaj sprawy', 'mp-workflow-automator' ),
 			'{{data}}'         => __( 'Bieżąca data', 'mp-workflow-automator' ),

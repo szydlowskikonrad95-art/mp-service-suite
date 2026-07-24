@@ -63,7 +63,7 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   i relacje ZOSTAJĄ) · powiązanie z kontem WP (odpinane przy anonimizacji).
 - **`wp_mp_service_cases`**: `customer_id` · `product_registry_id` **NULL dozwolony** (sprawa bez
   produktu, np. zapytanie bez serialu — wtedy `warranty_snapshot` i jej wersja jawnie NULL) ·
-  `case_number` UNIQUE (SRV/RRRR/NNNN) · `status` **NULL = nieporwierdzona (unverified)**, `IS NULL`
+  `case_number` UNIQUE (SRV/RRRR/NNNNN) · `status` **NULL = nieporwierdzona (unverified)**, `IS NULL`
   w pierwszym przejściu (patrz STATE_MACHINE.md) · `identity_status` (pending/verified) ·
   `verify_token_hash` UNIQUE + `verify_token_expires_at` + `verify_token_used_at` (NULL=żywy; w bazie
   WYŁĄCZNIE hashe tokenów) · `created_at` (=submit) · `verified_at` · `status_changed_at` ·
@@ -136,7 +136,7 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
    szczegóły i rollback: MIGRATION_POLICY.md.
 5. Środowisko: MySQL 8 / MariaDB 10.6+ (spec T1); demo pinowane na MariaDB 11.8 LTS.
 
-## 4. Numer sprawy SRV/RRRR/NNNN — JEDEN algorytm
+## 4. Numer sprawy SRV/RRRR/NNNNN — JEDEN algorytm
 
 Licznik ATOMOWY per rok w `wp_mp_srv_counters` (jedna kwerenda = init roku i podbicie):
 

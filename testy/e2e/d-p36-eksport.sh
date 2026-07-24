@@ -64,7 +64,7 @@ DR=$(grep -c '^SRV/' "$CSV")
 [ "$DR" = "4" ] && ok "liczba wierszy danych = 4 (= liczba spraw)" || bad "wierszy danych=$DR (!=4)"
 
 # (b) wartosci: sprawa odrzucona C ma status 'odrzucone' + kod 'duplikat'
-grep -E '^SRV/[0-9]{4}/[0-9]{4};odrzucone;' "$CSV" | grep -q 'duplikat' && ok "wiersz odrzucony: status+kod 'duplikat' obecne" || bad "brak poprawnego wiersza odrzuconego"
+grep -E '^SRV/[0-9]{4}/[0-9]{5,};odrzucone;' "$CSV" | grep -q 'duplikat' && ok "wiersz odrzucony: status+kod 'duplikat' obecne" || bad "brak poprawnego wiersza odrzuconego"
 
 # (d) ANTI-INJECTION: kod '=SUM(1+1)' wychodzi z apostrofem; ZERO golego =SUM na starcie komorki
 grep -qF "'=SUM(1+1)" "$CSV" && ok "anti-injection: '=SUM(1+1) poprzedzone apostrofem" || bad "brak apostrofu przed =SUM"

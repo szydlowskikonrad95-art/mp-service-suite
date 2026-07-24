@@ -1,6 +1,6 @@
 <?php
 /**
- * Testy formatu numeru sprawy SRV/RRRR/NNNN (czysta funkcja).
+ * Testy formatu numeru sprawy SRV/RRRR/NNNNN (czysta funkcja).
  *
  * @package MP\Testy
  */
@@ -11,31 +11,32 @@ use MP\Intake\SrvCounter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * NNNN = min. 4 cyfry z zerami do 9999, potem naturalnie 5+ (kontrakt).
+ * NNNNN = min. 5 cyfr z zerami do 99999, potem naturalnie 6+ (spec klienta).
  */
 final class SrvCounterTest extends TestCase {
 
 	/**
-	 * Pierwsza sprawa roku ma zera wiodace.
+	 * Pierwsza sprawa roku ma zera wiodace (5 cyfr).
 	 */
 	public function test_first_case_is_padded(): void {
-		self::assertSame( 'SRV/2026/0001', SrvCounter::format( 2026, 1 ) );
+		self::assertSame( 'SRV/2026/00001', SrvCounter::format( 2026, 1 ) );
 	}
 
 	/**
-	 * Setna/tysieczna sprawa — pelne 4 cyfry.
+	 * Numer dopelniany do pelnych 5 cyfr.
 	 */
-	public function test_padding_to_four_digits(): void {
-		self::assertSame( 'SRV/2026/0042', SrvCounter::format( 2026, 42 ) );
-		self::assertSame( 'SRV/2026/1000', SrvCounter::format( 2026, 1000 ) );
-		self::assertSame( 'SRV/2026/9999', SrvCounter::format( 2026, 9999 ) );
+	public function test_padding_to_five_digits(): void {
+		self::assertSame( 'SRV/2026/00042', SrvCounter::format( 2026, 42 ) );
+		self::assertSame( 'SRV/2026/01000', SrvCounter::format( 2026, 1000 ) );
+		self::assertSame( 'SRV/2026/09999', SrvCounter::format( 2026, 9999 ) );
+		self::assertSame( 'SRV/2026/99999', SrvCounter::format( 2026, 99999 ) );
 	}
 
 	/**
-	 * Powyzej 9999 numer rosnie naturalnie do 5+ cyfr (bez ucinania).
+	 * Powyzej 99999 numer rosnie naturalnie do 6+ cyfr (bez ucinania).
 	 */
 	public function test_overflow_grows_naturally(): void {
-		self::assertSame( 'SRV/2026/10000', SrvCounter::format( 2026, 10000 ) );
+		self::assertSame( 'SRV/2026/100000', SrvCounter::format( 2026, 100000 ) );
 		self::assertSame( 'SRV/2026/123456', SrvCounter::format( 2026, 123456 ) );
 	}
 
@@ -43,6 +44,6 @@ final class SrvCounterTest extends TestCase {
 	 * Rok tez ma sztywne 4 cyfry.
 	 */
 	public function test_year_is_four_digits(): void {
-		self::assertSame( 'SRV/2026/0001', SrvCounter::format( 2026, 1 ) );
+		self::assertSame( 'SRV/2026/00001', SrvCounter::format( 2026, 1 ) );
 	}
 }
