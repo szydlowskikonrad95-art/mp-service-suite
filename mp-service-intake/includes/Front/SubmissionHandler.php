@@ -146,10 +146,14 @@ final class SubmissionHandler {
 
 		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
 		// sprzatane cronem sierot razem ze sprawa).
-		$files = self::collect_files();
+		$att_errors = array();
+		$files      = self::collect_files();
 
 		if ( array() !== $files ) {
-			Attachments::store_for_case( (int) $result['case_id'], $kind, $files );
+			// D4: wynik NIE jest ignorowany — pominiete pliki musza trafic do klienta
+			// (inaczej reklamacja bez dowodu). Teksty bledow gotowe w store_for_case.
+			$att        = Attachments::store_for_case( (int) $result['case_id'], $kind, $files );
+			$att_errors = $att['errors'];
 		}
 
 		// Zgoda RODO: pelny tekst zamrozony, spieta ze sprawa (podpiecie do klienta przy weryfikacji).
@@ -167,7 +171,16 @@ final class SubmissionHandler {
 		Mailer::send_magic_link( $email, (string) $result['token'] );
 
 		// Komunikat NEUTRALNY — zero enumeracji, SRV dopiero w mailu/panelu.
-		self::redirect_back( array( 'notice' => self::neutral_message() ) );
+		// D4: dokladamy info o pominietych plikach (nie zdradza istnienia konta —
+		// dotyczy plikow ktore klient sam wgral, wiec anty-enumeracja zachowana).
+		$notice = self::neutral_message();
+
+		if ( array() !== $att_errors ) {
+			$notice .= ' ' . __( 'Uwaga: część załączników nie została dołączona do zgłoszenia:', 'mp-service-intake' )
+				. ' ' . implode( ' ', $att_errors );
+		}
+
+		self::redirect_back( array( 'notice' => $notice ) );
 	}
 
 	/**

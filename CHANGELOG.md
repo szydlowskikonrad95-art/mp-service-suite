@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C) — **załączniki: pominięte pliki są MELDOWANE klientowi** (poprawka #D4 z audytu kod-based).
+  Dotąd `SubmissionHandler::handle_submit()` wywoływał `Attachments::store_for_case()` i **ignorował wynik**
+  (`{stored, errors}`) — klient, którego pliki odpadły (zły typ, za duży, limit 5/sprawę, brak miejsca),
+  widział neutralny „sukces", a serwis dostawał reklamację **bez dowodów**. Teraz wynik jest przechwytywany,
+  a gotowe (istniejące server-side) teksty błędów doklejane do komunikatu PRG. Anty-enumeracja zachowana
+  (błędy dotyczą plików, które klient sam wgrał — nie zdradzają istnienia konta). Test `c4-zalaczniki`:
+  realny POST z plikiem złego typu → sprawa powstaje, plik odrzucony, notice niesie tekst błędu.
 - Intake (C) — **RODO art. 17: eraser USUWA konto WP klienta** (poprawka #D1 z audytu kod-based).
   Dotąd anonimizacja tylko odpinała konto (`customers.wp_user_id = NULL`), a rekord `wp_users` z realnym
   e-mailem/loginem/nazwiskiem zostawał bezterminowo — mimo że panel raportował „dane zanonimizowane"

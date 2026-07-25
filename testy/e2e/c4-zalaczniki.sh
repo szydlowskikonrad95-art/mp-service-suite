@@ -131,6 +131,28 @@ DELAT=$(q "SELECT deleted_at FROM wp_mp_attachments WHERE id=$AID")
 [ -n "$DELAT" ] && [ "$DELAT" != "NULL" ] && ok "retencja: przeterminowany zalacznik oznaczony deleted_at" || bad "retencja nie oznaczyla ($DELAT)"
 [ ! -f "$FILE_ON_DISK" ] && ok "retencja: PLIK skasowany z dysku (wiersz+plik)" || bad "plik zostal na dysku po retencji"
 
+# ── 8. D4: pominiete zalaczniki (zly typ) MELDOWANE klientowi (nie gubimy cicho) ─
+# Zgloszenie z plikiem zlego typu (maly tekst) -> sprawa powstaje, plik odrzucony,
+# ale klient MUSI zobaczyc info o pominieciu (inaczej reklamacja bez dowodu). Inny
+# e-mail niz sekcja 2, by nie wpasc w dedup (mark_submitted).
+printf 'to nie jest obraz, tylko zwykly tekst' > /tmp/mp-skip.txt
+cget -c "$JAR" -b "$JAR" -o /dev/null \
+	-F "action=mp_intake_submit" -F "_mp_nonce=$NONCE" \
+	-F "mp_ts=$(( $(date +%s) - 30 ))" \
+	-F "kind=reklamacja" -F "email=skip@example.com" \
+	-F "serial=SKIP-1" -F "purchase_document=FV/2026/9" \
+	-F "purchase_date=2026-03-15" -F "issue_description=Zgloszenie z plikiem zlego typu" -F "mp_consent=1" \
+	-F "mp_files[]=@/tmp/mp-skip.txt;type=text/plain" \
+	"$BASE/wp-admin/admin-post.php"
+CID2=$(q "SELECT id FROM wp_mp_service_cases WHERE status IS NULL AND id<>$CID ORDER BY id DESC LIMIT 1")
+[ -n "$CID2" ] && ok "D4: sprawa utworzona mimo odrzuconego pliku ($CID2)" || bad "D4: sprawa nie powstala"
+A2=$(q "SELECT COUNT(*) FROM wp_mp_attachments WHERE case_id=$CID2")
+[ "$A2" = "0" ] && ok "D4: plik zlego typu NIE zapisany jako zalacznik (0)" || bad "D4: zly plik zapisany ($A2)"
+# Notice z transientu PRG (klucz = mp_intake_ctx_ + ciasteczko mp_intake_sess z JAR).
+SESS=$(awk '$6=="mp_intake_sess"{print $7}' "$JAR" | tail -1)
+NOTICE=$(wp eval "\$c=get_transient('mp_intake_ctx_'.'$SESS'); echo is_array(\$c) ? (string) (\$c['notice'] ?? '') : '';" 2>/dev/null)
+echo "$NOTICE" | grep -qi "Niedozwolony" && ok "D4: klient POINFORMOWANY o pominietym pliku (notice niesie blad store_for_case)" || bad "D4: brak info o pominietym pliku (notice='$NOTICE')"
+
 echo
 echo "WYNIK C4: $PASS ok, $FAIL fail"
 [ "$FAIL" -eq 0 ]
