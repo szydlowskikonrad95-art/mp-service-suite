@@ -93,6 +93,7 @@ if ( $mp_intake_delete_data ) {
 		MP\Intake\Tables::CASES,
 		MP\Intake\Tables::CUSTOMERS,
 		MP\Intake\Tables::SRV_COUNTERS,
+		MP\Intake\Tables::RATE_COUNTERS,
 	);
 
 	foreach ( $mp_intake_tables as $mp_intake_table ) {

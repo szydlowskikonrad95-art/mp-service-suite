@@ -39,13 +39,13 @@ wp eval 'do_action("admin_init");' >/dev/null 2>&1
 
 # ── 4. Asercje: schemat stworzony, dane przetrwaly, role/cron/opcje ─────────
 MISS=""
-for t in mp_customers mp_service_cases mp_case_events mp_messages mp_attachments mp_consents mp_srv_counters; do
+for t in mp_customers mp_service_cases mp_case_events mp_messages mp_attachments mp_consents mp_srv_counters mp_rate_counters; do
 	[ "$(has_table "$t")" = "1" ] || MISS="$MISS $t"
 done
-[ -z "$MISS" ] && ok "upgrade BEZ reaktywacji: 7 tabel intake STWORZONYCH (maybe_upgrade)" || bad "brak tabel intake po upgrade:$MISS"
+[ -z "$MISS" ] && ok "upgrade BEZ reaktywacji: 8 tabel intake STWORZONYCH (maybe_upgrade, w tym mp_rate_counters v2)" || bad "brak tabel intake po upgrade:$MISS"
 
 SV=$(wp option get mp_intake_schema_version 2>/dev/null)
-[ "$SV" = "1" ] && ok "schema_version = 1 (migracja odnotowana)" || bad "schema_version = $SV"
+[ "$SV" = "2" ] && ok "schema_version = 2 (migracje v1+v2 odnotowane)" || bad "schema_version = $SV"
 
 PROD_AFTER=$(q "SELECT COUNT(*) FROM ${PFX}mp_product_registry")
 { [ -n "$PROD_AFTER" ] && [ "$PROD_AFTER" = "$PROD_BEFORE" ]; } && ok "dane registry PRZETRWALY upgrade ($PROD_AFTER)" || bad "dane registry zgubione (przed=$PROD_BEFORE po=$PROD_AFTER)"
