@@ -278,3 +278,12 @@
 .mp-account__messages {
 	margin: 0.6rem 0 0;
 }
+
+/* Login: węższa kolumna (sam e-mail). Wycofanie zgody: subtelny warm-akcent. */
+.mp-account--login {
+	max-width: 30rem;
+}
+
+.mp-account__privacy {
+	border-left: 3px solid #d98324;
+}
