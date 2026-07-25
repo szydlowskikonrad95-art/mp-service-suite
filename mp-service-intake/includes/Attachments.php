@@ -296,13 +296,48 @@ final class Attachments {
 			imagealphablending( $img, false );
 			imagesavealpha( $img, true );
 			imagepng( $img, $path );
-		} elseif ( 'image/webp' === $mime && function_exists( 'imagewebp' ) ) {
-			imagewebp( $img, $path );
+		} elseif ( 'image/webp' === $mime ) {
+			// D8: bez imagewebp NIE re-enkodujemy do JPEG — mime w bazie zostaje
+			// image/webp, wiec serve() daloby Content-Type: image/webp + nosniff na
+			// bajtach JPEG (nie otworzy). Zostawiamy oryginalny plik (spojny; EXIF
+			// nietkniety, ale to rzadki webp — Imagick strip-uje go wczesniej).
+			if ( function_exists( 'imagewebp' ) ) {
+				imagewebp( $img, $path );
+			}
 		} else {
 			imagejpeg( $img, $path, 90 );
 		}
 
 		imagedestroy( $img );
+	}
+
+	/**
+	 * Czy serwer ma biblioteke obrazow do stripowania EXIF/GPS (Imagick albo GD).
+	 *
+	 * @return bool
+	 */
+	public static function has_image_library(): bool {
+		return class_exists( '\Imagick' ) || function_exists( 'imagecreatefromstring' );
+	}
+
+	/**
+	 * D9: admin notice gdy brak biblioteki obrazow — EXIF/GPS NIE bedzie usuwany
+	 * (deklaracja prywatnosci nie moze cicho zawiesc). Tylko dla admina.
+	 *
+	 * @return void
+	 */
+	public static function admin_notice_no_image_library(): void {
+		if ( self::has_image_library() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-warning"><p>%s</p></div>',
+			esc_html__(
+				'MP Service Intake: serwer nie ma biblioteki obrazów (Imagick ani GD) — metadane EXIF/GPS z załączanych zdjęć NIE będą usuwane. Zainstaluj rozszerzenie PHP imagick lub gd.',
+				'mp-service-intake'
+			)
+		);
 	}
 
 	/**

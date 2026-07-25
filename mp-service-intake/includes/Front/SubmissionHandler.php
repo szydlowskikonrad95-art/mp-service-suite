@@ -28,6 +28,14 @@ final class SubmissionHandler {
 	public const MIN_FILL_SECONDS = 2;
 
 	/**
+	 * Maksymalny wiek znacznika czasu formularza w sekundach (powyzej =
+	 * replay/sfalszowany). 10800 = 3 h — hojnie ponad realny czas wypelniania;
+	 * nonce i tak wygasa wczesniej. Literal (spojnie z DEDUP_WINDOW — brak
+	 * zaleznosci od kolejnosci ladowania stalych WP).
+	 */
+	public const MAX_FILL_SECONDS = 10800;
+
+	/**
 	 * Transient z kontekstem bledow formularza (PRG — per sesja/ciasteczko).
 	 */
 	public const CTX_TRANSIENT = 'mp_intake_ctx_';
@@ -70,11 +78,16 @@ final class SubmissionHandler {
 			self::redirect_back( array( 'notice' => __( 'Sesja formularza wygasła — spróbuj ponownie.', 'mp-service-intake' ) ) );
 		}
 
-		// Antyspam: honeypot wypelniony ALBO za szybko => cichy sukces (bot nie wie).
+		// Antyspam: honeypot wypelniony ALBO podejrzany znacznik czasu => cichy
+		// sukces (bot nie wie). D11: BRAK mp_ts tez = bot — wczesniej pominiecie pola
+		// omijalo pulapke (warunek `$started > 0`); teraz missing/za szybko/za stary
+		// wpada w blokade. Prawdziwy formularz zawsze wysyla swiezy mp_ts.
 		$honeypot = isset( $_POST['mp_hp'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['mp_hp'] ) ) : '';
 		$started  = isset( $_POST['mp_ts'] ) ? (int) $_POST['mp_ts'] : 0;
+		$elapsed  = time() - $started;
+		$bad_ts   = $started <= 0 || $elapsed < self::MIN_FILL_SECONDS || $elapsed > self::MAX_FILL_SECONDS;
 
-		if ( '' !== $honeypot || ( $started > 0 && ( time() - $started ) < self::MIN_FILL_SECONDS ) ) {
+		if ( '' !== $honeypot || $bad_ts ) {
 			self::redirect_back( array( 'notice' => self::neutral_message() ) );
 		}
 

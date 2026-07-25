@@ -64,6 +64,17 @@ cget -c "$JAR" -b "$JAR" -o /dev/null \
 AFTER2=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 [ "$BEFORE" = "$AFTER2" ] && ok "pulapka czasu: wyslanie <2s odrzucone (zero nowych spraw)" || bad "pulapka czasu przepuscila!"
 
+# ── 3b. D11: bot POMIJA mp_ts => wczesniej omijalo pulapke, teraz odrzut ────
+cget -c "$JAR" -b "$JAR" -o /dev/null \
+	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=nots@spam.xx" \
+	--data-urlencode "serial=X3" --data-urlencode "purchase_document=FV/3" \
+	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=spam" \
+	--data-urlencode "mp_consent=1" \
+	"$BASE/wp-admin/admin-post.php"
+AFTER3=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
+[ "$BEFORE" = "$AFTER3" ] && ok "D11: brak mp_ts odrzucony (domkniety bypass pominiecia pola)" || bad "D11: brak mp_ts przepuszczony!"
+
 # ── 4. Czlowiek: poprawne zgloszenie => sprawa unverified + mail magic-link ─
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
