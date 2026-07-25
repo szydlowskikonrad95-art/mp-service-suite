@@ -178,8 +178,9 @@ final class SubmissionHandler {
 			Consents::processing_text()
 		);
 
-		// Dedup: dopiero teraz (udane zgloszenie) — retry po odrzuceniu nie jest duplikatem.
-		RateLimit::mark_submitted( $email, $serial, $kind );
+		// D5: liczniki e-mail/serial + marker dedup DOPIERO teraz (udane zgloszenie) —
+		// literowka/blad walidacji nie zjada limitu dobowego; retry nie jest duplikatem.
+		RateLimit::record_submission( $email, $serial, $kind );
 
 		Mailer::send_magic_link( $email, (string) $result['token'] );
 

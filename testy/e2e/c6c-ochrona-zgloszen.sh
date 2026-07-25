@@ -59,6 +59,23 @@ C4=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 [ "$C3" = "3" ] && ok "3 zgloszenia z maila przyjete (limit 3/doba)" || bad "spodziewano 3 spraw, jest $C3"
 [ "$C4" = "3" ] && ok "rate-limit e-mail: 4. zgloszenie ODRZUCONE (nadal 3 sprawy)" || bad "rate-limit e-mail przepuscil 4. ($C4)"
 
+# ── 2b. D5: NIEUDANE proby (brak zgody) NIE zjadaja limitu e-mail ────────────
+reset_all
+for s in D5-1 D5-2 D5-3; do
+	curl -s -o /dev/null \
+		--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
+		--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
+		--data-urlencode "kind=reklamacja" --data-urlencode "email=d5@example.com" \
+		--data-urlencode "serial=$s" --data-urlencode "purchase_document=FV/1" \
+		--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
+		"$MP_BASE/wp-admin/admin-post.php"   # BEZ mp_consent => odrzucone (walidacja)
+done
+CBAD=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
+submit 'd5@example.com' 'D5-OK'
+CGOOD=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
+[ "$CBAD" = "0" ] && ok "D5: 3 nieudane proby (brak zgody) => zero spraw" || bad "D5: nieudane utworzyly sprawy ($CBAD)"
+[ "$CGOOD" = "1" ] && ok "D5: po 3 bledach WAZNE zgloszenie PRZECHODZI (limit nie zjedzony przez literowki)" || bad "D5: legit zablokowany przez nieudane proby ($CGOOD)"
+
 # ── 3. Retry po odrzuceniu (brak zgody) NIE jest duplikatem ─────────────────
 reset_all
 # bez zgody -> odrzucone, marker dedup NIE ustawiony

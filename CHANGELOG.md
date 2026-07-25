@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C) — **rate-limit zgłoszeń liczy tylko UDANE próby** (#D5). Dotąd `RateLimit::check()`
+  inkrementował liczniki e-mail/serial PRZED walidacją (zgoda/serial/data), więc klient z literówką
+  wyczerpywał limit 3/dobę i nie mógł złożyć reklamacji. Teraz `check()` **tylko czyta** liczniki
+  e-mail/serial (blokada gdy już wyczerpane), a inkrement (`record_submission`) następuje dopiero po
+  utworzeniu sprawy. Limit **IP (anty-flood)** dalej liczy każdą próbę atomowo. Anti-spam zachowany
+  (3 udane zgłoszenia → 4. blok). Test `c6c`: 3 nieudane (bez zgody) nie zjadają limitu, ważne przechodzi.
+- Registry (B) — **limit importu 20 MB → 8 MB (ochrona przed OOM)** (#D10). `create_job_from_file` wczytuje
+  cały plik do pamięci (`file_get_contents` + `to_utf8` + `preg_split` w tablicę), co przy ~20 MB mogło
+  przekroczyć domyślny `memory_limit` 128 MB. Limit obniżony do 8 MB (bezpieczny zapas); większe importy
+  klient dzieli na części. Właściwe przetwarzanie (`process_batch`) i tak streamuje przez `fgetcsv`.
+  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (strażnik przed przyszłym bumpem).
 - Intake (C) — **honeypot czasowy: brak/za stary `mp_ts` też odrzucany** (#D11). Wcześniej pominięcie pola
   `mp_ts` omijało pułapkę czasu (warunek `$started > 0`) — bot mógł nie wysyłać znacznika. Teraz brak,
   zbyt szybkie (<2 s) i zbyt stare (>3 h, replay) znaczniki wpadają w cichy odrzut. Warstwa bonusowa —
