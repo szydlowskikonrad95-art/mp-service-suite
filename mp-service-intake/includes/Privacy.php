@@ -94,9 +94,18 @@ final class Privacy {
 				apply_filters( 'mp_privacy_redact_for_customer', null, $customer_id, $case_ids );
 			}
 
+			// Konto WP: id lapiemy PRZED anonimizacja (anonymize odpina wp_user_id).
+			$wp_user_id = Customers::wp_user_id( $customer_id );
+
 			Customers::anonymize( $customer_id );
 			// FLAGA #6: redakcja e-maila (PII) w zgodach — rozliczalnosc art. 7 zostaje (tekst+daty).
 			Consents::redact_email_for_customer( $customer_id );
+
+			// D1 (RODO art. 17): usun konto WP klienta (e-mail/login/nazwisko z wp_users).
+			// Tylko czyste konto klienta — personel/admin nietkniety (Accounts).
+			if ( null !== $wp_user_id ) {
+				Accounts::purge_client_account( $wp_user_id );
+			}
 
 			foreach ( $case_ids as $case_id ) {
 				CaseEvents::log( $case_id, CaseEvents::PII_REDACTION, array( 'target' => 'customer' ), null );

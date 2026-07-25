@@ -65,6 +65,10 @@ ANON=$(q "SELECT anonymized_at FROM wp_mp_customers WHERE id=$CUSTID")
 [ -n "$ANON" ] && [ "$ANON" != "NULL" ] && ok "klient zanonimizowany (anonymized_at ustawione, wiersz ZOSTAJE)" || bad "brak anonimizacji"
 WPU=$(q "SELECT COALESCE(wp_user_id,'NULL') FROM wp_mp_customers WHERE id=$CUSTID")
 [ "$WPU" = "NULL" ] && ok "konto WP odpiete od klienta" || bad "konto WP nieodpiete ($WPU)"
+# D1 (RODO art. 17): konto WP klienta USUNIETE z wp_users (nie tylko odpiete) —
+# e-mail/login/nazwisko nie moga zostac po "usun moje dane".
+WPLEFT=$(q "SELECT COUNT(*) FROM wp_users WHERE user_email='rodo@example.com'")
+[ "$WPLEFT" = "0" ] && ok "konto WP klienta SKASOWANE z wp_users (art. 17)" || bad "konto WP klienta zostalo w wp_users (D1): $WPLEFT"
 
 # messages zredagowane, form_data PII zredagowane, zalacznik skasowany.
 MRED=$(q "SELECT COUNT(*) FROM wp_mp_messages WHERE case_id=$CID AND body='[ZREDAGOWANO-RODO]'")
@@ -77,6 +81,24 @@ ADEL=$(q "SELECT COUNT(*) FROM wp_mp_attachments WHERE case_id=$CID AND deleted_
 RREASON=$(q "SELECT reason FROM wp_mp_warranty_exceptions WHERE case_id=$CID")
 echo "$RREASON" | grep -qi "zredagowano" && ok "B zredagowal reason wyjatku (mp_privacy_redact_for_customer)" || bad "reason wyjatku niezredagowany: $RREASON"
 q "SELECT event_type FROM wp_mp_case_events WHERE case_id=$CID" | grep -q "PII_REDACTION" && ok "event PII_REDACTION zapisany" || bad "brak eventu PII_REDACTION"
+
+# ── 5b. OCHRONA: konto personelu/admina (ten sam e-mail) NIE jest kasowane ──
+# EDGE ensure_for_customer: gdy e-mail nalezy do istniejacego konta personelu,
+# sprawa podpina sie po jego ID bez zmiany rol. Eraser D1 kasuje TYLKO czyste
+# konto klienta (mp_client) — konto personelu/admina musi przetrwac.
+STAFF_UID=$(wp user create staffrodo staffrodo@example.com --role=mp_agent --porcelain 2>/dev/null)
+OUT3=$(wp mp case-create --kind=zapytanie --email='staffrodo@example.com' --name='Pracownik X' --desc='sprawa personelu' 2>/dev/null)
+CID3=$(echo "$OUT3" | grep '^case_id=' | cut -d= -f2)
+T3=$(echo "$OUT3" | grep '^token=' | cut -d= -f2)
+wp mp case-verify "$T3" >/dev/null 2>&1
+CUST3=$(q "SELECT customer_id FROM wp_mp_service_cases WHERE id=$CID3")
+PIN=$(q "SELECT wp_user_id FROM wp_mp_customers WHERE id=$CUST3")
+[ "$PIN" = "$STAFF_UID" ] && ok "sprawa podpieta po istniejacym koncie personelu (edge)" || bad "podpiecie personelu: pin=$PIN uid=$STAFF_UID"
+wp eval "echo wp_json_encode( apply_filters('mp_case_change_status', null, $CID3, 'zamknięte', 'nowe', 1) );" >/dev/null 2>&1
+wp eval "MP\\Intake\\Privacy::erase('staffrodo@example.com');" >/dev/null 2>&1
+STAFF_LEFT=$(q "SELECT COUNT(*) FROM wp_users WHERE ID=$STAFF_UID")
+[ "$STAFF_LEFT" = "1" ] && ok "konto personelu NIETKNIETE mimo eraseru (ochrona admina)" || bad "eraser skasowal konto personelu (KRYTYCZNE)!"
+wp user delete "$STAFF_UID" --yes >/dev/null 2>&1
 
 # ── 6. Exporter zwraca dane klienta + sprawy + wiadomosci ──────────────────
 # (po anonimizacji email zmieniony; utworz swiezego klienta do eksportu)

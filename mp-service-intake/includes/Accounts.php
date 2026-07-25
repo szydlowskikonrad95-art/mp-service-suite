@@ -99,6 +99,54 @@ final class Accounts {
 	}
 
 	/**
+	 * Usuwa konto WP klienta przy eraserze RODO (art. 17).
+	 *
+	 * Kasujemy TYLKO czyste konto klienta (`mp_client`, bez uprawnien personelu/
+	 * admina) — login pochodzi od e-maila i jest nieusuwalny przez wp_update_user,
+	 * wiec pelne usuniecie usera to jedyny sposob wyczyszczenia e-maila/loginu/
+	 * nazwiska z wp_users. Konta personelu/admina (EDGE z ensure_for_customer:
+	 * podpiete po e-mailu bez zmiany rol) NIE tykamy. Nie usuwamy tez, gdy konto
+	 * wciaz spiete z innym NIEanonimizowanym klientem (bezpieczenstwo). Wywolywac
+	 * PO Customers::anonymize (ktore odpina wp_user_id) — id konta przekazujemy z
+	 * gory, bo po anonimizacji nie odczytamy go juz z rekordu klienta.
+	 *
+	 * @param int $wp_user_id ID uzytkownika WP (zlapane przed anonimizacja).
+	 * @return bool True gdy konto usuniete; false gdy pominiete (personel/admin/
+	 *              wspoldzielone/brak).
+	 */
+	public static function purge_client_account( int $wp_user_id ): bool {
+		if ( $wp_user_id <= 0 ) {
+			return false;
+		}
+
+		$user = get_user_by( 'id', $wp_user_id );
+
+		if ( ! $user instanceof \WP_User ) {
+			return false;
+		}
+
+		// Personel/admin (podpiety po e-mailu) — ZERO ingerencji.
+		if ( ! self::is_client_only( $user ) ) {
+			return false;
+		}
+
+		// Konto wciaz przypisane do innego nieanonimizowanego klienta — nie kasuj.
+		if ( array() !== Customers::ids_by_wp_user( $wp_user_id ) ) {
+			return false;
+		}
+
+		// Uniewaznij wszystkie sesje, potem usun konto (email/login/nazwisko znikaja).
+		$sessions = \WP_Session_Tokens::get_instance( $wp_user_id );
+		$sessions->destroy_all();
+
+		if ( ! function_exists( 'wp_delete_user' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+		}
+
+		return (bool) wp_delete_user( $wp_user_id );
+	}
+
+	/**
 	 * Buduje unikalny `user_login` z e-maila (WP wymaga unikalnego loginu).
 	 *
 	 * @param string $email E-mail.
