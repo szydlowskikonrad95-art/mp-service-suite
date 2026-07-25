@@ -1,36 +1,57 @@
 /**
  * MP Service Intake — styl frontu: formularz zgłoszenia + panel klienta.
- * Polerka (flaga #16): etykiety w bloku nad polami, pola pełnej szerokości,
- * czytelne karty/komunikaty. Zakres wąski (.mp-intake / .mp-account) — nie
- * walczy z motywem. Zero zmian logiki.
+ *
+ * Profesjonalny, ale NEUTRALNY MOTYWOWO: wąski zakres (.mp-intake / .mp-account),
+ * dziedziczy font motywu, akcent przez zmienną --mp-accent (nadpisywalna przez
+ * motyw/stronę klienta). Domyślnie ciemny neutral — ładnie wygląda na każdym
+ * motywie, nie narzuca marki. Zero zmian logiki. Dostępność: focus-visible, AA.
  */
 
 .mp-intake,
 .mp-account {
-	max-width: 40rem;
+	--mp-accent: #14161c;
+	--mp-accent-ink: #ffffff;
+	--mp-ink: #1a1d26;
+	--mp-muted: #5c6472;
+	--mp-line: #d9dce4;
+	--mp-line-soft: #e8eaf0;
+	--mp-field-bg: #ffffff;
+	--mp-soft-bg: #f7f8fa;
+	--mp-radius: 12px;
+	--mp-radius-sm: 9px;
+	--mp-err: #c0392b;
+
+	max-width: 42rem;
 	margin: 0 auto;
+	color: var(--mp-ink);
 }
 
 .mp-intake h2,
 .mp-account h2 {
-	margin: 0 0 1rem;
-}
-
-/* Pole: etykieta w osobnym bloku NAD polem (koniec "etykieta[pole]"). */
-.mp-intake-field {
 	margin: 0 0 1.1rem;
+	line-height: 1.15;
 }
 
-.mp-intake-field > label {
+/* ── Pola ──────────────────────────────────────────────────────── */
+.mp-intake-field {
+	margin: 0 0 1.15rem;
+}
+
+.mp-intake-field > label,
+.mp-account__form label,
+.mp-account__contact-form label,
+.mp-account__send label {
 	display: block;
 	font-weight: 600;
-	margin-bottom: 0.3rem;
+	margin-bottom: 0.35rem;
+	font-size: 0.95rem;
 }
 
 .mp-intake-field input[type="text"],
 .mp-intake-field input[type="email"],
 .mp-intake-field input[type="date"],
 .mp-intake-field input[type="tel"],
+.mp-intake-field input[type="number"],
 .mp-intake-field select,
 .mp-intake-field textarea,
 .mp-account__form input[type="email"],
@@ -38,75 +59,222 @@
 .mp-account__send textarea {
 	width: 100%;
 	box-sizing: border-box;
-	padding: 0.5rem 0.6rem;
+	padding: 0.7rem 0.85rem;
 	font: inherit;
+	color: var(--mp-ink);
+	background: var(--mp-field-bg);
+	border: 1.5px solid var(--mp-line);
+	border-radius: var(--mp-radius-sm);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.mp-intake-field input::placeholder,
+.mp-account__contact-form input::placeholder,
+.mp-account__send textarea::placeholder {
+	color: #9aa1ad;
+}
+
+.mp-intake-field input:focus,
+.mp-intake-field select:focus,
+.mp-intake-field textarea:focus,
+.mp-account__form input:focus,
+.mp-account__contact-form input:focus,
+.mp-account__send textarea:focus {
+	outline: 0;
+	border-color: var(--mp-accent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--mp-accent) 18%, transparent);
 }
 
 .mp-intake-field textarea,
 .mp-account__send textarea {
-	min-height: 6rem;
+	min-height: 7rem;
 	resize: vertical;
 }
 
-/* Zgoda RODO: checkbox obok tekstu, nie na całą szerokość. */
+/* Select: własny chevron (spójny z resztą, nie systemowy). */
+.mp-intake-field select {
+	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235c6472' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+	background-repeat: no-repeat;
+	background-position: right 0.95rem center;
+	padding-right: 2.4rem;
+	cursor: pointer;
+}
+
+/* ── Zgoda RODO: własny checkbox ───────────────────────────────── */
 .mp-intake-consent > label {
 	display: flex;
-	gap: 0.5rem;
+	gap: 0.6rem;
 	align-items: flex-start;
 	font-weight: 400;
+	font-size: 0.95rem;
+	color: var(--mp-muted);
+	cursor: pointer;
 }
 
 .mp-intake-consent input[type="checkbox"] {
-	width: auto;
-	flex: 0 0 auto;
-	margin-top: 0.2rem;
+	flex: 0 0 20px;
+	width: 20px;
+	height: 20px;
+	margin: 0.1rem 0 0;
+	border: 1.5px solid #c4c8d2;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	position: relative;
+	-webkit-appearance: none;
+	appearance: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+.mp-intake-consent input[type="checkbox"]:hover {
+	border-color: var(--mp-accent);
+}
+
+.mp-intake-consent input[type="checkbox"]:checked {
+	background: var(--mp-accent);
+	border-color: var(--mp-accent);
+}
+
+.mp-intake-consent input[type="checkbox"]:checked::after {
+	content: "";
+	position: absolute;
+	left: 6px;
+	top: 2px;
+	width: 5px;
+	height: 10px;
+	border: solid var(--mp-accent-ink);
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+
+.mp-intake-consent input[type="checkbox"]:focus-visible {
+	outline: 2px solid var(--mp-accent);
+	outline-offset: 2px;
+}
+
+/* ── Podpowiedzi / błędy / notki ───────────────────────────────── */
 .mp-intake-hint {
-	color: #555;
-	font-size: 0.9em;
+	display: block;
+	color: var(--mp-muted);
+	font-size: 0.85em;
+	margin-top: 0.3rem;
 }
 
 .mp-intake-error-summary,
 .mp-intake-error {
-	color: #b3261e;
+	color: var(--mp-err);
+}
+
+.mp-intake-error-summary {
+	padding: 0.75rem 0.9rem;
+	background: #fdecea;
+	border: 1px solid #f5c6c0;
+	border-radius: var(--mp-radius-sm);
+	margin: 0 0 1.1rem;
 }
 
 .mp-intake-error {
 	display: block;
-	margin-top: 0.25rem;
-	font-size: 0.9em;
+	margin-top: 0.3rem;
+	font-size: 0.88em;
+	font-weight: 500;
 }
 
 .mp-intake-notice,
 .mp-account__notice {
-	padding: 0.6rem 0.8rem;
-	background: #eef4fb;
-	border-left: 3px solid #1a3d5c;
+	padding: 0.85rem 1rem;
+	background: var(--mp-soft-bg);
+	border: 1px solid var(--mp-line-soft);
+	border-left: 3px solid var(--mp-accent);
+	border-radius: var(--mp-radius-sm);
+	margin: 0 0 1.1rem;
 }
 
+/* ── Przyciski ─────────────────────────────────────────────────── */
 .mp-intake-submit,
 .mp-account__form button,
 .mp-account__contact-form button,
-.mp-account__send button {
-	padding: 0.6rem 1.4rem;
+.mp-account__send button,
+.mp-account__privacy-form button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.8rem 1.6rem;
 	font: inherit;
+	font-weight: 600;
+	color: var(--mp-accent-ink);
+	background: var(--mp-accent);
+	border: 0;
+	border-radius: 999px;
 	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-/* Panel klienta: sprawy jako czytelne karty. */
+.mp-intake-submit {
+	width: 100%;
+	padding: 0.95rem 1.6rem;
+	font-size: 1.02rem;
+	margin-top: 0.3rem;
+}
+
+.mp-intake-submit:hover,
+.mp-account__form button:hover,
+.mp-account__contact-form button:hover,
+.mp-account__send button:hover,
+.mp-account__privacy-form button:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 8px 20px color-mix(in srgb, var(--mp-accent) 28%, transparent);
+}
+
+.mp-intake-submit:focus-visible,
+.mp-account button:focus-visible {
+	outline: 2px solid var(--mp-accent);
+	outline-offset: 3px;
+}
+
+/* Przycisk drugorzędny (wycofanie zgody / wyloguj) — obrys, nie pełny. */
+.mp-account__privacy-form button {
+	color: var(--mp-ink);
+	background: transparent;
+	border: 1.5px solid var(--mp-line);
+}
+
+.mp-account__privacy-form button:hover {
+	border-color: var(--mp-accent);
+	box-shadow: none;
+}
+
+/* ── Panel klienta: sprawy jako karty ──────────────────────────── */
 .mp-account__case {
-	border: 1px solid #ddd;
-	border-radius: 0.4rem;
-	padding: 0.8rem 1rem;
+	border: 1px solid var(--mp-line);
+	border-radius: var(--mp-radius);
+	padding: 1rem 1.15rem;
 	margin: 0 0 1rem;
+	background: var(--mp-field-bg);
+	box-shadow: 0 1px 2px rgba(16, 18, 30, 0.05);
+}
+
+.mp-account__empty {
+	padding: 1.5rem;
+	text-align: center;
+	color: var(--mp-muted);
+	background: var(--mp-soft-bg);
+	border: 1px dashed var(--mp-line);
+	border-radius: var(--mp-radius);
 }
 
 .mp-account__contact,
 .mp-account__privacy {
-	margin: 1.2rem 0;
-	padding: 0.8rem 1rem;
-	background: #fafafa;
-	border: 1px solid #eee;
-	border-radius: 0.4rem;
+	margin: 1.4rem 0;
+	padding: 1.1rem 1.2rem;
+	background: var(--mp-soft-bg);
+	border: 1px solid var(--mp-line-soft);
+	border-radius: var(--mp-radius);
+}
+
+.mp-account__messages {
+	margin: 0.6rem 0 0;
 }
