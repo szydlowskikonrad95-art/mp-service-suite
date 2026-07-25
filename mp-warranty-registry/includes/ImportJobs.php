@@ -172,6 +172,10 @@ final class ImportJobs {
 		$now   = gmdate( 'Y-m-d H:i:s' );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$file_path = (string) $wpdb->get_var(
+			$wpdb->prepare( "SELECT file_path FROM {$table} WHERE id = %d", $job_id )
+		);
+
 		$wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$table} SET status = %s, lock_key = %s, finished_at = %s, updated_at = %s WHERE id = %d",
@@ -183,6 +187,14 @@ final class ImportJobs {
 			)
 		);
 		// phpcs:enable
+
+		// D2 (RODO retencja art. 5 ust. 1 lit. e): zrodlowy CSV jest przetworzony
+		// (dane w mp_product_registry) i niesie PII (serial/faktura/nazwisko) — kasujemy.
+		// Raport bledow {file_path}.bledy.csv ZOSTAJE (admin pobiera przez handle_report;
+		// osierocone pliki, w tym stare raporty, sprzata cron Lifecycle::sweep_imports).
+		if ( '' !== $file_path ) {
+			wp_delete_file( $file_path );
+		}
 	}
 
 	/**

@@ -77,6 +77,20 @@ REPORT=$(q "SELECT CONCAT(file_path,'.bledy.csv') FROM wp_mp_import_jobs WHERE i
 RLINES=$(wp eval "echo count(array_filter(file('$REPORT') ?: []));" 2>/dev/null)
 [ "$RLINES" = "31" ] && ok "raport bledow: 30 wierszy + naglowek" || bad "raport bledow ma $RLINES linii (oczekiwane 31)"
 
+# ── 4b. D2 (RODO retencja): finish kasuje zrodlowy CSV, raport ZOSTAJE; cron sprzata sieroty ─
+SRCFILE=$(q "SELECT file_path FROM wp_mp_import_jobs WHERE id=$JOB")
+SRCEX=$(wp eval "echo file_exists('$SRCFILE') ? '1' : '0';" 2>/dev/null)
+[ "$SRCEX" = "0" ] && ok "D2: zrodlowy CSV skasowany po finish (PII nie zostaje na dysku)" || bad "D2: zrodlowy CSV ZOSTAL po finish ($SRCFILE)"
+[ "$RLINES" = "31" ] && ok "D2: raport .bledy.csv przetrwal finish (admin pobiera przez handle_report)" || bad "D2: raport zniknal po finish"
+# Cron retencji: sierota starsza niz prog kasowana, guardy chronione.
+SWDEL=$(wp eval '
+$d = rtrim(wp_upload_dir()["basedir"],"/")."/mp-imports";
+file_put_contents($d."/d2-orphan.csv","x"); touch($d."/d2-orphan.csv", time()-2*DAY_IN_SECONDS);
+$n = MP\Registry\Importer::sweep_import_files(DAY_IN_SECONDS);
+echo (file_exists($d."/d2-orphan.csv")?"ZOSTAL":"SKASOWANA")."|".((file_exists($d."/.htaccess")&&file_exists($d."/index.php"))?"GUARD-OK":"GUARD-USZK");
+' 2>/dev/null)
+[ "$SWDEL" = "SKASOWANA|GUARD-OK" ] && ok "D2: cron sweep kasuje sierote >24h, chroni guardy katalogu" || bad "D2: sweep zle zadzialal ($SWDEL)"
+
 # ── 5. Partia: CSV -> rejestr -> zwrotka mp_warranty_check (test partii DoD) ──
 BATCH=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'DOD-000001', null, null); echo \$c['batch'];" 2>/dev/null)
 [ "$BATCH" = "PARTIA-DOD-7" ] && ok "partia z CSV wraca w mp_warranty_check (dziedziczona przez sprawe)" || bad "partia: '$BATCH'"

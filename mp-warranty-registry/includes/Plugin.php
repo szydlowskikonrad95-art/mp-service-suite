@@ -55,6 +55,9 @@ final class Plugin {
 		// Intake/Automator. Bez tego update dodajacy migracje zostawia stary schemat.
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
+		// Cron retencji plikow importu (D2) — kasuje sieroty w mp-imports/.
+		Lifecycle::register_cron();
+
 		if ( is_admin() ) {
 			Admin\ProductsScreen::register();
 			Admin\ImportScreen::register();

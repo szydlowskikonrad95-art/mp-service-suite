@@ -25,11 +25,16 @@ final class Lifecycle {
 	public const SCHEMA_OPTION = 'mp_registry_schema_version';
 
 	/**
+	 * Hak crona retencji plikow importu (D2 — kasuje sieroty w mp-imports/).
+	 */
+	public const IMPORTS_CRON = 'mp_registry_imports_sweep';
+
+	/**
 	 * Haki cron pluginu (czyszczone przy deaktywacji; lista rosnie z kodem).
 	 *
 	 * @var string[]
 	 */
-	public const CRON_HOOKS = array();
+	public const CRON_HOOKS = array( self::IMPORTS_CRON );
 
 	/**
 	 * Aktywacja: role wspolne (idempotentnie), marker modulu, wersja schematu.
@@ -48,6 +53,32 @@ final class Lifecycle {
 		}
 
 		Schema::migrate();
+		self::schedule_imports_cron();
+	}
+
+	/**
+	 * Planuje dobowy cron retencji plikow importu (idempotentnie).
+	 *
+	 * @return void
+	 */
+	private static function schedule_imports_cron(): void {
+		if ( ! wp_next_scheduled( self::IMPORTS_CRON ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::IMPORTS_CRON );
+		}
+	}
+
+	/**
+	 * Rejestruje handler crona retencji plikow importu (na boot).
+	 *
+	 * @return void
+	 */
+	public static function register_cron(): void {
+		add_action(
+			self::IMPORTS_CRON,
+			static function (): void {
+				Importer::sweep_import_files();
+			}
+		);
 	}
 
 	/**
@@ -69,6 +100,7 @@ final class Lifecycle {
 
 		Roles::ensure();
 		Schema::migrate();
+		self::schedule_imports_cron();
 	}
 
 	/**
@@ -77,7 +109,6 @@ final class Lifecycle {
 	 * @return void
 	 */
 	public static function deactivate(): void {
-		// @phpstan-ignore foreach.emptyArray (CRON_HOOKS puste do czasu pierwszego crona — D7-8)
 		foreach ( self::CRON_HOOKS as $hook ) {
 			wp_clear_scheduled_hook( $hook );
 		}
