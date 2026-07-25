@@ -131,6 +131,46 @@ final class Importer {
 	}
 
 	/**
+	 * Sprząta osierocone pliki w mp-imports/ starsze niz prog (cron retencji D2).
+	 *
+	 * Lapie: (a) zrodlowe CSV jobow przerwanych w polowie (nigdy nie wywolaly
+	 * finish), (b) stare raporty .bledy.csv (PII rejestrow) po oknie wgladu admina.
+	 * Pomija guardy katalogu (.htaccess, index.php). RODO art. 5 ust. 1 lit. e.
+	 *
+	 * @param int $max_age_seconds Prog wieku pliku (domyslnie 24 h).
+	 * @return int Liczba skasowanych plikow.
+	 */
+	public static function sweep_import_files( int $max_age_seconds = DAY_IN_SECONDS ): int {
+		$dir = self::imports_dir();
+
+		if ( null === $dir ) {
+			return 0;
+		}
+
+		$threshold = time() - max( 0, $max_age_seconds );
+		$deleted   = 0;
+
+		foreach ( (array) glob( $dir . '/*' ) as $file ) {
+			if ( ! is_string( $file ) || ! is_file( $file ) ) {
+				continue;
+			}
+
+			$base = basename( $file );
+
+			if ( '.htaccess' === $base || 'index.php' === $base ) {
+				continue;
+			}
+
+			if ( (int) filemtime( $file ) < $threshold ) {
+				wp_delete_file( $file );
+				++$deleted;
+			}
+		}
+
+		return $deleted;
+	}
+
+	/**
 	 * Przetwarza jeden batch joba.
 	 *
 	 * @param int    $job_id ID joba.

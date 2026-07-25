@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Registry (B) — **pliki importu CSV kasowane (retencja RODO + dysk)** (poprawka #D2 z audytu kod-based).
+  Znormalizowany plik importu (`uploads/mp-imports/{uuid}.csv`, PII: serial/faktura/nazwisko) nigdy nie
+  był usuwany — `ImportJobs::finish()` robił tylko UPDATE statusu, a plugin B nie miał żadnego crona
+  (`CRON_HOOKS` puste). Pliki rosły bez końca (art. 5 ust. 1 lit. e). Teraz `finish()` **kasuje źródłowy
+  CSV** po zaksięgowaniu (raport błędów `.bledy.csv` ZOSTAJE — admin pobiera przez `handle_report`), a nowy
+  **dobowy cron `mp_registry_imports_sweep`** (`Importer::sweep_import_files`) sprząta sieroty starsze niż
+  24 h (joby przerwane w połowie + stare raporty), chroniąc guardy katalogu. Test `import-dod`: po `finish`
+  źródłowy CSV zniknął, raport przetrwał, sweep skasował sierotę >24 h.
 - Intake (C) — **rate-limit atomowy (odporny na współbieżność)** (poprawka #D3 z audytu kod-based).
   Liczniki rate-limitu (formularz zgłoszeń i żądania magic-linku) używały transientowego
   read-modify-write (`get_transient` + `set_transient`) — pod równoległymi żądaniami wszystkie czytały
