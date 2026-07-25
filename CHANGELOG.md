@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Registry (B) — **limit importu 20 MB → 8 MB (ochrona przed OOM)** (#D10). `create_job_from_file` wczytuje
+  cały plik do pamięci (`file_get_contents` + `to_utf8` + `preg_split` w tablicę), co przy ~20 MB mogło
+  przekroczyć domyślny `memory_limit` 128 MB. Limit obniżony do 8 MB (bezpieczny zapas); większe importy
+  klient dzieli na części. Właściwe przetwarzanie (`process_batch`) i tak streamuje przez `fgetcsv`.
+  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (strażnik przed przyszłym bumpem).
 - Registry (B) — **pliki importu CSV kasowane (retencja RODO + dysk)** (poprawka #D2 z audytu kod-based).
   Znormalizowany plik importu (`uploads/mp-imports/{uuid}.csv`, PII: serial/faktura/nazwisko) nigdy nie
   był usuwany — `ImportJobs::finish()` robił tylko UPDATE statusu, a plugin B nie miał żadnego crona
