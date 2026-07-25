@@ -4,6 +4,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Fixed
+- Intake (C) — **RODO art. 17: eraser USUWA konto WP klienta** (poprawka #D1 z audytu kod-based).
+  Dotąd anonimizacja tylko odpinała konto (`customers.wp_user_id = NULL`), a rekord `wp_users` z realnym
+  e-mailem/loginem/nazwiskiem zostawał bezterminowo — mimo że panel raportował „dane zanonimizowane"
+  (naruszenie art. 17 + art. 5 ust. 1 lit. a). Teraz `Privacy::erase()` łapie `wp_user_id` **przed**
+  anonimizacją i woła nową `Accounts::purge_client_account()`, która **usuwa konto** (unieważnia sesje +
+  `wp_delete_user`, e-mail/login/nazwisko znikają z `wp_users`). Kasuje **wyłącznie czyste konto klienta**
+  (`mp_client`); konta personelu/admina podpięte po e-mailu (EDGE `ensure_for_customer`) oraz konta wciąż
+  spięte z innym nieanonimizowanym klientem są nietknięte. Test `c5-rodo`: asercja skasowania z `wp_users`
+  + asercja ochrony konta personelu (21/0).
+
 ### Added
 - Intake (C) — **rate-limit żądań magic-linku (logowanie)** (`RateLimit::check_login`, osobne liczniki od
   formularza zgłoszeń): domyślnie 5 żądań/15 min na IP + 5/godz. na e-mail. Chroni skrzynki klientów przed
