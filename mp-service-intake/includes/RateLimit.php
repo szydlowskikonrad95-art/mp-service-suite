@@ -66,9 +66,14 @@ final class RateLimit {
 	}
 
 	/**
-	 * Sprawdza limity i dedup; przy przejsciu inkrementuje liczniki.
+	 * Sprawdza limity i dedup PRZED utworzeniem sprawy.
 	 *
-	 * NIE ustawia markera dedup (to robi mark_submitted po sukcesie).
+	 * D5: liczniki e-mail/serial NIE sa tu inkrementowane — tylko odczytywane.
+	 * Inkrement (record_submission) nastepuje dopiero po UDANYM zgloszeniu, wiec
+	 * user z literowka/bledem walidacji nie wyczerpuje swojego limitu dobowego.
+	 * Limit IP (anty-flood) inkrementuje sie tutaj atomowo — kazda proba, tez
+	 * nieudana, liczy sie do ochrony przed zalewem z jednego adresu.
+	 * NIE ustawia markera dedup (to robi record_submission po sukcesie).
 	 *
 	 * @param string $ip     Adres IP klienta (z RateLimit::client_ip() — filtr mp_intake_client_ip, domyslnie REMOTE_ADDR).
 	 * @param string $email  E-mail zglaszajacego.
@@ -85,22 +90,71 @@ final class RateLimit {
 			return self::BLOCK_DUPLICATE;
 		}
 
-		// Atomowy hit-and-check: inkrementujemy licznik i porownujemy NOWA wartosc.
-		// N-ta proba => count N (przechodzi), (N+1)-sza => count N+1 > max (blok) —
-		// ta sama obserwowalna granica co dawny read-then-bump, ale bez wyscigu.
+		// IP (anty-flood): atomowy hit-and-check — liczy KAZDA probe (tez nieudana).
 		if ( '' !== $ip && self::hit( 'mp_rl_ip_' . md5( $ip ), (int) $limits['ip_window'] ) > (int) $limits['ip_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $email && self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'] ) > (int) $limits['email_max'] ) {
+		// E-mail/serial: TYLKO odczyt biezacej liczby w oknie (bez inkrementu — D5).
+		if ( '' !== $email && self::current_count( 'mp_rl_em_' . md5( $email ) ) >= (int) $limits['email_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $serial && self::hit( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_window'] ) > (int) $limits['serial_max'] ) {
+		if ( '' !== $serial && self::current_count( 'mp_rl_sn_' . md5( $serial ) ) >= (int) $limits['serial_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
 		return null;
+	}
+
+	/**
+	 * D5: rejestruje UDANE zgloszenie — inkrementuje liczniki e-mail/serial i
+	 * ustawia marker dedup. Wolane PO utworzeniu sprawy (nie na kazda probe).
+	 *
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @param string $kind   Rodzaj.
+	 * @return void
+	 */
+	public static function record_submission( string $email, string $serial, string $kind ): void {
+		$email  = strtolower( trim( $email ) );
+		$serial = trim( $serial );
+		$limits = self::limits();
+
+		if ( '' !== $email ) {
+			self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'] );
+		}
+
+		if ( '' !== $serial ) {
+			self::hit( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_window'] );
+		}
+
+		self::mark_submitted( $email, $serial, $kind );
+	}
+
+	/**
+	 * Biezaca liczba hitow licznika w AKTYWNYM oknie (0 gdy brak/wygaslo).
+	 * Odczyt bez inkrementu (D5).
+	 *
+	 * @param string $key Klucz licznika.
+	 * @return int
+	 */
+	private static function current_count( string $key ): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::RATE_COUNTERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; odczyt licznika w oknie.
+		$hits = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT hits FROM {$table} WHERE rl_key = %s AND window_expires_at > %s",
+				$key,
+				gmdate( 'Y-m-d H:i:s' )
+			)
+		);
+		// phpcs:enable
+
+		return null === $hits ? 0 : (int) $hits;
 	}
 
 	/**

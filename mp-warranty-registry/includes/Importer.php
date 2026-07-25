@@ -24,9 +24,15 @@ final class Importer {
 	public const BATCH_SIZE = 100;
 
 	/**
-	 * Limit rozmiaru pliku importu w bajtach (konfigurowalny; default 20 MB).
+	 * Limit rozmiaru pliku importu w bajtach (konfigurowalny; default 8 MB).
+	 *
+	 * D10: obnizone z 20 MB — create_job_from_file wczytuje CALY plik do pamieci
+	 * (file_get_contents + to_utf8 + preg_split w tablice), co przy ~20 MB
+	 * przekraczalo 128 MB memory_limit (OOM). 8 MB daje bezpieczny zapas na
+	 * domyslnym hostingu; wieksze importy klient dzieli na czesci. Wlasciwe
+	 * przetwarzanie (process_batch) i tak streamuje przez fgetcsv.
 	 */
-	public const MAX_FILE_BYTES = 20971520;
+	public const MAX_FILE_BYTES = 8388608;
 
 	/**
 	 * Przygotowuje plik i zaklada job importu.
@@ -46,7 +52,7 @@ final class Importer {
 		$size = (int) filesize( $source_path );
 
 		if ( $size > self::MAX_FILE_BYTES ) {
-			return array( 'error' => 'Plik przekracza limit importu (20 MB) — podziel go na czesci.' );
+			return array( 'error' => 'Plik przekracza limit importu (8 MB) — podziel go na czesci.' );
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- lokalny plik importu.
