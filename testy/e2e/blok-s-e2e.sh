@@ -39,7 +39,7 @@ echo "== BLOK-S E2E: pelny przebieg 8 krokow kartki =="
 wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_srv_counters; DELETE FROM wp_mp_product_registry; DELETE FROM wp_mp_case_sla;" >/dev/null 2>&1
 # Rate-limit warstwowy + marker dedup (prefiks mp_rl_ip_/em_/sn_/dd_) — bez tego
 # ponowny przebieg z tym samym serialem/mailem jest odrzucany jako duplikat/limit.
-wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'" >/dev/null 2>&1
+wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'; DELETE FROM wp_mp_rate_counters" >/dev/null 2>&1
 wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
 for u in $(wp user list --role=mp_client --field=ID 2>/dev/null); do wp user delete "$u" --yes >/dev/null 2>&1; done
 rm -f "$CAPTURE"

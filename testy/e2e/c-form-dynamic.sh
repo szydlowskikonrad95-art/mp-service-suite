@@ -19,7 +19,7 @@ q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 
 reset_all() {
 	wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_consents;" >/dev/null 2>&1
-	wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'" >/dev/null 2>&1
+	wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'; DELETE FROM wp_mp_rate_counters" >/dev/null 2>&1
 }
 
 PAGE_ID=$(wp option get mp_intake_form_page_id 2>/dev/null)
