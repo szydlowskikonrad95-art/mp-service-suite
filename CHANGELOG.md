@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Changed
+- Intake (C) — **dopracowany wygląd frontu (formularz zgłoszenia + panel klienta).** Dotąd CSS był surowy
+  („techniczne" pola). Teraz profesjonalny, ale **neutralny motywowo** (wąski zakres `.mp-intake`/`.mp-account`,
+  dziedziczy font motywu): pola z zaokrągleniem i wyraźnym focus, **własny chevron selecta**, **własny checkbox
+  RODO**, przyciski-pigułki, sprawy w panelu jako karty, czytelne błędy/notki. Akcent przez zmienną
+  **`--mp-accent`** (domyślnie ciemny neutral — ładnie na każdym motywie klienta; strona/motyw może nadpisać).
+  Zero zmian logiki. Dostępność: `focus-visible`, kontrast AA.
+
 ### Fixed
 - Intake (C) — **rate-limit zgłoszeń liczy tylko UDANE próby** (#D5). Dotąd `RateLimit::check()`
   inkrementował liczniki e-mail/serial PRZED walidacją (zgoda/serial/data), więc klient z literówką
