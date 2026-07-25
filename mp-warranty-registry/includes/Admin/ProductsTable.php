@@ -120,13 +120,16 @@ final class ProductsTable extends \WP_List_Table {
 	 */
 	public function column_status( array $item ): string {
 		$status = WarrantyStatus::compute( true, isset( $item['warranty_until'] ) ? (string) $item['warranty_until'] : null, null, null );
+		// Klucze ze STALYCH (compute zwraca polskie slugi — angielskie klucze nie
+		// trafialy, przez co lista pokazywala surowe „wygasla"/„brak_danych").
 		$labels = array(
-			'active'                => __( 'aktywna', 'mp-warranty-registry' ),
-			'expired'               => __( 'wygasła', 'mp-warranty-registry' ),
-			'no_data'               => __( 'brak danych', 'mp-warranty-registry' ),
-			'verification_required' => __( 'wymagana weryfikacja', 'mp-warranty-registry' ),
+			WarrantyStatus::ACTIVE       => __( 'aktywna', 'mp-warranty-registry' ),
+			WarrantyStatus::EXPIRED      => __( 'wygasła', 'mp-warranty-registry' ),
+			WarrantyStatus::NO_DATA      => __( 'brak danych', 'mp-warranty-registry' ),
+			WarrantyStatus::VERIFICATION => __( 'wymagana weryfikacja', 'mp-warranty-registry' ),
 		);
-		$out    = esc_html( $labels[ $status ] ?? $status );
+		$label  = $labels[ $status ] ?? $status;
+		$out    = '<span class="mp-badge mp-badge-status mp-badge-status--' . esc_attr( $status ) . '">' . esc_html( $label ) . '</span>';
 
 		$exception = Repo::get_active_exception( (int) $item['id'], null );
 
