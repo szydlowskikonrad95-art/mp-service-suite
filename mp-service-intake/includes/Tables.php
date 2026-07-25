@@ -51,6 +51,11 @@ final class Tables {
 	public const SRV_COUNTERS = 'mp_srv_counters';
 
 	/**
+	 * Liczniki rate-limit (atomowe, okno przesuwane; cron sprzata wygasle).
+	 */
+	public const RATE_COUNTERS = 'mp_rate_counters';
+
+	/**
 	 * Pelna nazwa tabeli z prefiksem instalacji.
 	 *
 	 * @param string $table Stala z tej klasy.

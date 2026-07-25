@@ -16,7 +16,7 @@ q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 
 reset_all() {
 	wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_consents; DELETE FROM wp_mp_attachments;" >/dev/null 2>&1
-	wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'" >/dev/null 2>&1
+	wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%' OR option_name LIKE '_transient_timeout_mp_rl%'; DELETE FROM wp_mp_rate_counters" >/dev/null 2>&1
 	wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
 }
 
@@ -113,8 +113,8 @@ curl -s -o /dev/null -H "X-MP-Test-IP: $FILTERED_IP" \
 
 HASH_F=$(wp eval "echo md5('$FILTERED_IP');" 2>/dev/null)
 HASH_R=$(wp eval "echo md5('127.0.0.1');" 2>/dev/null)
-CNT_F=$(wp transient get "mp_rl_ip_$HASH_F" 2>/dev/null)
-CNT_R=$(wp transient get "mp_rl_ip_$HASH_R" 2>/dev/null)
+CNT_F=$(wp db query "SELECT hits FROM wp_mp_rate_counters WHERE rl_key='mp_rl_ip_$HASH_F'" --skip-column-names 2>/dev/null | tr -d '[:space:]')
+CNT_R=$(wp db query "SELECT hits FROM wp_mp_rate_counters WHERE rl_key='mp_rl_ip_$HASH_R'" --skip-column-names 2>/dev/null | tr -d '[:space:]')
 CASE_OK=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 [ "$CASE_OK" = "1" ] && ok "zgloszenie za proxy przyjete (sprawa utworzona)" || bad "zgloszenie za proxy nie przeszlo ($CASE_OK)"
 [ "$CNT_F" = "1" ] && ok "real-path: licznik rate-limitu bity dla IP z filtra ($FILTERED_IP)" || bad "licznik IP z filtra nie bity (=$CNT_F)"

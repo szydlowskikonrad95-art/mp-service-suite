@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C) — **rate-limit atomowy (odporny na współbieżność)** (poprawka #D3 z audytu kod-based).
+  Liczniki rate-limitu (formularz zgłoszeń i żądania magic-linku) używały transientowego
+  read-modify-write (`get_transient` + `set_transient`) — pod równoległymi żądaniami wszystkie czytały
+  tę samą wartość i nadpisywały +1, przez co **limit dało się obejść** (repro: 20 równoległych → licznik
+  spadał do ~2, zgubione ~18 inkrementów). Zastąpione **atomową tabelą `mp_rate_counters`** (migracja v2)
+  z jedną kwerendą `INSERT … ON DUPLICATE KEY UPDATE … LAST_INSERT_ID` (wzorzec `SrvCounter`, okno
+  przesuwane); wygasłe wiersze sprząta cron retencji (`cleanup_expired`). Test `c17`: 20 równoległych żądań
+  → licznik dokładnie 20 (zero zgubionych) + reset okna. Dedup pozostaje transientem (bez zmian).
 - Intake (C) — **załączniki: pominięte pliki są MELDOWANE klientowi** (poprawka #D4 z audytu kod-based).
   Dotąd `SubmissionHandler::handle_submit()` wywoływał `Attachments::store_for_case()` i **ignorował wynik**
   (`{stored, errors}`) — klient, którego pliki odpadły (zły typ, za duży, limit 5/sprawę, brak miejsca),

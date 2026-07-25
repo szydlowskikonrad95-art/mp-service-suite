@@ -8,13 +8,12 @@
  *  - serial:  5 / doba
  * Dedup twardy: ten sam (serial + e-mail + rodzaj) w 15 min = duplikat.
  *
- * Licznik = transient (okno przesuwane; TTL odswiezany przy DOZWOLONYM hicie).
- * DEDUP-MARKER ustawiany DOPIERO po UDANYM zgloszeniu (mark_submitted) — dzieki
- * temu retry po odrzuceniu (np. brak zgody) NIE jest falszywym duplikatem.
- *
- * ⚠️ Transienty pod obiektowym cache (redis/memcached) moga sie roznic od DB;
- * na demo (bez object-cache) licza sie z wp_options. Dla twardszej gwarancji
- * = wlasna tabela (poza zakresem P1.6 anty-spamu).
+ * Licznik = ATOMOWA tabela mp_rate_counters (okno przesuwane; INSERT ... ON
+ * DUPLICATE KEY UPDATE + LAST_INSERT_ID jak SrvCounter) — odporny na wyscig
+ * rownoleglych zadan (dawny transientowy read-modify-write przepuszczal N zadan
+ * naraz, D3). Wygasle wiersze sprzata cron retencji (cleanup_expired).
+ * DEDUP-MARKER dalej transient, ustawiany DOPIERO po UDANYM zgloszeniu
+ * (mark_submitted) — retry po odrzuceniu NIE jest falszywym duplikatem.
  *
  * @package MP\Intake
  */
@@ -86,26 +85,19 @@ final class RateLimit {
 			return self::BLOCK_DUPLICATE;
 		}
 
-		if ( '' !== $ip && self::over_limit( 'mp_rl_ip_' . md5( $ip ), (int) $limits['ip_max'] ) ) {
+		// Atomowy hit-and-check: inkrementujemy licznik i porownujemy NOWA wartosc.
+		// N-ta proba => count N (przechodzi), (N+1)-sza => count N+1 > max (blok) —
+		// ta sama obserwowalna granica co dawny read-then-bump, ale bez wyscigu.
+		if ( '' !== $ip && self::hit( 'mp_rl_ip_' . md5( $ip ), (int) $limits['ip_window'] ) > (int) $limits['ip_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $email && self::over_limit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_max'] ) ) {
+		if ( '' !== $email && self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'] ) > (int) $limits['email_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $serial && self::over_limit( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_max'] ) ) {
+		if ( '' !== $serial && self::hit( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_window'] ) > (int) $limits['serial_max'] ) {
 			return self::BLOCK_RATE;
-		}
-
-		if ( '' !== $ip ) {
-			self::bump( 'mp_rl_ip_' . md5( $ip ), (int) $limits['ip_window'] );
-		}
-		if ( '' !== $email ) {
-			self::bump( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'] );
-		}
-		if ( '' !== $serial ) {
-			self::bump( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_window'] );
 		}
 
 		return null;
@@ -166,29 +158,6 @@ final class RateLimit {
 	}
 
 	/**
-	 * Czy licznik osiagnal limit.
-	 *
-	 * @param string $key Klucz transienta.
-	 * @param int    $max Limit.
-	 * @return bool
-	 */
-	private static function over_limit( string $key, int $max ): bool {
-		return (int) get_transient( $key ) >= $max;
-	}
-
-	/**
-	 * Inkrementuje licznik (okno przesuwane — TTL odswiezany przy hicie).
-	 *
-	 * @param string $key    Klucz transienta.
-	 * @param int    $window Okno w sekundach.
-	 * @return void
-	 */
-	private static function bump( string $key, int $window ): void {
-		$count = (int) get_transient( $key );
-		set_transient( $key, $count + 1, $window );
-	}
-
-	/**
 	 * Domyslne limity ZADAN LINKU LOGOWANIA (magic-link) — nadpisywalne filtrem.
 	 *
 	 * @return array{ip_max:int, ip_window:int, email_max:int, email_window:int}
@@ -224,21 +193,74 @@ final class RateLimit {
 		$email  = strtolower( trim( $email ) );
 		$limits = self::login_limits();
 
-		if ( '' !== $ip && self::over_limit( 'mp_rl_login_ip_' . md5( $ip ), (int) $limits['ip_max'] ) ) {
+		if ( '' !== $ip && self::hit( 'mp_rl_login_ip_' . md5( $ip ), (int) $limits['ip_window'] ) > (int) $limits['ip_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $email && self::over_limit( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_max'] ) ) {
+		if ( '' !== $email && self::hit( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_window'] ) > (int) $limits['email_max'] ) {
 			return self::BLOCK_RATE;
-		}
-
-		if ( '' !== $ip ) {
-			self::bump( 'mp_rl_login_ip_' . md5( $ip ), (int) $limits['ip_window'] );
-		}
-		if ( '' !== $email ) {
-			self::bump( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_window'] );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Atomowy licznik rate-limitu w oknie przesuwanym (wlasna tabela).
+	 *
+	 * Jedna kwerenda = init/inkrement + reset po wygasnieciu okna (jak SrvCounter):
+	 * pierwszy hit zaklada wiersz z hits=1; kolejne w oknie inkrementuja; gdy okno
+	 * minelo, licznik startuje od 1. window_expires_at odswiezany na kazdym hicie
+	 * (okno przesuwane — zgodnie z dawna semantyka odswiezania TTL). LAST_INSERT_ID
+	 * zwraca NOWA wartosc licznika w tej samej sesji => brak wyscigu read-modify-write.
+	 *
+	 * @param string $key    Klucz licznika (bez PII — hash).
+	 * @param int    $window Okno w sekundach.
+	 * @return int Aktualna liczba hitow w oknie (po tym hicie).
+	 */
+	private static function hit( string $key, int $window ): int {
+		global $wpdb;
+
+		$table   = Tables::full( Tables::RATE_COUNTERS );
+		$now     = gmdate( 'Y-m-d H:i:s' );
+		$expires = gmdate( 'Y-m-d H:i:s', time() + $window );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowy inkrement + reset okna (D3).
+		$wpdb->query(
+			$wpdb->prepare(
+				"INSERT INTO {$table} (rl_key, hits, window_expires_at)
+				VALUES (%s, LAST_INSERT_ID(1), %s)
+				ON DUPLICATE KEY UPDATE
+					hits = LAST_INSERT_ID( IF( window_expires_at <= %s, 1, hits + 1 ) ),
+					window_expires_at = %s",
+				$key,
+				$expires,
+				$now,
+				$expires
+			)
+		);
+
+		$count = (int) $wpdb->get_var( 'SELECT LAST_INSERT_ID()' );
+		// phpcs:enable
+
+		return $count;
+	}
+
+	/**
+	 * Kasuje wygasle liczniki rate-limitu (wolane z crona retencji).
+	 *
+	 * @return int Liczba usunietych wierszy.
+	 */
+	public static function cleanup_expired(): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::RATE_COUNTERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; sprzatanie wygaslych okien.
+		$deleted = $wpdb->query(
+			$wpdb->prepare( "DELETE FROM {$table} WHERE window_expires_at <= %s", gmdate( 'Y-m-d H:i:s' ) )
+		);
+		// phpcs:enable
+
+		return (int) $deleted;
 	}
 }

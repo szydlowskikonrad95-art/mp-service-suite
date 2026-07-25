@@ -68,7 +68,7 @@ done
 # ── 2. WCAG-lite render sweep powierzchni ──────────────────────────────────
 echo "-- 2. render sweep powierzchni (img-alt + nazwy przyciskow + dup-id) --"
 wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_consents;" >/dev/null 2>&1
-wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%'" >/dev/null 2>&1
+wp db query "DELETE FROM wp_options WHERE option_name LIKE '_transient_mp_rl%'; DELETE FROM wp_mp_rate_counters" >/dev/null 2>&1
 for u in $(wp user list --role=mp_client --field=ID 2>/dev/null); do wp user delete "$u" --yes >/dev/null 2>&1; done
 
 # a) Formularz zgloszenia (czysty + z bledem)

@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 1;
+	public const LATEST = 2;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -38,6 +38,7 @@ final class Schema {
 			self::VERSION_OPTION,
 			array(
 				1 => array( self::class, 'migration_1_tables' ),
+				2 => array( self::class, 'migration_2_rate_counters' ),
 			)
 		);
 	}
@@ -184,6 +185,32 @@ final class Schema {
 				year SMALLINT UNSIGNED NOT NULL,
 				value BIGINT UNSIGNED NOT NULL DEFAULT 0,
 				PRIMARY KEY  (year)
+			) {$charset};"
+		);
+	}
+
+	/**
+	 * V2: mp_rate_counters — atomowe liczniki rate-limitu (okno przesuwane).
+	 *
+	 * Zastepuje transientowy read-modify-write (nieatomowy pod rownoleglymi
+	 * zadaniami) atomowym INSERT ... ON DUPLICATE KEY UPDATE (jak SrvCounter).
+	 * rl_key = 'mp_rl_*_'.md5(...) (bez PII); cron retencji sprzata wygasle.
+	 *
+	 * @return void
+	 */
+	public static function migration_2_rate_counters(): void {
+		global $wpdb;
+
+		$charset  = $wpdb->get_charset_collate();
+		$counters = Tables::full( Tables::RATE_COUNTERS );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$counters} (
+				rl_key VARCHAR(64) NOT NULL,
+				hits INT UNSIGNED NOT NULL DEFAULT 0,
+				window_expires_at DATETIME NOT NULL,
+				PRIMARY KEY  (rl_key),
+				KEY window_expires_at (window_expires_at)
 			) {$charset};"
 		);
 	}

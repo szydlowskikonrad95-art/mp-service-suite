@@ -109,6 +109,7 @@ final class Lifecycle {
 			self::RETENTION_CRON,
 			static function (): void {
 				Attachments::run_retention_sweep();
+				RateLimit::cleanup_expired();
 			}
 		);
 	}
