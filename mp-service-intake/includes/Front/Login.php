@@ -231,16 +231,9 @@ final class Login {
 	 * @return never
 	 */
 	private static function render_login_button( string $selector, string $token ): void {
-		self::landing_headers( 200 );
-
 		$action = admin_url( 'admin-post.php' );
 
-		echo '<!doctype html><html lang="pl"><head><meta charset="utf-8" />';
-		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
-		echo '<meta name="robots" content="noindex, nofollow" />';
-		echo '<title>' . esc_html__( 'Logowanie do panelu', 'mp-service-intake' ) . '</title>';
-		echo '<style>body{font-family:system-ui,sans-serif;max-width:30rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}button{font-size:1rem;padding:.7rem 1.4rem;cursor:pointer}</style>';
-		echo '</head><body>';
+		Landing::open( __( 'Logowanie do panelu', 'mp-service-intake' ) );
 		echo '<h1>' . esc_html__( 'Logowanie do panelu zgłoszeń', 'mp-service-intake' ) . '</h1>';
 		echo '<p>' . esc_html__( 'Kliknij przycisk, aby zalogować się do panelu swoich zgłoszeń.', 'mp-service-intake' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( $action ) . '">';
@@ -249,7 +242,8 @@ final class Login {
 		echo '<input type="hidden" name="tok" value="' . esc_attr( $token ) . '" />';
 		wp_nonce_field( 'mp_intake_login_confirm', '_mp_nonce' );
 		echo '<button type="submit">' . esc_html__( 'Zaloguj się', 'mp-service-intake' ) . '</button>';
-		echo '</form></body></html>';
+		echo '</form>';
+		Landing::close();
 		exit;
 	}
 
@@ -259,36 +253,11 @@ final class Login {
 	 * @return never
 	 */
 	private static function render_landing_fail(): void {
-		self::landing_headers( 410 );
-
-		echo '<!doctype html><html lang="pl"><head><meta charset="utf-8" />';
-		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
-		echo '<meta name="robots" content="noindex, nofollow" />';
-		echo '<title>' . esc_html__( 'Link nieaktualny', 'mp-service-intake' ) . '</title>';
-		echo '<style>body{font-family:system-ui,sans-serif;max-width:30rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}</style>';
-		echo '</head><body><h1>' . esc_html__( 'Link nieaktualny', 'mp-service-intake' ) . '</h1>';
+		Landing::open( __( 'Link nieaktualny', 'mp-service-intake' ), 410 );
+		echo '<h1>' . esc_html__( 'Link nieaktualny', 'mp-service-intake' ) . '</h1>';
 		echo '<p>' . esc_html__( 'Link logowania wygasł lub został już użyty. Poproś o nowy link ze strony logowania.', 'mp-service-intake' ) . '</p>';
-		echo '</body></html>';
+		Landing::close();
 		exit;
-	}
-
-	/**
-	 * Naglowki bezpieczenstwa stron z tokenem (no-store, no-referrer).
-	 *
-	 * @param int $status Kod HTTP.
-	 * @return void
-	 */
-	private static function landing_headers( int $status ): void {
-		if ( headers_sent() ) {
-			return;
-		}
-
-		status_header( $status );
-		header( 'Cache-Control: no-store, max-age=0' );
-		header( 'Referrer-Policy: no-referrer' );
-		header( 'X-Content-Type-Options: nosniff' );
-		header( 'X-Frame-Options: SAMEORIGIN' );
-		header( 'Content-Type: text/html; charset=utf-8' );
 	}
 
 	/**

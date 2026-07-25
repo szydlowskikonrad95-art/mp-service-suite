@@ -268,23 +268,9 @@ final class SubmissionHandler {
 	 * @return never
 	 */
 	private static function render_verify_form( string $token ): void {
-		if ( ! headers_sent() ) {
-			status_header( 200 );
-			header( 'Cache-Control: no-store, max-age=0' );
-			header( 'Referrer-Policy: no-referrer' );
-			header( 'X-Content-Type-Options: nosniff' );
-			header( 'X-Frame-Options: SAMEORIGIN' );
-			header( 'Content-Type: text/html; charset=utf-8' );
-		}
-
 		$title = __( 'Potwierdź zgłoszenie', 'mp-service-intake' );
 
-		echo '<!doctype html><html lang="pl"><head><meta charset="utf-8" />';
-		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
-		echo '<meta name="robots" content="noindex, nofollow" />';
-		echo '<title>' . esc_html( $title ) . '</title>';
-		echo '<style>body{font-family:system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}button{font-size:1rem;padding:.7rem 1.4rem;cursor:pointer}</style>';
-		echo '</head><body>';
+		Landing::open( $title );
 		echo '<h1>' . esc_html( $title ) . '</h1>';
 		echo '<p>' . esc_html__( 'Aby potwierdzić swoje zgłoszenie serwisowe i uruchomić obsługę, kliknij przycisk poniżej.', 'mp-service-intake' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -292,7 +278,8 @@ final class SubmissionHandler {
 		echo '<input type="hidden" name="token" value="' . esc_attr( $token ) . '" />';
 		wp_nonce_field( 'mp_intake_verify_confirm', '_mp_nonce' );
 		echo '<button type="submit">' . esc_html__( 'Potwierdzam', 'mp-service-intake' ) . '</button>';
-		echo '</form></body></html>';
+		echo '</form>';
+		Landing::close();
 		exit;
 	}
 
@@ -480,22 +467,8 @@ final class SubmissionHandler {
 	 * @return never
 	 */
 	private static function render_landing( string $title, string $message, int $status = 200, bool $with_panel_cta = false ): void {
-		if ( ! headers_sent() ) {
-			status_header( $status );
-			header( 'Cache-Control: no-store, max-age=0' );
-			header( 'Referrer-Policy: no-referrer' );
-			header( 'X-Content-Type-Options: nosniff' );
-			header( 'X-Frame-Options: SAMEORIGIN' );
-			header( 'Content-Type: text/html; charset=utf-8' );
-		}
-
-		echo '<!doctype html><html lang="pl"><head><meta charset="utf-8" />';
-		echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
-		echo '<meta name="robots" content="noindex, nofollow" />';
-		echo '<title>' . esc_html( $title ) . '</title>';
-		echo '<style>body{font-family:system-ui,sans-serif;max-width:38rem;margin:4rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}h1{font-size:1.4rem}'
-			. 'a.mp-cta{display:inline-block;margin-top:1.2rem;padding:.65rem 1.3rem;background:#1a3d5c;color:#fff;text-decoration:none;border-radius:.35rem}</style>';
-		echo '</head><body><h1>' . esc_html( $title ) . '</h1><p>' . esc_html( $message ) . '</p>';
+		Landing::open( $title, $status );
+		echo '<h1>' . esc_html( $title ) . '</h1><p>' . esc_html( $message ) . '</p>';
 
 		// CTA: droga dalej do panelu zgloszen (tylko po sukcesie potwierdzenia).
 		if ( $with_panel_cta ) {
@@ -503,7 +476,7 @@ final class SubmissionHandler {
 				. esc_html__( 'Przejdź do panelu zgłoszeń', 'mp-service-intake' ) . '</a></p>';
 		}
 
-		echo '</body></html>';
+		Landing::close();
 		exit;
 	}
 }

@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Changed
+- Intake (C) — **spójny wygląd WSZYSTKICH ekranów klienta.** Strony samodzielne (weryfikacja „Potwierdź
+  zgłoszenie", potwierdzenie/błędy, logowanie „Zaloguj się", „Link nieaktualny") stały poza motywem z gołym
+  systemowym stylem — teraz wspólna skorupa `Front\Landing` (jedno źródło stylu: karta na jasnym tle, akcent
+  `--mp-accent` jak formularz). Bezpieczeństwo bez zmian (no-store/no-referrer/nosniff/SAMEORIGIN/noindex).
+  Usunięte inline-style'e z panelu klienta (karty spraw/kontakt/prywatność/login) — teraz rządzi `intake.css`
+  (ładniejsze karty, subtelny warm-akcent na „wycofanie zgody"). Zero zmian logiki.
 - Intake (C) — **dopracowany wygląd frontu (formularz zgłoszenia + panel klienta).** Dotąd CSS był surowy
   („techniczne" pola). Teraz profesjonalny, ale **neutralny motywowo** (wąski zakres `.mp-intake`/`.mp-account`,
   dziedziczy font motywu): pola z zaokrągleniem i wyraźnym focus, **własny chevron selecta**, **własny checkbox

@@ -116,7 +116,7 @@ final class AccountPage {
 	 * @return string HTML.
 	 */
 	private static function render_login_form(): string {
-		$out = '<div class="mp-account mp-account--login" style="max-width:30rem;margin:0 auto">';
+		$out = '<div class="mp-account mp-account--login">';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG (bez skutkow), tresc escapowana.
 		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
@@ -197,7 +197,7 @@ final class AccountPage {
 		$phone = (string) ( $customer['phone'] ?? '' );
 		$email = (string) ( $customer['email'] ?? '' );
 
-		$out  = '<section class="mp-account__contact" style="margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:6px">';
+		$out  = '<section class="mp-account__contact">';
 		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Twoje dane kontaktowe', 'mp-service-intake' ) . '</h3>';
 		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'E-mail:', 'mp-service-intake' ) . ' ' . esc_html( $email ) . '</p>';
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__contact-form">';
@@ -260,7 +260,7 @@ final class AccountPage {
 	 * @return string HTML.
 	 */
 	private static function render_privacy_form(): string {
-		$out  = '<section class="mp-account__privacy" style="margin:1rem 0;padding:1rem;border:1px solid #e0b0b0;border-radius:6px;background:#fdf6f6">';
+		$out  = '<section class="mp-account__privacy">';
 		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Prywatność (RODO)', 'mp-service-intake' ) . '</h3>';
 		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
@@ -346,7 +346,7 @@ final class AccountPage {
 		$date    = '' !== $created ? get_date_from_gmt( $created, 'Y-m-d H:i' ) : '';
 		$closed  = in_array( $status, CaseRepo::TERMINAL_STATUSES, true );
 
-		$out  = '<section class="mp-account__case" style="margin:1.2rem 0;padding:1rem;border:1px solid #ddd;border-radius:6px">';
+		$out  = '<section class="mp-account__case">';
 		$out .= '<h3 style="margin:.2rem 0">' . esc_html( (string) ( $row['case_number'] ?? '' ) ) . '</h3>';
 		$out .= '<p style="margin:.2rem 0;color:#555">'
 			. esc_html( (string) ( $row['kind'] ?? '' ) ) . ' · '
