@@ -239,7 +239,10 @@ final class RateLimit {
 			)
 		);
 
-		$count = (int) $wpdb->get_var( 'SELECT LAST_INSERT_ID()' );
+		// D7: nowa wartosc z $wpdb->insert_id (INSERT..ODKU z LAST_INSERT_ID(expr)
+		// odswieza insert_id — zweryfikowane). Bezpieczniejsze na HyperDB niz osobny
+		// SELECT LAST_INSERT_ID() (moglby trafic na replike odczytowa).
+		$count = (int) $wpdb->insert_id;
 		// phpcs:enable
 
 		return $count;

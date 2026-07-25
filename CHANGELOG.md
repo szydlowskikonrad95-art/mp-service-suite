@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Fixed
+- Intake (C) — **honeypot czasowy: brak/za stary `mp_ts` też odrzucany** (#D11). Wcześniej pominięcie pola
+  `mp_ts` omijało pułapkę czasu (warunek `$started > 0`) — bot mógł nie wysyłać znacznika. Teraz brak,
+  zbyt szybkie (<2 s) i zbyt stare (>3 h, replay) znaczniki wpadają w cichy odrzut. Warstwa bonusowa —
+  realna ochrona to nonce + rate-limit. Test `c3-front`: submit bez `mp_ts` → zero spraw.
+- Intake (C) — **załączniki WebP bez `imagewebp()` nie są kaleczone** (#D8). Przy GD bez obsługi zapisu
+  WebP (i bez Imagick) strip metadanych zapisywał JPEG do pliku z mime `image/webp` w bazie → `serve()`
+  dawał błędny `Content-Type` (plik się nie otwierał). Teraz taki plik zostaje oryginalny (spójny).
+- Intake (C) — **admin notice gdy brak biblioteki obrazów** (#D9). Bez Imagick i bez GD metadane EXIF/GPS
+  ze zdjęć nie były usuwane po cichu — teraz admin dostaje ostrzeżenie (`Attachments::has_image_library`).
+- Intake (C) — **licznik SRV i rate-limit czytają `$wpdb->insert_id`** zamiast osobnego `SELECT
+  LAST_INSERT_ID()` (#D7, tylko ścieżki `INSERT … ON DUPLICATE KEY UPDATE` — zweryfikowane, że insert_id
+  się tam odświeża). Bezpieczniejsze na HyperDB (bare SELECT mógłby trafić na replikę) + jedno zapytanie
+  mniej. Round-robin automatora (plain UPDATE) świadomie zostaje przy `SELECT LAST_INSERT_ID()` — tam
+  `insert_id` się NIE odświeża (potwierdzone empirycznie).
 - Registry (B) — **pliki importu CSV kasowane (retencja RODO + dysk)** (poprawka #D2 z audytu kod-based).
   Znormalizowany plik importu (`uploads/mp-imports/{uuid}.csv`, PII: serial/faktura/nazwisko) nigdy nie
   był usuwany — `ImportJobs::finish()` robił tylko UPDATE statusu, a plugin B nie miał żadnego crona

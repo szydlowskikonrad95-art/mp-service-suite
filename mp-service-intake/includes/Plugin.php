@@ -54,6 +54,8 @@ final class Plugin {
 			Admin\UnverifiedScreen::register();
 			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
 			Admin\CasesScreen::register();
+			// D9: ostrzez admina gdy brak biblioteki obrazow (EXIF/GPS nieusuwany).
+			add_action( 'admin_notices', array( Attachments::class, 'admin_notice_no_image_library' ) );
 		}
 
 		// Listener kontraktowy: wiadomosc systemowa od D (np. raport koncowy).
