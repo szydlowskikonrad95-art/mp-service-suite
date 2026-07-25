@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Changed
+- Intake (C) — **kolorowe plakietki statusów w liście spraw (admin).** Status w kolumnie był zwykłym
+  tekstem — teraz czytelna plakietka z kolorem per status (nowe=niebieski, w naprawie=pomarańczowy,
+  zamknięte=szary itd.; custom status = neutralny). Personel od razu widzi stan. Styl natywny WP-admin
+  (reszta tabeli bez zmian). Zero zmian logiki.
 - Intake (C) — **spójny wygląd WSZYSTKICH ekranów klienta.** Strony samodzielne (weryfikacja „Potwierdź
   zgłoszenie", potwierdzenie/błędy, logowanie „Zaloguj się", „Link nieaktualny") stały poza motywem z gołym
   systemowym stylem — teraz wspólna skorupa `Front\Landing` (jedno źródło stylu: karta na jasnym tle, akcent
