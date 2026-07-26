@@ -92,12 +92,20 @@ final class Frontend {
 	public static function maybe_security_headers(): void {
 		$page_id = (int) get_option( self::PAGE_OPTION, 0 );
 
-		if ( 0 === $page_id || ! is_page( $page_id ) || headers_sent() ) {
+		if ( ! PageDetect::is_plugin_page( $page_id, 'mp_intake_form' ) ) {
 			return;
 		}
 
-		header( 'X-Frame-Options: SAMEORIGIN' );
-		header( 'X-Content-Type-Options: nosniff' );
+		PageDetect::send(
+			array(
+				'X-Frame-Options'         => 'SAMEORIGIN',
+				'X-Content-Type-Options'  => 'nosniff',
+				// Nowoczesny odpowiednik X-Frame-Options (starsze przegladarki czytaja tamten).
+				'Content-Security-Policy' => "frame-ancestors 'self';",
+				'Referrer-Policy'         => 'strict-origin-when-cross-origin',
+			),
+			'form'
+		);
 	}
 
 	/**

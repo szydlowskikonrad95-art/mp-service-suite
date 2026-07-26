@@ -85,13 +85,32 @@ final class AccountPage {
 	public static function maybe_headers(): void {
 		$page_id = (int) get_option( self::PAGE_OPTION, 0 );
 
-		if ( 0 === $page_id || ! is_page( $page_id ) || headers_sent() ) {
+		if ( ! PageDetect::is_plugin_page( $page_id, 'mp_account' ) ) {
 			return;
 		}
 
-		header( 'Cache-Control: no-store, max-age=0' );
-		header( 'X-Content-Type-Options: nosniff' );
-		header( 'X-Frame-Options: SAMEORIGIN' );
+		PageDetect::send(
+			array(
+				// Panel pokazuje DANE OSOBOWE: nic nie ma prawa zostac w cache
+				// (takze przy „wstecz") ani trafic do wyszukiwarki.
+				'Cache-Control'           => 'no-store, max-age=0',
+				'X-Robots-Tag'            => 'noindex, nofollow',
+				'Referrer-Policy'         => 'no-referrer',
+				'X-Content-Type-Options'  => 'nosniff',
+				'X-Frame-Options'         => 'SAMEORIGIN',
+				'Content-Security-Policy' => "frame-ancestors 'self';",
+			),
+			'account'
+		);
+
+		// Pas zapasowy: czesc hostingow filtruje naglowki, meta zostaje w HTML.
+		add_action(
+			'wp_head',
+			static function (): void {
+				echo '<meta name="robots" content="noindex, nofollow" />' . "\n";
+			},
+			1
+		);
 	}
 
 	/**
