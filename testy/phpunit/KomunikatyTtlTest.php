@@ -12,13 +12,14 @@
 
 declare(strict_types=1);
 
+use MP\Intake\CaseRepo;
 use MP\Intake\Front\Login;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Przeliczenie TTL na minuty dla komunikatow.
  */
-final class LoginTtlTest extends TestCase {
+final class KomunikatyTtlTest extends TestCase {
 
 	/**
 	 * Minuty zgadzaja sie z sekundami (zadnego „magicznego" 20 w tekstach).
@@ -49,5 +50,29 @@ final class LoginTtlTest extends TestCase {
 	 */
 	public function test_ttl_jest_pelna_liczba_minut(): void {
 		self::assertSame( 0, Login::TTL_SECONDS % 60, 'TTL nie jest pelna liczba minut — komunikat zaokragli' );
+	}
+
+	/**
+	 * To samo dla linku POTWIERDZAJACEGO zgloszenie: mail podaje liczbe godzin
+	 * z `CaseRepo::TOKEN_TTL_HOURS`, wiec stala musi zostac sensowna. Tu tez
+	 * stalo zaszyte slownie „24 godziny" i rozjechaloby sie po zmianie.
+	 */
+	public function test_link_potwierdzajacy_ma_sensowna_waznosc(): void {
+		self::assertGreaterThanOrEqual( 1, CaseRepo::TOKEN_TTL_HOURS, 'ponizej godziny klient nie zdazy' );
+		self::assertLessThanOrEqual( 72, CaseRepo::TOKEN_TTL_HOURS, 'powyzej 3 dni token przestaje byc jednorazowa weryfikacja' );
+		self::assertSame( CaseRepo::TOKEN_TTL_HOURS, (int) CaseRepo::TOKEN_TTL_HOURS, 'godziny musza byc calkowite' );
+	}
+
+	/**
+	 * Link potwierdzajacy zgloszenie ma zyc DLUZEJ niz link logowania:
+	 * pierwszy klient dostaje raz i moze otworzyc wieczorem, drugi zamawia
+	 * sam w chwili, gdy chce wejsc do panelu.
+	 */
+	public function test_potwierdzenie_zyje_dluzej_niz_logowanie(): void {
+		self::assertGreaterThan(
+			Login::TTL_SECONDS,
+			CaseRepo::TOKEN_TTL_HOURS * 3600,
+			'link potwierdzajacy powinien byc dluzszy niz sesyjny link logowania'
+		);
 	}
 }
