@@ -148,16 +148,18 @@ final class CasesListTable extends \WP_List_Table {
 	 * @return string HTML plakietki.
 	 */
 	private static function status_badge( string $status ): string {
+		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze z diakrytykami (ł/ę) mylą liczenie kolumn sniffa (bajty vs znaki, zależnie od rozszerzenia iconv) — ten sam wyjatek co w Statuses::CORE.
 		$colors = array(
-			'nowe'             => '#2563eb',
+			'nowe'            => '#2563eb',
 			'do uzupełnienia' => '#d97706',
-			'w analizie'       => '#7c3aed',
-			'zaakceptowane'    => '#0891b2',
-			'w naprawie'       => '#ea580c',
-			'odrzucone'        => '#dc2626',
+			'w analizie'      => '#7c3aed',
+			'zaakceptowane'   => '#0891b2',
+			'w naprawie'      => '#ea580c',
+			'odrzucone'       => '#dc2626',
 			'zamknięte'       => '#4b5563',
 		);
-		$color  = $colors[ $status ] ?? '#4b5563';
+		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
+		$color = $colors[ $status ] ?? '#4b5563';
 
 		return sprintf(
 			'<span style="display:inline-block;padding:.16em .62em;border-radius:999px;font-size:.82em;font-weight:600;line-height:1.5;color:#fff;background:%1$s">%2$s</span>',
