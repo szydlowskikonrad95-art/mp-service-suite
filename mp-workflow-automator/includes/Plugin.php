@@ -76,6 +76,11 @@ final class Plugin {
 		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
 		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
 		Admin\PanelScreen::register();
+
+		// Diagnostyka wdrozenia (Narzedzia -> Stan witryny). NAJWAZNIEJSZY test
+		// pakietu: bez WP-Crona terminy SLA, przypomnienia i eskalacje po prostu
+		// nie chodza, a system wyglada na sprawny — awaria cicha.
+		Admin\SiteHealthTests::register();
 	}
 
 	/**

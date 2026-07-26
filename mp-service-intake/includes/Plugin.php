@@ -50,6 +50,12 @@ final class Plugin {
 		// Upgrade bez reaktywacji (WP updater podmienia pliki): odpal zalegle migracje.
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
+		// Diagnostyka wdrozenia (Narzedzia -> Stan witryny). POZA is_admin(), bo WP
+		// uruchamia te testy takze cronem (`wp_site_health_scheduled_check`) i mailuje
+		// administratorowi o problemach krytycznych. Nakladka na notice D9 SWIADOMA:
+		// notice wola o pomoc, diagnostyka mowi JAK naprawic.
+		Admin\SiteHealthTests::register();
+
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
 			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
