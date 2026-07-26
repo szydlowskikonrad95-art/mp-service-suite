@@ -126,6 +126,102 @@ final class StatusBadgeContrastTest extends TestCase {
 	}
 
 	/**
+	 * Minimalna odleglosc percepcyjna miedzy plakietkami (deltaE w Lab).
+	 *
+	 * Ponizej ~25 dwa kolory zlewaja sie przy szybkim skanowaniu listy — a
+	 * najgorszy mozliwy myl to „w naprawie" (robota trwa) z „odrzucone"
+	 * (koniec sprawy). Rozne kody HEX tego NIE gwarantuja: pierwsze podejscie
+	 * do poprawki kontrastu dalo ceglasty `#c2410c` odlegly od czerwieni tylko
+	 * o 18,8 — kontrast byl OK, a kolory mylace.
+	 */
+	private const PROG_DELTA_E = 25.0;
+
+	/**
+	 * sRGB (0..255) => skladowa liniowa.
+	 *
+	 * @param int $wartosc Skladowa 0..255.
+	 * @return float
+	 */
+	private function linia( int $wartosc ): float {
+		$c = $wartosc / 255;
+
+		return $c <= 0.04045 ? $c / 12.92 : ( ( $c + 0.055 ) / 1.055 ) ** 2.4;
+	}
+
+	/**
+	 * Kolor HEX => CIE Lab (D65).
+	 *
+	 * @param string $hex Kolor.
+	 * @return array{0: float, 1: float, 2: float}
+	 */
+	private function lab( string $hex ): array {
+		$hex = ltrim( $hex, '#' );
+
+		$r = $this->linia( (int) hexdec( substr( $hex, 0, 2 ) ) );
+		$g = $this->linia( (int) hexdec( substr( $hex, 2, 2 ) ) );
+		$b = $this->linia( (int) hexdec( substr( $hex, 4, 2 ) ) );
+
+		$x = ( $r * 0.4124 + $g * 0.3576 + $b * 0.1805 ) / 0.95047;
+		$y = $r * 0.2126 + $g * 0.7152 + $b * 0.0722;
+		$z = ( $r * 0.0193 + $g * 0.1192 + $b * 0.9505 ) / 1.08883;
+
+		$f = static function ( float $t ): float {
+			return $t > 0.008856 ? $t ** ( 1 / 3 ) : ( 7.787 * $t + 16 / 116 );
+		};
+
+		$fx = $f( $x );
+		$fy = $f( $y );
+		$fz = $f( $z );
+
+		return array( 116 * $fy - 16, 500 * ( $fx - $fy ), 200 * ( $fy - $fz ) );
+	}
+
+	/**
+	 * Odleglosc percepcyjna dwoch kolorow (CIE76).
+	 *
+	 * @param string $a Kolor 1.
+	 * @param string $b Kolor 2.
+	 * @return float
+	 */
+	private function delta_e( string $a, string $b ): float {
+		list( $l1, $a1, $b1 ) = $this->lab( $a );
+		list( $l2, $a2, $b2 ) = $this->lab( $b );
+
+		return sqrt( ( $l1 - $l2 ) ** 2 + ( $a1 - $a2 ) ** 2 + ( $b1 - $b2 ) ** 2 );
+	}
+
+	/**
+	 * Sanity licznika odleglosci: identyczne = 0, biel/czern = duzo.
+	 */
+	public function test_licznik_odleglosci_jest_poprawny(): void {
+		self::assertEqualsWithDelta( 0.0, $this->delta_e( '#2563eb', '#2563eb' ), 0.01, 'ten sam kolor = 0' );
+		self::assertGreaterThan( 90.0, $this->delta_e( '#ffffff', '#000000' ), 'biel vs czern = skrajnie daleko' );
+	}
+
+	/**
+	 * ZADNA para plakietek nie moze byc mylaca.
+	 */
+	public function test_plakietki_sa_rozroznialne_percepcyjnie(): void {
+		$kolory = Statuses::BADGE_COLORS;
+		$slugi  = array_keys( $kolory );
+		$liczba = count( $slugi );
+
+		for ( $i = 0; $i < $liczba - 1; $i++ ) {
+			for ( $j = $i + 1; $j < $liczba; $j++ ) {
+				$a  = $slugi[ $i ];
+				$b  = $slugi[ $j ];
+				$de = $this->delta_e( $kolory[ $a ], $kolory[ $b ] );
+
+				self::assertGreaterThanOrEqual(
+					self::PROG_DELTA_E,
+					$de,
+					sprintf( 'statusy „%s" i „%s" wygladaja podobnie (deltaE %.1f < %.1f)', $a, $b, $de, self::PROG_DELTA_E )
+				);
+			}
+		}
+	}
+
+	/**
 	 * `badge_color()` zwraca kolor rdzenia, a dla obcego slug — fallback.
 	 */
 	public function test_badge_color_zwraca_fallback_dla_statusu_wlasnego(): void {

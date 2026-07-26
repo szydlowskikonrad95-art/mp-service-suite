@@ -53,6 +53,11 @@ final class Statuses {
 	 * Kolor jest DODATKIEM do etykiety, nigdy jedynym nosnikiem znaczenia
 	 * (WCAG 1.4.1) — w plakietce zawsze stoi nazwa statusu.
 	 *
+	 * Drugi warunek: kolory musza byc od siebie ODDALONE PERCEPCYJNIE
+	 * (deltaE >= 25 w Lab), bo dwa statusy o przeciwnym znaczeniu wygladajace
+	 * podobnie myla przy szybkim skanowaniu listy — „w naprawie" (trwa robota)
+	 * obok „odrzucone" (koniec) to najgorszy mozliwy myl. Tez pilnowane testem.
+	 *
 	 * @var array<string, string>
 	 */
 	// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- jak wyzej: diakrytyki mylą liczenie kolumn sniffa.
@@ -60,8 +65,8 @@ final class Statuses {
 		'nowe'            => '#2563eb',
 		'do uzupełnienia' => '#a16207',
 		'w analizie'      => '#7c3aed',
-		'zaakceptowane'   => '#0e7490',
-		'w naprawie'      => '#c2410c',
+		'zaakceptowane'   => '#15803d',
+		'w naprawie'      => '#7c2d12',
 		'odrzucone'       => '#dc2626',
 		'zamknięte'       => '#4b5563',
 	);
