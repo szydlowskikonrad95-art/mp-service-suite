@@ -164,6 +164,23 @@ else
 	echo "  SKIP WP_DEBUG log niedostepny (env bez debug) — zero-notice sprawdzane na dirty-env"
 fi
 
+# ── CRON SLA PRZEZYWA CYKL DEAKTYWACJA -> AKTYWACJA ───────────────────────
+# Regresja z 26.07 (znaleziona przez diagnostyke Stanu witryny): aktywacja odpala
+# sie ZANIM `plugins_loaded` zarejestruje 5-minutowy interwal, wiec
+# wp_schedule_event() odrzucal go jako nieznany i CICHO nie planowal sweepa.
+# Skutek: terminy SLA, przypomnienia i eskalacje (P3.4) martwe na swiezej instalacji.
+wp plugin deactivate mp-workflow-automator >/dev/null 2>&1
+PO_DEAKT=$(wp cron event list --fields=hook --format=csv 2>/dev/null | grep -c "mp_automator_sla_sweep")
+[ "$PO_DEAKT" = "0" ] && ok "deaktywacja sprzata cron sweepa SLA" || bad "po deaktywacji cron SLA zostal ($PO_DEAKT)"
+
+wp plugin activate mp-workflow-automator >/dev/null 2>&1
+PO_AKT=$(wp cron event list --fields=hook --format=csv 2>/dev/null | grep -c "mp_automator_sla_sweep")
+[ "$PO_AKT" = "1" ] && ok "AKTYWACJA planuje sweep SLA (terminy i eskalacje zyja)" || bad "po aktywacji BRAK crona SLA — SLA martwe, a system wyglada na sprawny"
+
+# Test „Stanu witryny" musi to widziec — inaczej klient nie ma jak zdiagnozowac.
+STAN=$(wp eval 'require_once ABSPATH . "wp-admin/includes/class-wp-site-health.php"; $t = WP_Site_Health::get_tests(); $w = call_user_func( $t["direct"]["mp_automator_cron"]["test"] ); echo $w["status"];' 2>/dev/null | tr -d '[:space:]')
+[ "$STAN" = "good" ] && ok "diagnostyka Stanu witryny potwierdza dzialajacy cron SLA" || bad "diagnostyka mowi: $STAN"
+
 echo ""
 echo "WYNIK DoD D: PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

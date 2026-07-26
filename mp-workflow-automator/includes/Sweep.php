@@ -73,8 +73,35 @@ final class Sweep {
 	 * @return void
 	 */
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time() + MINUTE_IN_SECONDS, self::INTERVAL, self::CRON_HOOK );
+		/*
+		 * KOLEJNOSC MA ZNACZENIE (bug znaleziony 2026-07-26 przez diagnostyke
+		 * Stanu witryny): aktywacja wtyczki odpala sie ZANIM `plugins_loaded`
+		 * wykona `register()`, ktore dodaje nasz 5-minutowy interwal. Bez niego
+		 * `wp_schedule_event()` odrzuca harmonogram jako nieznany i zwraca
+		 * WP_Error — a poniewaz nikt tego nie sprawdzal, sweep SLA po prostu
+		 * NIGDY sie nie planowal. Skutek: terminy, przypomnienia i eskalacje
+		 * (P3.4) martwe, mimo ze system wyglada na sprawny.
+		 *
+		 * Dlatego filtr dokladamy tu defensywnie — `schedule()` ma dzialac
+		 * niezaleznie od tego, czy plugin jest juz w pelni zaladowany.
+		 */
+		if ( ! has_filter( 'cron_schedules', array( self::class, 'add_interval' ) ) ) {
+			// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected, WordPress.WP.CronInterval.CronSchedulesInterval -- 5-min interwal to WYMOG spec P3.4.
+			add_filter( 'cron_schedules', array( self::class, 'add_interval' ) );
+		}
+
+		if ( wp_next_scheduled( self::CRON_HOOK ) ) {
+			return;
+		}
+
+		// Piaty argument `true` = zwroc WP_Error z POWODEM zamiast samego false.
+		// Cicha porazka planowania oznacza martwe SLA, wiec chcemy znac przyczyne.
+		$wynik = wp_schedule_event( time() + MINUTE_IN_SECONDS, self::INTERVAL, self::CRON_HOOK, array(), true );
+
+		if ( is_wp_error( $wynik ) ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'MP Automator: nie udalo sie zaplanowac sweepa SLA (' . self::CRON_HOOK . '): ' . $wynik->get_error_message()
+			);
 		}
 	}
 

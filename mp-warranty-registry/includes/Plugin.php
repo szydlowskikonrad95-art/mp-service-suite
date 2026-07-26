@@ -58,6 +58,10 @@ final class Plugin {
 		// Cron retencji plikow importu (D2) — kasuje sieroty w mp-imports/.
 		Lifecycle::register_cron();
 
+		// Diagnostyka wdrozenia (Narzedzia -> Stan witryny): kodowanie CSV.
+		// POZA is_admin() — WP odpala te testy takze cronem.
+		Admin\SiteHealthTests::register();
+
 		if ( is_admin() ) {
 			Admin\ProductsScreen::register();
 			Admin\ImportScreen::register();
