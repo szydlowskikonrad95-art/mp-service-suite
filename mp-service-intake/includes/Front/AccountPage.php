@@ -152,6 +152,21 @@ final class AccountPage {
 		$out .= '<p class="mp-account__field"><label for="mp-account-email">' . esc_html__( 'Adres e-mail', 'mp-service-intake' ) . '</label>';
 		$out .= '<input type="email" id="mp-account-email" name="email" required autocomplete="email" /></p>';
 		$out .= '<p class="mp-account__actions"><button type="submit">' . esc_html__( 'Wyślij link logowania', 'mp-service-intake' ) . '</button></p>';
+		// Waznosc linku POWIEDZIANA Z GORY: bez tego klient otwiera maila po
+		// godzinie, widzi „link nieaktualny" i dzwoni do serwisu. Liczba minut
+		// z Login::TTL_SECONDS, zeby ekran i mail nie mogly sie rozjechac.
+		$out .= '<p class="mp-account__meta">' . esc_html(
+			sprintf(
+				/* translators: %d: liczba minut waznosci linku logowania. */
+				_n(
+					'Link będzie ważny %d minutę i zadziała tylko raz. Po tym czasie po prostu poproś o nowy.',
+					'Link będzie ważny %d minut i zadziała tylko raz. Po tym czasie po prostu poproś o nowy.',
+					Login::ttl_minutes(),
+					'mp-service-intake'
+				),
+				Login::ttl_minutes()
+			)
+		) . '</p>';
 		$out .= '</form></div>';
 
 		return $out;
