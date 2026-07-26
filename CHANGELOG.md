@@ -4,6 +4,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Added
+- Registry (B) — **przykładowy plik importu w paczce + opis kolumn na ekranie.** Wtyczka wozi
+  `przyklady/przyklad-import-produktow.csv` (8 wierszy pokazujących WSZYSTKIE obsługiwane kolumny, oba formaty
+  daty, kategorię slugiem i etykietą, wiersz minimalny „tylko serial", jedną gwarancję już wygasłą), a ekran
+  importu linkuje do niego („Pobierz przykładowy plik CSV"). Ekran wymienia teraz też **kolumny opcjonalne**
+  (dotąd tylko wymaganą `serial`), formaty dat, listę kategorii **czytaną z `Categories::slugs()`** (nie
+  przepisaną ręcznie — nie może się rozjechać) oraz jawnie mówi, że import DODAJE produkty i nie nadpisuje
+  duplikatu serialu. Test-strażnik `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
+  plik przez realny parser — przykład nie może cicho przestać się importować.
+
+### Fixed
+- Registry (B) + Automator (D) — **`str_getcsv`/`fputcsv` bez jawnego `$escape` = deprecated na PHP 8.4+.**
+  Import 10 tys. wierszy potrafił wygenerować 10 tys. wpisów „deprecated" przy `WP_DEBUG` (łamie kontrakt
+  dirty-env „zero notice z naszego kodu"), a **domyślna wartość ma się w przyszłym PHP zmienić** — czyli
+  parsowanie zmieniłoby się samo. Teraz `$escape` podawany jawnie jako PUSTY = semantyka RFC-4180, taka jaką
+  pisze Excel (cudzysłów podwajany, backslash literalny). Efekt uboczny naprawiony przy okazji: model typu
+  `Kabel 3\4` i ścieżka `D:\dane\` parsują się poprawnie (z dotychczasowym domyślnym `\` psuły podział pola).
+  Zabezpieczone testem `test_backslash_jest_zwyklym_znakiem`.
+
 ### Changed
 - Admin — **kolorowe plakietki statusów w listach personelu (czytelność).** Intake (C): status sprawy
   (nowe=niebieski, w naprawie=pomarańczowy, zamknięte=szary…). Registry (B): status gwarancji

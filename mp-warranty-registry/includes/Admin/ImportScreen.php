@@ -11,6 +11,7 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Categories;
 use MP\Registry\CsvParser;
 use MP\Registry\Importer;
 use MP\Registry\ImportJobs;
@@ -232,6 +233,23 @@ final class ImportScreen {
 					esc_html( size_format( $max_bytes ) )
 				);
 				?>
+			</p>
+			<p>
+				<?php
+				printf(
+					/* translators: %s: lista dozwolonych slugow kategorii. */
+					esc_html__( 'Kolumny opcjonalne: model, partia, faktura (albo dokument_zakupu), data_zakupu, gwarancja_do, kategoria. Daty w formacie 2026-04-12 albo 12.04.2026; puste pole jest dozwolone. Kategoria — jedna z: %s (wartość spoza listy trafia do „inne"). Bez kolumny gwarancja_do rejestr nie policzy statusu gwarancji.', 'mp-warranty-registry' ),
+					esc_html( implode( ', ', Categories::slugs() ) )
+				);
+				?>
+			</p>
+			<p>
+				<?php esc_html_e( 'Import DODAJE produkty do rejestru. Numer seryjny, który już w nim jest, trafia do raportu błędów i NIE nadpisuje istniejącego wpisu. Przy porównywaniu seriali spacje i myślniki są pomijane, a wielkość liter nie ma znaczenia.', 'mp-warranty-registry' ); ?>
+			</p>
+			<p>
+				<a href="<?php echo esc_url( plugin_dir_url( MP_REGISTRY_FILE ) . 'przyklady/przyklad-import-produktow.csv' ); ?>" download>
+					<?php esc_html_e( 'Pobierz przykładowy plik CSV (8 wierszy, gotowy do wgrania)', 'mp-warranty-registry' ); ?>
+				</a>
 			</p>
 			<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="mp_import_upload" />

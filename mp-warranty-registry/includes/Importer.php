@@ -24,6 +24,17 @@ final class Importer {
 	public const BATCH_SIZE = 100;
 
 	/**
+	 * Znak ucieczki dla str_getcsv: PUSTY = semantyka RFC-4180 (tak pisze Excel —
+	 * cudzysłów podwajany `""`, backslash literalny). Podajemy JAWNIE z dwoch
+	 * powodow: (1) PHP 8.4+ deprecuje pominiecie argumentu ($escape) — przy
+	 * imporcie 10k wierszy to 10k wpisow „deprecated" w logu przy WP_DEBUG,
+	 * (2) domyslna wartosc ma sie ZMIENIC w przyszlym PHP, wiec bez jawnego
+	 * podania parsowanie zmienilo by sie samo. Model typu „Kabel 3\4" albo
+	 * sciezka „D:\dane\" parsuja sie poprawnie tylko z pustym escape.
+	 */
+	private const CSV_ESCAPE = '';
+
+	/**
 	 * Limit rozmiaru pliku importu w bajtach (konfigurowalny; default 8 MB).
 	 *
 	 * D10: obnizone z 20 MB — create_job_from_file wczytuje CALY plik do pamieci
@@ -77,7 +88,7 @@ final class Importer {
 
 		$separator = CsvParser::detect_separator( (string) $lines[0] );
 
-		if ( null === CsvParser::map_header( str_getcsv( (string) $lines[0], $separator ) ) ) {
+		if ( null === CsvParser::map_header( str_getcsv( (string) $lines[0], $separator, '"', self::CSV_ESCAPE ) ) ) {
 			return array( 'error' => 'Naglowek nie zawiera kolumny serial (albo aliasu).' );
 		}
 
@@ -359,7 +370,7 @@ final class Importer {
 		}
 
 		$separator = CsvParser::detect_separator( $header_line );
-		$map       = CsvParser::map_header( str_getcsv( trim( $header_line ), $separator ) );
+		$map       = CsvParser::map_header( str_getcsv( trim( $header_line ), $separator, '"', self::CSV_ESCAPE ) );
 
 		if ( null === $map ) {
 			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- para do fopen.
@@ -387,7 +398,7 @@ final class Importer {
 				continue;
 			}
 
-			$rows[] = CsvParser::parse_row( str_getcsv( trim( $line ), $separator ), $map );
+			$rows[] = CsvParser::parse_row( str_getcsv( trim( $line ), $separator, '"', self::CSV_ESCAPE ), $map );
 			++$collected;
 		}
 

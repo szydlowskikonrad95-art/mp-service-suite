@@ -24,6 +24,20 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
+== Frequently Asked Questions ==
+
+= What should the CSV import file look like? =
+
+A ready-to-use sample ships with the plugin: `przyklady/przyklad-import-produktow.csv`. The import screen also links to it ("Pobierz przykładowy plik CSV").
+
+Only the serial column is required (header `serial`, `numer_seryjny` or `sn`). Optional columns: `model`, `partia` (`batch`), `faktura` (`dokument_zakupu`), `data_zakupu`, `gwarancja_do` (`warranty_until`), `kategoria`. Without `gwarancja_do` the warranty status cannot be computed and the product shows "no data".
+
+Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detected automatically. Encoding: UTF-8 or Windows-1250 (the latter needs the iconv or intl extension; otherwise the file is rejected instead of silently mangling Polish characters). Maximum file size: 8 MB -- split larger registries, imports are resumable.
+
+= Does re-importing a file update existing products? =
+
+No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
+
 == Changelog ==
 
 = 0.5.0 =

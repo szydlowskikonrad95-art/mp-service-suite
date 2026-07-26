@@ -53,6 +53,35 @@ if ( ! function_exists( 'get_option' ) ) {
 	}
 }
 
+if ( ! function_exists( 'apply_filters' ) ) {
+	/**
+	 * Stub filtrow: brak wtyczek = wartosc domyslna bez zmian (Categories::all,
+	 * Statuses::all itp. spadaja wtedy na wlasne DEFAULTS/CORE).
+	 *
+	 * @param string $hook  Nazwa filtra (ignorowana).
+	 * @param mixed  $value Wartosc wejsciowa.
+	 * @return mixed Wartosc bez zmian.
+	 */
+	function apply_filters( string $hook, $value ) { // phpcs:ignore
+		unset( $hook );
+
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'sanitize_key' ) ) {
+	/**
+	 * Stub sanitize_key wg zachowania rdzenia WP: male litery i tylko
+	 * [a-z0-9_-] (uzywane przez Categories::sanitize na wartosci z CSV).
+	 *
+	 * @param string $key Surowa wartosc.
+	 * @return string
+	 */
+	function sanitize_key( string $key ): string { // phpcs:ignore
+		return (string) preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $key ) );
+	}
+}
+
 spl_autoload_register(
 	static function ( string $class_name ) use ( $mp_repo_root ): void {
 		$prefix = 'MP\\Common\\';
