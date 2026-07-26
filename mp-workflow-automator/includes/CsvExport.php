@@ -312,8 +312,10 @@ final class CsvExport {
 	private static function put_row( $handle, array $cells ): void {
 		$safe = array_map( array( self::class, 'harden' ), $cells );
 
+		// $escape PUSTY = RFC-4180 (jak Excel). Jawnie, bo PHP 8.4+ deprecuje
+		// pominiecie argumentu, a jego domyslna wartosc ma sie zmienic.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv -- zapis wiersza do strumienia odpowiedzi (download w locie).
-		fputcsv( $handle, $safe, self::SEP );
+		fputcsv( $handle, $safe, self::SEP, '"', '' );
 	}
 
 	/**

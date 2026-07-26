@@ -95,6 +95,48 @@ echo (file_exists($d."/d2-orphan.csv")?"ZOSTAL":"SKASOWANA")."|".((file_exists($
 BATCH=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'DOD-000001', null, null); echo \$c['batch'];" 2>/dev/null)
 [ "$BATCH" = "PARTIA-DOD-7" ] && ok "partia z CSV wraca w mp_warranty_check (dziedziczona przez sprawe)" || bad "partia: '$BATCH'"
 
+# ── 5b. PRZYKLAD DOLACZONY DO WTYCZKI: klient klika „Pobierz przykladowy CSV" i importuje go ──
+# Sens: plik z przyklady/ jedzie w ZIP-ie i jest linkowany z ekranu importu. Jesli kiedys
+# przestanie sie importowac (zmiana parsera, slownika kategorii, formatu dat), klient dostanie
+# przyklad ktory NIE dziala. Tu przechodzi PELNA droga na zywym WP, nie tylko przez parser.
+SAMPLE=$(wp eval "echo plugin_dir_path( MP_REGISTRY_FILE ) . 'przyklady/przyklad-import-produktow.csv';" 2>/dev/null)
+if [ -n "$SAMPLE" ] && [ -f "$SAMPLE" ]; then
+	ok "przyklad znaleziony w katalogu wtyczki ($(basename "$SAMPLE"))"
+	wp mp import-products "$SAMPLE" > /tmp/mp-sample-import.log 2>&1
+	SJOB=$(q "SELECT MAX(id) FROM wp_mp_import_jobs")
+	SROWS=$(q "SELECT success_rows FROM wp_mp_import_jobs WHERE id=$SJOB")
+	SERR=$(q "SELECT error_rows FROM wp_mp_import_jobs WHERE id=$SJOB")
+	[ "$SROWS" = "8" ] && [ "$SERR" = "0" ] && ok "przyklad zaimportowany w calosci: 8 wierszy, 0 bledow" || bad "przyklad: success=$SROWS bledy=$SERR (oczekiwano 8/0)"
+
+	# Zrodlo MUSI przetrwac (D2 kasuje kopie w uploads, nie plik wtyczki — inaczej
+	# pierwszy import zjadalby dolaczony przyklad).
+	[ -f "$SAMPLE" ] && ok "D2: plik-przyklad w katalogu wtyczki przetrwal import" || bad "D2: import SKASOWAL dolaczony przyklad"
+
+	# Data w formacie polskiego Excela (15.02.2026) sprowadzona do Y-m-d.
+	SDATE=$(q "SELECT purchase_date FROM wp_mp_product_registry WHERE serial_normalized='SNAGD2001'")
+	[ "$SDATE" = "2026-02-15" ] && ok "data d.m.Y z przykladu znormalizowana do $SDATE" || bad "data z przykladu: '$SDATE'"
+
+	# Kategoria podana ETYKIETA ("Elektronika audio" / "AGD drobne") zapisana jako slug.
+	SCAT=$(q "SELECT category FROM wp_mp_product_registry WHERE serial_normalized='SNAUD1002'")
+	SCAT2=$(q "SELECT category FROM wp_mp_product_registry WHERE serial_normalized='SNAGD2002'")
+	[ "$SCAT" = "audio" ] && [ "$SCAT2" = "agd" ] && ok "kategoria z etykiety zapisana slugiem (audio/agd)" || bad "kategoria z etykiety: '$SCAT'/'$SCAT2'"
+
+	# Wiersz minimalny (tylko serial + model): kategoria = fallback, daty puste.
+	SMIN=$(q "SELECT CONCAT(category,'|',IFNULL(purchase_date,'NULL'),'|',IFNULL(warranty_until,'NULL')) FROM wp_mp_product_registry WHERE serial_normalized='SNOTH4001'")
+	[ "$SMIN" = "inne|NULL|NULL" ] && ok "wiersz minimalny: kategoria=inne, daty puste" || bad "wiersz minimalny: '$SMIN'"
+
+	# Przyklad pokazuje OBA stany gwarancji — aktywna i wygasla (widoczne plakietki w adminie).
+	SACT=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'SN-AUD-1001', null, null); echo \$c['status'];" 2>/dev/null)
+	SEXP=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'SN-AUD-1003', null, null); echo \$c['status'];" 2>/dev/null)
+	[ "$SACT" = "aktywna" ] && [ "$SEXP" = "wygasla" ] && ok "przyklad pokazuje oba stany gwarancji (aktywna + wygasla)" || bad "stany gwarancji z przykladu: '$SACT'/'$SEXP'"
+
+	# Serial z myslnikami rozpoznawany po normalizacji (tak jak w opisie dla klienta).
+	SNORM=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'sn aud 1001', null, null); echo \$c['status'];" 2>/dev/null)
+	[ "$SNORM" = "aktywna" ] && ok "'sn aud 1001' = 'SN-AUD-1001' (normalizacja serialu dziala na zywo)" || bad "normalizacja serialu: '$SNORM'"
+else
+	bad "nie znaleziono przykladu przyklady/przyklad-import-produktow.csv w katalogu wtyczki"
+fi
+
 # ── 6. Negatywne uprawnienia (agent/klient/anonim nie dotkna wyjatkow ani archiwum) ──
 wp user get mp-dod-agent >/dev/null 2>&1 || wp user create mp-dod-agent agent-dod@example.com --role=mp_agent --user_pass=x >/dev/null 2>&1
 PID1=$(q "SELECT id FROM wp_mp_product_registry ORDER BY id LIMIT 1")
