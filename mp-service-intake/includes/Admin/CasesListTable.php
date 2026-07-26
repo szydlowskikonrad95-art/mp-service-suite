@@ -131,13 +131,41 @@ final class CasesListTable extends \WP_List_Table {
 			case 'kind':
 				return esc_html( (string) ( $item['kind'] ?? '' ) );
 			case 'status':
-				return esc_html( Statuses::label( (string) ( $item['status'] ?? '' ) ) );
+				return self::status_badge( (string) ( $item['status'] ?? '' ) );
 			case 'created_at':
 				$raw = (string) ( $item['created_at'] ?? '' );
 				return '' !== $raw ? esc_html( get_date_from_gmt( $raw, 'Y-m-d H:i' ) ) : '—';
 			default:
 				return '';
 		}
+	}
+
+	/**
+	 * Kolorowa plakietka statusu (czytelnosc na liscie). Kolor per status rdzenia;
+	 * status custom (filtr) => neutralny szary. Styl inline (brak osobnego admin-CSS).
+	 *
+	 * @param string $status Slug statusu.
+	 * @return string HTML plakietki.
+	 */
+	private static function status_badge( string $status ): string {
+		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze z diakrytykami (ł/ę) mylą liczenie kolumn sniffa (bajty vs znaki, zależnie od rozszerzenia iconv) — ten sam wyjatek co w Statuses::CORE.
+		$colors = array(
+			'nowe'            => '#2563eb',
+			'do uzupełnienia' => '#d97706',
+			'w analizie'      => '#7c3aed',
+			'zaakceptowane'   => '#0891b2',
+			'w naprawie'      => '#ea580c',
+			'odrzucone'       => '#dc2626',
+			'zamknięte'       => '#4b5563',
+		);
+		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
+		$color = $colors[ $status ] ?? '#4b5563';
+
+		return sprintf(
+			'<span style="display:inline-block;padding:.16em .62em;border-radius:999px;font-size:.82em;font-weight:600;line-height:1.5;color:#fff;background:%1$s">%2$s</span>',
+			esc_attr( $color ),
+			esc_html( Statuses::label( $status ) )
+		);
 	}
 
 	/**

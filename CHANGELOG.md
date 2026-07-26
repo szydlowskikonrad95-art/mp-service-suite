@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Changed
+- Admin — **kolorowe plakietki statusów w listach personelu (czytelność).** Intake (C): status sprawy
+  (nowe=niebieski, w naprawie=pomarańczowy, zamknięte=szary…). Registry (B): status gwarancji
+  (aktywna=zielony, wygasła=czerwony, weryfikacja=żółty, brak danych=szary) — reuse istniejącego
+  `admin-registry.css`/`mp-badge`. **Bonus fix:** mapa etykiet statusu gwarancji miała klucze angielskie,
+  a `WarrantyStatus::compute` zwraca polskie — lista pokazywała surowe „wygasla"/„brak_danych"; teraz
+  poprawne „wygasła"/„brak danych". Styl natywny WP-admin, zero zmian logiki.
 - Intake (C) — **spójny wygląd WSZYSTKICH ekranów klienta.** Strony samodzielne (weryfikacja „Potwierdź
   zgłoszenie", potwierdzenie/błędy, logowanie „Zaloguj się", „Link nieaktualny") stały poza motywem z gołym
   systemowym stylem — teraz wspólna skorupa `Front\Landing` (jedno źródło stylu: karta na jasnym tle, akcent

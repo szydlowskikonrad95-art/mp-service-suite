@@ -20,6 +20,32 @@
 	border: 1px solid #dba617;
 }
 
+/* Status gwarancji — kolor per stan (czytelnosc listy). */
+.mp-registry .mp-badge-status {
+	font-weight: 600;
+}
+
+.mp-registry .mp-badge-status--aktywna {
+	background: #e6f4ea;
+	color: #1e7e34;
+}
+
+.mp-registry .mp-badge-status--wygasla {
+	background: #fdecea;
+	color: #b3261e;
+}
+
+.mp-registry .mp-badge-status--brak_danych {
+	background: #eef0f2;
+	color: #50575e;
+}
+
+.mp-registry .mp-badge-status--weryfikacja {
+	background: #fcf9e8;
+	color: #996800;
+	border: 1px solid #dba617;
+}
+
 .mp-registry .mp-registry-filters label {
 	margin-right: 12px;
 }
