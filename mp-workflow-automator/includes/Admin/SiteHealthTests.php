@@ -12,6 +12,7 @@
 
 namespace MP\Automator\Admin;
 
+use MP\Automator\Rules;
 use MP\Automator\Sweep;
 use MP\Automator\Common\SiteHealth;
 
@@ -30,6 +31,74 @@ final class SiteHealthTests {
 			'mp_automator',
 			array(
 				'cron' => array( self::class, 'test_cron' ),
+				'pula' => array( self::class, 'test_pula_przydzialu' ),
+			)
+		);
+	}
+
+	/**
+	 * Pula auto-przydzialu: pusta = sprawy nie trafiaja do nikogo.
+	 *
+	 * Druga cicha awaria po cronie. Regula `default_assign` jest zakladana przy
+	 * aktywacji z PUSTA pula (nie zgadujemy, kto ma dostawac sprawy), wiec na
+	 * swiezej instalacji auto-przydzial nie robi nic: sprawa wpada, silnik loguje
+	 * ASSIGNMENT_UNMATCHED do rejestru operacji i na tym koniec. Z zewnatrz
+	 * wyglada to jak dzialajacy system — az ktos zapyta, czemu nikt nie odebral
+	 * zgloszenia. Pule filtruje jeszcze runtime (user musi miec cap `mp_agent`),
+	 * wiec liczymy TYCH SAMYCH pracownikow co RuleEngine, nie surowy JSON.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_pula_przydzialu(): array {
+		$konfiguracje = array();
+
+		foreach ( Rules::enabled_for_trigger( Rules::TRIGGER_CASE_CREATED ) as $rule ) {
+			if ( Rules::ACTION_ASSIGN === $rule['action_type'] ) {
+				$konfiguracje[] = $rule['action_config_json'];
+			}
+		}
+
+		$regula_jest = array() !== $konfiguracje;
+		$pracownikow = SiteHealth::pracownikow_w_puli(
+			$konfiguracje,
+			static function ( int $uid ): bool {
+				return user_can( $uid, 'mp_agent' );
+			}
+		);
+
+		if ( ! $regula_jest ) {
+			return SiteHealth::wynik(
+				'mp_automator_pula',
+				'recommended',
+				__( 'Automatyczny przydział spraw jest wyłączony', 'mp-workflow-automator' ),
+				__( 'Nie ma włączonej reguły przydzielającej nowe zgłoszenia. Sprawy będą czekać, aż ktoś przypisze je ręcznie na liście zgłoszeń.', 'mp-workflow-automator' ),
+				__( 'Jeśli chcesz przydział automatyczny, włącz regułę w Automator → Reguły.', 'mp-workflow-automator' )
+			);
+		}
+
+		if ( 0 === $pracownikow ) {
+			return SiteHealth::wynik(
+				'mp_automator_pula',
+				'recommended',
+				__( 'Nowe zgłoszenia nie trafiają do nikogo — pusta lista pracowników', 'mp-workflow-automator' ),
+				__( 'Reguła automatycznego przydziału jest włączona, ale nie wskazano ani jednego pracownika serwisu (albo wskazane osoby straciły uprawnienia). Zgłoszenia będą przyjmowane i widoczne na liście, lecz nikt nie dostanie ich do obsługi ani powiadomienia mailem.', 'mp-workflow-automator' ),
+				__( 'Wejdź w Automator → Reguły, otwórz regułę przydziału i wskaż pracowników serwisu, między których mają być rozdzielane zgłoszenia.', 'mp-workflow-automator' )
+			);
+		}
+
+		return SiteHealth::wynik(
+			'mp_automator_pula',
+			'good',
+			__( 'Nowe zgłoszenia są automatycznie przydzielane', 'mp-workflow-automator' ),
+			sprintf(
+				/* translators: %d: liczba pracownikow w puli przydzialu. */
+				_n(
+					'Zgłoszenia są rozdzielane po kolei między %d pracownika serwisu.',
+					'Zgłoszenia są rozdzielane po kolei między %d pracowników serwisu.',
+					$pracownikow,
+					'mp-workflow-automator'
+				),
+				$pracownikow
 			)
 		);
 	}

@@ -113,4 +113,39 @@ final class SiteHealth {
 	public static function nadawca_domyslny( string $adres ): bool {
 		return 1 === preg_match( '/^wordpress@/i', trim( $adres ) );
 	}
+
+	/**
+	 * Ilu REALNYCH pracownikow obsluzy pula auto-przydzialu.
+	 *
+	 * Liczymy tak samo jak silnik regul: pusty/zepsuty JSON = zero, a kazdy
+	 * wskazany user musi jeszcze miec uprawnienie agenta (ktos mogl zmienic mu
+	 * role po zapisaniu reguly — wtedy pula jest formalnie niepusta, a przydzial
+	 * i tak nie ma komu oddac sprawy). Zwracamy liczbe UNIKALNYCH pracownikow:
+	 * ten sam user wpisany dwa razy to dalej jeden czlowiek.
+	 *
+	 * @param array<int, string|null> $konfiguracje_json Kolumny action_config_json regul przydzialu.
+	 * @param callable                $czy_agent         fn(int $user_id): bool — czy user ma cap agenta.
+	 * @return int Liczba unikalnych pracownikow w puli.
+	 */
+	public static function pracownikow_w_puli( array $konfiguracje_json, callable $czy_agent ): int {
+		$pracownicy = array();
+
+		foreach ( $konfiguracje_json as $json ) {
+			$config = json_decode( (string) $json, true );
+
+			if ( ! is_array( $config ) || ! isset( $config['pool'] ) || ! is_array( $config['pool'] ) ) {
+				continue;
+			}
+
+			foreach ( $config['pool'] as $uid ) {
+				$uid = (int) $uid;
+
+				if ( $uid > 0 && $czy_agent( $uid ) ) {
+					$pracownicy[ $uid ] = true;
+				}
+			}
+		}
+
+		return count( $pracownicy );
+	}
 }
