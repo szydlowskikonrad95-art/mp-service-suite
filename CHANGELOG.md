@@ -15,6 +15,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
 ### Fixed
+- Intake (C) — **nagłówki bezpieczeństwa docierały TYLKO na auto-stronę wtyczki.** Warunek brzmiał
+  „jeśli to strona o ID zapisanym w opcji" — a dokumentowany sposób użycia to **wstawienie shortcode'u
+  na własną podstronę**. Takie strony (czyli te, które realnie robi klient) szły **bez żadnego nagłówka**:
+  zmierzone na żywym WP — auto-strona miała `Cache-Control: no-store`, ręcznie założona `/moje-sprawy/`
+  nie miała nic. Teraz decyduje obecność shortcode'u (`PageDetect::is_plugin_page`), a zestawy są
+  filtrowalne (`mp_intake_security_headers`) — strona klienta może je dostosować albo wyłączyć.
+  Formularz dostaje `X-Frame-Options`, `X-Content-Type-Options`, `CSP: frame-ancestors 'self'`,
+  `Referrer-Policy`. **Panel klienta dodatkowo `X-Robots-Tag: noindex, nofollow`, `Cache-Control:
+  no-store` i `Referrer-Policy: no-referrer`** — pokazuje dane osobowe, więc nie ma prawa trafić do
+  wyszukiwarki ani zostać w cache; plus `<meta name="robots" noindex>` jako pas zapasowy, gdy hosting
+  utnie nagłówki. Strony BEZ naszego shortcode'u zostają nietknięte (sprawdzane osobną asercją: zero
+  ingerencji poza własnym terenem). Regresję pilnuje `testy/e2e/c3-front.sh` §8.
 - Intake (C) — **panel klienta: 20 inline-style'i usuniętych, własne odstępy zamiast liczenia na motyw.**
   Objaw: na motywie, który zeruje marginesy `<p>` (a robi tak wiele motywów), przycisk „Wyślij"/„Zapisz dane"
   **przyklejał się do pola** — 0 px odstępu; na motywie domyślnym WP wychodziło 22 px, czyli poprawnie tylko

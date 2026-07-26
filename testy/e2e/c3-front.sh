@@ -127,6 +127,34 @@ CODE=$(cget -c "$JAR" -b "$JAR" -o /dev/null -w '%{http_code}' \
 	"$BASE/wp-admin/admin-post.php")
 { [ "$CODE" = "200" ] || [ "$CODE" = "410" ]; } && ok "ponowny POST obsluzony (HTTP $CODE, token jednorazowy W1)" || bad "ponowny POST: HTTP $CODE"
 
+# ── 8. NAGLOWKI BEZPIECZENSTWA NA WLASNEJ STRONIE ZE SHORTCODEM ───────────
+# Regresja z 26.07: naglowki leczaly TYLKO na auto-stronie (ID w opcji). Kto
+# wstawil shortcode na SWOJA podstrone — a to jest dokumentowany sposob uzycia —
+# nie dostawal ich wcale. Zmierzone na demie: auto-strona miala `no-store`,
+# reczna `/moje-sprawy/` nie miala nic.
+PID_F=$(wp post create --post_type=page --post_title="E2E naglowki formularz" --post_status=publish --post_content="[mp_intake_form]" --porcelain 2>/dev/null)
+PID_A=$(wp post create --post_type=page --post_title="E2E naglowki panel" --post_status=publish --post_content="[mp_account]" --porcelain 2>/dev/null)
+URL_F="$BASE$(wp post url "$PID_F" 2>/dev/null | sed 's#^https\?://[^/]*##')"
+URL_A="$BASE$(wp post url "$PID_A" 2>/dev/null | sed 's#^https\?://[^/]*##')"
+
+HDR_F=$(curl -sI "${HOSTHDR[@]}" "$URL_F")
+echo "$HDR_F" | grep -qi '^x-content-type-options: *nosniff' && ok "wlasna strona z [mp_intake_form]: nosniff" || bad "wlasna strona formularza BEZ nosniff"
+echo "$HDR_F" | grep -qi "^content-security-policy: *frame-ancestors" && ok "wlasna strona z [mp_intake_form]: CSP frame-ancestors" || bad "wlasna strona formularza BEZ CSP"
+echo "$HDR_F" | grep -qi '^x-frame-options: *SAMEORIGIN' && ok "wlasna strona z [mp_intake_form]: X-Frame-Options" || bad "wlasna strona formularza BEZ X-Frame-Options"
+
+HDR_A=$(curl -sI "${HOSTHDR[@]}" "$URL_A")
+echo "$HDR_A" | grep -qi '^x-robots-tag: *noindex' && ok "wlasna strona z [mp_account]: noindex (panel z PII poza wyszukiwarka)" || bad "panel BEZ noindex"
+echo "$HDR_A" | grep -qi '^cache-control: *no-store' && ok "wlasna strona z [mp_account]: no-store (PII nie zostaje w cache)" || bad "panel BEZ no-store"
+echo "$HDR_A" | grep -qi '^referrer-policy: *no-referrer' && ok "wlasna strona z [mp_account]: no-referrer" || bad "panel BEZ Referrer-Policy"
+cget "$URL_A" | grep -qi '<meta name="robots" content="noindex' && ok "panel: meta robots noindex w HTML (pas zapasowy)" || bad "panel: brak meta robots"
+
+# Strona BEZ naszego shortcode'u nie moze dostac tych naglowkow (zero ingerencji w cudza strone).
+PID_X=$(wp post create --post_type=page --post_title="E2E obca strona" --post_status=publish --post_content="Zwykla tresc bez shortcode." --porcelain 2>/dev/null)
+URL_X="$BASE$(wp post url "$PID_X" 2>/dev/null | sed 's#^https\?://[^/]*##')"
+curl -sI "${HOSTHDR[@]}" "$URL_X" | grep -qi '^x-robots-tag: *noindex' && bad "OBCA strona dostala noindex — wtyczka ingeruje poza swoim terenem!" || ok "obca strona nietknieta (zero ingerencji poza wlasnymi stronami)"
+
+wp post delete "$PID_F" "$PID_A" "$PID_X" --force >/dev/null 2>&1
+
 echo
 echo "WYNIK C3: $PASS ok, $FAIL fail"
 [ "$FAIL" -eq 0 ]
