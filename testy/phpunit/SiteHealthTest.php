@@ -91,4 +91,41 @@ final class SiteHealthTest extends TestCase {
 	public function test_brak_naprawy_daje_puste_actions(): void {
 		self::assertSame( '', SiteHealth::wynik( 'd', 'good', 'Tytul', 'Opis' )['actions'] );
 	}
+
+	/**
+	 * Pula auto-przydzialu: liczymy TYCH SAMYCH ludzi co silnik regul.
+	 *
+	 * Cicha awaria nr 2 (po cronie): regula jest wlaczona, wiec wyglada dobrze,
+	 * ale pula pusta => sprawa nie trafia do nikogo i nikt nie dostaje maila.
+	 */
+	public function test_pracownikow_w_puli(): void {
+		$agenci    = array( 2, 3 );
+		$czy_agent = static function ( int $uid ) use ( $agenci ): bool {
+			return in_array( $uid, $agenci, true );
+		};
+
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array(), $czy_agent ), 'brak regul => zero' );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( '{"pool":[]}' ), $czy_agent ), 'pusta pula => zero' );
+		self::assertSame( 2, SiteHealth::pracownikow_w_puli( array( '{"pool":[2,3]}' ), $czy_agent ) );
+		self::assertSame( 1, SiteHealth::pracownikow_w_puli( array( '{"pool":[2,99]}' ), $czy_agent ), 'user bez uprawnien agenta sie NIE liczy' );
+		self::assertSame( 1, SiteHealth::pracownikow_w_puli( array( '{"pool":[2,2]}' ), $czy_agent ), 'ten sam user dwa razy = jeden czlowiek' );
+		self::assertSame( 2, SiteHealth::pracownikow_w_puli( array( '{"pool":[2]}', '{"pool":[3]}' ), $czy_agent ), 'dwie reguly sumuja sie' );
+		self::assertSame( 1, SiteHealth::pracownikow_w_puli( array( '{"pool":["2"]}' ), $czy_agent ), 'id jako tekst z JSON tez liczymy' );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( '{"pool":[0,-5]}' ), $czy_agent ), 'zero i ujemne odpadaja' );
+	}
+
+	/**
+	 * Zepsuta konfiguracja nie moze wywrocic diagnostyki ani udawac, ze pula jest.
+	 */
+	public function test_pracownikow_w_puli_znosi_smieci(): void {
+		$czy_agent = static function ( int $uid ): bool {
+			return $uid > 0;
+		};
+
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( null ), $czy_agent ), 'NULL w kolumnie' );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( '' ), $czy_agent ), 'pusty string' );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( 'to nie jest json' ), $czy_agent ) );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( '{"pool":"2,3"}' ), $czy_agent ), 'pula nie-tablica' );
+		self::assertSame( 0, SiteHealth::pracownikow_w_puli( array( '{"template_key":"x"}' ), $czy_agent ), 'regula bez puli' );
+	}
 }
