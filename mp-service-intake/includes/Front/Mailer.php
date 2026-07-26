@@ -11,6 +11,8 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\CaseRepo;
+
 /**
  * Wysylka maili zgloszenia.
  */
@@ -38,10 +40,11 @@ final class Mailer {
 			self::nazwa_firmy()
 		);
 		$body = sprintf(
-			/* translators: 1: nazwa firmy/strony, 2: link potwierdzajacy. */
-			__( "Dziękujemy za zgłoszenie serwisowe w %1\$s.\n\nAby je potwierdzić i uruchomić obsługę, kliknij w link poniżej (ważny 24 godziny):\n\n%2\$s\n\nJeśli to nie Ty wysłałeś to zgłoszenie, zignoruj tę wiadomość.", 'mp-service-intake' ),
+			/* translators: 1: nazwa firmy/strony, 2: link potwierdzajacy, 3: liczba godzin waznosci linku. */
+			__( "Dziękujemy za zgłoszenie serwisowe w %1\$s.\n\nAby je potwierdzić i uruchomić obsługę, kliknij w link poniżej (ważny %3\$d godz.):\n\n%2\$s\n\nJeśli to nie Ty wysłałeś to zgłoszenie, zignoruj tę wiadomość.", 'mp-service-intake' ),
 			self::nazwa_firmy(),
-			$url
+			$url,
+			CaseRepo::TOKEN_TTL_HOURS
 		) . self::stopka();
 
 		return wp_mail( $email, self::filtruj_temat( $subject, 'potwierdzenie' ), self::filtruj_tresc( $body, 'potwierdzenie' ) );
@@ -74,9 +77,10 @@ final class Mailer {
 			self::nazwa_firmy()
 		);
 		$body = sprintf(
-			/* translators: 1: link logowania, 2: adres panelu zgloszen. */
-			__( "Aby zalogować się do panelu swoich zgłoszeń, otwórz link poniżej i kliknij przycisk logowania (link ważny 20 minut, jednorazowy):\n\n%1\$s\n\nLink wygasł? Poproś o nowy, podając swój adres e-mail na stronie: %2\$s\n\nJeśli to nie Ty prosiłeś o logowanie, zignoruj tę wiadomość — nikt nie uzyskał dostępu do konta.", 'mp-service-intake' ),
+			/* translators: 1: link logowania, 2: liczba minut waznosci linku, 3: adres panelu zgloszen. */
+			__( "Aby zalogować się do panelu swoich zgłoszeń, otwórz link poniżej i kliknij przycisk logowania (link ważny %2\$d minut, jednorazowy):\n\n%1\$s\n\nLink wygasł? Poproś o nowy, podając swój adres e-mail na stronie: %3\$s\n\nJeśli to nie Ty prosiłeś o logowanie, zignoruj tę wiadomość — nikt nie uzyskał dostępu do konta.", 'mp-service-intake' ),
 			$url,
+			Login::ttl_minutes(),
 			self::adres_panelu()
 		) . self::stopka();
 

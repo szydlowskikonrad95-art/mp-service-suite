@@ -37,8 +37,22 @@ final class Login {
 
 	/**
 	 * Zywotnosc linku logowania w sekundach (link sesyjny — krotki TTL).
+	 *
+	 * PUBLICZNA, bo ta sama liczba musi trafic do klienta w DWOCH miejscach:
+	 * na ekranie prosby o link i w tresci maila. Wpisana slownie „20 minut"
+	 * rozjechalaby sie po pierwszej zmianie TTL — a klient dostalby „link
+	 * nieaktualny" bez wyjasnienia i zadzwonil do serwisu.
 	 */
-	private const TTL_SECONDS = 1200;
+	public const TTL_SECONDS = 1200;
+
+	/**
+	 * Zywotnosc linku w PELNYCH minutach — do komunikatow dla czlowieka.
+	 *
+	 * @return int Minuty (minimum 1, zeby komunikat nigdy nie mowil „0 minut").
+	 */
+	public static function ttl_minutes(): int {
+		return max( 1, (int) round( self::TTL_SECONDS / 60 ) );
+	}
 
 	/**
 	 * Rejestruje handlery admin-post (goscie i zalogowani).
