@@ -15,6 +15,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
 ### Fixed
+- Intake (C) — **panel klienta: 20 inline-style'i usuniętych, własne odstępy zamiast liczenia na motyw.**
+  Objaw: na motywie, który zeruje marginesy `<p>` (a robi tak wiele motywów), przycisk „Wyślij"/„Zapisz dane"
+  **przyklejał się do pola** — 0 px odstępu; na motywie domyślnym WP wychodziło 22 px, czyli poprawnie tylko
+  przez przypadek. Przyczyna: `Front/AccountPage.php` budował formularze `<br>`-ami i inline-style'ami, które
+  **przebijały własny CSS wtyczki** (pola dostawały `padding:.5rem` zamiast zaprojektowanego `.7rem/.85rem`,
+  przycisk RODO czerwoną łatę zamiast obrysu). Teraz: klasy `mp-account__field` / `__actions` / `__meta` /
+  `__message*` / `__note-closed` + reguły w `intake.css`, a zaszyte kolory (`#555`, `#666`, `#2e7d32`, `#a33`,
+  `#fff`, `#f6f6f6`) zamienione na zmienne (`--mp-muted`, `--mp-ok` — nowa, `--mp-err`, `--mp-soft-bg`).
+  Skutek: **ten sam wygląd na dowolnym motywie** i możliwość dopasowania kolorów bez tykania kodu wtyczki.
+  Zmierzone po naprawie: odstęp pole→przycisk **18 px na OKTANie i 18 px na Twenty Twenty-Five**, kontrast
+  przycisku „Wycofaj zgodę" **5.12:1** (AA). Zero zmian logiki i treści. Honeypot w `FormRenderer` zostaje
+  inline świadomie — gdyby arkusz się nie wczytał, pułapka na boty stałaby się widoczna dla ludzi.
 - Registry (B) + Automator (D) — **`str_getcsv`/`fputcsv` bez jawnego `$escape` = deprecated na PHP 8.4+.**
   Import 10 tys. wierszy potrafił wygenerować 10 tys. wpisów „deprecated" przy `WP_DEBUG` (łamie kontrakt
   dirty-env „zero notice z naszego kodu"), a **domyślna wartość ma się w przyszłym PHP zmienić** — czyli
@@ -34,8 +46,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   zgłoszenie", potwierdzenie/błędy, logowanie „Zaloguj się", „Link nieaktualny") stały poza motywem z gołym
   systemowym stylem — teraz wspólna skorupa `Front\Landing` (jedno źródło stylu: karta na jasnym tle, akcent
   `--mp-accent` jak formularz). Bezpieczeństwo bez zmian (no-store/no-referrer/nosniff/SAMEORIGIN/noindex).
-  Usunięte inline-style'e z panelu klienta (karty spraw/kontakt/prywatność/login) — teraz rządzi `intake.css`
-  (ładniejsze karty, subtelny warm-akcent na „wycofanie zgody"). Zero zmian logiki.
+  Karty spraw / kontakt / prywatność w panelu klienta dostały wygląd z `intake.css` (ładniejsze karty,
+  subtelny warm-akcent na „wycofanie zgody"). Zero zmian logiki.
+  <!-- SPROSTOWANIE 2026-07-26: pierwotnie stało tu „Usunięte inline-style'e z panelu klienta" — to było
+       NIEPRAWDĄ, `AccountPage.php` miał ich dalej 20. Faktyczne usunięcie: wpis w „Fixed" niżej. -->
+
 - Intake (C) — **dopracowany wygląd frontu (formularz zgłoszenia + panel klienta).** Dotąd CSS był surowy
   („techniczne" pola). Teraz profesjonalny, ale **neutralny motywowo** (wąski zakres `.mp-intake`/`.mp-account`,
   dziedziczy font motywu): pola z zaokrągleniem i wyraźnym focus, **własny chevron selecta**, **własny checkbox

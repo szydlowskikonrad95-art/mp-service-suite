@@ -130,9 +130,9 @@ final class AccountPage {
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_login_request" />';
 		$out .= wp_nonce_field( 'mp_intake_login_request', '_mp_nonce', true, false );
-		$out .= '<p><label for="mp-account-email">' . esc_html__( 'Adres e-mail', 'mp-service-intake' ) . '</label><br />';
-		$out .= '<input type="email" id="mp-account-email" name="email" required autocomplete="email" style="width:100%;box-sizing:border-box;padding:.5rem" /></p>';
-		$out .= '<p><button type="submit" style="padding:.6rem 1.2rem;cursor:pointer">' . esc_html__( 'Wyślij link logowania', 'mp-service-intake' ) . '</button></p>';
+		$out .= '<p class="mp-account__field"><label for="mp-account-email">' . esc_html__( 'Adres e-mail', 'mp-service-intake' ) . '</label>';
+		$out .= '<input type="email" id="mp-account-email" name="email" required autocomplete="email" /></p>';
+		$out .= '<p class="mp-account__actions"><button type="submit">' . esc_html__( 'Wyślij link logowania', 'mp-service-intake' ) . '</button></p>';
 		$out .= '</form></div>';
 
 		return $out;
@@ -198,16 +198,16 @@ final class AccountPage {
 		$email = (string) ( $customer['email'] ?? '' );
 
 		$out  = '<section class="mp-account__contact">';
-		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Twoje dane kontaktowe', 'mp-service-intake' ) . '</h3>';
-		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'E-mail:', 'mp-service-intake' ) . ' ' . esc_html( $email ) . '</p>';
+		$out .= '<h3>' . esc_html__( 'Twoje dane kontaktowe', 'mp-service-intake' ) . '</h3>';
+		$out .= '<p class="mp-account__meta">' . esc_html__( 'E-mail:', 'mp-service-intake' ) . ' ' . esc_html( $email ) . '</p>';
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__contact-form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_update_contact" />';
 		$out .= wp_nonce_field( 'mp_intake_update_contact', '_mp_nonce', true, false );
-		$out .= '<p><label for="mp-name">' . esc_html__( 'Imię i nazwisko', 'mp-service-intake' ) . '</label><br />';
-		$out .= '<input type="text" id="mp-name" name="name" value="' . esc_attr( $name ) . '" style="width:100%;box-sizing:border-box;padding:.5rem" /></p>';
-		$out .= '<p><label for="mp-phone">' . esc_html__( 'Telefon', 'mp-service-intake' ) . '</label><br />';
-		$out .= '<input type="text" id="mp-phone" name="phone" value="' . esc_attr( $phone ) . '" style="width:100%;box-sizing:border-box;padding:.5rem" /></p>';
-		$out .= '<p><button type="submit" style="padding:.5rem 1rem;cursor:pointer">' . esc_html__( 'Zapisz dane', 'mp-service-intake' ) . '</button></p>';
+		$out .= '<p class="mp-account__field"><label for="mp-name">' . esc_html__( 'Imię i nazwisko', 'mp-service-intake' ) . '</label>';
+		$out .= '<input type="text" id="mp-name" name="name" value="' . esc_attr( $name ) . '" /></p>';
+		$out .= '<p class="mp-account__field"><label for="mp-phone">' . esc_html__( 'Telefon', 'mp-service-intake' ) . '</label>';
+		$out .= '<input type="text" id="mp-phone" name="phone" value="' . esc_attr( $phone ) . '" /></p>';
+		$out .= '<p class="mp-account__actions"><button type="submit">' . esc_html__( 'Zapisz dane', 'mp-service-intake' ) . '</button></p>';
 		$out .= '</form></section>';
 
 		return $out;
@@ -261,12 +261,12 @@ final class AccountPage {
 	 */
 	private static function render_privacy_form(): string {
 		$out  = '<section class="mp-account__privacy">';
-		$out .= '<h3 style="margin:.2rem 0">' . esc_html__( 'Prywatność (RODO)', 'mp-service-intake' ) . '</h3>';
-		$out .= '<p style="color:#555;margin:.2rem 0">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
+		$out .= '<h3>' . esc_html__( 'Prywatność (RODO)', 'mp-service-intake' ) . '</h3>';
+		$out .= '<p class="mp-account__meta">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_withdraw" />';
 		$out .= wp_nonce_field( 'mp_intake_withdraw', '_mp_nonce', true, false );
-		$out .= '<p><button type="submit" style="padding:.5rem 1rem;cursor:pointer;color:#a33;border:1px solid #a33;background:#fff">' . esc_html__( 'Wycofaj zgodę i usuń moje dane', 'mp-service-intake' ) . '</button></p>';
+		$out .= '<p class="mp-account__actions"><button type="submit">' . esc_html__( 'Wycofaj zgodę i usuń moje dane', 'mp-service-intake' ) . '</button></p>';
 		$out .= '</form></section>';
 
 		return $out;
@@ -347,8 +347,8 @@ final class AccountPage {
 		$closed  = in_array( $status, CaseRepo::TERMINAL_STATUSES, true );
 
 		$out  = '<section class="mp-account__case">';
-		$out .= '<h3 style="margin:.2rem 0">' . esc_html( (string) ( $row['case_number'] ?? '' ) ) . '</h3>';
-		$out .= '<p style="margin:.2rem 0;color:#555">'
+		$out .= '<h3>' . esc_html( (string) ( $row['case_number'] ?? '' ) ) . '</h3>';
+		$out .= '<p class="mp-account__meta">'
 			. esc_html( (string) ( $row['kind'] ?? '' ) ) . ' · '
 			. esc_html__( 'Status:', 'mp-service-intake' ) . ' <strong>' . esc_html( '' !== $status ? $status : '—' ) . '</strong> · '
 			. esc_html( $date ) . '</p>';
@@ -371,7 +371,7 @@ final class AccountPage {
 		$messages = Messages::for_case( $case_id );
 
 		if ( array() === $messages ) {
-			return '<p class="mp-account__empty" style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
+			return '<p class="mp-account__empty">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
 		}
 
 		$labels = array(
@@ -380,16 +380,16 @@ final class AccountPage {
 			'system' => __( 'System', 'mp-service-intake' ),
 		);
 
-		$out = '<ul class="mp-account__messages" style="list-style:none;padding:0;margin:.5rem 0">';
+		$out = '<ul class="mp-account__messages">';
 
 		foreach ( $messages as $msg ) {
 			$author = (string) ( $msg['author_type'] ?? 'system' );
 			$label  = $labels[ $author ] ?? $labels['system'];
 			$when   = get_date_from_gmt( (string) ( $msg['created_at'] ?? '' ), 'Y-m-d H:i' );
 
-			$out .= '<li style="margin:.4rem 0;padding:.5rem .7rem;background:#f6f6f6;border-radius:4px">';
-			$out .= '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
-			$out .= '<span style="color:#666;font-size:.85em">' . esc_html( $when ) . '</span><br />';
+			$out .= '<li class="mp-account__message">';
+			$out .= '<span class="mp-account__message-author">' . esc_html( $label ) . '</span> ';
+			$out .= '<span class="mp-account__message-when">' . esc_html( $when ) . '</span><br />';
 			$out .= nl2br( esc_html( (string) ( $msg['body'] ?? '' ) ) );
 			$out .= '</li>';
 		}
@@ -415,12 +415,12 @@ final class AccountPage {
 		$out .= wp_nonce_field( 'mp_intake_message', '_mp_nonce', true, false );
 
 		if ( $closed ) {
-			$out .= '<p style="color:#2e7d32;margin:.3rem 0">' . esc_html__( 'Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy.', 'mp-service-intake' ) . '</p>';
+			$out .= '<p class="mp-account__note-closed">' . esc_html__( 'Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy.', 'mp-service-intake' ) . '</p>';
 		}
 
-		$out .= '<p><label for="mp-msg-' . esc_attr( (string) $case_id ) . '">' . esc_html__( 'Napisz wiadomość do serwisu', 'mp-service-intake' ) . '</label><br />';
-		$out .= '<textarea id="mp-msg-' . esc_attr( (string) $case_id ) . '" name="body" rows="3" required style="width:100%;box-sizing:border-box;padding:.5rem"></textarea></p>';
-		$out .= '<p><button type="submit" style="padding:.5rem 1rem;cursor:pointer">' . esc_html__( 'Wyślij', 'mp-service-intake' ) . '</button></p>';
+		$out .= '<p class="mp-account__field"><label for="mp-msg-' . esc_attr( (string) $case_id ) . '">' . esc_html__( 'Napisz wiadomość do serwisu', 'mp-service-intake' ) . '</label>';
+		$out .= '<textarea id="mp-msg-' . esc_attr( (string) $case_id ) . '" name="body" rows="3" required></textarea></p>';
+		$out .= '<p class="mp-account__actions"><button type="submit">' . esc_html__( 'Wyślij', 'mp-service-intake' ) . '</button></p>';
 		$out .= '</form>';
 
 		return $out;

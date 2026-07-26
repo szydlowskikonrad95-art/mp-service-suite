@@ -20,6 +20,7 @@
 	--mp-radius: 12px;
 	--mp-radius-sm: 9px;
 	--mp-err: #c0392b;
+	--mp-ok: #2e7d32;
 
 	max-width: 42rem;
 	margin: 0 auto;
@@ -35,6 +36,33 @@
 /* ── Pola ──────────────────────────────────────────────────────── */
 .mp-intake-field {
 	margin: 0 0 1.15rem;
+}
+
+/*
+ * Panel klienta: WŁASNE odstępy grup pól i akcji.
+ *
+ * Dlaczego jawnie: te grupy to akapity <p>, a motywy roznie traktuja ich
+ * marginesy (sporo motywow robi `p { margin: 0 }`). Bez tych regul przycisk
+ * przyklejal sie do pola — wtyczka MA wygladac tak samo na kazdym motywie,
+ * nie liczyc na jego rytm.
+ */
+.mp-account__field {
+	margin: 0 0 1.1rem;
+}
+
+.mp-account__actions {
+	margin: 1.1rem 0 0;
+}
+
+.mp-account h3 {
+	margin: 0 0 0.35rem;
+	font-size: 1.06rem;
+	line-height: 1.25;
+}
+
+.mp-account__meta {
+	color: var(--mp-muted);
+	margin: 0 0 0.9rem;
 }
 
 .mp-intake-field > label,
@@ -235,15 +263,22 @@
 	outline-offset: 3px;
 }
 
-/* Przycisk drugorzędny (wycofanie zgody / wyloguj) — obrys, nie pełny. */
+/*
+ * Przycisk drugorzędny (wycofanie zgody) — obrys, nie pełny: to akcja
+ * NIEODWRACALNA, wiec nie moze wygladac jak glowne CTA. Kolor ostrzegawczy
+ * z wlasnej zmiennej (--mp-err), NIE zaszyty — na ciemnym motywie strona
+ * podmienia zmienna i przycisk dalej jest czytelny. Kontrast --mp-err
+ * (#c0392b) na tle sekcji (--mp-soft-bg #f7f8fa) = 5.12:1, czyli AA dla
+ * tekstu i 3:1 dla obrysu z zapasem.
+ */
 .mp-account__privacy-form button {
-	color: var(--mp-ink);
+	color: var(--mp-err);
 	background: transparent;
-	border: 1.5px solid var(--mp-line);
+	border: 1.5px solid var(--mp-err);
 }
 
 .mp-account__privacy-form button:hover {
-	border-color: var(--mp-accent);
+	background: color-mix(in srgb, var(--mp-err) 8%, transparent);
 	box-shadow: none;
 }
 
@@ -277,6 +312,30 @@
 
 .mp-account__messages {
 	margin: 0.6rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mp-account__message {
+	margin: 0 0 0.45rem;
+	padding: 0.55rem 0.75rem;
+	background: var(--mp-soft-bg);
+	border-radius: var(--mp-radius-sm);
+}
+
+.mp-account__message-author {
+	font-weight: 600;
+}
+
+.mp-account__message-when {
+	color: var(--mp-muted);
+	font-size: 0.85em;
+}
+
+/* Nota „sprawa zamknieta" — informacja, nie blad (stad zielen, nie czerwien). */
+.mp-account__note-closed {
+	color: var(--mp-ok);
+	margin: 0 0 0.7rem;
 }
 
 /* Login: węższa kolumna (sam e-mail). Wycofanie zgody: subtelny warm-akcent. */
