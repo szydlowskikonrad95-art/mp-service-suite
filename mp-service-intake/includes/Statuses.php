@@ -42,6 +42,52 @@ final class Statuses {
 	// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 
 	/**
+	 * Kolor tla plakietki statusu na liscie spraw (tekst zawsze bialy).
+	 *
+	 * DOBOR NIE JEST DOWOLNY: klient koncowy to instytucja publiczna, wiec
+	 * plakietka musi spelniac WCAG 2.1 AA dla MALEGO tekstu (kontrast >= 4.5:1
+	 * bialego na tym tle) — plakietka ma `font-size:.82em`, wiec nie lapie sie
+	 * na luzniejszy prog tekstu duzego. Pilnuje tego test jednostkowy
+	 * `StatusBadgeContrastTest`, zeby „ladniejszy" odcien nie wszedl przypadkiem.
+	 *
+	 * Kolor jest DODATKIEM do etykiety, nigdy jedynym nosnikiem znaczenia
+	 * (WCAG 1.4.1) — w plakietce zawsze stoi nazwa statusu.
+	 *
+	 * Drugi warunek: kolory musza byc od siebie ODDALONE PERCEPCYJNIE
+	 * (deltaE >= 25 w Lab), bo dwa statusy o przeciwnym znaczeniu wygladajace
+	 * podobnie myla przy szybkim skanowaniu listy — „w naprawie" (trwa robota)
+	 * obok „odrzucone" (koniec) to najgorszy mozliwy myl. Tez pilnowane testem.
+	 *
+	 * @var array<string, string>
+	 */
+	// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- jak wyzej: diakrytyki mylą liczenie kolumn sniffa.
+	public const BADGE_COLORS = array(
+		'nowe'            => '#2563eb',
+		'do uzupełnienia' => '#a16207',
+		'w analizie'      => '#7c3aed',
+		'zaakceptowane'   => '#15803d',
+		'w naprawie'      => '#7c2d12',
+		'odrzucone'       => '#dc2626',
+		'zamknięte'       => '#4b5563',
+	);
+	// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
+
+	/**
+	 * Neutralne tlo dla statusu spoza rdzenia (wlasny status z filtra D).
+	 */
+	public const BADGE_COLOR_FALLBACK = '#4b5563';
+
+	/**
+	 * Kolor plakietki dla statusu; status wlasny => neutralny szary.
+	 *
+	 * @param string $slug Slug statusu.
+	 * @return string Kolor HEX.
+	 */
+	public static function badge_color( string $slug ): string {
+		return self::BADGE_COLORS[ $slug ] ?? self::BADGE_COLOR_FALLBACK;
+	}
+
+	/**
 	 * Pelna mapa statusow: slug => array{label:string, terminal:bool}.
 	 * Rdzen 7 + wlasne z filtra; rdzenia nie da sie nadpisac ani usunac.
 	 *
