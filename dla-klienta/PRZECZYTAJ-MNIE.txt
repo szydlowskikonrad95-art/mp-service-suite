@@ -28,7 +28,7 @@ CO JEST W PACZCE
 
 WYMAGANIA
 ---------
-  WordPress 6.0 lub nowszy (sprawdzone na 6.9)
+  WordPress 6.0 lub nowszy (sprawdzone na 6.9 oraz na najnowszym 7.0)
   PHP 8.1 lub nowszy, z rozszerzeniem fileinfo
   MySQL 8 albo MariaDB 10.6+ (sprawdzone na obu)
   HTTPS oraz działający WP-Cron — szczegóły w instrukcji, sekcja 7

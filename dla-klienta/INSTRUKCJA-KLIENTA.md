@@ -18,7 +18,7 @@ pozostałe przechodzą w tryb ograniczony (nigdy nie wywalają strony).
 
 ## 2. Wymagania
 
-- WordPress **6.0** lub nowszy (sprawdzone na **6.9** — na tej wersji przechodzą wszystkie testy)
+- WordPress **6.0** lub nowszy — cała paczka przechodzi testy instalacji od zera na **6.9** (PHP 8.1) i na najnowszym **7.0** (PHP 8.2)
 - PHP **8.1** lub nowszy (z rozszerzeniem `fileinfo` — potrzebne do bezpiecznego przyjmowania załączników)
 - Baza **MySQL 8 / MariaDB 10.6+**
 - Dostęp administratora do panelu WordPress

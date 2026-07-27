@@ -29,7 +29,7 @@ cp ../../build/dist/mp-service-suite-KLIENT-*.zip paczka/
 KAT="$(basename "$(ls -d paczka/mp-service-suite-*/ | head -1)")"
 printf '%s' "$MP_TEST_HASLO" > paczka/.haslo   # katalog paczka/ jest gitignorowany
 
-echo "== 1. Czysty WordPress (PHP 8.1 / MySQL 8) =="
+echo "== 1. Czysty WordPress (${MP_WP_OBRAZ:-wordpress:6.9-php8.1-apache}) =="
 docker compose -p "$PROJEKT" down -v --remove-orphans >/dev/null 2>&1 || true
 docker compose -p "$PROJEKT" up -d >/dev/null
 W() { docker compose -p "$PROJEKT" exec -T cli wp --path=/var/www/html "$@"; }
