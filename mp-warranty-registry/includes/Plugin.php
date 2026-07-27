@@ -38,6 +38,13 @@ final class Plugin {
 	 * @return void
 	 */
 	public function boot(): void {
+		// Audyt #14: obiecany w kontrakcie mechanizm zgodnosci wersji — WPIETY.
+		// Niezgodnosc (plugin zbudowany na inna wersje kontraktu niz zaladowana
+		// stala) = admin notice + degraded mode przez has_filter, NIGDY fatal.
+		if ( ! Common\Contract::is_compatible( 1 ) ) {
+			Common\Contract::register_mismatch_notice( 'MP Warranty & Serial Registry' );
+		}
+
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_filter( 'mp_warranty_check', array( WarrantyCheck::class, 'handle' ), 10, 4 );
 		add_filter( 'mp_serial_usage_count', array( $this, 'serial_usage_count' ), 10, 2 );

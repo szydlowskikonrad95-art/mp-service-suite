@@ -38,6 +38,13 @@ final class Plugin {
 	 * @return void
 	 */
 	public function boot(): void {
+		// Audyt #14: obiecany w kontrakcie mechanizm zgodnosci wersji — WPIETY.
+		// Niezgodnosc (plugin zbudowany na inna wersje kontraktu niz zaladowana
+		// stala) = admin notice + degraded mode przez has_filter, NIGDY fatal.
+		if ( ! Common\Contract::is_compatible( 1 ) ) {
+			Common\Contract::register_mismatch_notice( 'MP Service Intake' );
+		}
+
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		Front\Frontend::register();

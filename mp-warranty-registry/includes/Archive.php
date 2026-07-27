@@ -98,6 +98,20 @@ final class Archive {
 	private static function set_archived( int $product_registry_id, bool $archived ): void {
 		global $wpdb;
 
+		// Audyt #18: bramka "aktywna sprawa blokuje archiwizacje" na NAJNIZSZYM
+		// mutatorze — kazda przyszla sciezka zapisu przechodzi przez ten sam
+		// punkt (dotad pilnowal tylko Archive::archive, wiec nowy caller moglby
+		// bramke ominac). FAIL-CLOSED: brak odpowiedzi modulu spraw = odmowa.
+		if ( $archived ) {
+			$count = has_filter( 'mp_product_active_cases_count' )
+				? apply_filters( 'mp_product_active_cases_count', null, $product_registry_id )
+				: null;
+
+			if ( ! is_numeric( $count ) || (int) $count > 0 ) {
+				return; // Odmowa — stan produktu nietkniety (archive() melduje blad wyzej).
+			}
+		}
+
 		$table    = Tables::full( Tables::REGISTRY );
 		$actor_id = get_current_user_id();
 		$now      = gmdate( 'Y-m-d H:i:s' );

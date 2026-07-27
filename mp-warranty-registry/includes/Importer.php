@@ -220,6 +220,56 @@ final class Importer {
 			);
 		}
 
+		// Audyt #7: zamek per job — dwie rownolegle partie czytaly ten sam
+		// offset i podwajaly liczniki (dane chronil unikalny indeks, ale
+		// postep klamal i import konczyl sie przedwczesnie z pominietymi
+		// wierszami). Przegrany wyscig dostaje 'processing' i ponowi probe.
+		$lock_name = 'mp_import_job_' . $job_id;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamek procesu.
+		$got = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock_name ) );
+		// phpcs:enable
+
+		if ( 1 !== $got ) {
+			return array(
+				'status'    => 'processing',
+				'processed' => (int) $job['processed_rows'],
+				'total'     => (int) $job['total_rows'],
+				'errors'    => (int) $job['error_rows'],
+			);
+		}
+
+		try {
+			// Swiezy odczyt POD zamkiem: rownolegle wywolanie moglo przesunac
+			// offset, zanim zamek trafil do nas.
+			$job = ImportJobs::get( $job_id );
+
+			if ( null === $job || 'processing' !== (string) $job['status'] || (string) $job['job_token'] !== $token ) {
+				return array(
+					'status'  => 'error',
+					'message' => 'Job zakonczony lub przejety w trakcie oczekiwania.',
+				);
+			}
+
+			return self::process_batch_locked( $job_id, $job );
+		} finally {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zwolnienie zamka.
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_name ) );
+			// phpcs:enable
+		}
+	}
+
+	/**
+	 * Wlasciwa robota partii — wolane WYLACZNIE pod zamkiem per job (audyt #7).
+	 *
+	 * @param int                  $job_id ID joba.
+	 * @param array<string, mixed> $job    Swiezy wiersz joba (odczytany pod zamkiem).
+	 * @return array<string, mixed>
+	 */
+	private static function process_batch_locked( int $job_id, array $job ): array {
+		global $wpdb;
+
+		$token = (string) $job['job_token'];
+
 		$offset = (int) $job['processed_rows'];
 		$total  = (int) $job['total_rows'];
 		$rows   = self::read_rows( (string) $job['file_path'], $offset, self::BATCH_SIZE );

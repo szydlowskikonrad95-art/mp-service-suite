@@ -166,6 +166,30 @@ final class PanelScreen {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z redirectu (bez zmiany stanu); handler zapisu mial nonce.
 		$config_error = isset( $_GET['mp_config_error'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_config_error'] ) ) : '';
 		if ( '' !== $config_error ) {
+			// Audyt #9: konflikt rownoczesnej edycji ma WLASNY komunikat (to nie
+			// blad skladni, tylko drugi admin zapisal pierwszy).
+			if ( str_starts_with( $config_error, 'konflikt' ) ) {
+				$what_k = 'konflikt-response' === $config_error
+					? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
+					: __( 'checklist', 'mp-workflow-automator' );
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s = nazwa konfiguracji (checklist / szablonow odpowiedzi) */
+								__( 'Ktoś zapisał konfigurację %s w międzyczasie — Twoje zmiany NIE zostały zapisane, żeby nie nadpisać cudzych. Odśwież stronę i nanieś swoje zmiany ponownie.', 'mp-workflow-automator' ),
+								$what_k
+							)
+						);
+						?>
+					</p>
+				</div>
+				<?php
+				return;
+			}
+
 			$what = 'response' === $config_error
 				? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
 				: __( 'checklisty', 'mp-workflow-automator' );
@@ -677,7 +701,8 @@ final class PanelScreen {
 			'mp-checklist-payload',
 			__( 'Zapisz checklisty', 'mp-workflow-automator' ),
 			false,
-			ChecklistTemplates::KINDS_ALLOWED
+			ChecklistTemplates::KINDS_ALLOWED,
+			ChecklistTemplates::config_rev()
 		);
 
 		self::render_config_form(
@@ -688,7 +713,8 @@ final class PanelScreen {
 			'mp-templates-payload',
 			__( 'Zapisz szablony', 'mp-workflow-automator' ),
 			true,
-			ResponseTemplates::KINDS_ALLOWED
+			ResponseTemplates::KINDS_ALLOWED,
+			ResponseTemplates::config_rev()
 		);
 
 		self::render_markers_whitelist();
@@ -706,9 +732,10 @@ final class PanelScreen {
 	 * @param string             $submit   Etykieta przycisku zapisu.
 	 * @param bool               $has_body Czy wiersz ma pole `body` (szablony=true, checklisty=false).
 	 * @param array<int, string> $kinds    Dozwolone rodzaje spraw (sekcje formularza).
+	 * @param string             $rev      Odcisk wersji konfiguracji (blokada optymistyczna — audyt #9).
 	 * @return void
 	 */
-	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit, bool $has_body, array $kinds ): void {
+	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit, bool $has_body, array $kinds, string $rev = '' ): void {
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) ) {
 			$data = array();
@@ -717,6 +744,8 @@ final class PanelScreen {
 		<h3 class="mp-automator-h3"><?php echo esc_html( $heading ); ?></h3>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-config mp-config-builder" data-has-body="<?php echo $has_body ? '1' : '0'; ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
+			<?php // Audyt #9: odcisk wersji konfiguracji — handler odrzuci zapis, gdy ktos zapisal w miedzyczasie. ?>
+			<input type="hidden" name="mp_config_rev" value="<?php echo esc_attr( $rev ); ?>" />
 			<?php wp_nonce_field( $action ); ?>
 			<p class="description"><?php echo esc_html( $label ); ?></p>
 

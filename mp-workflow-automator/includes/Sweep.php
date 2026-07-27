@@ -38,6 +38,14 @@ final class Sweep {
 	private const BATCH = 50;
 
 	/**
+	 * Maks. liczba paczek na jeden przebieg (audyt #13): po dluzszym przestoju
+	 * 5000 zaleglych spraw nadrabialo sie ~8 godzin (1 paczka / 5 min); teraz
+	 * do 10 paczek na przebieg = zaleglosci schodza ~10x szybciej, a swiezy
+	 * przebieg bez zaleglosci konczy po pierwszej niepelnej paczce.
+	 */
+	private const MAX_ROUNDS = 10;
+
+	/**
 	 * Rejestruje interwal + hak crona (wolane z Plugin::boot).
 	 *
 	 * @return void
@@ -134,51 +142,71 @@ final class Sweep {
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 
-			// PRZYPOMNIENIA (mail): prog warning minal, niewyslane, ale termin JESZCZE
-			// aktywny (deadline w PRZYSZLOSCI). Sprawy juz po terminie NIE dostaja
-			// przypomnienia — i tak eskaluja (flaga #8); ich marker zajmuje krok nizej.
-			$reminders = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT case_id FROM {$table}
-					WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL
-						AND warning_at <= %s AND reminder_sent_at IS NULL AND deadline_at > %s
-					ORDER BY warning_at ASC LIMIT %d",
-					$now,
-					$now,
-					self::BATCH
-				)
-			);
+			// Audyt #13: zaleglosci nadrabiane PETLA paczek (max MAX_ROUNDS na
+			// przebieg) zamiast jednej paczki na 5 minut.
+			$rounds  = 0;
+			$sum_rem = 0;
+			$sum_sup = 0;
+			$sum_esc = 0;
 
-			foreach ( $reminders as $case_id ) {
-				Sla::notify( (int) $case_id, Sla::KIND_REMINDER );
-			}
+			do {
+				++$rounds;
 
-			// TLUMIENIE flagi #8: sprawy po terminie z niewyslanym przypomnieniem —
-			// zajmij marker reminder_sent_at BEZ maila i BEZ eventu osi C (dostana
-			// eskalacje nizej, nie podwojne powiadomienie). Zamierzony rozjazd marker
-			// (stan wewnetrzny) vs event (audyt) — patrz Sla::claim_suppressed_reminders.
-			$suppressed = Sla::claim_suppressed_reminders();
+				// PRZYPOMNIENIA (mail): prog warning minal, niewyslane, ale termin JESZCZE
+				// aktywny (deadline w PRZYSZLOSCI). Sprawy juz po terminie NIE dostaja
+				// przypomnienia — i tak eskaluja (flaga #8); ich marker zajmuje krok nizej.
+				$reminders = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT case_id FROM {$table}
+						WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL
+							AND warning_at <= %s AND reminder_sent_at IS NULL AND deadline_at > %s
+						ORDER BY warning_at ASC LIMIT %d",
+						$now,
+						$now,
+						self::BATCH
+					)
+				);
 
-			// ESKALACJE: termin minal, nieeskalowane. Masa (>DIGEST_THRESHOLD) => JEDEN
-			// digest zamiast lawiny osobnych maili (SLA-3). Idempotencja przez escalated_at.
-			$escalations = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT case_id FROM {$table}
-					WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
-					ORDER BY deadline_at ASC LIMIT %d",
-					$now,
-					self::BATCH
-				)
-			);
+				foreach ( $reminders as $case_id ) {
+					Sla::notify( (int) $case_id, Sla::KIND_REMINDER );
+				}
 
-			Sla::escalate( $escalations );
+				// TLUMIENIE flagi #8: sprawy po terminie z niewyslanym przypomnieniem —
+				// zajmij marker reminder_sent_at BEZ maila i BEZ eventu osi C (dostana
+				// eskalacje nizej, nie podwojne powiadomienie). Zamierzony rozjazd marker
+				// (stan wewnetrzny) vs event (audyt) — patrz Sla::claim_suppressed_reminders.
+				$suppressed = Sla::claim_suppressed_reminders();
+
+				// ESKALACJE: termin minal, nieeskalowane. Masa (>DIGEST_THRESHOLD) => JEDEN
+				// digest zamiast lawiny osobnych maili (SLA-3). Idempotencja przez escalated_at.
+				$escalations = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT case_id FROM {$table}
+						WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
+						ORDER BY deadline_at ASC LIMIT %d",
+						$now,
+						self::BATCH
+					)
+				);
+
+				Sla::escalate( $escalations );
+
+				$last_rem = count( $reminders );
+				$last_esc = count( $escalations );
+
+				$sum_rem += $last_rem;
+				$sum_sup += (int) $suppressed;
+				$sum_esc += $last_esc;
+			} while ( $rounds < self::MAX_ROUNDS
+				&& ( self::BATCH === $last_rem || self::BATCH === $last_esc ) );
 
 			WorkflowEvents::log(
 				WorkflowEvents::SWEEP_RUN,
 				array(
-					'reminders'            => count( $reminders ),
-					'reminders_suppressed' => (int) $suppressed,
-					'escalations'          => count( $escalations ),
+					'reminders'            => $sum_rem,
+					'reminders_suppressed' => $sum_sup,
+					'escalations'          => $sum_esc,
+					'rounds'               => $rounds,
 				)
 			);
 		} finally {

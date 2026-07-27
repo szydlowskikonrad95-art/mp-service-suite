@@ -214,6 +214,18 @@ final class ChecklistTemplates {
 
 		check_admin_referer( self::ACTION_CONFIG );
 
+		// Audyt #9: blokada optymistyczna — drugi admin zapisujacy po nas nie
+		// nadpisze cudzych zmian po cichu (ten sam wzorzec, co przy zmianie
+		// statusu sprawy). Formularz niesie odcisk wersji z chwili otwarcia.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$rev = isset( $_POST['mp_config_rev'] ) ? sanitize_text_field( wp_unslash( $_POST['mp_config_rev'] ) ) : '';
+
+		if ( self::config_rev() !== $rev ) {
+			$ref = wp_get_referer();
+			wp_safe_redirect( add_query_arg( 'mp_config_error', 'konflikt-checklist', false !== $ref ? $ref : admin_url() ) );
+			exit;
+		}
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
 		$raw     = isset( $_POST['payload'] ) ? sanitize_textarea_field( wp_unslash( $_POST['payload'] ) ) : '';
 		$decoded = json_decode( $raw, true );
@@ -288,5 +300,14 @@ final class ChecklistTemplates {
 		$base = false !== $back ? $back : admin_url();
 		wp_safe_redirect( add_query_arg( 'mp_config_error', 'checklist', $base ) );
 		exit;
+	}
+
+	/**
+	 * Odcisk biezacej konfiguracji (blokada optymistyczna formularza — audyt #9).
+	 *
+	 * @return string
+	 */
+	public static function config_rev(): string {
+		return md5( (string) wp_json_encode( get_option( self::OPTION, array() ) ) );
 	}
 }
