@@ -76,13 +76,30 @@ final class Lifecycle {
 	 * @return void
 	 */
 	public static function maybe_upgrade(): void {
+		// Cron POZA bramka wersji schematu (audyt cyklu zycia 27.07 — ta sama klasa
+		// bledu co #103 w Automatorze, tam juz naprawiona, tu jeszcze nie byla).
+		// Gdy schemat sie NIE zmienia, cala funkcja wychodzila w pierwszej linii —
+		// wiec raz zniknietego zadania (migracja hostingu, wtyczka czyszczaca crony,
+		// przywrocenie starszej kopii tabeli opcji) NIC by nie odtworzylo. A to
+		// zadanie kasuje zalaczniki i porzucone zgloszenia RAZEM z danymi
+		// kontaktowymi: jego cicha smierc = dane osobowe zostaja NA ZAWSZE (RODO).
+		// wp_next_scheduled sprawia, ze wywolanie jest idempotentne i nic nie kosztuje.
+		self::schedule_retention_cron();
+
 		if ( (int) get_option( Schema::VERSION_OPTION, 0 ) >= Schema::LATEST ) {
 			return;
 		}
 
 		Roles::ensure();
 		Schema::migrate();
+	}
 
+	/**
+	 * Planuje dzienny cron retencji, jesli go nie ma (idempotentne).
+	 *
+	 * @return void
+	 */
+	public static function schedule_retention_cron(): void {
 		if ( ! wp_next_scheduled( self::RETENTION_CRON ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::RETENTION_CRON );
 		}

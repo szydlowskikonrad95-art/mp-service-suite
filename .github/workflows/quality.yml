@@ -289,10 +289,12 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
       - name: Testy C30 (RODO — retencja porzuconych zgłoszeń niepotwierdzonych)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
-      - name: Testy uninstall-crony (zero zadan-widm po odinstalowaniu — NA KOŃCU, odinstalowuje wtyczki)
-        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/uninstall-crony.sh
+      - name: Testy odtwarzania cronów (zadanie skasowane z zewnątrz wraca bez reaktywacji)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/cron-odtwarza-sie.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
+      - name: Testy uninstall-crony (zero zadań-widm — NA SAMYM KOŃCU, odinstalowuje wtyczki)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/uninstall-crony.sh
 
   # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:

@@ -37,7 +37,37 @@ final class SiteHealthTests {
 				'poczta_lokal' => array( self::class, 'test_srodowisko_lokalne' ),
 				'sieroty'      => array( self::class, 'test_sieroty_weryfikacji' ),
 				'poczta_awari' => array( self::class, 'test_poczta_wysylka' ),
+				'cron_retencj' => array( self::class, 'test_cron_retencji' ),
 			)
+		);
+	}
+
+	/**
+	 * Czy dzienne sprzatanie danych jest zaplanowane (audyt cyklu zycia 27.07).
+	 *
+	 * To zadanie kasuje zalaczniki po okresie retencji ORAZ porzucone zgloszenia
+	 * razem z danymi kontaktowymi. Jego cicha smierc oznacza, ze dane osobowe
+	 * zostaja w bazie na zawsze — a system wyglada na sprawny. Automator mial
+	 * taki test od poczatku, Intake nie.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_cron_retencji(): array {
+		if ( wp_next_scheduled( \MP\Intake\Lifecycle::RETENTION_CRON ) ) {
+			return SiteHealth::wynik(
+				'mp_intake_cron_retencji',
+				'good',
+				__( 'Sprzątanie starych danych jest zaplanowane', 'mp-service-intake' ),
+				__( 'Codzienne zadanie usuwa załączniki po okresie retencji i porzucone zgłoszenia razem z danymi kontaktowymi.', 'mp-service-intake' )
+			);
+		}
+
+		return SiteHealth::wynik(
+			'mp_intake_cron_retencji',
+			'critical',
+			__( 'Sprzątanie starych danych NIE JEST zaplanowane', 'mp-service-intake' ),
+			__( 'Codzienne zadanie, które usuwa stare załączniki i porzucone zgłoszenia wraz z danymi kontaktowymi, zniknęło z listy zadań WordPressa. Dopóki tak jest, dane osobowe zostają w bazie bezterminowo, a system wygląda na sprawny.', 'mp-service-intake' ),
+			__( 'Wejdź w Wtyczki, wyłącz i włącz ponownie „MP Service Intake" — zadanie zostanie odtworzone. Jeśli problem wraca, sprawdź, czy któraś wtyczka optymalizująca nie kasuje zadań cyklicznych.', 'mp-service-intake' )
 		);
 	}
 
