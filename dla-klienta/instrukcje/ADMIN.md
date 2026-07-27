@@ -38,7 +38,7 @@ jej nie widzi) i zostaje w historii produktu:
   (**Narzędzia → Eksport / Usuwanie danych osobowych**) obejmują dane systemu serwisowego.
 - Usuwanie = **anonimizacja**: dane osobowe znikają (także konto klienta i e-mail w zgodach),
   oś zdarzeń i statystyki zostają. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
-- **Wspólny adres wielu osób** (sekretariat): eraser po adresie obejmie wszystkie kartoteki
+- **Wspólny adres wielu osób** (sekretariat): narzędzie WordPressa „Usuń dane osobowe" działa po adresie e-mail i obejmie wszystkie kartoteki
   z tego adresu — przed uruchomieniem potwierdź tożsamość i zakres wniosku.
 - Retencja załączników i sprzątanie danych tymczasowych chodzą automatycznie (cron).
 

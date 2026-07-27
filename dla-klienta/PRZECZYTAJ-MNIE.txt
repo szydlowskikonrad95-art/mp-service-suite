@@ -7,7 +7,8 @@ OD CZEGO ZACZĄĆ
    konfiguracja i noty dla serwera. To jedyny dokument potrzebny do wdrożenia.
 2. Zainstaluj trzy wtyczki (pliki .zip) w panelu WordPressa:
    Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer.
-   Kolejność nie ma znaczenia — moduły dogadują się same.
+   Moduły dogadują się same, więc żadna kolejność niczego nie zepsuje.
+   Zalecana: Rejestr gwarancji → Zgłoszenia → Automatyzacje (tak, jak w instrukcji).
 
 CO JEST W PACZCE
 ----------------

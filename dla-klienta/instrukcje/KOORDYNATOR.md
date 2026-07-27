@@ -18,7 +18,8 @@ pisać do klienta. Ponowne przydzielenie tej samej osobie nic nie wysyła (bez s
 ## 2. Zgłoszenia niepotwierdzone
 
 **MP: Niepotwierdzone** — zgłoszenia, których klient jeszcze nie potwierdził mailem. Nie obsługuje
-się ich (mogą być pomyłką lub spamem); po 72 godzinach sprzątają się same.
+się ich (mogą być pomyłką lub spamem). Link potwierdzający jest ważny **72 godziny**, więc po tym
+czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika razem z danymi**.
 
 ![Niepotwierdzone zgłoszenia](zdjecia/admin-03-niepotwierdzone.png)
 

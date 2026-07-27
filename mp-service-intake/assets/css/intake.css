@@ -346,3 +346,26 @@
 .mp-account__privacy {
 	border-left: 3px solid #d98324;
 }
+
+/* Komunikat wylacznie dla czytnika ekranu (zmiana pol formularza).
+   Wlasna klasa, bo nie kazdy motyw klienta ma .screen-reader-text. */
+.mp-intake-sr-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Fokus przeniesiony na komunikat po wyslaniu nie moze rysowac obwodki
+   dookola calego akapitu bez powodu — ale MUSI byc widoczny przy klawiaturze. */
+.mp-intake-notice:focus-visible,
+.mp-intake-error-summary:focus-visible {
+	outline: 2px solid var(--mp-accent);
+	outline-offset: 3px;
+}

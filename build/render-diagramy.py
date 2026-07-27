@@ -17,12 +17,14 @@ KORZEN = pathlib.Path(__file__).resolve().parent.parent
 ZRODLA = KORZEN / "dla-klienta" / "diagramy-zrodla"
 CEL = KORZEN / "dla-klienta" / "diagramy"
 
-# zrodlo -> nazwa pliku PNG (nazwy PNG sa PRZYWOLYWANE w instrukcjach, nie zmieniaj ich lekka reka)
+# zrodlo -> nazwa pliku PNG. Nazwa pliku ma opisywac TRESC: stare nazwy zostaly po
+# poprzedniej wersji diagramow i klamaly (plik "maszyna-stanow" zawieral tabele,
+# "przeplyw-8-krokow" mial 7 krokow, "architektura-hooki" — dokument bez slowa o hookach).
 MAPA = {
-    "01-z-czego-sklada-sie-system.html": "01-architektura-hooki.png",
-    "02-przeplyw-zgloszenia.html": "02-przeplyw-8-krokow.png",
-    "03-statusy-sprawy.html": "03-maszyna-stanow.png",
-    "04-gdzie-mieszkaja-dane.html": "04-schemat-tabel.png",
+    "01-z-czego-sklada-sie-system.html": "01-z-czego-sklada-sie-system.png",
+    "02-przeplyw-zgloszenia.html": "02-droga-zgloszenia.png",
+    "03-statusy-sprawy.html": "03-statusy-sprawy.png",
+    "04-gdzie-mieszkaja-dane.html": "04-gdzie-mieszkaja-dane.png",
 }
 
 CEL.mkdir(parents=True, exist_ok=True)

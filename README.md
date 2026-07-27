@@ -10,8 +10,8 @@ ale niezależne wtyczki WordPress**:
 | **MP Workflow Automator** | kierownik | reguły przydziału (kategoria/kraj/język/priorytet), 7 konfigurowalnych statusów, maile po ważnych zmianach, SLA z przypomnieniem i eskalacją, checklisty, raporty CSV |
 
 Dane żyją w **16 dedykowanych tabelach** (nie we wpisach WP) z twardymi zasadami integralności:
-unikalny numer sprawy nadawany przez bazę, nieusuwalna oś zdarzeń każdej sprawy, blokada usunięcia
-produktu z aktywną sprawą, migracje wersjonowane z możliwością odtworzenia. Szczegóły i uzasadnienie
+unikalny numer sprawy nadawany przez bazę, nieusuwalna oś zdarzeń każdej sprawy, blokada archiwizacji
+produktu z aktywną sprawą (produktów nie usuwa się na twardo — trafiają do archiwum), migracje wersjonowane z możliwością odtworzenia. Szczegóły i uzasadnienie
 każdej tabeli: [`dokumentacja-techniczna/DATABASE.md`](dokumentacja-techniczna/DATABASE.md).
 
 ## Wymagania
@@ -24,7 +24,7 @@ WordPress 6.x · PHP 8.1–8.5 (CI testuje każdą wersję) · MySQL 8 / MariaDB
    wtyczka działa też sama i ogranicza funkcje, gdy braci nie ma — zamiast błędu pokazuje komunikat.
 2. Aktywacja Intake sama tworzy strony **formularza zgłoszenia** i **panelu klienta** oraz role:
    *administrator systemu MP*, *koordynator serwisu*, *pracownik serwisu*, *klient*.
-3. Zajrzyj do **Narzędzia → Stan witryny** — dziesięć testów diagnostycznych mówi, czego
+3. Zajrzyj do **Narzędzia → Stan witryny** — trzynaście testów diagnostycznych mówi, czego
    brakuje na hostingu (fileinfo, biblioteka obrazów, HTTPS, nadawca poczty, cron…) i **jak to
    naprawić** — łącznie z tym, czy automatyzacja realnie się wykonuje, a nie tylko jest zaplanowana.
 4. W Rejestrze zaimportuj produkty z CSV (na ekranie importu jest przykładowy plik do pobrania).
