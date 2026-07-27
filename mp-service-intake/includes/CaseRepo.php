@@ -1659,6 +1659,24 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Numer SRV sprawy (do ekranow personelu — wewnetrzne ID nic nie mowi).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string Numer SRV albo pusty string, gdy sprawy juz nie ma.
+	 */
+	public static function case_number( int $case_id ): string {
+		global $wpdb;
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$numer = $wpdb->get_var( $wpdb->prepare( "SELECT case_number FROM {$cases} WHERE id = %d", $case_id ) );
+		// phpcs:enable
+
+		return null === $numer ? '' : (string) $numer;
+	}
+
+	/**
 	 * Kasuje PORZUCONE zgloszenia niepotwierdzone (RODO — audyt kosztu 27.07).
 	 *
 	 * Kto wypelnil formularz i nie kliknal linku, zostawial w bazie sprawe RAZEM

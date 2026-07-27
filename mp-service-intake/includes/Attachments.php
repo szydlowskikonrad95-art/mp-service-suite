@@ -235,7 +235,17 @@ final class Attachments {
 		);
 		// phpcs:enable
 
-		return 1 === (int) $inserted;
+		if ( 1 !== (int) $inserted ) {
+			// Audyt awarii 27.07: plik lezal juz na dysku, a wiersz nie powstal
+			// (zerwane polaczenie do bazy, pelny dysk, za duzy pakiet). Bez tego
+			// kasowania zostawal plik-widmo: retencja go nie ruszy (chodzi po
+			// wierszach), wiec zdjecie klienta lezaloby w uploads bezterminowo.
+			wp_delete_file( $dest );
+
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
