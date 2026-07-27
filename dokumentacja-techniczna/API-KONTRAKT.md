@@ -194,9 +194,21 @@ array( 'ekspertyza_zew' => array( 'label' => 'Ekspertyza zewnętrzna', 'terminal
 ```
 **Limit sluga: ≤ 20 znaków** — `wp_mp_service_cases.status` = `VARCHAR(20)`. Slug to KLUCZ MASZYNOWY (po `sanitize_key`); długą nazwę ludzką niesie `label` (bez limitu). Slug > 20 znaków jest **odrzucany przy rejestracji** (`StatusDefs::SLUG_MAX=20` → `continue`/`return ''`, NIE ucina — zero kolizji). C jest chroniony **przechodnio**: `mp_case_change_status` puszcza tylko `Statuses::exists()`, a slug > 20 nigdy się nie zarejestruje → dostałby `INVALID_STATUS`; dlatego osobny check długości w C jest zbędny. *(Poprzednia wersja przykładu — `ekspertyza_zewnetrzna`, 21 zn — łamała ten limit i była cicho ucinana; złapane samo-kontrolą buildera + strażnik, 22.07.)*
 
-### `mp_case_card_sections( $sections, $case_id )` — renderuje C, dokłada D
+### Karta sprawy — sekcje D przez DEDYKOWANE filtry (renderuje C, odpowiada D)
+> *(Audyt #15: wcześniej opisany tu `mp_case_card_sections` NIE istniał w kodzie — hook-widmo;
+> ktoś budujący 4. wtyczkę podpiąłby się i nic by się nie stało. Poniżej realny mechanizm.)*
+
+**`mp_case_deadline( $result, $case_id )`** — karta i lista C pytają o terminy SLA sprawy.
+Zwrotka `{deadline_at, warning_at, status}` (wiersz `wp_mp_case_sla`) albo `null` gdy brak SLA/D.
 ```php
-$sections[] = array( 'title' => 'Checklista', 'content' => $html, 'order' => 30 );
+$sla = apply_filters( 'mp_case_deadline', null, 123 );
+```
+
+**`mp_case_checklist_state( $result, $case_id )`** — karta C pyta o checklistę sprawy.
+Zwrotka: PEŁNA lista kroków rodzaju z nałożonym stanem odhaczeń —
+`[{step_key, label, completed, completed_by, completed_at}]`; pusta gdy sprawa/rodzaj nieznany.
+```php
+$steps = apply_filters( 'mp_case_checklist_state', null, 123 );
 ```
 
 ### `mp_intake_captcha_html( $html )` — pusty slot C (captcha nie od startu).

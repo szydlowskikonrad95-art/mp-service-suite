@@ -170,6 +170,19 @@ final class SubmissionHandler {
 			);
 		}
 
+		// Audyt #2: zgoda RODO zapisywana PRZED zalacznikami — zgoda to wymog
+		// prawny przetwarzania, zalacznik to dodatek. Pad w srodku (np. pelny
+		// dysk przy zapisie plikow) nie moze zostawic sprawy z danymi bez
+		// utrwalonej zgody.
+		// Zgoda RODO: pelny tekst zamrozony, spieta ze sprawa (podpiecie do klienta przy weryfikacji).
+		Consents::record(
+			$email,
+			(int) $result['case_id'],
+			Consents::KEY_PROCESSING,
+			Consents::VERSION,
+			Consents::processing_text()
+		);
+
 		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
 		// sprzatane cronem sierot razem ze sprawa).
 		$att_errors = array();
@@ -181,15 +194,6 @@ final class SubmissionHandler {
 			$att        = Attachments::store_for_case( (int) $result['case_id'], $kind, $files );
 			$att_errors = $att['errors'];
 		}
-
-		// Zgoda RODO: pelny tekst zamrozony, spieta ze sprawa (podpiecie do klienta przy weryfikacji).
-		Consents::record(
-			$email,
-			(int) $result['case_id'],
-			Consents::KEY_PROCESSING,
-			Consents::VERSION,
-			Consents::processing_text()
-		);
 
 		// D5: liczniki e-mail/serial + marker dedup DOPIERO teraz (udane zgloszenie) —
 		// literowka/blad walidacji nie zjada limitu dobowego; retry nie jest duplikatem.

@@ -455,6 +455,20 @@ final class CaseRepo {
 
 		$from = null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null;
 
+		// Audyt #6: ponowny przydzial TEJ SAMEJ osobie (podwojne klikniecie)
+		// = no-op — bez drugiego wpisu na osi i drugiego maila do pracownika.
+		// Ta sama ochrona, ktora set_priority mial od zawsze (asymetria zlapana
+		// przez audyt idempotencji).
+		if ( $from === $user_id ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+			return array(
+				'success' => true,
+				'from'    => $from,
+				'to'      => $user_id,
+			);
+		}
+
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 		$wpdb->query(
 			$wpdb->prepare(
@@ -747,6 +761,24 @@ final class CaseRepo {
 				'success'    => false,
 				'error_code' => 'STATUS_CONFLICT',
 				'current'    => $from,
+			);
+		}
+
+		// Audyt #3: wznowienie zamknietej sprawy = decyzja CZLOWIEKA z uprawnieniem
+		// koordynatora (STATE_MACHINE.md tak mowi — teraz kod to egzekwuje).
+		// Regula automatu (actor systemowy = 0) skonfigurowana przez admina nie
+		// moze cicho otwierac spraw zamknietych.
+		if ( Statuses::is_terminal( $from )
+			&& ( $actor_id <= 0
+				|| ! ( user_can( $actor_id, 'mp_coordinator' ) || user_can( $actor_id, 'mp_system_admin' ) || user_can( $actor_id, 'manage_options' ) ) )
+		) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- rollback.
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'success'    => false,
+				'error_code' => 'REOPEN_REQUIRES_COORDINATOR',
 			);
 		}
 

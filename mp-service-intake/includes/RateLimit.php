@@ -208,12 +208,26 @@ final class RateLimit {
 	 * @return bool True = rezerwacja nasza (mozna tworzyc sprawe).
 	 */
 	public static function claim_submission( string $email, string $serial, string $kind ): bool {
+		return self::claim_window( self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind ), self::DEDUP_WINDOW );
+	}
+
+	/**
+	 * Generyczna atomowa rezerwacja klucza w oknie (audyt #4/#5).
+	 *
+	 * Pierwsze zadanie w oknie dostaje true; kazde kolejne false, dopoki okno
+	 * zyje. Okno NIE jest przedluzane cudza proba (liczy sie od pierwszej
+	 * rezerwacji). Wzorzec LAST_INSERT_ID jak hit()/SrvCounter.
+	 *
+	 * @param string $key    Klucz (bez PII — hash).
+	 * @param int    $window Okno w sekundach.
+	 * @return bool True = rezerwacja nasza.
+	 */
+	public static function claim_window( string $key, int $window ): bool {
 		global $wpdb;
 
-		$key     = self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind );
 		$table   = Tables::full( Tables::RATE_COUNTERS );
 		$now     = gmdate( 'Y-m-d H:i:s' );
-		$expires = gmdate( 'Y-m-d H:i:s', time() + self::DEDUP_WINDOW );
+		$expires = gmdate( 'Y-m-d H:i:s', time() + $window );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowa rezerwacja pod unikalnym kluczem.
 		$wpdb->query(

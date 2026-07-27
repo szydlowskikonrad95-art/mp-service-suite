@@ -119,4 +119,27 @@ final class WorkflowEvents {
 		);
 		// phpcs:enable
 	}
+
+	/**
+	 * Czas (GMT, format bazy) OSTATNIEGO zdarzenia danego typu.
+	 *
+	 * Diagnostyka wykonania (audyt #11): „zaplanowane" != „wykonuje się" —
+	 * SWEEP_RUN mówi, kiedy sweep NAPRAWDĘ chodził.
+	 *
+	 * @param string $event_type Typ zdarzenia (stała z tej klasy).
+	 * @return string|null Czas `Y-m-d H:i:s` (GMT) albo null, gdy brak zdarzeń.
+	 */
+	public static function last_time( string $event_type ): ?string {
+		global $wpdb;
+
+		$table = Tables::full( Tables::WORKFLOW_EVENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ts = $wpdb->get_var(
+			$wpdb->prepare( "SELECT created_at FROM {$table} WHERE event_type = %s ORDER BY id DESC LIMIT 1", $event_type )
+		);
+		// phpcs:enable
+
+		return null === $ts ? null : (string) $ts;
+	}
 }
