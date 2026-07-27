@@ -14,6 +14,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   duplikatu serialu. Test-strażnik `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
+### Changed
+- **Numer sprawy ma format ze specyfikacji: `SRV/RRRR/NNNN` (cztery cyfry).** Dotąd kod nadawał
+  pięć cyfr (`SRV/2026/00001`), mimo że kartka zamawiającego mówi `SRV/RRRR/NNNN`. Rozjazd
+  utrwalił się, bo wcześniej „poprawiono literówkę" **w dokumentacji, dopasowując ją do kodu**
+  zamiast odwrotnie — a komentarz w kodzie twierdził, że pięć cyfr to „spec klienta". Wyszło
+  w audycie odbiorczym czytającym surową specyfikację. Po zmianie: pierwsza sprawa roku to
+  `SRV/2026/0001`; po przekroczeniu 9999 spraw numer rośnie naturalnie do pięciu cyfr, więc
+  licznik się nie zapętli ani nie zdubluje.
+
 ### Fixed
 - **Poczta: awaria wysyłki przestała być niewidoczna (audyt 27.07).** Cztery miejsca w Intake
   (magic-link, ponowna wysyłka, potwierdzenie z numerem SRV, link logowania) ignorowały wynik
