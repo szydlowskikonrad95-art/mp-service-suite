@@ -173,5 +173,5 @@ if ( $mp_intake_delete_data ) {
 MP\Intake\Common\Uninstall::run(
 	'mp_module_intake',
 	array( 'mp_intake_schema_version', 'mp_intake_delete_data' ),
-	array()
+	MP\Intake\Lifecycle::CRON_HOOKS
 );

@@ -289,6 +289,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
       - name: Testy C30 (RODO — retencja porzuconych zgłoszeń niepotwierdzonych)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
+      - name: Testy uninstall-crony (zero zadan-widm po odinstalowaniu — NA KOŃCU, odinstalowuje wtyczki)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/uninstall-crony.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 

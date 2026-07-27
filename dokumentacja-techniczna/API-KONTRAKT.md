@@ -180,6 +180,14 @@ powiązane ze sprawami klienta. B nieaktywne/błąd → eraser raportuje `items_
 array( 'success' => true, 'redacted_count' => 2 );
 ```
 
+### `mp_cases_verified_ids( $result, $days = 30, $limit = 200 )` — pyta D, odpowiada C
+
+Zwraca **SAME IDENTYFIKATORY** spraw zweryfikowanych w oknie `$days` (bez danych osobowych —
+RODO/T5). D porównuje tę listę z własną tabelą terminów i doszywa różnicę: sprawy potwierdzone
+w chwili, gdy Automator był WYŁĄCZONY, mają u siebie komplet śladów (C zapisał zdarzenie i
+wyemitował akcję), więc reconcile po braku zdarzenia narodzin ich NIE widzi. Wołane z crona,
+więc **bez bramki uprawnień** — jak `mp_case_get_context`. Okno i limit trzymają koszt zapytania.
+
 ### `mp_rejection_reasons( $reasons )` — oddaje D
 Słownik powodów odrzuceń (kod→etykieta; opcja‑treść, edycja w adminie D). Bez D → C używa
 awaryjnego mini‑słownika (DUPLICATE / NO_RESPONSE / OTHER) + ręczny kod ≤64.
@@ -222,8 +230,8 @@ transakcji, akcje PO commit. `mp_cases_query` respektuje ROLĘ wołającego (mp_
 |---|---|
 | `mp_case_get_context( $case_id )` | → `{status, rodzaj, priority, assigned_to, kategoria, kraj, język, verified_at, status_changed_at, case_number, rejection_reason_code, kontakt}`; kontakt = runtime do maili, NIGDY do logów; nieistniejąca sprawa → `'not_found'` |
 | `mp_case_change_status( $case_id, $new_status, $expected_status, $actor_id, $rejection_reason_code = null )` | optimistic‑lock (`WHERE status = expected`); „odrzucone" WYMAGA kodu; emituje `mp_case_status_changed` PO commit |
-| `mp_case_assign( $case_id, $user_id, $actor_id )` | walidacja (istnienie, verified, rola przydzielanego) + event `CASE_ASSIGNED {from, to, actor}` |
-| `mp_case_set_priority( $case_id, $priority, $actor_id )` | + event `PRIORITY_CHANGED` |
+| `mp_case_assign( $case_id, $user_id, $actor_id )` | walidacja (istnienie, verified, rola przydzielanego) + event `CASE_ASSIGNED {from, to, actor}`. **Sprawa TERMINALNA (zamknięte/odrzucone) → `error_code: 'CASE_CLOSED'`**, transakcja wycofana, zero eventu i zero maila — do pracy sprawa wraca przez wznowienie |
+| `mp_case_set_priority( $case_id, $priority, $actor_id )` | + event `PRIORITY_CHANGED`. **Sprawa TERMINALNA → `error_code: 'CASE_CLOSED'`** (jak przy przydziale) |
 | `mp_case_checklist_authorize( $case_id, $step_key, $completed, $actor_id )` | walidacja własności/roli + event `CHECKLIST_ITEM_TOGGLED`; KOLEJNOŚĆ: najpierw ta funkcja, po OK → D zapisuje stan u siebie |
 | `mp_case_add_system_message( $case_id, $content )` | wiadomość systemowa (author_type=system) — m.in. RAPORT KOŃCOWY sprawy od D |
 | `mp_cases_query( $filters, $page, $per_page )` | paginowane (chunk 500) — raporty/eksport/resync D |

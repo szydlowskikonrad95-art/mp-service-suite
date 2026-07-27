@@ -80,6 +80,17 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 - Wejścia: `sanitize_*` / `absint` przy każdym `$_POST/$_GET`. Wyjścia: `esc_html/esc_attr/esc_url` przy każdym echo (WPCS w CI).
 - Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem anty-spamu P1.6).
 
+## 6b. Nagłówki bezpieczeństwa stron wtyczki
+
+Strony formularza i panelu klienta dostają nagłówki ochronne (`X-Content-Type-Options: nosniff`,
+`X-Frame-Options`, `Content-Security-Policy: frame-ancestors`, `Referrer-Policy`, a panel klienta
+dodatkowo `X-Robots-Tag: noindex` i `Cache-Control: no-store`). Nagłówki idą na KAŻDĄ stronę
+z formularzem — także tę, którą klient zrobił sam, wstawiając shortcode (wcześniej trafiały
+wyłącznie na stronę zakładaną przez wtyczkę).
+
+Zestaw jest nadpisywalny filtrem **`mp_intake_security_headers`** — wdrożenie za CDN/proxy,
+które ustawia własne nagłówki, może je tu przyciąć zamiast walczyć z duplikatami.
+
 ## 7. Rate-limit — źródło IP za reverse-proxy (flaga #10)
 
 - Rate-limit po IP liczy **domyślnie `$_SERVER['REMOTE_ADDR']`** — bezpieczna domyślka (`RateLimit::client_ip()`).
