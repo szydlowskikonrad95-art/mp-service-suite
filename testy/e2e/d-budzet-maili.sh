@@ -24,15 +24,14 @@ q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 CZEKAJACE='SELECT COUNT(*) FROM wp_mp_case_sla WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL AND warning_at <= UTC_TIMESTAMP() AND reminder_sent_at IS NULL AND deadline_at > UTC_TIMESTAMP()'
 
 # ── 0. Szesc spraw z wymagalnym przypomnieniem ──────────────────────────────
-PRZESZLOSC=$(date -u -d '2 hours ago' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u -v-2H '+%Y-%m-%d %H:%M:%S')
-PRZYSZLOSC=$(date -u -d '10 hours' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u -v+10H '+%Y-%m-%d %H:%M:%S')
+# Daty w SQL (BusyBox `date` w obrazie wp-cli nie zna `-d '2 hours ago'`).
 
 for i in 1 2 3 4 5 6; do
 	O=$(wp mp case-create --kind=zapytanie --email="budzet$i@example.com" --name="Budzet $i" --desc="test budzetu maili" 2>/dev/null)
 	CID=$(echo "$O" | grep '^case_id=' | cut -d= -f2)
 	wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe' WHERE id=$CID" >/dev/null 2>&1
 	wp db query "REPLACE INTO wp_mp_case_sla (case_id, status, sla_policy_version, deadline_at, warning_at, reminder_sent_at, escalated_at, updated_at)
-		VALUES ($CID, 'nowe', 1, '$PRZYSZLOSC', '$PRZESZLOSC', NULL, NULL, '$PRZESZLOSC')" >/dev/null 2>&1
+		VALUES ($CID, 'nowe', 1, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 HOUR), DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 HOUR), NULL, NULL, DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 HOUR))" >/dev/null 2>&1
 done
 
 # Doszywanie sierot ZANIM zaczniemy mierzyc — inaczej pierwszy przebieg sweepa

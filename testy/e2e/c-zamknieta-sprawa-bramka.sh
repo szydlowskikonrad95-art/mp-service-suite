@@ -17,7 +17,8 @@ q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 AG=$(wp user get agentzamk --field=ID 2>/dev/null)
 [ -z "$AG" ] && AG=$(wp user create agentzamk agentzamk@example.com --role=mp_agent --user_pass=x --porcelain 2>/dev/null)
 
-O=$(wp mp case-create --kind=naprawa --email='zamknieta@example.com' --name='Zofia Zamknieta' --desc='bramka terminalna' 2>/dev/null)
+# naprawa (jak reklamacja) WYMAGA serialu, dokumentu i daty zakupu.
+O=$(wp mp case-create --kind=naprawa --email='zamknieta@example.com' --name='Zofia Zamknieta' --desc='bramka terminalna' --serial='MPZAMK001' --document='FV/2026/901' --date='2026-05-02' 2>/dev/null)
 CID=$(echo "$O" | grep '^case_id=' | cut -d= -f2)
 wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe' WHERE id=$CID" >/dev/null 2>&1
 [[ "$CID" =~ ^[0-9]+$ ]] && ok "seed: sprawa otwarta (id=$CID)" || bad "seed zly ($CID)"

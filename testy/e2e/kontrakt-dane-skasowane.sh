@@ -22,7 +22,9 @@ grep -q "do_action( 'mp_cases_data_erased' )" "$GITHUB_WORKSPACE/mp-service-inta
 	|| bad "uninstall NIE emituje mp_cases_data_erased (kontrakt znowu martwy)"
 
 # ── 1. Stan wyjsciowy: wiersze D + wyjatek gwarancyjny na sprawe ────────────
-O=$(wp mp case-create --kind=reklamacja --email='erased@example.com' --name='Ewa Erased' --desc='test kontraktu' 2>/dev/null)
+# reklamacja WYMAGA serialu, dokumentu zakupu i daty (walidacja formularza) —
+# bez nich sprawa w ogole nie powstaje i seed leci pusty.
+O=$(wp mp case-create --kind=reklamacja --email='erased@example.com' --name='Ewa Erased' --desc='test kontraktu' --serial='MPERASED1' --document='FV/2026/900' --date='2026-05-01' 2>/dev/null)
 CID=$(echo "$O" | grep '^case_id=' | cut -d= -f2)
 wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe' WHERE id=$CID" >/dev/null 2>&1
 wp eval "MP\\Automator\\Sla::on_case_created($CID);" >/dev/null 2>&1

@@ -18,7 +18,9 @@ ok()  { PASS=$((PASS+1)); echo "  OK  $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
 q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 
-STARA=$(date -u -d '20 minutes ago' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u -v-20M '+%Y-%m-%d %H:%M:%S')
+# Daty liczymy w SQL, nie w bashu: obraz wp-cli ma BusyBox `date`, ktore NIE zna
+# skladni `-d '20 minutes ago'` — data wychodzila PUSTA i baza zapisywala
+# 0000-00-00, przez co sprawa wypadala z okna czasowego resyncu.
 
 # ── 1. Sprawa potwierdzona, gdy Automator byl wylaczony ─────────────────────
 O1=$(wp mp case-create --kind=zapytanie --email='resync@example.com' --name='Rena Resync' --desc='automator byl wylaczony' 2>/dev/null)
@@ -27,7 +29,7 @@ C1=$(echo "$O1" | grep '^case_id=' | cut -d= -f2)
 
 # C zrobil SWOJE: weryfikacja + zdarzenie narodzin. D tego nie uslyszal (byl OFF),
 # wiec u niego nie ma wiersza terminu — dokladnie ten stan odtwarzamy.
-wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe', verified_at='$STARA' WHERE id=$C1" >/dev/null 2>&1
+wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe', verified_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 20 MINUTE) WHERE id=$C1" >/dev/null 2>&1
 wp eval "MP\\Intake\\CaseEvents::log($C1, MP\\Intake\\CaseEvents::CASE_CREATED, array('case_number'=>'TEST'), null);" >/dev/null 2>&1
 wp db query "DELETE FROM wp_mp_case_sla WHERE case_id=$C1" >/dev/null 2>&1
 

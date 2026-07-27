@@ -14,19 +14,19 @@ ok()  { PASS=$((PASS+1)); echo "  OK  $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
 q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 
-DAWNO=$(date -u -d '60 days ago' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u -v-60d '+%Y-%m-%d %H:%M:%S')
+# Daty w SQL (BusyBox `date` w obrazie wp-cli nie zna `-d '60 days ago'`).
 
 # ── 0. Trzy sprawy: porzucona stara / porzucona swieza / POTWIERDZONA stara ──
 O1=$(wp mp case-create --kind=zapytanie --email='porzucona@example.com' --name='Piotr Porzucony' --desc='nie klikal linku' 2>/dev/null)
 STARA=$(echo "$O1" | grep '^case_id=' | cut -d= -f2)
-wp db query "UPDATE wp_mp_service_cases SET created_at='$DAWNO' WHERE id=$STARA" >/dev/null 2>&1
+wp db query "UPDATE wp_mp_service_cases SET created_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY) WHERE id=$STARA" >/dev/null 2>&1
 
 O2=$(wp mp case-create --kind=zapytanie --email='swieza@example.com' --name='Sara Swieza' --desc='moze jeszcze kliknie' 2>/dev/null)
 SWIEZA=$(echo "$O2" | grep '^case_id=' | cut -d= -f2)
 
 O3=$(wp mp case-create --kind=zapytanie --email='potwierdzona@example.com' --name='Karol Klient' --desc='klikniety link' 2>/dev/null)
 POTW=$(echo "$O3" | grep '^case_id=' | cut -d= -f2)
-wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe', created_at='$DAWNO', verified_at='$DAWNO' WHERE id=$POTW" >/dev/null 2>&1
+wp db query "UPDATE wp_mp_service_cases SET identity_status='verified', status='nowe', created_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY), verified_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY) WHERE id=$POTW" >/dev/null 2>&1
 
 OPCJA_PRZED=$(q "SELECT COUNT(*) FROM wp_options WHERE option_name='mp_pending_contact_$STARA'")
 [ "${OPCJA_PRZED:-0}" -ge 1 ] 2>/dev/null && ok "seed: dane kontaktowe porzuconej sprawy sa w bazie" || bad "seed: brak opcji kontaktu ($OPCJA_PRZED)"
