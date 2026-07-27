@@ -29,7 +29,7 @@ final class Lifecycle {
 	 *
 	 * @var string[]
 	 */
-	public const CRON_HOOKS = array( Sweep::CRON_HOOK );
+	public const CRON_HOOKS = array( Sweep::CRON_HOOK, Sla::RECALC_CONTINUE_HOOK );
 
 	/**
 	 * Aktywacja: role wspolne (idempotentnie), marker modulu, migracje schematu.

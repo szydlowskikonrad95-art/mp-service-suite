@@ -183,6 +183,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-budzet-maili.sh
       - name: Testy kontraktu mp_cases_data_erased (sygnał żywy, nie tylko w dokumentacji)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/kontrakt-dane-skasowane.sh
+      - name: Testy D28 (Przelicz SLA paczkami — bez timeoutu przy dużej bazie)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-recalc-paczkami.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)
