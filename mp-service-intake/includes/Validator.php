@@ -80,6 +80,19 @@ final class Validator {
 	 * @return string|null Kod bledu albo null gdy OK.
 	 */
 	public static function validate_value( string $type, string $value, string $today ): ?string {
+		// Twardy sufit dlugosci PRZED walidacja typu. Bez niego pola `text`
+		// i `textarea` wpadaly w `default: null`, czyli mialy limit... zaden:
+		// zgloszenie ze 100 tys. znakow opisu wchodzilo do bazy w calosci
+		// (sprawdzone atakiem na zywym WP). Skutki: puchnaca baza i kopie
+		// zapasowe klienta, karta sprawy renderujaca kilometr tekstu, taki sam
+		// kilometr w mailu do pracownika. Limity z zapasem — normalny opis
+		// usterki miesci sie w 300-800 znakach.
+		$limit = self::limit_znakow( $type );
+
+		if ( $limit > 0 && mb_strlen( $value ) > $limit ) {
+			return 'TOO_LONG';
+		}
+
 		switch ( $type ) {
 			case 'email':
 				return self::is_email( $value ) ? null : 'INVALID_EMAIL';
@@ -119,6 +132,28 @@ final class Validator {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Maksymalna dlugosc wartosci wg typu pola (0 = typ ma wlasna walidacje).
+	 *
+	 * Rozne sufity, bo pola sluza do czego innego: jednolinijkowe `text`
+	 * (model, objaw, nr partii) nie potrzebuje wiecej niz zdanie, a `textarea`
+	 * to opis usterki — dajemy zapas na spokojna relacje, ale nie na powiesc.
+	 *
+	 * @param string $type Typ pola.
+	 * @return int Limit znakow (0 = brak limitu na tym poziomie).
+	 */
+	public static function limit_znakow( string $type ): int {
+		switch ( $type ) {
+			case 'textarea':
+				return 5000;
+			case 'text':
+				return 500;
+			default:
+				// email/serial/document/date/tel maja wlasne, ciasniejsze reguly.
+				return 0;
+		}
 	}
 
 	/**

@@ -13,6 +13,7 @@
 namespace MP\Intake\Front;
 
 use MP\Intake\FormConfig;
+use MP\Intake\Validator;
 
 /**
  * Budowa HTML formularza zgloszenia.
@@ -209,11 +210,17 @@ final class FormRenderer {
 		$required = in_array( $key, $required_keys, true ) ? ' required' : '';
 		$descr    = ' aria-describedby="' . self::err_id( $key ) . '"';
 
+		// `maxlength` = ta sama granica co w Validatorze, tylko podana od razu
+		// w przegladarce: klient widzi limit PISZAC, zamiast stracic dlugi tekst
+		// przy wysylce. Serwer i tak sprawdza po swojemu (to jest tylko wygoda).
+		$limit  = Validator::limit_znakow( (string) $field['type'] );
+		$maxlen = $limit > 0 ? ' maxlength="' . esc_attr( (string) $limit ) . '"' : '';
+
 		if ( 'textarea' === $field['type'] ) {
-			$control = '<textarea id="' . esc_attr( $id ) . '" name="' . esc_attr( $key ) . '" rows="4"' . $required . $descr . '>' . esc_textarea( $value ) . '</textarea>';
+			$control = '<textarea id="' . esc_attr( $id ) . '" name="' . esc_attr( $key ) . '" rows="4"' . $maxlen . $required . $descr . '>' . esc_textarea( $value ) . '</textarea>';
 		} else {
 			$html_type = self::html_input_type( $field['type'] );
-			$control   = '<input type="' . esc_attr( $html_type ) . '" id="' . esc_attr( $id ) . '" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '"' . $required . $descr . ' />';
+			$control   = '<input type="' . esc_attr( $html_type ) . '" id="' . esc_attr( $id ) . '" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '"' . $maxlen . $required . $descr . ' />';
 		}
 
 		return self::field_wrap( $key, esc_html( $field['label'] ), $control, $errors, $id );
@@ -333,6 +340,7 @@ final class FormRenderer {
 			'DOCUMENT_INVALID' => __( 'Numer dokumentu wygląda nieprawidłowo.', 'mp-service-intake' ),
 			'INVALID_TEL'      => __( 'Podaj poprawny numer telefonu.', 'mp-service-intake' ),
 			'KIND_INVALID'     => __( 'Wybierz poprawny rodzaj zgłoszenia.', 'mp-service-intake' ),
+			'TOO_LONG'         => __( 'Ten tekst jest za długi — skróć go i wyślij ponownie.', 'mp-service-intake' ),
 		);
 
 		return $map[ $code ] ?? __( 'Popraw to pole.', 'mp-service-intake' );
