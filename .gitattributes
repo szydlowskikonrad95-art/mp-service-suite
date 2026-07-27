@@ -1,0 +1,12 @@
+# Pasek "Languages" na GitHubie liczy CALE repo, wiec harness testowy (82 skrypty
+# powloki w testy/) przykrywal obraz produktu: 39% Shell przy wtyczkach, ktore w
+# ZIP-ie dla klienta nie maja ANI JEDNEGO pliku .sh.
+#
+# linguist-detectable=false nie ukrywa plikow — zostaja w repo, widoczne i czytelne.
+# Wylacza je wylacznie ze statystyki jezykow, zeby pasek pokazywal to, co klient
+# instaluje (PHP/JS/CSS), a nie infrastrukture do testowania.
+testy/** linguist-detectable=false
+build/*.sh linguist-detectable=false
+
+# Diagramy zrodlowe (XML draw.io) to dokumentacja, nie kod.
+dla-klienta/diagramy/*.drawio linguist-documentation=true
