@@ -36,9 +36,15 @@ final class Customers {
 		$table = Tables::full( Tables::CUSTOMERS );
 		$now   = gmdate( 'Y-m-d H:i:s' );
 
+		// FOR UPDATE (audyt #8): odczyt blokujacy — rownolegly eraser trzyma
+		// wiersz klienta w transakcji, wiec czekamy tu az skonczy i widzimy
+		// JEGO wynik (zanonimizowany klient odpada z dopasowania => nowa
+		// osoba dostaje swiezy rekord, a nie truchlo po usunieciu danych).
+		// Wolane w transakcji attach_customer_on_verify; standalone = blokada
+		// na czas pojedynczego zapytania (nieszkodliwa).
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytania przygotowane.
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT id, name FROM {$table} WHERE email = %s AND anonymized_at IS NULL ORDER BY id", $email ),
+			$wpdb->prepare( "SELECT id, name FROM {$table} WHERE email = %s AND anonymized_at IS NULL ORDER BY id FOR UPDATE", $email ),
 			ARRAY_A
 		);
 
