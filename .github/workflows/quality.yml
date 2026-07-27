@@ -378,6 +378,64 @@ jobs:
       - name: Test migracji v0.2.0 -> v0.3.0 (dane+schemat+cron+role+opcje)
         run: cd /tmp/wp && V020_SRC=/tmp/v020 V030_SRC="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE"/testy/e2e/migration.sh
 
+  # DoD C sekcja 4 — SILNIK BAZY: spec klienta wymienia MySQL 8 ORAZ MariaDB 10.6+,
+  # a caly pakiet testowaliśmy dotad WYLACZNIE na MariaDB. Ten przebieg dowodzi, ze
+  # schemat, migracje i pelna sciezka zgloszenia dzialaja takze na MySQL 8 (inny
+  # domyslny sql_mode, inne traktowanie DEFAULT i collation).
+  mysql8:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wp
+          MYSQL_PASSWORD: wp
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mysqli, iconv, intl
+          tools: wp-cli:2.12.0
+      - name: Build pluginow (kopie Common)
+        run: bash build/build.sh
+      - name: Instalacja WP 6.9.4 na MySQL 8
+        run: |
+          mkdir -p /tmp/wp && cd /tmp/wp
+          wp core download --version=6.9.4
+          wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
+          wp core install --url=http://127.0.0.1:8080 --title=MySQL8 --admin_user=admin \
+            --admin_password=admin --admin_email=mysql8@example.com --skip-email
+          cp -r "$GITHUB_WORKSPACE"/mp-service-intake "$GITHUB_WORKSPACE"/mp-warranty-registry \
+            "$GITHUB_WORKSPACE"/mp-workflow-automator /tmp/wp/wp-content/plugins/
+          wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
+      - name: Silnik bazy to naprawde MySQL (nie MariaDB)
+        run: |
+          cd /tmp/wp
+          WERSJA=$(wp db query "SELECT VERSION()" --skip-column-names)
+          echo "silnik: $WERSJA"
+          echo "$WERSJA" | grep -qi "mariadb" && { echo "BLAD: to MariaDB, nie MySQL"; exit 1; } || true
+          echo "$WERSJA" | grep -q "^8\." || { echo "BLAD: oczekiwano MySQL 8.x"; exit 1; }
+      - name: Wszystkie 16 tabel powstalo (schemat przeszedl na MySQL 8)
+        run: |
+          cd /tmp/wp
+          ILE=$(wp db query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='wordpress' AND table_name LIKE 'wp_mp_%'" --skip-column-names)
+          echo "tabel MP: $ILE"
+          [ "$ILE" = "16" ] || { echo "BLAD: oczekiwano 16 tabel, jest $ILE"; exit 1; }
+      - name: Testy C1 (rdzen sprawy — numer SRV, narodziny, snapshot)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c1-rdzen.sh
+      - name: Testy C5 (RODO — zgody, eraser, anonimizacja)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c5-rodo.sh
+      - name: DoD import + uninstall bez sladu na MySQL 8
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
+
   # DoD C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev
   release-smoke:
     runs-on: ubuntu-latest
