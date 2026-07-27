@@ -1,0 +1,80 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<link rel="stylesheet" href="style.css">
+<style>body{width:1020px}</style>
+</head><body>
+
+<div class="brand"><span>🔧</span> MP Service Suite · dokumentacja</div>
+<div class="eyebrow"><span class="num">3</span> Statusy sprawy · co znaczą i kto je zmienia</div>
+<h1>Siedem statusów — i zegar, który przy nich chodzi</h1>
+<p class="sub">Przy każdym statusie system pilnuje terminu. Godziny poniżej to ustawienia
+   startowe — <b>zmienisz je sam</b> w Automatyzacje MP, bez dotykania kodu. Priorytet sprawy
+   skraca lub wydłuża ten czas.</p>
+
+<div class="statusy">
+  <table>
+    <tr>
+      <th style="width:20%">Status</th>
+      <th style="width:44%">Co znaczy</th>
+      <th style="width:20%">Kto ustawia</th>
+      <th style="width:16%">Termin</th>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-nowe">nowe</span></td>
+      <td>Klient potwierdził zgłoszenie, nikt się nim jeszcze nie zajął.</td>
+      <td>system — po potwierdzeniu</td>
+      <td class="zegar">24 godz.</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-uzup">do uzupełnienia</span></td>
+      <td>Czekamy na coś od klienta: zdjęcie, numer seryjny, dowód zakupu.</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">72 godz.</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-analiza">w analizie</span></td>
+      <td>Sprawa jest oglądana — diagnoza, ocena zasadności, wycena.</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">48 godz.</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-akcept">zaakceptowane</span></td>
+      <td>Uznaliśmy zgłoszenie (albo klient zgodził się na koszt naprawy).</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">24 godz.</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-naprawa">w naprawie</span></td>
+      <td>Sprzęt jest na warsztacie, praca trwa.</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">120 godz.</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-odrzuc">odrzucone</span> <span class="koniec">KONIEC</span></td>
+      <td>Zgłoszenie nieuznane. System <b>wymaga podania powodu</b> — trafia on do historii
+          i do wiadomości dla klienta.</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">—</td>
+    </tr>
+    <tr>
+      <td><span class="plakietka p-zamk">zamknięte</span> <span class="koniec">KONIEC</span></td>
+      <td>Sprawa załatwiona. Klient dostaje raport końcowy z podsumowaniem.</td>
+      <td>pracownik serwisu</td>
+      <td class="zegar">—</td>
+    </tr>
+  </table>
+</div>
+
+<div class="note" style="margin-top:24px">
+  <b>Sprawa zamknięta za wcześnie? Da się ją wznowić.</b> Wraca wtedy do statusu
+  <span class="plakietka p-analiza" style="font-size:.76rem">w analizie</span> i dostaje
+  <b>świeży termin</b>. Wznowić może tylko koordynator albo administrator — pracownik nie odblokuje
+  sobie sam sprawy, którą zamknął.
+</div>
+
+<div class="note" style="background:#EDF2F7;border-color:#C3D3E2;border-left-color:#2271b1;color:#243c52">
+  <b>Potrzebujesz własnego statusu?</b> Możesz dodać swój (np. „czeka na część") — będzie działał
+  jak pozostałe robocze: z terminem i z zapisem w historii. Statusów kończących sprawę są zawsze
+  dwa: odrzucone i zamknięte.
+</div>
+
+</body></html>

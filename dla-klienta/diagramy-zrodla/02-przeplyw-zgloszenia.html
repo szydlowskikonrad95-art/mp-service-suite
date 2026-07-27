@@ -1,0 +1,92 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<link rel="stylesheet" href="style.css">
+<style>body{width:1000px}</style>
+</head><body>
+
+<div class="brand"><span>🔧</span> MP Service Suite · dokumentacja</div>
+<div class="eyebrow"><span class="num">2</span> Droga zgłoszenia · od formularza do zamknięcia</div>
+<h1>Co się dzieje z reklamacją, krok po kroku</h1>
+<p class="sub">Kolor paska mówi, <b>kto wykonuje krok</b>: niebieski — klient, pomarańczowy — system
+   (dzieje się samo), zielony — Twój serwis. Pod każdym krokiem, małą czcionką, miejsce w panelu.</p>
+
+<div class="flow">
+
+  <div class="node klient">
+    <span class="kto klient">KLIENT</span>
+    <h3>1. Wypełnia formularz na Twojej stronie</h3>
+    <p>Wybiera rodzaj sprawy — <b>reklamacja, naprawa, zapytanie albo zwrot</b> — a formularz sam
+       dopasowuje pola: reklamacja pyta o numer seryjny i dokument zakupu, zapytanie tylko o opis.
+       Może dołączyć zdjęcia usterki.</p>
+    <div class="chips"><span>strona „Zgłoszenie serwisowe"</span><span>do 5 plików</span></div>
+  </div>
+
+  <div class="arrow">↓<small>zgłoszenie czeka, nie trafia jeszcze do serwisu</small></div>
+
+  <div class="node system">
+    <span class="kto system">SYSTEM · dzieje się samo</span>
+    <h3>2. Wysyła e-mail z linkiem potwierdzającym</h3>
+    <p>Dopóki klient nie kliknie linku, sprawa <b>nie pojawia się na liście serwisu</b>. To odsiewa
+       boty i literówki w adresie — nie tracisz czasu na zgłoszenia, do których nikt nie odbierze.</p>
+    <div class="chips"><span>link ważny 24 godz.</span><span>działa jeden raz</span></div>
+  </div>
+
+  <div class="arrow">↓<small>klient klika i potwierdza</small></div>
+
+  <div class="node system">
+    <span class="kto system">SYSTEM · dzieje się samo</span>
+    <h3>3. Nadaje numer sprawy i uruchamia zegar terminu</h3>
+    <p>Sprawa dostaje numer w formacie <b>SRV/2026/0001</b> i od tej chwili liczy się termin
+       pierwszej reakcji. Klient dostaje drugi e-mail — z numerem, którym może się posługiwać.</p>
+    <div class="chips"><span>SRV/RRRR/NNNN</span><span>start terminu SLA</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="node system">
+    <span class="kto system">SYSTEM · dzieje się samo</span>
+    <h3>4. Nadaje priorytet i przydziela pracownika</h3>
+    <p>Jeśli włączysz regułę przydziału, sprawa od razu trafia do konkretnej osoby i ta osoba
+       dostaje powiadomienie. Bez reguły sprawa czeka na liście jako <b>nieprzydzielona</b>.</p>
+    <div class="chips"><span>Automatyzacje MP → Reguły przydziału</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="node serwis">
+    <span class="kto serwis">TWÓJ SERWIS</span>
+    <h3>5. Pracownik prowadzi sprawę</h3>
+    <p>Zmienia status, odhacza checklistę (diagnoza → wycena → akceptacja → naprawa) i pisze
+       do klienta z gotowych szablonów. <b>Każda decyzja zapisuje się w historii sprawy</b> —
+       nikt jej nie skasuje, także administrator.</p>
+    <div class="chips"><span>MP: Sprawy → karta sprawy</span></div>
+  </div>
+
+  <div class="arrow">↓<small>równolegle, przez cały czas</small></div>
+
+  <div class="node system">
+    <span class="kto system">SYSTEM · dzieje się samo</span>
+    <h3>6. Pilnuje terminów</h3>
+    <p>Przed upływem terminu wysyła przypomnienie pracownikowi, a po jego przekroczeniu —
+       eskalację do koordynatora. Na liście spraw widać, ile godzin zostało.</p>
+    <div class="chips"><span>przypomnienie przed</span><span>eskalacja po</span></div>
+  </div>
+
+  <div class="arrow">↓<small>sprawa zamknięta lub odrzucona</small></div>
+
+  <div class="node system">
+    <span class="kto system">SYSTEM · dzieje się samo</span>
+    <h3>7. Wysyła klientowi raport końcowy</h3>
+    <p>Po zamknięciu sprawy klient dostaje podsumowanie: co zgłosił, co zostało zrobione i kiedy.
+       Ten sam zapis zostaje w historii — masz czym się obronić przy sporze.</p>
+    <div class="chips"><span>raport w wiadomościach sprawy + e-mail</span></div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Po co ten mail z potwierdzeniem, skoro klient już wysłał formularz?</b> Bo bez niego każdy bot
+  i każda literówka w adresie tworzą sprawę, którą ktoś musi obsłużyć i zamknąć. Tutaj sprawa rusza
+  dopiero, gdy klient udowodni, że adres jest jego — i od razu wiadomo, że powiadomienia dojdą.
+</div>
+
+</body></html>

@@ -1,0 +1,68 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<link rel="stylesheet" href="style.css">
+<style>
+  body{width:1000px}
+  .role{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+  .role span{background:#EDF2F7;color:#0b4a75;font-size:.85rem;padding:.25rem .7rem;border-radius:999px}
+</style>
+</head><body>
+
+<div class="brand"><span>🔧</span> MP Service Suite · dokumentacja</div>
+<div class="eyebrow"><span class="num">1</span> Z czego składa się system</div>
+<h1>Trzy wtyczki, które dogadują się między sobą</h1>
+<p class="sub">Każda robi jedną rzecz i <b>działa też sama</b>. Jeśli wyłączysz którąkolwiek,
+   pozostałe pracują dalej — po prostu bez jej funkcji. Żadna nie zagląda do danych drugiej
+   na własną rękę.</p>
+
+<div class="flow">
+
+  <div class="node klient">
+    <span class="kto klient">WTYCZKA 1 · RECEPCJA</span>
+    <h3>Zgłoszenia serwisowe</h3>
+    <p>Formularz na stronie, potwierdzenie adresu e-mail, numer sprawy, konto klienta bez hasła
+       (logowanie linkiem z maila), wiadomości z klientem, załączniki i obsługa RODO.</p>
+    <div class="chips"><span>menu: MP: Sprawy</span><span>MP: Niepotwierdzone</span></div>
+  </div>
+
+  <div class="arrow">↕<small>pyta o gwarancję w chwili zgłoszenia</small></div>
+
+  <div class="node serwis">
+    <span class="kto serwis">WTYCZKA 2 · MAGAZYN WIEDZY</span>
+    <h3>Rejestr gwarancji</h3>
+    <p>Twoja baza produktów: numery seryjne, partie, daty zakupu i końca gwarancji. Wgrywasz ją
+       z pliku CSV z Excela. Przy zgłoszeniu system sam sprawdza, czy gwarancja jeszcze biegnie,
+       i <b>zapamiętuje ten wynik na stałe</b> — późniejsza zmiana w bazie nie zmienia
+       rozstrzygnięcia starej sprawy.</p>
+    <div class="chips"><span>menu: Rejestr MP</span><span>import CSV</span><span>wyjątki gwarancyjne</span></div>
+  </div>
+
+  <div class="arrow">↕<small>dostaje sygnał, że sprawa ruszyła</small></div>
+
+  <div class="node system">
+    <span class="kto system">WTYCZKA 3 · AUTOMAT</span>
+    <h3>Automatyzacje MP</h3>
+    <p>Reguły, które wyręczają człowieka: przydział spraw pracownikom, priorytety, powiadomienia
+       e-mail z szablonów, pilnowanie terminów (przypomnienie przed, eskalacja po), checklisty
+       i raporty do pliku CSV.</p>
+    <div class="chips"><span>menu: Automatyzacje MP</span><span>terminy SLA</span><span>eksport raportów</span></div>
+  </div>
+
+</div>
+
+<div class="note" style="margin-top:26px">
+  <b>Cztery role użytkowników</b> zakładają się same przy włączeniu — nie trzeba nic ustawiać:
+  <div class="role">
+    <span>Klient — widzi tylko swoje sprawy</span>
+    <span>Pracownik serwisu — prowadzi przydzielone sprawy</span>
+    <span>Koordynator — rozdziela pracę i wznawia sprawy</span>
+    <span>Administrator systemu — konfiguracja i wyjątki gwarancyjne</span>
+  </div>
+</div>
+
+<div class="note" style="background:#EDF2F7;border-color:#C3D3E2;border-left-color:#2271b1;color:#243c52">
+  <b>Dlaczego trzy wtyczki, a nie jedna wielka?</b> Bo awaria albo wyłączenie jednej części nie
+  zatrzymuje całej firmy. Możesz też kupić dziś przyjmowanie zgłoszeń, a automatyzacje włączyć
+  za pół roku — bez przepisywania czegokolwiek.
+</div>
+
+</body></html>
