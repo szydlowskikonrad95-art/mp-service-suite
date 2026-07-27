@@ -93,6 +93,12 @@ jobs:
   # skan sekretow (maszyna; lokalny pre-commit to tylko pierwsza linia)
   gitleaks:
     runs-on: ubuntu-latest
+    # W repo PRYWATNYM akcja musi odczytac liste commitow PR-a przez API
+    # (GET /repos/.../pulls/N/commits). Samo `contents: read` daje 403
+    # „Resource not accessible by integration" — w publicznym repo przechodzilo.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
         with:
