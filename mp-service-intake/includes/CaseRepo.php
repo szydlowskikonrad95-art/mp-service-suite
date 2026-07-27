@@ -1631,6 +1631,46 @@ final class CaseRepo {
 	}
 
 	/**
+	 * ID spraw ZWERYFIKOWANYCH w ostatnich dniach (funkcja kontraktowa
+	 * `mp_cases_verified_ids`) — do resynchronizacji Automatora (audyt 27.07).
+	 *
+	 * Sieroty z audytu #1 rozpoznajemy po BRAKU zdarzenia narodzin. Istnieje
+	 * jednak drugi wariant tej samej awarii, ktorego tamto kryterium NIE widzi:
+	 * gdy w chwili potwierdzenia Automator byl WYLACZONY (auto-update, tryb
+	 * odzyskiwania WP), C zapisuje CASE_CREATED i emituje akcje poprawnie, tyle
+	 * ze nikt jej nie slucha. Sprawa ma komplet sladow u siebie, a mimo to nigdy
+	 * nie dostanie przydzialu ani terminu. Dlatego D musi umiec porownac swoj
+	 * stan z lista spraw C — zwracamy WYLACZNIE identyfikatory (zero danych
+	 * osobowych, RODO/T5), okno czasowe + limit trzymaja koszt zapytania w ryzach.
+	 *
+	 * @param int $days  Okno (dni wstecz od weryfikacji).
+	 * @param int $limit Maksymalna liczba ID.
+	 * @return array<int, int>
+	 */
+	public static function verified_ids_recent( int $days = 30, int $limit = 200 ): array {
+		global $wpdb;
+
+		$cases  = Tables::full( Tables::CASES );
+		$days   = max( 1, min( 365, $days ) );
+		$limit  = max( 1, min( 500, $limit ) );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$cases}
+				WHERE identity_status = 'verified' AND verified_at IS NOT NULL AND verified_at >= %s
+				ORDER BY id DESC LIMIT %d",
+				$cutoff,
+				$limit
+			)
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
 	 * Sprawy ZWERYFIKOWANE bez zdarzenia narodzin (CASE_CREATED) — sieroty po
 	 * awarii w trakcie weryfikacji (audyt #1).
 	 *

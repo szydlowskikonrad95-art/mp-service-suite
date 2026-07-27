@@ -161,6 +161,21 @@ final class Plugin {
 			6
 		);
 
+		// Kontrakt D->C: ID spraw zweryfikowanych w oknie czasowym (bez danych
+		// osobowych) — Automator porownuje je ze swoim stanem i doszywa sprawy,
+		// ktore przeszly weryfikacje, gdy byl wylaczony (audyt 27.07). Wolane z
+		// crona, wiec BEZ bramki uprawnien — jak `mp_case_get_context`.
+		add_filter(
+			'mp_cases_verified_ids',
+			static function ( $result, $days = 30, $limit = 200 ) {
+				unset( $result );
+
+				return CaseRepo::verified_ids_recent( (int) $days, (int) $limit );
+			},
+			10,
+			3
+		);
+
 		// Kontrakt D->C: paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D
 		// (mp_cases_query). Respektuje ROLE wolajacego (mp_agent => tylko swoje);
 		// zwraca pola ZMINIMALIZOWANE — surowy kontakt NIGDY nie wychodzi (RODO/T5).

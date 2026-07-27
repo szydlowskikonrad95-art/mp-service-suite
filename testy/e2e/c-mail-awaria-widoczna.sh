@@ -67,9 +67,12 @@ ALERT2=$(wp option get "$ALERT_OPT" --format=json 2>/dev/null)
 	|| bad "link logowania padl bez alertu"
 
 # ── 4. PRZYPADEK BEZ PROBLEMU: wysylka OK => zero nowych sladow, alert czysty ─
+# Sukces wymuszamy filtrem (pre_wp_mail => true), bo w kontenerze CI nie ma
+# serwera poczty i „naturalna" wysylka ZAWSZE by padala — test kontrolny
+# sprawdzalby wtedy to samo, co poprzednie (pulapka falszywej pewnosci).
 wp option delete "$ALERT_OPT" >/dev/null 2>&1
 BEFORE_OK=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type='MAIL_FAILED'")
-wp eval "MP\\Intake\\Front\\Mailer::send_magic_link('mail-awaria@example.com', 'token-testowy', $CID);" >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail', '__return_true'); MP\\Intake\\Front\\Mailer::send_magic_link('mail-awaria@example.com', 'token-testowy', $CID);" >/dev/null 2>&1
 AFTER_OK=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CID AND event_type='MAIL_FAILED'")
 [ "$AFTER_OK" = "$BEFORE_OK" ] \
 	&& ok "wysylka udana NIE zasmieca osi sprawy (brak falszywych MAIL_FAILED)" \
@@ -79,6 +82,14 @@ ALERT3=$(wp option get "$ALERT_OPT" --format=json 2>/dev/null)
 { [ -z "$ALERT3" ] || [ "$ALERT3" = "false" ]; } \
 	&& ok "udana wysylka NIE podnosi alertu" \
 	|| bad "alert podniesiony mimo udanej wysylki ($ALERT3)"
+
+# ── 4b. Alert GASNIE po pierwszej udanej wysylce (obietnica ze Stanu witryny) ─
+wp eval "update_option('$ALERT_OPT', array('kind'=>'magic_link','time'=>'2026-01-01 00:00:00'), false);" >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail', '__return_true'); MP\\Intake\\Front\\Mailer::send_magic_link('mail-awaria@example.com', 'token-testowy', $CID);" >/dev/null 2>&1
+ALERT4=$(wp option get "$ALERT_OPT" --format=json 2>/dev/null)
+{ [ -z "$ALERT4" ] || [ "$ALERT4" = "false" ]; } \
+	&& ok "udana wysylka GASI stary alert (komunikat nie wisi wiecznie)" \
+	|| bad "alert nie zgasl po udanej wysylce ($ALERT4)"
 
 # ── 5. Stan witryny WIDZI alert (nie tylko baza) ─────────────────────────────
 wp eval "update_option('$ALERT_OPT', array('kind'=>'magic_link','time'=>gmdate('Y-m-d H:i:s')), false);" >/dev/null 2>&1

@@ -139,6 +139,13 @@ final class Sweep {
 			 * dostaja SLA/przydzial natychmiast, terminy lapie kolejny przebieg.
 			 */
 			do_action( 'mp_sla_sweep_tick' );
+
+			// Audyt 27.07: sprawy potwierdzone, gdy TA wtyczka byla wylaczona, maja
+			// u siebie komplet sladow (C zapisal zdarzenie i wyemitowal akcje — tyle
+			// ze nikt jej nie slyszal), wiec tick powyzej ich NIE dosle. Porownujemy
+			// wiec wlasny stan z lista spraw C i doszywamy roznice.
+			Sla::reconcile_untracked();
+
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 

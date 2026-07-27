@@ -84,6 +84,76 @@ final class Sla {
 	}
 
 	/**
+	 * RESYNC: sprawy zweryfikowane, o ktorych Automator nic nie wie (audyt 27.07).
+	 *
+	 * Reconcile z audytu #1 rozpoznaje sieroty po BRAKU zdarzenia narodzin w C —
+	 * i dlatego NIE widzi drugiego wariantu tej samej awarii: gdy w chwili
+	 * potwierdzenia ta wtyczka byla WYLACZONA, C zapisal zdarzenie i wyemitowal
+	 * akcje poprawnie, tylko nikt jej nie sluchal. Sprawa wyglada na kompletna,
+	 * a nigdy nie dostanie przydzialu ani terminu — cicho, na zawsze.
+	 * Tu porownujemy liste C z wlasna tabela terminow i doszywamy roznice.
+	 *
+	 * @param int $limit Maksymalna liczba spraw na jeden przebieg.
+	 * @return int Liczba doszytych spraw.
+	 */
+	public static function reconcile_untracked( int $limit = 20 ): int {
+		global $wpdb;
+
+		$ids = apply_filters( 'mp_cases_verified_ids', array(), 30, 200 );
+
+		if ( ! is_array( $ids ) || array() === $ids ) {
+			return 0;
+		}
+
+		$table   = Tables::full( Tables::CASE_SLA );
+		$doszyte = 0;
+
+		foreach ( $ids as $case_id ) {
+			if ( $doszyte >= $limit ) {
+				break;
+			}
+
+			$case_id = (int) $case_id;
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$znane = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE case_id = %d", $case_id ) );
+			// phpcs:enable
+
+			if ( $znane > 0 ) {
+				continue;
+			}
+
+			// Sprawa nieznana => przejdz sciezke narodzin w TEJ SAMEJ kolejnosci co
+			// przy zywym zdarzeniu: reguly (priorytet, potem przydzial) na haku 10,
+			// termin na haku 20 — inaczej pierwszy termin policzylby sie przed
+			// nadaniem priorytetu i wyszedlby inny niz u spraw obsluzonych normalnie.
+			RuleEngine::on_case_created( $case_id );
+			self::provision( $case_id );
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, weryfikacja skutku.
+			$po = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE case_id = %d", $case_id ) );
+			// phpcs:enable
+
+			if ( 0 === $po ) {
+				continue; // sprawa zniknela/niezweryfikowana — nie nasza robota.
+			}
+
+			++$doszyte;
+
+			WorkflowEvents::log(
+				WorkflowEvents::SWEEP_RUN,
+				array(
+					'action' => 'resync_untracked',
+					'powod'  => 'sprawa_bez_terminu',
+				),
+				$case_id
+			);
+		}
+
+		return $doszyte;
+	}
+
+	/**
 	 * Zaklada/przelicza wiersz SLA dla sprawy (REPLACE = reset markerow przy zmianie).
 	 * Sprawa zniknela/niezweryfikowana => nic (defensywa sweepa czysci sieroty w SLA-2/3).
 	 *
