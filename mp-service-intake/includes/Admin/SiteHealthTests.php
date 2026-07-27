@@ -13,6 +13,7 @@ namespace MP\Intake\Admin;
 
 use MP\Intake\Common\SiteHealth;
 use MP\Intake\Attachments;
+use MP\Intake\Front\Mailer;
 
 /**
  * Rejestracja testow Intake w Narzedzia -> Stan witryny.
@@ -35,7 +36,54 @@ final class SiteHealthTests {
 				'upload_limit' => array( self::class, 'test_limit_uploadu' ),
 				'poczta_lokal' => array( self::class, 'test_srodowisko_lokalne' ),
 				'sieroty'      => array( self::class, 'test_sieroty_weryfikacji' ),
+				'poczta_awari' => array( self::class, 'test_poczta_wysylka' ),
 			)
+		);
+	}
+
+	/**
+	 * Czy ostatnia wysylka maila do klienta sie powiodla (audyt 27.07).
+	 *
+	 * `test_nadawca` sprawdza tylko DEKLARACJE (jaki adres jest ustawiony) —
+	 * nie mowi nic o tym, czy poczta faktycznie wychodzi. Ten test czyta slad
+	 * po REALNEJ odmowie serwera poczty, zapisany przez Mailer::deliver().
+	 * Bez niego awaria byla cicha: klient nie dostawal linku, panel milczal.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_poczta_wysylka(): array {
+		$alert = get_option( Mailer::ALERT_OPTION, array() );
+
+		if ( ! is_array( $alert ) || array() === $alert ) {
+			return SiteHealth::wynik(
+				'mp_intake_poczta_awaria',
+				'good',
+				__( 'Poczta: ostatnie wiadomości do klientów wyszły bez błędu', 'mp-service-intake' ),
+				__( 'Serwer poczty nie odrzucił żadnej wiadomości od ostatniego sprawdzenia.', 'mp-service-intake' )
+			);
+		}
+
+		$rodzaje = array(
+			'magic_link'    => __( 'link potwierdzający zgłoszenie', 'mp-service-intake' ),
+			'potwierdzenie' => __( 'wiadomość z numerem sprawy', 'mp-service-intake' ),
+			'logowanie'     => __( 'link do logowania w panelu klienta', 'mp-service-intake' ),
+		);
+
+		$kind  = isset( $alert['kind'] ) ? (string) $alert['kind'] : '';
+		$nazwa = $rodzaje[ $kind ] ?? __( 'wiadomość do klienta', 'mp-service-intake' );
+		$kiedy = isset( $alert['time'] ) ? (string) $alert['time'] : '';
+
+		return SiteHealth::wynik(
+			'mp_intake_poczta_awaria',
+			'critical',
+			__( 'Poczta NIE WYCHODZI — klienci nie dostają wiadomości', 'mp-service-intake' ),
+			sprintf(
+				/* translators: 1: rodzaj wiadomosci, 2: data i godzina (UTC). */
+				__( 'Serwer poczty odrzucił ostatnią próbę wysyłki (%1$s, %2$s UTC). Dopóki to trwa, klient nie potwierdzi zgłoszenia ani nie zaloguje się do panelu — a formularz i tak pokazuje mu komunikat o wysłanej wiadomości.', 'mp-service-intake' ),
+				$nazwa,
+				'' === $kiedy ? '—' : $kiedy
+			),
+			__( 'Sprawdź konfigurację poczty na hostingu (najczęściej brak wtyczki SMTP albo złe hasło do skrzynki). Po naprawie wyślij próbny link ponownie z ekranu „MP: Niepotwierdzone" — ten komunikat zniknie po pierwszej udanej wysyłce.', 'mp-service-intake' )
 		);
 	}
 

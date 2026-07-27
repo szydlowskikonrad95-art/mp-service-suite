@@ -11,6 +11,7 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\CaseEvents;
 use MP\Intake\CaseRepo;
 
 /**
@@ -19,13 +20,21 @@ use MP\Intake\CaseRepo;
 final class Mailer {
 
 	/**
+	 * Opcja alertu poczty (ostatnia nieudana wysylka) — czyta Stan witryny.
+	 *
+	 * @var string
+	 */
+	public const ALERT_OPTION = 'mp_intake_mail_alert';
+
+	/**
 	 * Wysyla magic-link potwierdzenia zgloszenia.
 	 *
-	 * @param string $email Adres odbiorcy.
-	 * @param string $token Surowy token (do URL).
+	 * @param string   $email   Adres odbiorcy.
+	 * @param string   $token   Surowy token (do URL).
+	 * @param int|null $case_id Sprawa, ktorej dotyczy mail (slad przy awarii wysylki).
 	 * @return bool Wynik wp_mail.
 	 */
-	public static function send_magic_link( string $email, string $token ): bool {
+	public static function send_magic_link( string $email, string $token, ?int $case_id = null ): bool {
 		$url = add_query_arg(
 			array(
 				'action' => 'mp_intake_verify',
@@ -47,7 +56,7 @@ final class Mailer {
 			CaseRepo::TOKEN_TTL_HOURS
 		) . self::stopka();
 
-		return wp_mail( $email, self::filtruj_temat( $subject, 'potwierdzenie' ), self::filtruj_tresc( $body, 'potwierdzenie' ) );
+		return self::deliver( $email, self::filtruj_temat( $subject, 'potwierdzenie' ), self::filtruj_tresc( $body, 'potwierdzenie' ), 'magic_link', $case_id );
 	}
 
 	/**
@@ -84,17 +93,18 @@ final class Mailer {
 			self::adres_panelu()
 		) . self::stopka();
 
-		return wp_mail( $email, self::filtruj_temat( $subject, 'logowanie' ), self::filtruj_tresc( $body, 'logowanie' ) );
+		return self::deliver( $email, self::filtruj_temat( $subject, 'logowanie' ), self::filtruj_tresc( $body, 'logowanie' ), 'logowanie', null );
 	}
 
 	/**
 	 * Wysyla potwierdzenie z numerem SRV (po weryfikacji).
 	 *
-	 * @param string $email       Adres odbiorcy.
-	 * @param string $case_number Numer SRV.
+	 * @param string   $email       Adres odbiorcy.
+	 * @param string   $case_number Numer SRV.
+	 * @param int|null $case_id     Sprawa, ktorej dotyczy mail (slad przy awarii wysylki).
 	 * @return bool Wynik wp_mail.
 	 */
-	public static function send_confirmation( string $email, string $case_number ): bool {
+	public static function send_confirmation( string $email, string $case_number, ?int $case_id = null ): bool {
 		$subject = sprintf(
 			/* translators: %s: numer sprawy SRV. */
 			__( 'Zgłoszenie %s zostało przyjęte', 'mp-service-intake' ),
@@ -108,7 +118,62 @@ final class Mailer {
 			self::adres_panelu()
 		) . self::stopka();
 
-		return wp_mail( $email, self::filtruj_temat( $subject, 'przyjecie' ), self::filtruj_tresc( $body, 'przyjecie' ) );
+		return self::deliver( $email, self::filtruj_temat( $subject, 'przyjecie' ), self::filtruj_tresc( $body, 'przyjecie' ), 'potwierdzenie', $case_id );
+	}
+
+	/**
+	 * JEDNO GARDLO WYSYLKI (audyt 27.07 — soczewki „obserwowalnosc" i „awarie").
+	 *
+	 * Funkcja wp_mail() zwraca false przy odmowie serwera poczty i NIE rzuca wyjatku. Bez
+	 * tego gardla awaria byla niewidoczna: klient nie dostawal linku, formularz i tak
+	 * mowil „sprawdz skrzynke", a w bazie nie zostawal zaden slad. Wzorzec przeniesiony
+	 * z Automatora (Sla::notify — log + alert), zeby obie wtyczki reagowaly tak samo.
+	 *
+	 * @param string   $email   Adres odbiorcy.
+	 * @param string   $subject Temat.
+	 * @param string   $body    Tresc.
+	 * @param string   $kind    Rodzaj maila (magic_link|logowanie|potwierdzenie).
+	 * @param int|null $case_id Sprawa (gdy znana) — slad ladue na jej osi.
+	 * @return bool Wynik wp_mail.
+	 */
+	private static function deliver( string $email, string $subject, string $body, string $kind, ?int $case_id ): bool {
+		$ok = wp_mail( $email, $subject, $body );
+
+		if ( $ok ) {
+			// Udana wysylka gasi alert — inaczej komunikat w Stanie witryny wisialby
+			// wiecznie po jednej chwilowej odmowie serwera (i przestalby cokolwiek znaczyc).
+			if ( array() !== (array) get_option( self::ALERT_OPTION, array() ) ) {
+				delete_option( self::ALERT_OPTION );
+			}
+
+			return true;
+		}
+
+		// Slad na osi sprawy — obsluga widzi, ktory mail nie wyszedl i kiedy.
+		if ( null !== $case_id && $case_id > 0 ) {
+			CaseEvents::log(
+				$case_id,
+				CaseEvents::MAIL_FAILED,
+				array(
+					'kind'       => $kind,
+					'error_code' => 'smtp_failed',
+				),
+				null
+			);
+		}
+
+		// Alert globalny — widoczny w Narzedzia -> Stan witryny takze dla maili
+		// bez sprawy (link logowania), bo tam awaria poczty tez blokuje klienta.
+		update_option(
+			self::ALERT_OPTION,
+			array(
+				'kind' => $kind,
+				'time' => gmdate( 'Y-m-d H:i:s' ),
+			),
+			false
+		);
+
+		return false;
 	}
 
 	/**

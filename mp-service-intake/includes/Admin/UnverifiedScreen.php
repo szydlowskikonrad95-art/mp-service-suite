@@ -177,7 +177,7 @@ final class UnverifiedScreen {
 		}
 
 		set_transient( $throttle_key, 1, self::THROTTLE_SECONDS );
-		Mailer::send_magic_link( $to, $token );
+		Mailer::send_magic_link( $to, $token, $case_id );
 		Audit::log( 'resend', $case_id, get_current_user_id() );
 
 		self::back( __( 'Link weryfikacyjny wysłany ponownie (świeży token).', 'mp-service-intake' ) );
