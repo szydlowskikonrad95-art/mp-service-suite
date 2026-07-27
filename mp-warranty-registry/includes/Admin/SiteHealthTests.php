@@ -30,7 +30,36 @@ final class SiteHealthTests {
 			'mp_registry',
 			array(
 				'csv_kodowanie' => array( self::class, 'test_kodowanie_csv' ),
+				'cron_importow' => array( self::class, 'test_cron_importow' ),
 			)
+		);
+	}
+
+	/**
+	 * Czy sprzatanie plikow importu jest zaplanowane (audyt cyklu zycia 27.07).
+	 *
+	 * Wgrane pliki CSV zawieraja dane klientow (numery seryjne, faktury, nazwiska).
+	 * Zadanie usuwa je po zakonczeniu importu; gdy zniknie z listy zadan, pliki
+	 * zostaja na serwerze bezterminowo, a nic tego nie sygnalizuje.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_cron_importow(): array {
+		if ( wp_next_scheduled( \MP\Registry\Lifecycle::IMPORTS_CRON ) ) {
+			return SiteHealth::wynik(
+				'mp_registry_cron_importow',
+				'good',
+				__( 'Sprzątanie plików importu jest zaplanowane', 'mp-warranty-registry' ),
+				__( 'Codzienne zadanie usuwa wgrane pliki CSV po zakończonym imporcie.', 'mp-warranty-registry' )
+			);
+		}
+
+		return SiteHealth::wynik(
+			'mp_registry_cron_importow',
+			'critical',
+			__( 'Sprzątanie plików importu NIE JEST zaplanowane', 'mp-warranty-registry' ),
+			__( 'Zadanie usuwające wgrane pliki CSV zniknęło z listy zadań WordPressa. Pliki zawierają dane klientów (numery seryjne, faktury, nazwiska) i będą zostawać na serwerze bezterminowo.', 'mp-warranty-registry' ),
+			__( 'Wejdź w Wtyczki, wyłącz i włącz ponownie „MP Warranty & Serial Registry" — zadanie zostanie odtworzone.', 'mp-warranty-registry' )
 		);
 	}
 

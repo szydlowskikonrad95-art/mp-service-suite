@@ -110,13 +110,19 @@ final class Lifecycle {
 	 * @return void
 	 */
 	public static function maybe_upgrade(): void {
+		// Cron POZA bramka wersji schematu (audyt cyklu zycia 27.07). Gdy schemat
+		// sie nie zmienia, funkcja wychodzila w pierwszej linii — raz zniknietego
+		// zadania nic by nie odtworzylo, a ono sprzata pliki importu z danymi
+		// klientow (serial, faktura, nazwisko). schedule_imports_cron() jest
+		// idempotentne, wiec wolanie przy kazdym wejsciu do panelu nic nie kosztuje.
+		self::schedule_imports_cron();
+
 		if ( (int) get_option( self::SCHEMA_OPTION, 0 ) >= Schema::LATEST ) {
 			return;
 		}
 
 		Roles::ensure();
 		Schema::migrate();
-		self::schedule_imports_cron();
 	}
 
 	/**
