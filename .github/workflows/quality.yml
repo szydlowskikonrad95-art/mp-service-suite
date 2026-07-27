@@ -168,6 +168,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c22-indeks-przydzialu.sh
       - name: Testy C23 (reconcile sierot weryfikacji — tick sweepa D→C)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c23-reconcile-sierota.sh
+      - name: Testy C24 (diagnostyka cron — wykonanie, nie sam plan)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c24-diagnostyka-cron-wykonanie.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)

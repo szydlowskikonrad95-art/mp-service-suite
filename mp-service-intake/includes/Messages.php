@@ -33,6 +33,30 @@ final class Messages {
 	public static function add( int $case_id, string $author_type, ?int $author_id, string $body ): int {
 		global $wpdb;
 
+		// Audyt #5: podwojny POST tej samej wiadomosci (dwuklik/refresh) dawal
+		// dwa identyczne wpisy na osi i dwa maile. Rezerwacja 60 s na odcisku
+		// tresci: duplikat w oknie zwraca ISTNIEJACY wpis bez drugiego zdarzenia.
+		// Ta sama tresc wyslana ponownie PO oknie jest legalna (klient moze
+		// sie powtorzyc celowo).
+		$odcisk = 'mp_rl_msg_' . md5( $case_id . '|' . $author_type . '|' . (string) ( $author_id ?? 0 ) . '|' . sha1( $body ) );
+
+		if ( ! RateLimit::claim_window( $odcisk, MINUTE_IN_SECONDS ) ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$existing = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT id FROM ' . Tables::full( Tables::MESSAGES ) . ' WHERE case_id = %d AND author_type = %s AND body = %s ORDER BY id DESC LIMIT 1',
+					$case_id,
+					$author_type,
+					$body
+				)
+			);
+			// phpcs:enable
+
+			if ( null !== $existing ) {
+				return (int) $existing;
+			}
+		}
+
 		$now = gmdate( 'Y-m-d H:i:s' );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna.

@@ -139,14 +139,46 @@ final class SiteHealthTests {
 
 		$nastepne = (int) wp_next_scheduled( Sweep::CRON_HOOK );
 
+		// Audyt #11: „zaplanowane" != „wykonuje się". WP-Cron odpala się z ruchu
+		// na stronie — serwis B2B nocą stoi, a panel świecił na zielono, bo test
+		// sprawdzał tylko plan. Porównujemy WYKONANIE (log SWEEP_RUN) z progiem
+		// dwóch interwałów (2 × 5 min).
+		$prog_s  = 10 * MINUTE_IN_SECONDS;
+		$ostatni = \MP\Automator\WorkflowEvents::last_time( \MP\Automator\WorkflowEvents::SWEEP_RUN );
+
+		if ( null !== $ostatni && ( time() - (int) strtotime( $ostatni . ' +0000' ) ) > $prog_s ) {
+			return SiteHealth::wynik(
+				'mp_automator_cron',
+				'critical',
+				__( 'Pilnowanie terminów SLA STOI — zadanie zaplanowane, ale się nie wykonuje', 'mp-workflow-automator' ),
+				sprintf(
+					/* translators: %s: data i godzina ostatniego wykonania. */
+					__( 'Ostatni przebieg sprawdzania terminów: %s (GMT). Zadanie jest zaplanowane, ale od ponad dwóch interwałów się nie uruchomiło — WP-Cron odpala się z odwiedzin strony, więc bez ruchu (np. nocą) przypomnienia i eskalacje stoją, choć wszystko wygląda na sprawne.', 'mp-workflow-automator' ),
+					esc_html( $ostatni )
+				),
+				__( 'Ustaw w panelu hostingu zadanie systemowe (cron) wywołujące wp-cron.php co 5 minut — wtedy terminy są pilnowane niezależnie od ruchu na stronie.', 'mp-workflow-automator' )
+			);
+		}
+
+		if ( null === $ostatni && $nastepne > 0 && ( time() - $nastepne ) > $prog_s ) {
+			return SiteHealth::wynik(
+				'mp_automator_cron',
+				'critical',
+				__( 'Pilnowanie terminów SLA nie wystartowało — WP-Cron się nie odpala', 'mp-workflow-automator' ),
+				__( 'Zadanie sprawdzania terminów jest zaplanowane w przeszłości i nigdy się nie wykonało. WP-Cron uruchamia się z odwiedzin strony — bez ruchu nic nie ruszy.', 'mp-workflow-automator' ),
+				__( 'Wejdź na stronę (dowolna wizyta odpala zaległe zadania) albo ustaw w panelu hostingu zadanie systemowe (cron) wywołujące wp-cron.php co 5 minut.', 'mp-workflow-automator' )
+			);
+		}
+
 		return SiteHealth::wynik(
 			'mp_automator_cron',
 			'good',
 			__( 'Terminy SLA są pilnowane', 'mp-workflow-automator' ),
 			sprintf(
-				/* translators: %s: data i godzina nastepnego uruchomienia. */
-				__( 'Zadanie sprawdzające terminy jest zaplanowane. Najbliższe uruchomienie: %s.', 'mp-workflow-automator' ),
-				esc_html( wp_date( 'Y-m-d H:i', $nastepne ) )
+				/* translators: 1: data nastepnego uruchomienia, 2: data ostatniego wykonania albo myslnik. */
+				__( 'Zadanie sprawdzające terminy jest zaplanowane (najbliższe: %1$s) i realnie się wykonuje (ostatni przebieg: %2$s GMT).', 'mp-workflow-automator' ),
+				esc_html( wp_date( 'Y-m-d H:i', $nastepne ) ),
+				esc_html( null !== $ostatni ? $ostatni : __( 'pierwszy przed nami', 'mp-workflow-automator' ) )
 			)
 		);
 	}

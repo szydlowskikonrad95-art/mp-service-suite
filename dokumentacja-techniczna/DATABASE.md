@@ -16,14 +16,16 @@ Specyfikacja (sekcja 2, „Trzy zależności baz danych") wylicza **4 tabele i 3
 
 Spec wylicza RELACJE, nie limituje liczby tabel — a jej wymagania funkcjonalne (cytaty niżej)
 wymuszają dodatkowe tabele. **Każda tabela ponad 4 bazowe ma niżej cytat‑uzasadnienie z konkretnego
-wymagania spec.** Razem: **15 tabel (14 biznesowo‑stanowych + 1 techniczna `wp_mp_srv_counters`)**.
+wymagania spec.** Razem: **16 tabel (14 biznesowo‑stanowych + 2 techniczne: `wp_mp_srv_counters`
+i `wp_mp_rate_counters`)**. *(Audyt #17: `wp_mp_rate_counters`, dodana migracją v2 Intake, przez
+pewien czas nie figurowała w tym spisie — uzupełniona razem z mapą PII.)*
 
 ## 1. Tabele i właściciele
 
 Właściciel = JEDYNY plugin, który czyta i pisze tę tabelę wprost (reszta wyłącznie hookami —
 patrz OWNERSHIP.md; pilnuje tego linter cudzych tabel w CI).
 
-### Własność C — mp-service-intake (7)
+### Własność C — mp-service-intake (8)
 
 | Tabela | Uzasadnienie |
 |---|---|
@@ -34,6 +36,7 @@ patrz OWNERSHIP.md; pilnuje tego linter cudzych tabel w CI).
 | `wp_mp_attachments` | spec T5/RODO: „limity typów i rozmiaru plików" + „zdefiniowana retencja załączników" — cron retencji chodzi po tej tabeli |
 | `wp_mp_consents` | spec RODO: „rejestr zgód" |
 | `wp_mp_srv_counters` | techniczna; spec P1.3: „automatyczne generowanie numeru sprawy" + sekcja 2: „unikalny numer sprawy" — licznik atomowy per rok (patrz §4) |
+| `wp_mp_rate_counters` | techniczna (migracja v2); spec P1.6: „ochrona formularza przed spamem, duplikatami" — atomowe liczniki rate‑limitu i rezerwacje dedup w oknach przesuwanych (dawne transienty przepuszczały równoległe żądania); klucze to HASHE (md5), zero PII; wygasłe wiersze sprząta cron retencji |
 
 ### Własność B — mp-warranty-registry (4)
 
@@ -168,6 +171,7 @@ sprawach → duplikaty SRV po reinstalacji w tym samym roku).
 | `product_registry.purchase_document` | TAK (kwazi‑identyfikator) | wartości żyją TYLKO w tabeli stanu; w diffach eventów `{field, changed:true}`; nie wychodzi hookami (weryfikacja `$verify` porównywana po stronie B) |
 | `warranty_exceptions.reason` | MOŻE (wolny tekst admina) | filter `mp_privacy_redact_for_customer` od C → B redaguje reason wyjątków powiązanych ze sprawami klienta |
 | `case_sla` / `case_checklists` / `workflow_rules` | NIE Z KONSTRUKCJI | zero pól wolnotekstowych przenoszących PII |
+| `rate_counters.rl_key` | NIE Z KONSTRUKCJI | klucz = md5(IP/e‑mail/serial) — hash jednokierunkowy, bez surowych danych; wiersze wygasają i są sprzątane cronem retencji |
 | `workflow_events.payload` | NIE Z KONSTRUKCJI | NO‑PII (D „nie ma nic do redakcji") |
 | konto WP klienta (`wp_users`) | TAK | odpięcie przy anonimizacji (natywny eraser WP obsługuje resztę) |
 
