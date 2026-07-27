@@ -50,9 +50,20 @@ echo "$HTML_COORD" | grep -q 'value="mp_automator_recalc_sla"' && bad "(b) koord
 
 # ── 3. (d) LISTY renderuja dane z tabel D ────────────────────────────────────
 echo "$HTML_SYS" | grep -q 'Reguły przydziału' && ok "sekcja Reguły przydziału renderuje" || bad "brak sekcji regul"
+# Regula z tabeli musi byc widoczna, ale NIE jako surowy `trigger_type` —
+# panel czyta koordynator serwisu, wiec pokazuje opis po polsku. Asercja
+# sprawdza to, co widzi CZLOWIEK, i pilnuje, ze techniczne kody nie wracaja.
 RULE_TRIG=$(q "SELECT trigger_type FROM wp_mp_workflow_rules ORDER BY priority ASC, id ASC LIMIT 1")
 if [ -n "$RULE_TRIG" ]; then
-	echo "$HTML_SYS" | grep -qF "$RULE_TRIG" && ok "reguly: trigger '$RULE_TRIG' z tabeli widoczny w liscie" || bad "reguly: brak danych z tabeli ($RULE_TRIG)"
+	case "$RULE_TRIG" in
+		case_created)   OPIS='gdy wpłynie nowe zgłoszenie' ;;
+		status_changed) OPIS='gdy zmieni się status sprawy' ;;
+		message_added)  OPIS='gdy pojawi się nowa wiadomość' ;;
+		*)              OPIS="$RULE_TRIG" ;;
+	esac
+	echo "$HTML_SYS" | grep -qF "$OPIS" && ok "reguly: wyzwalacz opisany po ludzku ('$OPIS')" || bad "reguly: brak opisu wyzwalacza ($OPIS)"
+	echo "$HTML_SYS" | grep -qE '>(case_created|status_changed|message_added|assign|notify)<' && bad "reguly: surowy kod techniczny wyciekl do panelu" || ok "reguly: zero surowych kodow technicznych w panelu"
+	echo "$HTML_SYS" | grep -qE 'przydziela sprawę|wysyła powiadomienie' && ok "reguly: akcja opisana po ludzku" || bad "reguly: akcja nieopisana"
 else
 	ok "reguly: brak seedu (lista pusta obsluzona)"
 fi
