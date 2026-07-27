@@ -1546,6 +1546,15 @@ final class CaseRepo {
 	/**
 	 * Przy weryfikacji: tworzy/podpina klienta z zapamietanych danych kontaktowych.
 	 *
+	 * Transakcja [dopasowanie klienta -> wpiecie sprawy] pod blokada wiersza
+	 * klienta (audyt #8): bez niej rownolegly eraser RODO mogl miedzy tymi
+	 * krokami zanonimizowac klienta i sprawa z pelnym PII wisiala przy
+	 * "usunietym" rekordzie, poza spisem erasera. Teraz albo wpinamy sie
+	 * PRZED eraserem (widzi sprawe i odracza), albo PO nim (klient
+	 * zanonimizowany odpada z dopasowania i powstaje swiezy rekord).
+	 * Konto WP i sprzatanie opcji celowo POZA transakcja (cudza tabela
+	 * wp_users; brak konta naprawia sie przy nastepnym logowaniu).
+	 *
 	 * @param int $case_id ID sprawy.
 	 * @return int ID klienta (0 gdy brak danych kontaktowych).
 	 */
@@ -1558,18 +1567,17 @@ final class CaseRepo {
 			return 0;
 		}
 
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$wpdb->query( 'START TRANSACTION' );
+
 		$customer_id = Customers::upsert_by_email(
 			(string) $pending['email'],
 			(string) ( $pending['name'] ?? '' ),
 			(string) ( $pending['phone'] ?? '' )
 		);
 
-		// Konto WP klienta DOPIERO teraz (panel „moje zgloszenia"; edge personel/admin — Accounts).
-		Accounts::ensure_for_customer( $customer_id, (string) $pending['email'], (string) ( $pending['name'] ?? '' ) );
-
 		$table = Tables::full( Tables::CASES );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 		$wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$table} SET customer_id = %d, updated_at = %s WHERE id = %d",
@@ -1578,7 +1586,12 @@ final class CaseRepo {
 				$case_id
 			)
 		);
+
+		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
+
+		// Konto WP klienta DOPIERO teraz (panel „moje zgloszenia"; edge personel/admin — Accounts).
+		Accounts::ensure_for_customer( $customer_id, (string) $pending['email'], (string) ( $pending['name'] ?? '' ) );
 
 		delete_option( 'mp_pending_contact_' . $case_id );
 

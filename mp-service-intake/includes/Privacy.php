@@ -67,31 +67,72 @@ final class Privacy {
 	 * @return array{items_removed: bool, items_retained: bool, messages: array<int, string>, done: bool}
 	 */
 	public static function erase( string $email, int $page = 1 ): array {
+		global $wpdb;
+
 		unset( $page );
 
-		$email    = trim( $email );
-		$messages = array();
-		$removed  = false;
-		$retained = false;
+		$email     = trim( $email );
+		$messages  = array();
+		$removed   = false;
+		$retained  = false;
+		$customers = Tables::full( Tables::CUSTOMERS );
+		$deferral  = __( 'Dane zatrzymane do zakończenia aktywnej sprawy serwisowej lub upływu okresu roszczeń (gwarancja/rękojmia).', 'mp-service-intake' );
 
 		foreach ( Customers::ids_by_email( $email ) as $customer_id ) {
+			// Transakcja + blokada wiersza klienta (audyt #8): rownolegla
+			// weryfikacja zgloszenia (attach_customer_on_verify) czeka na tej
+			// blokadzie, wiec miedzy spisem spraw a anonimizacja NIC nie moze
+			// sie dopiac. Bez tego nowa sprawa dopieta w oknie wyscigu
+			// zostawala z pelnym PII przy "usunietym" kliencie, a raport
+			// klamal, ze dane usunieto.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$wpdb->query( 'START TRANSACTION' );
+
+			$locked = $wpdb->get_var(
+				$wpdb->prepare( "SELECT id FROM {$customers} WHERE id = %d AND anonymized_at IS NULL FOR UPDATE", $customer_id )
+			);
+			// phpcs:enable
+
+			// Ktos zdazyl zanonimizowac przed nami — nic do roboty.
+			if ( null === $locked ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+				continue;
+			}
+
 			// Sprawa aktywna / okno roszczen => ODROCZENIE EN BLOC (nic nie tykamy).
 			if ( CaseRepo::has_active_case( $customer_id ) ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
 				$retained   = true;
-				$messages[] = __( 'Dane zatrzymane do zakończenia aktywnej sprawy serwisowej lub upływu okresu roszczeń (gwarancja/rękojmia).', 'mp-service-intake' );
+				$messages[] = $deferral;
 				continue;
 			}
 
 			$cases    = CaseRepo::for_customer( $customer_id );
 			$case_ids = array_map( static fn( array $c ): int => (int) $c['id'], $cases );
 
+			// Najpierw operacje CZYSTO bazodanowe (cofalne rollbackiem);
+			// pliki zalacznikow dopiero PO commicie — rollback nie umie
+			// przywrocic skasowanego pliku.
 			Messages::redact_for_cases( $case_ids );
 			CaseRepo::redact_pii_for_cases( $case_ids );
-			Attachments::delete_for_cases( $case_ids );
 
 			// B redaguje reason wyjatkow powiazanych ze sprawami klienta.
 			if ( has_filter( 'mp_privacy_redact_for_customer' ) ) {
 				apply_filters( 'mp_privacy_redact_for_customer', null, $customer_id, $case_ids );
+			}
+
+			// RECHECK pod blokada (audyt #8, pas i szelki): jesli mimo blokady
+			// jakas sciezka dopiela sprawe po pierwszym spisie (np. wpiecie w tym
+			// samym procesie), to jest to NOWA, aktywna sprawa => pelne
+			// odroczenie: cofamy redakcje w calosci, sprawa trafi do spisu
+			// przy nastepnym przebiegu erasera.
+			$ids_after = array_map( static fn( array $c ): int => (int) $c['id'], CaseRepo::for_customer( $customer_id ) );
+
+			if ( array() !== array_diff( $ids_after, $case_ids ) ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+				$retained   = true;
+				$messages[] = $deferral;
+				continue;
 			}
 
 			// Konto WP: id lapiemy PRZED anonimizacja (anonymize odpina wp_user_id).
@@ -100,6 +141,13 @@ final class Privacy {
 			Customers::anonymize( $customer_id );
 			// FLAGA #6: redakcja e-maila (PII) w zgodach — rozliczalnosc art. 7 zostaje (tekst+daty).
 			Consents::redact_email_for_customer( $customer_id );
+
+			$wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+
+			// PO COMMIT — operacje nieodwracalne lub poza naszymi tabelami.
+			// Pliki: idempotentne; gdyby proces padl tuz po commicie, retencja
+			// zalacznikow (Lifecycle) sprzata sieroty.
+			Attachments::delete_for_cases( $case_ids );
 
 			// D1 (RODO art. 17): usun konto WP klienta (e-mail/login/nazwisko z wp_users).
 			// Tylko czyste konto klienta — personel/admin nietkniety (Accounts).
