@@ -18,6 +18,7 @@ namespace MP\Automator\Admin;
 
 use MP\Automator\ChecklistTemplates;
 use MP\Automator\ResponseTemplates;
+use MP\Automator\Rules;
 use MP\Automator\Tables;
 use MP\Automator\WorkflowEvents;
 
@@ -249,7 +250,7 @@ final class PanelScreen {
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna D, read-only podglad.
 		$rows = $wpdb->get_results(
-			"SELECT id, trigger_type, condition_key, condition_operator, condition_value, action_type, priority, enabled, source
+			"SELECT id, trigger_type, condition_key, condition_operator, condition_value, action_type, action_config_json, priority, enabled, source
 			FROM {$table} ORDER BY priority ASC, id ASC"
 		);
 		// phpcs:enable
@@ -260,9 +261,9 @@ final class PanelScreen {
 			<thead>
 				<tr>
 					<th scope="col"><?php esc_html_e( 'ID', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Wyzwalacz', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Kiedy działa', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Warunek', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Akcja', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Co robi', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Priorytet', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Aktywna', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Źródło', 'mp-workflow-automator' ); ?></th>
@@ -275,18 +276,149 @@ final class PanelScreen {
 					<?php foreach ( $rows as $r ) : ?>
 						<tr>
 							<td><?php echo esc_html( (string) $r->id ); ?></td>
-							<td><?php echo esc_html( (string) $r->trigger_type ); ?></td>
-							<td><?php echo esc_html( trim( $r->condition_key . ' ' . $r->condition_operator . ' ' . $r->condition_value ) ); ?></td>
-							<td><?php echo esc_html( (string) $r->action_type ); ?></td>
+							<td><?php echo esc_html( self::opis_wyzwalacza( (string) $r->trigger_type ) ); ?></td>
+							<td><?php echo esc_html( self::opis_warunku( (string) $r->condition_key, (string) $r->condition_operator, (string) $r->condition_value ) ); ?></td>
+							<td><?php echo esc_html( self::opis_akcji( (string) $r->action_type, (string) $r->action_config_json ) ); ?></td>
 							<td><?php echo esc_html( (string) $r->priority ); ?></td>
 							<td><?php echo (int) $r->enabled ? esc_html__( 'tak', 'mp-workflow-automator' ) : esc_html__( 'nie', 'mp-workflow-automator' ); ?></td>
-							<td><?php echo esc_html( (string) $r->source ); ?></td>
+							<td><?php echo esc_html( 'system' === $r->source ? __( 'wbudowana', 'mp-workflow-automator' ) : __( 'własna', 'mp-workflow-automator' ) ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
 			</tbody>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Kiedy regula sie odpala — po ludzku, nie kodem technicznym.
+	 *
+	 * Tabele regul czyta KOORDYNATOR SERWISU, nie programista: `case_created`
+	 * i `equals` nic mu nie mowia, a caly reszta produktu mowi po polsku —
+	 * ten jeden ekran wypadal z konwencji.
+	 *
+	 * @param string $trigger Stala TRIGGER_*.
+	 * @return string
+	 */
+	private static function opis_wyzwalacza( string $trigger ): string {
+		switch ( $trigger ) {
+			case Rules::TRIGGER_CASE_CREATED:
+				return __( 'gdy wpłynie nowe zgłoszenie', 'mp-workflow-automator' );
+			case Rules::TRIGGER_STATUS_CHANGED:
+				return __( 'gdy zmieni się status sprawy', 'mp-workflow-automator' );
+			case Rules::TRIGGER_MESSAGE_ADDED:
+				return __( 'gdy pojawi się nowa wiadomość', 'mp-workflow-automator' );
+			default:
+				return $trigger;
+		}
+	}
+
+	/**
+	 * Warunek po ludzku; brak warunku = „zawsze", a nie osierocone „equals".
+	 *
+	 * @param string $klucz    Pole warunku.
+	 * @param string $operator Operator.
+	 * @param string $wartosc  Wartosc.
+	 * @return string
+	 */
+	private static function opis_warunku( string $klucz, string $operator, string $wartosc ): string {
+		if ( '' === trim( $klucz ) ) {
+			return __( 'zawsze', 'mp-workflow-automator' );
+		}
+
+		$pola = array(
+			'author_type' => __( 'autor wiadomości', 'mp-workflow-automator' ),
+			'kategoria'   => __( 'kategoria produktu', 'mp-workflow-automator' ),
+			'kraj'        => __( 'kraj', 'mp-workflow-automator' ),
+			'jezyk'       => __( 'język', 'mp-workflow-automator' ),
+			'priorytet'   => __( 'priorytet', 'mp-workflow-automator' ),
+		);
+
+		$wartosci = array(
+			'client' => __( 'klient', 'mp-workflow-automator' ),
+			'staff'  => __( 'pracownik', 'mp-workflow-automator' ),
+		);
+
+		$operatory = array(
+			'equals'       => __( 'to', 'mp-workflow-automator' ),
+			'not_equals'   => __( 'to nie', 'mp-workflow-automator' ),
+			'in_list'      => __( 'jest jednym z', 'mp-workflow-automator' ),
+			'is_empty'     => __( 'jest pusty', 'mp-workflow-automator' ),
+			'is_not_empty' => __( 'jest wypełniony', 'mp-workflow-automator' ),
+		);
+
+		$pole = $pola[ $klucz ] ?? $klucz;
+		$op   = $operatory[ $operator ] ?? $operator;
+
+		if ( in_array( $operator, array( 'is_empty', 'is_not_empty' ), true ) ) {
+			return $pole . ' ' . $op;
+		}
+
+		return trim( $pole . ' ' . $op . ' ' . ( $wartosci[ $wartosc ] ?? $wartosc ) );
+	}
+
+	/**
+	 * Co regula robi — z NAJWAZNIEJSZYM szczegolem wprost w tresci.
+	 *
+	 * Przy przydziale to lista pracownikow: bez niej admin patrzy na „assign"
+	 * i nie ma pojecia, ze pula jest pusta, wiec zgloszenia nie trafiaja do
+	 * nikogo. Diagnostyka w Stanie witryny zglasza to osobno, ale czlowiek
+	 * patrzy najpierw tutaj.
+	 *
+	 * @param string $akcja  Stala ACTION_*.
+	 * @param string $config JSON konfiguracji akcji.
+	 * @return string
+	 */
+	private static function opis_akcji( string $akcja, string $config ): string {
+		$dane = json_decode( $config, true );
+		$dane = is_array( $dane ) ? $dane : array();
+
+		if ( Rules::ACTION_ASSIGN === $akcja ) {
+			$pula   = isset( $dane['pool'] ) && is_array( $dane['pool'] ) ? array_map( 'intval', $dane['pool'] ) : array();
+			$imiona = array();
+
+			foreach ( $pula as $uid ) {
+				$user = $uid > 0 ? get_userdata( $uid ) : false;
+
+				if ( $user && user_can( $uid, 'mp_agent' ) ) {
+					$imiona[] = $user->display_name;
+				}
+			}
+
+			if ( array() === $imiona ) {
+				return __( 'przydziela sprawę pracownikowi — UWAGA: lista pracowników jest pusta, więc nikt jej nie dostanie', 'mp-workflow-automator' );
+			}
+
+			return sprintf(
+				/* translators: %s: lista imion pracownikow w puli. */
+				__( 'przydziela sprawę po kolei: %s', 'mp-workflow-automator' ),
+				implode( ', ', $imiona )
+			);
+		}
+
+		if ( Rules::ACTION_NOTIFY === $akcja ) {
+			$do = isset( $dane['recipient'] ) ? (string) $dane['recipient'] : '';
+
+			if ( 'client' === $do ) {
+				return __( 'wysyła powiadomienie klientowi', 'mp-workflow-automator' );
+			}
+
+			if ( 'agent' === $do ) {
+				return __( 'wysyła powiadomienie pracownikowi', 'mp-workflow-automator' );
+			}
+
+			return __( 'wysyła powiadomienie', 'mp-workflow-automator' );
+		}
+
+		if ( Rules::ACTION_CHANGE_STATUS === $akcja ) {
+			return __( 'zmienia status sprawy', 'mp-workflow-automator' );
+		}
+
+		if ( Rules::ACTION_SET_PRIORITY === $akcja ) {
+			return __( 'ustawia priorytet sprawy', 'mp-workflow-automator' );
+		}
+
+		return $akcja;
 	}
 
 	/**
