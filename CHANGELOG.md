@@ -6,6 +6,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [1.0.0] - 2026-07-27
 
+### Security (panel klienta — nieodwracalna akcja z potwierdzeniem)
+- **Usunięcie danych osobowych wymaga teraz dwóch świadomych kliknięć.** Przycisk „Wycofaj zgodę
+  i usuń moje dane" wysyłał formularz od razu: jedno kliknięcie wycofywało zgodę na **wszystkich**
+  sprawach i uruchamiało usuwanie — a przycisk sąsiadował z niewinnym „Zapisz dane". Na telefonie
+  pudło kciukiem kończyło się nieodwracalną utratą danych. Teraz pierwsze kliknięcie prowadzi na
+  ekran, który mówi wprost **co zniknie** (imię, telefon, e-mail), **co zostaje** (historia zdarzeń
+  i statystyki, bez danych identyfikujących) i że operacji **nie da się cofnąć**; dopiero przycisk
+  na tym ekranie ją wykonuje — z osobnym nonce. Ten sam wzorzec, co przy potwierdzaniu zgłoszenia
+  i logowaniu linkiem z maila.
+- **Blok RODO przeniesiony pod listę spraw.** Rozdzielał dane kontaktowe od zgłoszeń, przez co
+  klient wchodzący sprawdzić status naprawy w pierwszej kolejności widział czerwony przycisk
+  kasowania konta.
+
 ### Changed (sprawdzenie na najnowszym WordPressie)
 - **`Tested up to: 7.0`** we wszystkich trzech wtyczkach — paczka przeszła **instalację od zera na
   WordPressie 7.0.2** (PHP 8.2, MySQL 8): ścieżka klienta 19/0, wgranie wtyczki przez panel 6/0,

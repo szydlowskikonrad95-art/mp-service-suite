@@ -31,6 +31,21 @@ login_and_withdraw_nonce() {
 	echo "$panel" | grep -o 'value="mp_intake_withdraw".*' | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//'
 }
 
+# Wycofanie zgody jest DWUSTOPNIOWE (C27): pierwszy POST prowadzi na ekran
+# potwierdzenia, operacje wykonuje dopiero drugi, z wlasnym nonce.
+wycofaj() { # $1=jar  $2=nonce kroku 1
+	local page_id page_path sep panel n2
+	curl -s -b "$1" -o /dev/null --data-urlencode "action=mp_intake_withdraw" \
+		--data-urlencode "_mp_nonce=$2" "$MP_BASE/wp-admin/admin-post.php"
+	page_id=$(wp option get mp_account_page_id 2>/dev/null)
+	page_path=$(wp post url "$page_id" 2>/dev/null | sed 's#^https\?://[^/]*##')
+	case "$page_path" in *\?*) sep='&' ;; *) sep='?' ;; esac
+	panel=$(curl -s -b "$1" "$MP_BASE${page_path}${sep}mp_withdraw=potwierdz")
+	n2=$(echo "$panel" | grep -o 'value="mp_intake_withdraw_confirm".*' | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+	curl -s -b "$1" -o /dev/null --data-urlencode "action=mp_intake_withdraw_confirm" \
+		--data-urlencode "_mp_nonce=$n2" "$MP_BASE/wp-admin/admin-post.php"
+}
+
 wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_messages; DELETE FROM wp_mp_consents; DELETE FROM wp_mp_attachments;" >/dev/null 2>&1
 wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"mp_pending_contact_%\"") as $o) delete_option($o);' >/dev/null 2>&1
 for u in $(wp user list --role=mp_client --field=ID 2>/dev/null); do wp user delete "$u" --yes >/dev/null 2>&1; done
@@ -46,7 +61,7 @@ wp db query "UPDATE wp_mp_consents SET customer_id=$CUSTA WHERE case_id=$CIDA" >
 
 NA=$(login_and_withdraw_nonce 'akt@example.com' "$UIDA" /tmp/mp-a-jar)
 [ -n "$NA" ] && ok "panel HTTP (aktywny): nonce formularza wycofania" || bad "brak nonce wycofania (aktywny)"
-curl -s -b /tmp/mp-a-jar -o /dev/null --data-urlencode "action=mp_intake_withdraw" --data-urlencode "_mp_nonce=$NA" "$MP_BASE/wp-admin/admin-post.php"
+wycofaj /tmp/mp-a-jar "$NA"
 
 WDRA=$(q "SELECT withdrawn_at FROM wp_mp_consents WHERE customer_id=$CUSTA")
 { [ -n "$WDRA" ] && [ "$WDRA" != "NULL" ]; } && ok "zgoda wycofana (withdrawn_at ustawione, art. 7(3))" || bad "zgoda niewycofana ($WDRA)"
@@ -68,7 +83,7 @@ NB=$(login_and_withdraw_nonce 'zam@example.com' "$UIDB" /tmp/mp-b-jar)
 # Zamknij sprawe PO zalogowaniu (nonce juz pobrany), przed POST-em.
 # REALNA droga (change_status, nie seed) — anty-drift #14 (slug 'zamknięte' z ę).
 wp eval "apply_filters('mp_case_change_status', null, $CIDB, 'zamknięte', 'nowe', 1);" >/dev/null 2>&1
-curl -s -b /tmp/mp-b-jar -o /dev/null --data-urlencode "action=mp_intake_withdraw" --data-urlencode "_mp_nonce=$NB" "$MP_BASE/wp-admin/admin-post.php"
+wycofaj /tmp/mp-b-jar "$NB"
 
 EVB=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE case_id=$CIDB AND event_type='CONSENT_WITHDRAWN'")
 [ "$EVB" -ge 1 ] && ok "event CONSENT_WITHDRAWN na sprawie zamknietej ($EVB)" || bad "brak eventu (zamknieta)"

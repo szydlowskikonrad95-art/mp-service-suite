@@ -54,6 +54,7 @@ final class AccountPage {
 		add_action( 'admin_post_mp_intake_message', array( self::class, 'handle_send_message' ) );
 		add_action( 'admin_post_mp_intake_update_contact', array( self::class, 'handle_update_contact' ) );
 		add_action( 'admin_post_mp_intake_withdraw', array( self::class, 'handle_withdraw' ) );
+		add_action( 'admin_post_mp_intake_withdraw_confirm', array( self::class, 'handle_withdraw_confirm' ) );
 	}
 
 	/**
@@ -196,10 +197,14 @@ final class AccountPage {
 		}
 
 		$out .= self::render_contact_form( $wp_user_id, $shared );
-		$out .= self::render_privacy_form( $shared );
 
+		// Blok RODO CELOWO pod lista spraw: klient wchodzi tu po status naprawy,
+		// a nie po kasowanie konta. Wczesniej czerwony przycisk usuwania danych
+		// rozdzielal profil od zgloszen i sasiadowal z „Zapisz dane" — na telefonie
+		// pudlo kciukiem konczylo sie nieodwracalna akcja (przeglad UI 27.07).
 		if ( array() === $cases ) {
-			$out .= '<p>' . esc_html__( 'Nie znaleźliśmy zgłoszeń przypisanych do tego konta.', 'mp-service-intake' ) . '</p></div>';
+			$out .= '<p>' . esc_html__( 'Nie znaleźliśmy zgłoszeń przypisanych do tego konta.', 'mp-service-intake' ) . '</p>';
+			$out .= self::render_privacy_form( $shared ) . '</div>';
 
 			return $out;
 		}
@@ -210,6 +215,7 @@ final class AccountPage {
 			$out .= self::render_case_block( $case );
 		}
 
+		$out .= self::render_privacy_form( $shared );
 		$out .= '</div>';
 
 		return $out;
@@ -335,6 +341,29 @@ final class AccountPage {
 		}
 
 		$out .= '<p class="mp-account__meta">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- wybor WIDOKU (krok 1 vs ekran potwierdzenia); sama operacja ma wlasny nonce nizej.
+		$krok_potwierdzenia = isset( $_GET['mp_withdraw'] ) && 'potwierdz' === sanitize_text_field( wp_unslash( (string) $_GET['mp_withdraw'] ) );
+
+		if ( $krok_potwierdzenia ) {
+			// Drugi, swiadomy klik. Mowimy wprost, co zniknie, a co zostaje —
+			// klient ma podjac decyzje z pelna informacja, nie w ciemno.
+			$out .= '<div class="mp-account__privacy-confirm" role="alert">';
+			$out .= '<p><strong>' . esc_html__( 'Ta operacja jest nieodwracalna — nie można jej cofnąć.', 'mp-service-intake' ) . '</strong></p>';
+			$out .= '<p>' . esc_html__( 'Usuniemy Twoje dane osobowe: imię i nazwisko, telefon, adres e-mail oraz treści, które je zawierają.', 'mp-service-intake' ) . '</p>';
+			$out .= '<p>' . esc_html__( 'Zostaje historia zdarzeń zgłoszeń i statystyki serwisu — bez danych pozwalających Cię zidentyfikować. Wymaga tego rozliczalność obsługi reklamacji.', 'mp-service-intake' ) . '</p>';
+			$out .= '<p>' . esc_html__( 'Po usunięciu danych stracisz dostęp do tego panelu.', 'mp-service-intake' ) . '</p>';
+			$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
+			$out .= '<input type="hidden" name="action" value="mp_intake_withdraw_confirm" />';
+			$out .= wp_nonce_field( 'mp_intake_withdraw_confirm', '_mp_nonce', true, false );
+			$out .= '<p class="mp-account__actions">';
+			$out .= '<button type="submit">' . esc_html__( 'Tak, wycofuję zgodę i usuwam dane', 'mp-service-intake' ) . '</button> ';
+			$out .= '<a href="' . esc_url( self::url() ) . '">' . esc_html__( 'Anuluj', 'mp-service-intake' ) . '</a>';
+			$out .= '</p></form></div></section>';
+
+			return $out;
+		}
+
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_withdraw" />';
 		$out .= wp_nonce_field( 'mp_intake_withdraw', '_mp_nonce', true, false );
@@ -345,11 +374,12 @@ final class AccountPage {
 	}
 
 	/**
-	 * Obsluga wycofania zgody + kanal do erasera (POST).
+	 * KROK 1 — klikniecie „Wycofaj zgodę i usuń moje dane" NIC nie zmienia.
 	 *
-	 * Wycofanie zgody (art. 7(3)) jest NATYCHMIASTOWE i emituje CONSENT_WITHDRAWN
-	 * na sprawach klienta — niezaleznie od tego, czy eraser od razu usunie dane
-	 * (aktywna sprawa => odroczenie EN BLOC w Privacy::erase).
+	 * Prowadzi na ekran potwierdzenia (ten sam wzorzec, co magic-link: klikniecie
+	 * pokazuje strone z przyciskiem). Wczesniej jeden POST kasowal dane, a przycisk
+	 * sasiadowal z „Zapisz dane" — pudlo kciukiem na telefonie bylo nieodwracalne.
+	 * Konto wspoldzielone odbija sie juz tutaj, zeby nie prowadzic donikad.
 	 *
 	 * @return void
 	 */
@@ -359,6 +389,33 @@ final class AccountPage {
 		if ( 0 === $user_id
 			|| ! isset( $_POST['_mp_nonce'] )
 			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['_mp_nonce'] ) ), 'mp_intake_withdraw' )
+		) {
+			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
+		}
+
+		if ( count( Customers::ids_by_wp_user( $user_id ) ) > 1 ) {
+			self::redirect_notice( self::shared_mailbox_notice() );
+		}
+
+		wp_safe_redirect( add_query_arg( 'mp_withdraw', 'potwierdz', self::url() ) );
+		exit;
+	}
+
+	/**
+	 * KROK 2 — potwierdzone wycofanie zgody + kanal do erasera (POST).
+	 *
+	 * Wycofanie zgody (art. 7(3)) jest NATYCHMIASTOWE i emituje CONSENT_WITHDRAWN
+	 * na sprawach klienta — niezaleznie od tego, czy eraser od razu usunie dane
+	 * (aktywna sprawa => odroczenie EN BLOC w Privacy::erase).
+	 *
+	 * @return void
+	 */
+	public static function handle_withdraw_confirm(): void {
+		$user_id = get_current_user_id();
+
+		if ( 0 === $user_id
+			|| ! isset( $_POST['_mp_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['_mp_nonce'] ) ), 'mp_intake_withdraw_confirm' )
 		) {
 			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
 		}
