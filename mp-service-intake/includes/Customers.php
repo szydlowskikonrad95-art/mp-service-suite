@@ -16,10 +16,17 @@ namespace MP\Intake;
 final class Customers {
 
 	/**
-	 * Znajduje klienta po emailu albo tworzy nowego (bez duplikatow po mailu).
+	 * Znajduje klienta po emailu I TOZSAMOSCI albo tworzy nowego.
 	 *
-	 * @param string $email E-mail (klucz logiczny klienta).
-	 * @param string $name  Nazwa/imie.
+	 * Jeden adres e-mail moze obslugiwac WIELE OSOB (wspolna skrzynka
+	 * sekretariatu/recepcji — w instytucji publicznej norma). Dopasowujemy
+	 * istniejacy rekord TYLKO gdy nazwisko wskazuje te sama osobe
+	 * (same_person); inne nazwisko pod tym samym adresem = OSOBNY rekord,
+	 * zeby dane pierwszej osoby nie byly nadpisywane cudzymi, a sprawy nie
+	 * mieszaly sie miedzy ludzmi (znalezisko #10 audytu 27.07).
+	 *
+	 * @param string $email E-mail (wspolny klucz skrzynki, NIE osoby).
+	 * @param string $name  Nazwa/imie (druga polowa tozsamosci).
 	 * @param string $phone Telefon.
 	 * @return int ID klienta.
 	 */
@@ -30,22 +37,34 @@ final class Customers {
 		$now   = gmdate( 'Y-m-d H:i:s' );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytania przygotowane.
-		$existing = $wpdb->get_var(
-			$wpdb->prepare( "SELECT id FROM {$table} WHERE email = %s AND anonymized_at IS NULL ORDER BY id LIMIT 1", $email )
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT id, name FROM {$table} WHERE email = %s AND anonymized_at IS NULL ORDER BY id", $email ),
+			ARRAY_A
 		);
 
-		if ( null !== $existing ) {
+		foreach ( (array) $rows as $row ) {
+			$stored = (string) ( $row['name'] ?? '' );
+
+			// Inna osoba pod wspolnym adresem — nie sklejaj rekordow.
+			if ( '' !== $stored && '' !== $name && ! self::same_person( $stored, $name ) ) {
+				continue;
+			}
+
+			$existing = (int) $row['id'];
+
+			// Pierwotna pisownia nazwiska zostaje (stabilny zapis tej osoby);
+			// puste imie uzupelniamy, telefon odswiezamy.
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$table} SET name = %s, phone = %s, updated_at = %s WHERE id = %d",
-					$name,
+					'' !== $stored ? $stored : $name,
 					$phone,
 					$now,
-					(int) $existing
+					$existing
 				)
 			);
 
-			return (int) $existing;
+			return $existing;
 		}
 
 		$wpdb->insert(
@@ -61,6 +80,34 @@ final class Customers {
 		// phpcs:enable
 
 		return (int) $wpdb->insert_id;
+	}
+
+	/**
+	 * Czy dwa zapisy nazwiska wskazuja TE SAMA osobe.
+	 *
+	 * Ta sama tresc po normalizacji wielkosci liter i bialych znakow = ta sama
+	 * osoba (literowki w wielkosci liter nie tworza duplikatow). Rozne
+	 * nazwiska pod wspolnym adresem = rozne osoby.
+	 *
+	 * @param string $a Nazwisko A.
+	 * @param string $b Nazwisko B.
+	 * @return bool
+	 */
+	public static function same_person( string $a, string $b ): bool {
+		return self::normalize_name( $a ) === self::normalize_name( $b );
+	}
+
+	/**
+	 * Normalizacja nazwiska do porownania tozsamosci (trim, pojedyncze
+	 * spacje, male litery UTF-8).
+	 *
+	 * @param string $name Nazwisko.
+	 * @return string
+	 */
+	private static function normalize_name( string $name ): string {
+		$name = trim( (string) preg_replace( '/\s+/u', ' ', $name ) );
+
+		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $name, 'UTF-8' ) : strtolower( $name );
 	}
 
 	/**
