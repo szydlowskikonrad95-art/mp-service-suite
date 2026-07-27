@@ -148,6 +148,19 @@ if ( $mp_intake_delete_data ) {
 
 	delete_option( MP\Intake\Schema::VERSION_OPTION );
 
+	/**
+	 * Sygnal kontraktowy: tabele spraw przestaly istniec (API-KONTRAKT.md §A).
+	 *
+	 * Audyt 27.07: kontrakt byl OPISANY (API-KONTRAKT, OWNERSHIP, EVENT_MODEL,
+	 * diagram architektury) i mial gotowych SLUCHACZY (Rejestr cofa wyjatki
+	 * gwarancyjne przypiete do spraw, Automator czysci terminy i checklisty) —
+	 * ale NIKT go nie emitowal. Po odinstalowaniu Intake w pozostalych wtyczkach
+	 * zostawaly wiersze wiszace na nieistniejacych sprawach, a dokumentacja
+	 * obiecywala klientowi cos przeciwnego. Emisja PO skasowaniu tabel: sluchacze
+	 * maja nie probowac czytac spraw, ktorych juz nie ma.
+	 */
+	do_action( 'mp_cases_data_erased' );
+
 	// Osierocone opcje kontaktu (unverified) + transienty (rate-limit/resend) — grep-zero.
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall sciezka ON: sprzatanie WLASNYCH opcji/transientow.
 	$wpdb->query(

@@ -38,6 +38,13 @@ final class Plugin {
 	 * @return void
 	 */
 	public function boot(): void {
+		// Audyt #14: obiecany w kontrakcie mechanizm zgodnosci wersji — WPIETY.
+		// Niezgodnosc (plugin zbudowany na inna wersje kontraktu niz zaladowana
+		// stala) = admin notice + degraded mode przez has_filter, NIGDY fatal.
+		if ( ! Common\Contract::is_compatible( 1 ) ) {
+			Common\Contract::register_mismatch_notice( 'MP Workflow Automator' );
+		}
+
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
@@ -49,6 +56,13 @@ final class Plugin {
 
 		// Ksiega SLA (P3.4): wiersz terminu na created + przeliczenie przy zmianie statusu.
 		Sla::register();
+
+		// Kontrakt C -> D (API-KONTRAKT.md §A): sprawy przestaly istniec => nasze
+		// wiersze przypiete do spraw traca sens. Rejestr operacji ZOSTAJE (historia).
+		// Audyt 27.07: kontrakt byl opisany w dokumentacji i na diagramie, ale po
+		// stronie D nie mial ZADNEGO sluchacza — terminy i checklisty przezywaly
+		// odinstalowanie Intake jako dane wiszace na nieistniejacych sprawach.
+		add_action( 'mp_cases_data_erased', array( self::class, 'on_cases_data_erased' ) );
 
 		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
 		Sweep::register();
@@ -81,6 +95,35 @@ final class Plugin {
 		// pakietu: bez WP-Crona terminy SLA, przypomnienia i eskalacje po prostu
 		// nie chodza, a system wyglada na sprawny — awaria cicha.
 		Admin\SiteHealthTests::register();
+	}
+
+	/**
+	 * Sprawy skasowane przez C => czyscimy WLASNE wiersze przypiete do spraw.
+	 *
+	 * Rejestr operacji (workflow_events) ZOSTAJE — to historia dzialania
+	 * automatyzacji, nie dane sprawy (OWNERSHIP.md). Opcje-tresci (szablony,
+	 * checklisty, statusy wlasne, reguly) tez zostaja: przezywaja razem z
+	 * konfiguracja modulu.
+	 *
+	 * @return void
+	 */
+	public static function on_cases_data_erased(): void {
+		global $wpdb;
+
+		foreach ( array( Tables::CASE_SLA, Tables::CASE_CHECKLISTS ) as $tabela ) {
+			$pelna = Tables::full( $tabela );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna (nazwa ze stalej); sygnal kontraktowy z uninstalla C.
+			$wpdb->query( "DELETE FROM {$pelna}" );
+		}
+
+		WorkflowEvents::log(
+			WorkflowEvents::SWEEP_RUN,
+			array(
+				'action' => 'cases_data_erased',
+				'powod'  => 'uninstall_intake',
+			)
+		);
 	}
 
 	/**

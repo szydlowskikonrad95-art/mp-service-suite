@@ -199,7 +199,7 @@ final class SubmissionHandler {
 		// literowka/blad walidacji nie zjada limitu dobowego; retry nie jest duplikatem.
 		RateLimit::record_submission( $email, $serial, $kind );
 
-		Mailer::send_magic_link( $email, (string) $result['token'] );
+		Mailer::send_magic_link( $email, (string) $result['token'], (int) $result['case_id'] );
 
 		// Komunikat NEUTRALNY — zero enumeracji, SRV dopiero w mailu/panelu.
 		// D4: dokladamy info o pominietych plikach (nie zdradza istnienia konta —
@@ -254,7 +254,7 @@ final class SubmissionHandler {
 			$email = self::email_for_case( (int) $result['case_id'] );
 
 			if ( '' !== $email ) {
-				Mailer::send_confirmation( $email, (string) $result['case_number'] );
+				Mailer::send_confirmation( $email, (string) $result['case_number'], (int) $result['case_id'] );
 			}
 
 			self::render_landing(

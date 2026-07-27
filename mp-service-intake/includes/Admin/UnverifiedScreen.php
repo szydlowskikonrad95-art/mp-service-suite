@@ -123,13 +123,75 @@ final class UnverifiedScreen {
 			echo '<input type="hidden" name="action" value="mp_intake_resend" />';
 			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
 			wp_nonce_field( 'mp_intake_resend_' . $case_id );
-			echo '<input type="email" name="email" value="' . esc_attr( $email ) . '" style="min-width:16rem" />';
+			// Audyt dostepnosci 27.07: pole bylo BEZ nazwy dla czytnika ekranu — uzytkownik
+			// slyszal samo „pole edycyjne", nie wiedzac, czego dotyczy (a to adres klienta).
+			printf(
+				'<label class="screen-reader-text" for="mp-resend-email-%1$d">%2$s</label>',
+				(int) $case_id,
+				esc_html(
+					sprintf(
+						/* translators: %s = numer sprawy SRV. */
+						__( 'Adres e-mail klienta dla zgłoszenia %s', 'mp-service-intake' ),
+						(string) ( $row['case_number'] ?? '' )
+					)
+				)
+			);
+			echo '<input type="email" id="mp-resend-email-' . esc_attr( (string) $case_id ) . '" name="email" value="' . esc_attr( $email ) . '" style="min-width:16rem" />';
 			echo '<button type="submit" class="button">' . esc_html__( 'Wyślij ponownie', 'mp-service-intake' ) . '</button>';
 			echo '</form></td>';
 			echo '</tr>';
 		}
 
-		echo '</tbody></table></div>';
+		echo '</tbody></table>';
+
+		self::render_audit();
+
+		echo '</div>';
+	}
+
+	/**
+	 * Rejestr ostatnich ponownych wysylek (audyt obserwowalnosci 27.07).
+	 *
+	 * Operacje byly ZAPISYWANE, ale nie mial ich gdzie zobaczyc: klasa Audit
+	 * miala metode odczytu, ktorej nikt nie wolal. Gdy klient skarzy sie na fale
+	 * maili, pytanie „kto i kiedy klikal" bylo bez odpowiedzi inaczej niz
+	 * zagladaniem do bazy — a firma bez informatyka tego nie zrobi.
+	 *
+	 * @return void
+	 */
+	private static function render_audit(): void {
+		$wpisy = Audit::entries();
+
+		echo '<h2 class="mp-audit-naglowek">' . esc_html__( 'Ostatnie ponowne wysyłki', 'mp-service-intake' ) . '</h2>';
+
+		if ( array() === $wpisy ) {
+			echo '<p>' . esc_html__( 'Nikt jeszcze nie wysyłał linku ponownie.', 'mp-service-intake' ) . '</p>';
+
+			return;
+		}
+
+		$wpisy = array_slice( array_reverse( $wpisy ), 0, 20 );
+
+		echo '<table class="wp-list-table widefat fixed striped"><thead><tr>';
+		echo '<th>' . esc_html__( 'Kiedy', 'mp-service-intake' ) . '</th>';
+		echo '<th>' . esc_html__( 'Sprawa', 'mp-service-intake' ) . '</th>';
+		echo '<th>' . esc_html__( 'Kto', 'mp-service-intake' ) . '</th>';
+		echo '</tr></thead><tbody>';
+
+		foreach ( $wpisy as $wpis ) {
+			$case_id  = (int) ( $wpis['case_id'] ?? 0 );
+			$actor_id = (int) ( $wpis['actor_id'] ?? 0 );
+			$user     = $actor_id > 0 ? get_userdata( $actor_id ) : false;
+			$numer    = CaseRepo::case_number( $case_id );
+
+			echo '<tr>';
+			echo '<td>' . esc_html( get_date_from_gmt( (string) ( $wpis['at'] ?? '' ), 'Y-m-d H:i' ) ) . '</td>';
+			echo '<td>' . esc_html( '' !== $numer ? $numer : '#' . $case_id ) . '</td>';
+			echo '<td>' . esc_html( false !== $user ? $user->display_name : __( 'system', 'mp-service-intake' ) ) . '</td>';
+			echo '</tr>';
+		}
+
+		echo '</tbody></table>';
 	}
 
 	/**
@@ -177,7 +239,7 @@ final class UnverifiedScreen {
 		}
 
 		set_transient( $throttle_key, 1, self::THROTTLE_SECONDS );
-		Mailer::send_magic_link( $to, $token );
+		Mailer::send_magic_link( $to, $token, $case_id );
 		Audit::log( 'resend', $case_id, get_current_user_id() );
 
 		self::back( __( 'Link weryfikacyjny wysłany ponownie (świeży token).', 'mp-service-intake' ) );

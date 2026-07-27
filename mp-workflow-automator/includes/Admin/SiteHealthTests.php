@@ -72,7 +72,9 @@ final class SiteHealthTests {
 				'recommended',
 				__( 'Automatyczny przydział spraw jest wyłączony', 'mp-workflow-automator' ),
 				__( 'Nie ma włączonej reguły przydzielającej nowe zgłoszenia. Sprawy będą czekać, aż ktoś przypisze je ręcznie na liście zgłoszeń.', 'mp-workflow-automator' ),
-				__( 'Jeśli chcesz przydział automatyczny, włącz regułę w Automator → Reguły.', 'mp-workflow-automator' )
+				// Audyt ekranow 27.07: poprzednia tresc odsylala do edycji reguly w panelu,
+				// ktory jest TYLKO DO ODCZYTU — instrukcja prowadzila donikad.
+				__( 'Regułę przydziału zakłada wtyczka przy instalacji. Jeśli jej nie ma (np. została skasowana), włącz i wyłącz wtyczkę MP Workflow Automator — reguła zostanie odtworzona.', 'mp-workflow-automator' )
 			);
 		}
 
@@ -82,7 +84,9 @@ final class SiteHealthTests {
 				'recommended',
 				__( 'Nowe zgłoszenia nie trafiają do nikogo — pusta lista pracowników', 'mp-workflow-automator' ),
 				__( 'Reguła automatycznego przydziału jest włączona, ale nie wskazano ani jednego pracownika serwisu (albo wskazane osoby straciły uprawnienia). Zgłoszenia będą przyjmowane i widoczne na liście, lecz nikt nie dostanie ich do obsługi ani powiadomienia mailem.', 'mp-workflow-automator' ),
-				__( 'Wejdź w Automator → Reguły, otwórz regułę przydziału i wskaż pracowników serwisu, między których mają być rozdzielane zgłoszenia.', 'mp-workflow-automator' )
+				// Audyt ekranow 27.07: pula pracownikow NIE jest lista w regule — wynika z
+				// przypisanej roli. Tresc mowi teraz to, co user realnie ma zrobic.
+				__( 'Wejdź w Użytkownicy, otwórz osobę, która ma obsługiwać zgłoszenia, i nadaj jej rolę „Pracownik serwisu MP". Zgłoszenia rozdzielają się między wszystkie osoby z tą rolą.', 'mp-workflow-automator' )
 			);
 		}
 

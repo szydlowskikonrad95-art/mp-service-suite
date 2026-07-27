@@ -106,9 +106,14 @@ echo "$HTML_FU" | grep -qF '{{numer_sprawy}}' && ok "(P3.5) WHITELIST markerow w
 # obrona warstwowa: koordynator (nie-sysadmin) NIE widzi formularzy config
 HTML_FU_C=$(render_as $COORD)
 echo "$HTML_FU_C" | grep -q 'mp_automator_checklist_config' && bad "(P3.5) koordynator WIDZI formularz config!" || ok "(P3.5) koordynator: formularze config UKRYTE (tylko system_admin)"
-# realny zapis konfiguracji przez handler (nonce zgodny z ACTION_CONFIG)
+# Bramka #9: formularz MUSI niesc odcisk wersji — bez niego handler odrzuca KAZDY
+# zapis, czyli konfiguracja umiera po cichu u klienta (regresja nie do wykrycia okiem).
+REVN=$(echo "$HTML_FU" | grep -c 'name="mp_config_rev"')
+[ "${REVN:-0}" -ge 2 ] && ok "(P3.5) oba formularze config niosa mp_config_rev (blokada optymistyczna #9)" || bad "(P3.5) formularz BEZ mp_config_rev => zapis configu bylby martwy ($REVN)"
+# realny zapis konfiguracji przez handler (nonce zgodny z ACTION_CONFIG + odcisk
+# wersji mp_config_rev, ktory niesie realny formularz — blokada optymistyczna #9)
 NEW_JSON='{"reklamacja":[{"key":"test_krok","label":"Krok testowy"}]}'
-wp eval "wp_set_current_user($SYS); \$n=wp_create_nonce('mp_automator_checklist_config'); \$_REQUEST['_wpnonce']=\$n; \$_POST['_wpnonce']=\$n; \$_POST['payload']='$NEW_JSON'; \$_REQUEST['action']='mp_automator_checklist_config'; do_action('admin_post_mp_automator_checklist_config');" >/dev/null 2>&1
+wp eval "wp_set_current_user($SYS); \$n=wp_create_nonce('mp_automator_checklist_config'); \$_REQUEST['_wpnonce']=\$n; \$_POST['_wpnonce']=\$n; \$_POST['mp_config_rev']=MP\\Automator\\ChecklistTemplates::config_rev(); \$_POST['payload']='$NEW_JSON'; \$_REQUEST['action']='mp_automator_checklist_config'; do_action('admin_post_mp_automator_checklist_config');" >/dev/null 2>&1
 SAVED=$(wp eval '$a=MP\Automator\ChecklistTemplates::all(); echo (isset($a["reklamacja"]) && in_array("test_krok", array_column($a["reklamacja"],"key"), true))?"1":"0";' 2>/dev/null | tr -d '[:space:]')
 [ "$SAVED" = "1" ] && ok "(P3.5) POST checklist z nonce => realny zapis configu przez handler" || bad "(P3.5) zapis configu nie zadzialal ($SAVED)"
 CFG_EV=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='CONFIG_CHANGED' AND payload LIKE '%checklist_templates%'")

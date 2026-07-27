@@ -23,6 +23,11 @@ jobs:
           php-version: '${{ matrix.php }}'
           tools: 'composer:v2'
       - run: composer install --prefer-dist --no-progress
+      - name: Build kopii wspólnego kodu (includes/Common — generowane, gitignorowane)
+        # Bez tego testy jednostkowe pracują na innym kształcie kodu niż produkcja:
+        # klasy MP\<Plugin>\Common\* po prostu nie istnieją, więc każde odwołanie do
+        # wspólnego helpera wywala się dopiero w CI (a lokalnie działa, bo build był).
+        run: bash build/build.sh
       - name: Lint skladni
         run: find mp-service-intake mp-warranty-registry mp-workflow-automator lib -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
       - name: PHPUnit
@@ -268,6 +273,22 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-bughunt.sh
       - name: BLOK-S a11y/WCAG sweep (guard img-alt + nazwy przycisków + dup-id na wszystkich powierzchniach)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-a11y.sh
+      # ── Audyt 27.07: PRZED krokiem DoD (on odinstalowuje wtyczki i kasuje tabele),
+      #    ale po testach funkcjonalnych — kontrakt czysci case_sla i checklisty. ──
+      - name: Testy C25 (awaria poczty widoczna — ślad na sprawie + alert w Stanie witryny)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-mail-awaria-widoczna.sh
+      - name: Testy D26 (resync spraw potwierdzonych przy wyłączonym Automatorze)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-resync-nieznane-sprawy.sh
+      - name: Testy D27 (budżet maili na przebieg — hosting nie dostaje lawiny)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-budzet-maili.sh
+      - name: Testy kontraktu mp_cases_data_erased (sygnał żywy, nie tylko w dokumentacji)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/kontrakt-dane-skasowane.sh
+      - name: Testy D28 (Przelicz SLA paczkami — bez timeoutu przy dużej bazie)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-recalc-paczkami.sh
+      - name: Testy C29 (zamknięta sprawa — bramka na przydział i pilność)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
+      - name: Testy C30 (RODO — retencja porzuconych zgłoszeń niepotwierdzonych)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 

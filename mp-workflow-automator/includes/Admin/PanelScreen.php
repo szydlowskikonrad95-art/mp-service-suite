@@ -110,6 +110,26 @@ final class PanelScreen {
 			self::asset_ver( 'assets/js/panel-config.js' ),
 			true
 		);
+
+		// Audyt jezykowy 27.07: wiersze DODAWANE przyciskiem powstaja w JS, wiec ich
+		// etykiety i opisy dla czytnikow ekranu omijaly tlumaczenia — po zmianie jezyka
+		// interfejsu stare wiersze byly przetlumaczone, a nowe nie. Teksty ida teraz
+		// z PHP (ten sam wzorzec co ekran importu w Rejestrze).
+		wp_localize_script(
+			'mp-automator-panel-config',
+			'mpAutomatorCfg',
+			array(
+				'i18n' => array(
+					'klucz'        => __( 'klucz', 'mp-workflow-automator' ),
+					'kluczLabel'   => __( 'Klucz', 'mp-workflow-automator' ),
+					'etykieta'     => __( 'etykieta', 'mp-workflow-automator' ),
+					'etykietaAria' => __( 'Etykieta', 'mp-workflow-automator' ),
+					'tresc'        => __( 'treść (markery {{...}})', 'mp-workflow-automator' ),
+					'trescAria'    => __( 'Treść szablonu', 'mp-workflow-automator' ),
+					'usunWiersz'   => __( 'Usuń wiersz', 'mp-workflow-automator' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -166,6 +186,30 @@ final class PanelScreen {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z redirectu (bez zmiany stanu); handler zapisu mial nonce.
 		$config_error = isset( $_GET['mp_config_error'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_config_error'] ) ) : '';
 		if ( '' !== $config_error ) {
+			// Audyt #9: konflikt rownoczesnej edycji ma WLASNY komunikat (to nie
+			// blad skladni, tylko drugi admin zapisal pierwszy).
+			if ( str_starts_with( $config_error, 'konflikt' ) ) {
+				$what_k = 'konflikt-response' === $config_error
+					? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
+					: __( 'checklist', 'mp-workflow-automator' );
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s = nazwa konfiguracji (checklist / szablonow odpowiedzi) */
+								__( 'Ktoś zapisał konfigurację %s w międzyczasie — Twoje zmiany NIE zostały zapisane, żeby nie nadpisać cudzych. Odśwież stronę i nanieś swoje zmiany ponownie.', 'mp-workflow-automator' ),
+								$what_k
+							)
+						);
+						?>
+					</p>
+				</div>
+				<?php
+				return;
+			}
+
 			$what = 'response' === $config_error
 				? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
 				: __( 'checklisty', 'mp-workflow-automator' );
@@ -527,7 +571,7 @@ final class PanelScreen {
 					<th scope="col"><?php esc_html_e( 'Zdarzenie', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Sprawa', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Wykonawca', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Kiedy (UTC)', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Kiedy', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Szczegóły', 'mp-workflow-automator' ); ?></th>
 				</tr>
 			</thead>
@@ -538,10 +582,10 @@ final class PanelScreen {
 					<?php foreach ( $rows as $e ) : ?>
 						<tr>
 							<td><?php echo esc_html( (string) $e->id ); ?></td>
-							<td><code><?php echo esc_html( (string) $e->event_type ); ?></code></td>
-							<td><?php echo null !== $e->case_id ? esc_html( '#' . (string) (int) $e->case_id ) : '—'; ?></td>
+							<td><?php echo esc_html( self::etykieta_zdarzenia( (string) $e->event_type ) ); ?></td>
+							<td><?php echo null !== $e->case_id ? esc_html( self::numer_sprawy( (int) $e->case_id ) ) : '—'; ?></td>
 							<td><?php echo esc_html( self::actor_label( $e->actor_id ) ); ?></td>
-							<td><?php echo esc_html( (string) $e->created_at ); ?></td>
+							<td><?php echo esc_html( get_date_from_gmt( (string) $e->created_at, 'Y-m-d H:i' ) ); ?></td>
 							<td class="mp-automator-payload"><?php echo esc_html( self::payload_summary( (string) $e->payload ) ); ?></td>
 						</tr>
 					<?php endforeach; ?>
@@ -550,6 +594,55 @@ final class PanelScreen {
 		</table>
 		<?php
 		self::render_pagination( $page, $pages, $total, $show_technical );
+	}
+
+	/**
+	 * Zdarzenie po ludzku (audyt ekranow 27.07).
+	 *
+	 * Rejestr pokazywal surowy kod techniczny (`ASSIGNMENT_UNMATCHED`), a czyta go
+	 * koordynator bez zaplecza informatycznego. Nieznane kody zostaja jak byly —
+	 * lepiej pokazac kod niz zgadywac znaczenie.
+	 *
+	 * @param string $kod Kod zdarzenia.
+	 * @return string
+	 */
+	private static function etykieta_zdarzenia( string $kod ): string {
+		$slownik = array(
+			'RULE_EXECUTED'             => __( 'Reguła wykonana', 'mp-workflow-automator' ),
+			'RULE_LOOP_BLOCKED'         => __( 'Zatrzymano pętlę reguł', 'mp-workflow-automator' ),
+			'RULE_LIMIT_HIT'            => __( 'Osiągnięto limit akcji reguł', 'mp-workflow-automator' ),
+			'ASSIGNMENT_UNMATCHED'      => __( 'Brak pasującej reguły przydziału', 'mp-workflow-automator' ),
+			'MAIL_FAILED'               => __( 'Nieudana wysyłka maila (ponowimy)', 'mp-workflow-automator' ),
+			'MAIL_FAILED_FINAL'         => __( 'Mail nie wyszedł po kilku próbach', 'mp-workflow-automator' ),
+			'MAIL_SKIPPED_NO_RECIPIENT' => __( 'Pominięto mail — brak odbiorcy', 'mp-workflow-automator' ),
+			'MAIL_DEDUPED'              => __( 'Pominięto powtórzony mail', 'mp-workflow-automator' ),
+			'EXPORT_GENERATED'          => __( 'Wygenerowano eksport CSV', 'mp-workflow-automator' ),
+			'CONFIG_CHANGED'            => __( 'Zmieniono konfigurację', 'mp-workflow-automator' ),
+			'SWEEP_RUN'                 => __( 'Przebieg pilnowania terminów', 'mp-workflow-automator' ),
+			'SLA_RECALCULATED'          => __( 'Przeliczono terminy SLA', 'mp-workflow-automator' ),
+		);
+
+		return $slownik[ $kod ] ?? $kod;
+	}
+
+	/**
+	 * Numer sprawy zamiast wewnetrznego ID (audyt ekranow 27.07).
+	 *
+	 * Rejestr pokazywal „#151", a wszedzie indziej sprawa nazywa sie SRV/2026/00003 —
+	 * nie dalo sie powiazac wpisu w logu ze sprawa na liscie.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string
+	 */
+	private static function numer_sprawy( int $case_id ): string {
+		$ctx = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+
+		if ( is_array( $ctx ) && ! empty( $ctx['case_number'] ) ) {
+			return (string) $ctx['case_number'];
+		}
+
+		/* translators: %d = wewnetrzny numer sprawy (gdy Intake nie odpowiada). */
+		return sprintf( __( 'sprawa #%d', 'mp-workflow-automator' ), $case_id );
 	}
 
 	/**
@@ -677,7 +770,8 @@ final class PanelScreen {
 			'mp-checklist-payload',
 			__( 'Zapisz checklisty', 'mp-workflow-automator' ),
 			false,
-			ChecklistTemplates::KINDS_ALLOWED
+			ChecklistTemplates::KINDS_ALLOWED,
+			ChecklistTemplates::config_rev()
 		);
 
 		self::render_config_form(
@@ -688,7 +782,8 @@ final class PanelScreen {
 			'mp-templates-payload',
 			__( 'Zapisz szablony', 'mp-workflow-automator' ),
 			true,
-			ResponseTemplates::KINDS_ALLOWED
+			ResponseTemplates::KINDS_ALLOWED,
+			ResponseTemplates::config_rev()
 		);
 
 		self::render_markers_whitelist();
@@ -706,9 +801,10 @@ final class PanelScreen {
 	 * @param string             $submit   Etykieta przycisku zapisu.
 	 * @param bool               $has_body Czy wiersz ma pole `body` (szablony=true, checklisty=false).
 	 * @param array<int, string> $kinds    Dozwolone rodzaje spraw (sekcje formularza).
+	 * @param string             $rev      Odcisk wersji konfiguracji (blokada optymistyczna — audyt #9).
 	 * @return void
 	 */
-	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit, bool $has_body, array $kinds ): void {
+	private static function render_config_form( string $action, string $heading, string $label, string $json, string $field_id, string $submit, bool $has_body, array $kinds, string $rev = '' ): void {
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) ) {
 			$data = array();
@@ -717,6 +813,8 @@ final class PanelScreen {
 		<h3 class="mp-automator-h3"><?php echo esc_html( $heading ); ?></h3>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-config mp-config-builder" data-has-body="<?php echo $has_body ? '1' : '0'; ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
+			<?php // Audyt #9: odcisk wersji konfiguracji — handler odrzuci zapis, gdy ktos zapisal w miedzyczasie. ?>
+			<input type="hidden" name="mp_config_rev" value="<?php echo esc_attr( $rev ); ?>" />
 			<?php wp_nonce_field( $action ); ?>
 			<p class="description"><?php echo esc_html( $label ); ?></p>
 

@@ -18,7 +18,10 @@ SADMIN=$(wp user get sadminq --field=ID 2>/dev/null)
 
 # handler wolany WPROST (rejestracja admin-post za is_admin, w CLI=false); nonce w tym samym evalu.
 save_cfg() { # $1=uid $2=Klasa(Checklist|Response) $3=nonce_action $4=payload
-	wp eval "wp_set_current_user($1); \$n=wp_create_nonce('$3'); \$_POST['_wpnonce']=\$n; \$_REQUEST['_wpnonce']=\$n; \$_POST['payload']='$4'; MP\\Automator\\${2}Templates::handle_config();" >/dev/null 2>&1
+	# mp_config_rev = odcisk wersji configu (blokada optymistyczna, audyt #9) — formularz
+	# admina go niesie, wiec test tez musi, inaczej handler odrzuci zapis PRZED walidacja
+	# JSON i test przechodzilby dla zlego powodu (falszywa zielen).
+	wp eval "wp_set_current_user($1); \$n=wp_create_nonce('$3'); \$_POST['_wpnonce']=\$n; \$_REQUEST['_wpnonce']=\$n; \$_POST['mp_config_rev']=MP\\Automator\\${2}Templates::config_rev(); \$_POST['payload']='$4'; MP\\Automator\\${2}Templates::handle_config();" >/dev/null 2>&1
 }
 cnt() { wp eval "echo count((array) get_option('$1', array()));" 2>/dev/null; }
 

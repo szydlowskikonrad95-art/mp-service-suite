@@ -108,8 +108,28 @@ final class Lifecycle {
 		add_action(
 			self::RETENTION_CRON,
 			static function (): void {
-				Attachments::run_retention_sweep();
-				RateLimit::cleanup_expired();
+				global $wpdb;
+
+				// Audyt #12: zamek jak w sweepie SLA — dwa rownolegle przebiegi
+				// retencji (cron + reczne wywolanie) nie danszuja na tych samych
+				// plikach; drugi wychodzi od razu.
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamek procesu.
+				$got = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', 'mp_intake_retention' ) );
+
+				if ( 1 !== $got ) {
+					return;
+				}
+
+				try {
+					Attachments::run_retention_sweep();
+					RateLimit::cleanup_expired();
+					// RODO (audyt 27.07): porzucone zgloszenia niepotwierdzone
+					// zostawaly w bazie RAZEM z danymi kontaktowymi na zawsze.
+					CaseRepo::purge_abandoned_pending();
+				} finally {
+					$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'mp_intake_retention' ) );
+					// phpcs:enable
+				}
 			}
 		);
 	}

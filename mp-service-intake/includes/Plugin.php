@@ -38,6 +38,13 @@ final class Plugin {
 	 * @return void
 	 */
 	public function boot(): void {
+		// Audyt #14: obiecany w kontrakcie mechanizm zgodnosci wersji — WPIETY.
+		// Niezgodnosc (plugin zbudowany na inna wersje kontraktu niz zaladowana
+		// stala) = admin notice + degraded mode przez has_filter, NIGDY fatal.
+		if ( ! Common\Contract::is_compatible( 1 ) ) {
+			Common\Contract::register_mismatch_notice( 'MP Service Intake' );
+		}
+
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		Front\Frontend::register();
@@ -152,6 +159,21 @@ final class Plugin {
 			},
 			10,
 			6
+		);
+
+		// Kontrakt D->C: ID spraw zweryfikowanych w oknie czasowym (bez danych
+		// osobowych) — Automator porownuje je ze swoim stanem i doszywa sprawy,
+		// ktore przeszly weryfikacje, gdy byl wylaczony (audyt 27.07). Wolane z
+		// crona, wiec BEZ bramki uprawnien — jak `mp_case_get_context`.
+		add_filter(
+			'mp_cases_verified_ids',
+			static function ( $result, $days = 30, $limit = 200 ) {
+				unset( $result );
+
+				return CaseRepo::verified_ids_recent( (int) $days, (int) $limit );
+			},
+			10,
+			3
 		);
 
 		// Kontrakt D->C: paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D

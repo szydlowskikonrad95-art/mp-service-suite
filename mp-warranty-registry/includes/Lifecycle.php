@@ -76,7 +76,23 @@ final class Lifecycle {
 		add_action(
 			self::IMPORTS_CRON,
 			static function (): void {
-				Importer::sweep_import_files();
+				global $wpdb;
+
+				// Audyt #12: zamek jak w sweepie SLA — jeden przebieg sprzatania
+				// plikow importu naraz; rownolegly wychodzi od razu.
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamek procesu.
+				$got = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', 'mp_registry_imports_sweep' ) );
+
+				if ( 1 !== $got ) {
+					return;
+				}
+
+				try {
+					Importer::sweep_import_files();
+				} finally {
+					$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'mp_registry_imports_sweep' ) );
+					// phpcs:enable
+				}
 			}
 		);
 	}

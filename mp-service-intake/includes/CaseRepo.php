@@ -437,7 +437,7 @@ final class CaseRepo {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT assigned_to FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				"SELECT assigned_to, status FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
 				$case_id
 			),
 			ARRAY_A
@@ -450,6 +450,20 @@ final class CaseRepo {
 			return array(
 				'success'    => false,
 				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		// Audyt maszyny stanow 27.07: bramka terminalna chronila TYLKO kolumne status.
+		// Sprawa ZAMKNIETA/ODRZUCONA dawala sie dalej przydzielic — leciala akcja
+		// mp_case_assigned, mail do pracownika i wpis na osi zamknietej sprawy.
+		// Zamknieta sprawa nie jest w robocie, wiec nie ma jej komu przydzielac;
+		// do pracy wraca przez WZNOWIENIE (koordynator, REOPEN_TARGET).
+		if ( Statuses::is_terminal( (string) $row['status'] ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_CLOSED',
 			);
 		}
 
@@ -541,12 +555,15 @@ final class CaseRepo {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytania przygotowane.
 		$wpdb->query( 'START TRANSACTION' );
 
-		$current = $wpdb->get_var(
+		$biezace = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT priority FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				"SELECT priority, status FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
 				$case_id
-			)
+			),
+			ARRAY_A
 		);
+
+		$current = is_array( $biezace ) ? $biezace['priority'] : null;
 
 		if ( null === $current ) {
 			$wpdb->query( 'ROLLBACK' );
@@ -555,6 +572,17 @@ final class CaseRepo {
 			return array(
 				'success'    => false,
 				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		// Audyt maszyny stanow 27.07 (jak przy przydziale): sprawa zamknieta/odrzucona
+		// nie jest w robocie — zmiana pilnosci nie ma tam sensu i tylko zasmieca os.
+		if ( Statuses::is_terminal( (string) $biezace['status'] ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_CLOSED',
 			);
 		}
 
@@ -1628,6 +1656,132 @@ final class CaseRepo {
 		delete_option( 'mp_pending_contact_' . $case_id );
 
 		return $customer_id;
+	}
+
+	/**
+	 * Numer SRV sprawy (do ekranow personelu — wewnetrzne ID nic nie mowi).
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string Numer SRV albo pusty string, gdy sprawy juz nie ma.
+	 */
+	public static function case_number( int $case_id ): string {
+		global $wpdb;
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$numer = $wpdb->get_var( $wpdb->prepare( "SELECT case_number FROM {$cases} WHERE id = %d", $case_id ) );
+		// phpcs:enable
+
+		return null === $numer ? '' : (string) $numer;
+	}
+
+	/**
+	 * Kasuje PORZUCONE zgloszenia niepotwierdzone (RODO — audyt kosztu 27.07).
+	 *
+	 * Kto wypelnil formularz i nie kliknal linku, zostawial w bazie sprawe RAZEM
+	 * z danymi kontaktowymi (e-mail, imie, telefon w opcji `mp_pending_contact_*`)
+	 * — NA ZAWSZE. Okno potwierdzenia to 72 h, wiec po nim taka sprawa nie ma juz
+	 * jak ruszyc: zostaje martwy rekord z danymi osobowymi bez podstawy retencji.
+	 * Kasujemy z duzym zapasem (domyslnie 30 dni), zeby nie ruszyc niczego, co
+	 * klient moglby jeszcze reklamowac; prog zmienia filtr.
+	 *
+	 * @param int $days  Wiek w dniach (od utworzenia).
+	 * @param int $limit Maksymalna liczba spraw na przebieg.
+	 * @return int Liczba skasowanych spraw.
+	 */
+	public static function purge_abandoned_pending( int $days = 0, int $limit = 200 ): int {
+		global $wpdb;
+
+		/**
+		 * Ile dni trzymamy porzucone (niepotwierdzone) zgloszenia.
+		 *
+		 * @param int $days Domyslnie 30.
+		 */
+		$days = $days > 0 ? $days : (int) apply_filters( 'mp_intake_pending_retention_days', 30 );
+		$days = max( 1, $days );
+
+		$cases  = Tables::full( Tables::CASES );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabele wlasne; lista %d w IN() z count().
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$cases}
+				WHERE identity_status = 'pending' AND created_at <= %s
+				ORDER BY id ASC LIMIT %d",
+				$cutoff,
+				max( 1, min( 500, $limit ) )
+			)
+		);
+
+		$ids = array_map( 'intval', (array) $ids );
+
+		if ( array() === $ids ) {
+			// phpcs:enable
+			return 0;
+		}
+
+		// Zalaczniki NAJPIERW: kasuja tez PLIKI z dysku (sam DELETE wiersza
+		// zostawilby zdjecia klienta w uploads na zawsze).
+		Attachments::delete_for_cases( $ids );
+
+		foreach ( $ids as $case_id ) {
+			delete_option( 'mp_pending_contact_' . $case_id );
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabele wlasne; lista %d w IN() z count().
+		foreach ( array( Tables::CASE_EVENTS, Tables::MESSAGES, Tables::CONSENTS ) as $tabela ) {
+			$pelna = Tables::full( $tabela );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$pelna} WHERE case_id IN ({$placeholders})", $ids ) );
+		}
+
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$cases} WHERE id IN ({$placeholders})", $ids ) );
+		// phpcs:enable
+
+		return count( $ids );
+	}
+
+	/**
+	 * ID spraw ZWERYFIKOWANYCH w ostatnich dniach (funkcja kontraktowa
+	 * `mp_cases_verified_ids`) — do resynchronizacji Automatora (audyt 27.07).
+	 *
+	 * Sieroty z audytu #1 rozpoznajemy po BRAKU zdarzenia narodzin. Istnieje
+	 * jednak drugi wariant tej samej awarii, ktorego tamto kryterium NIE widzi:
+	 * gdy w chwili potwierdzenia Automator byl WYLACZONY (auto-update, tryb
+	 * odzyskiwania WP), C zapisuje CASE_CREATED i emituje akcje poprawnie, tyle
+	 * ze nikt jej nie slucha. Sprawa ma komplet sladow u siebie, a mimo to nigdy
+	 * nie dostanie przydzialu ani terminu. Dlatego D musi umiec porownac swoj
+	 * stan z lista spraw C — zwracamy WYLACZNIE identyfikatory (zero danych
+	 * osobowych, RODO/T5), okno czasowe + limit trzymaja koszt zapytania w ryzach.
+	 *
+	 * @param int $days  Okno (dni wstecz od weryfikacji).
+	 * @param int $limit Maksymalna liczba ID.
+	 * @return array<int, int>
+	 */
+	public static function verified_ids_recent( int $days = 30, int $limit = 200 ): array {
+		global $wpdb;
+
+		$cases  = Tables::full( Tables::CASES );
+		$days   = max( 1, min( 365, $days ) );
+		$limit  = max( 1, min( 500, $limit ) );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$cases}
+				WHERE identity_status = 'verified' AND verified_at IS NOT NULL AND verified_at >= %s
+				ORDER BY id DESC LIMIT %d",
+				$cutoff,
+				$limit
+			)
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
 	}
 
 	/**

@@ -91,6 +91,14 @@ final class CaseEvents {
 	public const CHECKLIST_ITEM_TOGGLED = 'CHECKLIST_ITEM_TOGGLED';
 
 	/**
+	 * Nieudana wysylka maila do klienta (magic-link / potwierdzenie z numerem SRV).
+	 * Payload: {kind, error_code} — STRUKTURALNY, bez tresci maila. Bez tego zdarzenia
+	 * awaria poczty byla niewidoczna: klient nie dostawal linku, a w bazie nie zostawal
+	 * zaden slad (audyt 27.07). Wzorzec zgodny z MAIL_FAILED w Automatorze.
+	 */
+	public const MAIL_FAILED = 'MAIL_FAILED';
+
+	/**
 	 * Os czasu sprawy (append-only) — chronologicznie. Do karty sprawy personelu.
 	 *
 	 * @param int $case_id ID sprawy.

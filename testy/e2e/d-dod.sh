@@ -115,13 +115,15 @@ EC=$(q "SELECT COUNT(*) FROM ${PFX}mp_workflow_events WHERE event_type='EXPORT_G
 
 # checklist_config (cap sysadmin): mp_agent => 403, opcja nietknieta.
 CFGB=$(wp option get mp_automator_checklist_templates --format=json 2>/dev/null)
-wp eval --user="$AG" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'hack','label'=>'H')))); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('mp_automator_checklist_config'); MP\\Automator\\ChecklistTemplates::handle_config();" >/dev/null 2>&1
+# odcisk wersji poprawny => jedynym powodem odmowy moze byc BRAK UPRAWNIEN (a nie
+# blokada optymistyczna #9); inaczej test przechodzilby dla zlego powodu.
+wp eval --user="$AG" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'hack','label'=>'H')))); \$_POST['mp_config_rev']=MP\\Automator\\ChecklistTemplates::config_rev(); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('mp_automator_checklist_config'); MP\\Automator\\ChecklistTemplates::handle_config();" >/dev/null 2>&1
 CFGA=$(wp option get mp_automator_checklist_templates --format=json 2>/dev/null)
 [ "$CFGB" = "$CFGA" ] && ok "checklist_config: mp_agent zablokowany (opcja nietknieta)" || bad "checklist_config: agent zmienil konfig!"
 
 # response_config (cap sysadmin): mp_agent => 403, opcja nietknieta.
 RCFGB=$(wp option get mp_automator_response_templates --format=json 2>/dev/null)
-wp eval --user="$AG" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'hack','label'=>'H','body'=>'B')))); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('mp_automator_response_config'); MP\\Automator\\ResponseTemplates::handle_config();" >/dev/null 2>&1
+wp eval --user="$AG" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'hack','label'=>'H','body'=>'B')))); \$_POST['mp_config_rev']=MP\\Automator\\ResponseTemplates::config_rev(); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('mp_automator_response_config'); MP\\Automator\\ResponseTemplates::handle_config();" >/dev/null 2>&1
 RCFGA=$(wp option get mp_automator_response_templates --format=json 2>/dev/null)
 [ "$RCFGB" = "$RCFGA" ] && ok "response_config: mp_agent zablokowany (opcja nietknieta)" || bad "response_config: agent zmienil konfig!"
 

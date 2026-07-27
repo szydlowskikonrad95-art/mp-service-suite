@@ -50,6 +50,18 @@ final class Sla {
 	public const ALERT_OPTION = 'mp_automator_mail_alert';
 
 	/**
+	 * Paczka przy przeliczaniu terminow (audyt kosztu 27.07 — bez tego jedno
+	 * kliniecie „Przelicz SLA" przy 15 tys. spraw to ~30 tys. zapytan w jednym
+	 * zadaniu PHP, czyli timeout w polowie roboty).
+	 */
+	private const RECALC_BATCH = 200;
+
+	/**
+	 * Hak dokanczania przeliczania w tle (czyszczony przy deaktywacji/uninstall).
+	 */
+	public const RECALC_CONTINUE_HOOK = 'mp_automator_sla_recalc_continue';
+
+	/**
 	 * Rejestruje nasluchy ksiegi (wolane z Plugin::boot).
 	 *
 	 * @return void
@@ -57,6 +69,7 @@ final class Sla {
 	public static function register(): void {
 		add_action( 'mp_case_created', array( self::class, 'on_case_created' ), 20, 1 );
 		add_action( 'mp_case_status_changed', array( self::class, 'on_status_changed' ), 20, 4 );
+		add_action( self::RECALC_CONTINUE_HOOK, array( self::class, 'continue_recompute' ), 10, 1 );
 	}
 
 	/**
@@ -81,6 +94,76 @@ final class Sla {
 	public static function on_status_changed( $case_id, $old_status, $new_status, $actor_id ): void {
 		unset( $old_status, $new_status, $actor_id );
 		self::provision( (int) $case_id );
+	}
+
+	/**
+	 * RESYNC: sprawy zweryfikowane, o ktorych Automator nic nie wie (audyt 27.07).
+	 *
+	 * Reconcile z audytu #1 rozpoznaje sieroty po BRAKU zdarzenia narodzin w C —
+	 * i dlatego NIE widzi drugiego wariantu tej samej awarii: gdy w chwili
+	 * potwierdzenia ta wtyczka byla WYLACZONA, C zapisal zdarzenie i wyemitowal
+	 * akcje poprawnie, tylko nikt jej nie sluchal. Sprawa wyglada na kompletna,
+	 * a nigdy nie dostanie przydzialu ani terminu — cicho, na zawsze.
+	 * Tu porownujemy liste C z wlasna tabela terminow i doszywamy roznice.
+	 *
+	 * @param int $limit Maksymalna liczba spraw na jeden przebieg.
+	 * @return int Liczba doszytych spraw.
+	 */
+	public static function reconcile_untracked( int $limit = 20 ): int {
+		global $wpdb;
+
+		$ids = apply_filters( 'mp_cases_verified_ids', array(), 30, 200 );
+
+		if ( ! is_array( $ids ) || array() === $ids ) {
+			return 0;
+		}
+
+		$table   = Tables::full( Tables::CASE_SLA );
+		$doszyte = 0;
+
+		foreach ( $ids as $case_id ) {
+			if ( $doszyte >= $limit ) {
+				break;
+			}
+
+			$case_id = (int) $case_id;
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$znane = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE case_id = %d", $case_id ) );
+			// phpcs:enable
+
+			if ( $znane > 0 ) {
+				continue;
+			}
+
+			// Sprawa nieznana => przejdz sciezke narodzin w TEJ SAMEJ kolejnosci co
+			// przy zywym zdarzeniu: reguly (priorytet, potem przydzial) na haku 10,
+			// termin na haku 20 — inaczej pierwszy termin policzylby sie przed
+			// nadaniem priorytetu i wyszedlby inny niz u spraw obsluzonych normalnie.
+			RuleEngine::on_case_created( $case_id );
+			self::provision( $case_id );
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, weryfikacja skutku.
+			$po = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE case_id = %d", $case_id ) );
+			// phpcs:enable
+
+			if ( 0 === $po ) {
+				continue; // sprawa zniknela/niezweryfikowana — nie nasza robota.
+			}
+
+			++$doszyte;
+
+			WorkflowEvents::log(
+				WorkflowEvents::SWEEP_RUN,
+				array(
+					'action' => 'resync_untracked',
+					'powod'  => 'sprawa_bez_terminu',
+				),
+				$case_id
+			);
+		}
+
+		return $doszyte;
 	}
 
 	/**
@@ -175,25 +258,42 @@ final class Sla {
 	 *    sweepem (flaga #8: tlumienie przypomnienia) => 1 powiadomienie, nie dubel.
 	 * Iteruje WLASNA tabele case_sla (case_id) + kontekst per sprawa hookiem C —
 	 * bez literalu cudzej tabeli. Zwraca liczbe DOTKNIETYCH (otwartych) spraw.
+	 * Pracuje PACZKAMI: pelna paczka planuje dokanczanie w tle (audyt kosztu 27.07).
 	 *
+	 * @param int $after_id Przelicza sprawy o case_id WIEKSZYM niz podany (paginacja).
+	 * @param int $limit    Rozmiar paczki (0 = RECALC_BATCH).
 	 * @return int
 	 */
-	public static function recompute_open(): int {
+	public static function recompute_open( int $after_id = 0, int $limit = 0 ): int {
 		global $wpdb;
 
 		$table = Tables::full( Tables::CASE_SLA );
+		$limit = $limit > 0 ? $limit : self::RECALC_BATCH;
 
+		// Audyt kosztu 27.07: dotad zapytanie szlo BEZ LIMIT, a potem leciala petla
+		// z zapytaniem kontekstu i UPDATE-em na KAZDY wiersz. Przy 15 tys. spraw
+		// (skala po ~2 latach) jedno kliniecie „Przelicz SLA" to ~30 tys. zapytan
+		// w jednym zadaniu PHP — na wspoldzielonym hostingu pewny timeout, w dodatku
+		// w POLOWIE przeliczania. Teraz paczka + dokanczanie w tle.
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; zbior case_id do przeliczenia.
-		$case_ids = $wpdb->get_col( "SELECT case_id FROM {$table}" );
+		$case_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT case_id FROM {$table} WHERE case_id > %d ORDER BY case_id ASC LIMIT %d",
+				$after_id,
+				$limit
+			)
+		);
 		// phpcs:enable
 
 		$policy  = SlaConfig::policy_version();
 		$now     = gmdate( 'Y-m-d H:i:s' );
 		$touched = 0;
+		$last_id = $after_id;
 
 		foreach ( $case_ids as $cid ) {
-			$cid = (int) $cid;
-			$ctx = apply_filters( 'mp_case_get_context', 'not_found', $cid );
+			$cid     = (int) $cid;
+			$last_id = $cid;
+			$ctx     = apply_filters( 'mp_case_get_context', 'not_found', $cid );
 
 			// Sprawa zniknela => sierota; nie ruszamy (sweep sprzata osobno).
 			if ( ! is_array( $ctx ) ) {
@@ -230,7 +330,36 @@ final class Sla {
 			++$touched;
 		}
 
+		// Paczka pelna => sa jeszcze sprawy do przeliczenia. Dokanczamy w tle, zamiast
+		// trzymac zadanie admina otwarte az do timeoutu. Zdarzenie jednorazowe za
+		// minute; przy braku WP-Crona nadrobi to i tak najblizszy przebieg sweepa
+		// (przeliczenie jest idempotentne — markery i liczniki poza setem UPDATE).
+		if ( count( $case_ids ) >= $limit && $last_id > $after_id ) {
+			if ( ! wp_next_scheduled( self::RECALC_CONTINUE_HOOK, array( $last_id ) ) ) {
+				wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::RECALC_CONTINUE_HOOK, array( $last_id ) );
+			}
+		}
+
 		return $touched;
+	}
+
+	/**
+	 * Dokanczanie przeliczania SLA w tle (kolejna paczka po ostatnim ID).
+	 *
+	 * @param int $after_id Ostatnie przeliczone case_id.
+	 * @return void
+	 */
+	public static function continue_recompute( $after_id = 0 ): void {
+		$touched = self::recompute_open( (int) $after_id );
+
+		WorkflowEvents::log(
+			WorkflowEvents::SLA_RECALCULATED,
+			array(
+				'cases_touched' => $touched,
+				'tryb'          => 'dokanczanie_w_tle',
+				'po_id'         => (int) $after_id,
+			)
+		);
 	}
 
 	/**
