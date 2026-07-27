@@ -71,7 +71,9 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   `form_data` LONGTEXT (klucz→{label z chwili złożenia, value}) + `form_schema_version` ·
   `warranty_snapshot` LONGTEXT (pełna zwrotka `mp_warranty_check` z chwili zgłoszenia) +
   `warranty_snapshot_schema_version` · rodzaj sprawy (reklamacja/naprawa/zapytanie/zwrot) ·
-  `priority` · `assigned_to` · kraj (z mapy pól) · język (auto z locale).
+  `priority` · `assigned_to` (+ klucz złożony `(assigned_to, identity_status)` z migracji v3 — „moje
+  sprawy" pracownika i eksport CSV per pracownik bez skanu tabeli; audyt #16) · kraj (z mapy pól) ·
+  język (auto z locale).
 - **`wp_mp_case_events`**: `case_id` · typ zdarzenia · `payload` LONGTEXT (JSON walidowany w PHP)
   + `schema_version` · actor · `created_at`. **APPEND‑ONLY BEZ WYJĄTKÓW** (zero metod UPDATE/DELETE);
   zero pól wolnotekstowych — patrz EVENT_MODEL.md.

@@ -164,6 +164,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c20-rodo-wyscig.sh
       - name: Testy C21 (dedup — atomowa rezerwacja vs równoległe POST-y)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c21-dedup-wyscig.sh
+      - name: Testy C22 (indeks przydziału — migracja v3 + EXPLAIN)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c22-indeks-przydzialu.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)

@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 2;
+	public const LATEST = 3;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -39,6 +39,7 @@ final class Schema {
 			array(
 				1 => array( self::class, 'migration_1_tables' ),
 				2 => array( self::class, 'migration_2_rate_counters' ),
+				3 => array( self::class, 'migration_3_assigned_index' ),
 			)
 		);
 	}
@@ -211,6 +212,64 @@ final class Schema {
 				window_expires_at DATETIME NOT NULL,
 				PRIMARY KEY  (rl_key),
 				KEY window_expires_at (window_expires_at)
+			) {$charset};"
+		);
+	}
+
+	/**
+	 * V3: klucz zlozony (assigned_to, identity_status) na sprawach — audyt #16.
+	 *
+	 * Tabela miala indeksy na kliencie/produkcie/statusie/dacie, ale NIE na
+	 * przydzielonym: kazde „moje sprawy" pracownika (filtr listy) i eksport CSV
+	 * per pracownik skanowaly tabele bez indeksu (przy 5000 spraw zauwazalne
+	 * na wolnym hostingu). Klucz zlozony pokrywa oba zapytania
+	 * (`assigned_to = %d AND identity_status = 'verified'`).
+	 * dbDelta z PELNA definicja tabeli (wzorzec migracji v2 Rejestru) —
+	 * dorzuca brakujacy klucz, istniejacych danych nie tyka.
+	 *
+	 * @return void
+	 */
+	public static function migration_3_assigned_index(): void {
+		global $wpdb;
+
+		$charset = $wpdb->get_charset_collate();
+		$cases   = Tables::full( Tables::CASES );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$cases} (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				case_number VARCHAR(20) NOT NULL,
+				customer_id BIGINT UNSIGNED NULL,
+				product_registry_id BIGINT UNSIGNED NULL,
+				kind VARCHAR(20) NOT NULL DEFAULT '',
+				status VARCHAR(20) NULL,
+				identity_status VARCHAR(10) NOT NULL DEFAULT 'pending',
+				verify_token_hash CHAR(64) NULL,
+				verify_token_expires_at DATETIME NULL,
+				verify_token_used_at DATETIME NULL,
+				rejection_reason_code VARCHAR(64) NULL,
+				possible_duplicate TINYINT(1) NOT NULL DEFAULT 0,
+				form_data LONGTEXT NULL,
+				form_schema_version INT UNSIGNED NOT NULL DEFAULT 1,
+				warranty_snapshot LONGTEXT NULL,
+				warranty_snapshot_schema_version INT UNSIGNED NULL,
+				priority VARCHAR(10) NOT NULL DEFAULT 'normal',
+				assigned_to BIGINT UNSIGNED NULL,
+				country VARCHAR(2) NOT NULL DEFAULT '',
+				lang VARCHAR(10) NOT NULL DEFAULT '',
+				created_at DATETIME NOT NULL,
+				verified_at DATETIME NULL,
+				status_changed_at DATETIME NULL,
+				updated_at DATETIME NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY case_number (case_number),
+				UNIQUE KEY verify_token_hash (verify_token_hash),
+				KEY customer_id (customer_id),
+				KEY product_registry_id (product_registry_id),
+				KEY status (status),
+				KEY identity_status (identity_status),
+				KEY created_at (created_at),
+				KEY assigned_to (assigned_to,identity_status)
 			) {$charset};"
 		);
 	}
