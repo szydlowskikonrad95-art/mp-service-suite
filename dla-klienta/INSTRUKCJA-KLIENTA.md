@@ -158,6 +158,9 @@ ostatnio się wykonało — jeśli stoi ponad 10 minut, zaświeci na czerwono z 
 ## 8. RODO (dane osobowe)
 
 - Zgody klienta są zapisywane z treścią i wersją; klient może **wycofać zgodę** i **poprosić o usunięcie danych** z panelu.
+- Usunięcie danych wymaga **dwóch kliknięć**: pierwsze pokazuje ekran z informacją, co zniknie, co
+  zostaje i że operacji nie da się cofnąć — dopiero przycisk na tym ekranie ją wykonuje. Dzięki temu
+  klient nie skasuje sobie danych przypadkiem (np. pudłem kciukiem na telefonie).
 - **Wyjątek — wspólny adres e-mail** (np. sekretariat zgłaszający za kilka osób): system prowadzi
   wtedy **osobne kartoteki** dla każdej osoby, a samodzielna edycja i usuwanie danych z panelu są
   wyłączone — wniosek składa się wiadomością w sprawie i rozpatruje go pracownik (żeby jedna osoba
