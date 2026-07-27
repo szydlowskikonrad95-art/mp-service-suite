@@ -24,11 +24,11 @@ Format każdego punktu: **CO** (co widać w kodzie) · **KOTWICA W KARTCE** (kt�
 - **KOTWICA W KARTCE:** wymagania RODO ze specyfikacji — minimalizacja danych, anonimizacja, rejestr zgód, zdefiniowana retencja. Realizujemy **literę** tych wymagań; „skala" bierze się z tego, że dane osobowe żyją w 3 wtyczkach i każdą trzeba domknąć.
 - **GDZIE:** `mp-service-intake/includes/Privacy.php`, `Consents.php`, `CaseRepo.php` (anonimizacja/redakcja), `Attachments.php` (retencja + cron), tabela `wp_mp_consents`.
 
-## 4. 15 tabel bazy zamiast 4 „bazowych"
+## 4. 16 tabel bazy zamiast 4 „bazowych"
 
-- **CO:** specyfikacja (sekcja 2 „Trzy zależności baz danych") wylicza **4 tabele bazowe i 3 relacje**; w bazie jest **15 tabel**.
+- **CO:** specyfikacja (sekcja 2 „Trzy zależności baz danych") wylicza **4 tabele bazowe i 3 relacje**; w bazie jest **16 tabel**.
 - **KOTWICA W KARTCE:** specyfikacja wylicza **relacje, nie limituje liczby tabel** — a jej wymagania funkcjonalne wymuszają dodatkowe tabele. Każda tabela ponad 4 bazowe ma cytat‑uzasadnienie z konkretnego wymagania. Przykłady: `wp_mp_attachments` (T5/RODO „limity plików + retencja"), `wp_mp_consents` (RODO „rejestr zgód"), `wp_mp_workflow_rules` (P3.1 „automatyczny przydział wg kategorii/kraju/języka/priorytetu"), `wp_mp_case_sla` (P3.4 „przypomnienie przed terminem + eskalacja"), `wp_mp_case_checklists` (P3.5 „checklisty per typ sprawy"), `wp_mp_workflow_events` (sekcja 1 „rejestr operacji istotnych").
-- **GDZIE:** pełna mapa 15 tabel z właścicielem i cytatem‑uzasadnieniem per tabela: `dokumentacja-techniczna/DATABASE.md` §1.
+- **GDZIE:** pełna mapa 16 tabel z właścicielem i cytatem‑uzasadnieniem per tabela: `dokumentacja-techniczna/DATABASE.md` §1.
 
 ## 5. Magic‑linki / tokeny konta klienta (split‑token, jednorazowe, TTL)
 

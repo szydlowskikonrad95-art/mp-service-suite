@@ -15,6 +15,49 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
 ### Fixed
+- **Poczta: awaria wysyłki przestała być niewidoczna (audyt 27.07).** Cztery miejsca w Intake
+  (magic-link, ponowna wysyłka, potwierdzenie z numerem SRV, link logowania) ignorowały wynik
+  `wp_mail()`. Gdy hosting odmawiał wysyłki, klient nie dostawał linku, formularz i tak pokazywał
+  „sprawdź skrzynkę", a w bazie **nie zostawał żaden ślad** — nikt nie odkrywał, czemu zgłoszenia
+  przestały się potwierdzać. Poprawny wzorzec istniał obok, w Automatorze. Teraz: jedno gardło
+  wysyłki, zdarzenie `MAIL_FAILED` na osi sprawy, alert w Narzędzia → Stan witryny (gaśnie po
+  pierwszej udanej wysyłce) i nowy test diagnostyczny „Poczta NIE WYCHODZI" z instrukcją naprawy.
+- **Sprawa potwierdzona przy wyłączonym Automatorze nie zostaje sierotą (audyt 27.07).** Naprawa
+  sierot z #1 rozpoznawała je po BRAKU zdarzenia narodzin — więc nie widziała przypadku, gdy Intake
+  zapisał wszystko poprawnie, tylko Automator był wyłączony i nikt akcji nie usłyszał. Taka sprawa
+  nigdy nie dostawała przydziału ani terminu. Sweep porównuje teraz swój stan z listą spraw
+  (kontrakt `mp_cases_verified_ids` — same ID, zero danych osobowych) i doszywa różnicę.
+- **Kontrakt `mp_cases_data_erased` ożył.** Sygnał był opisany w API-KONTRAKT.md, OWNERSHIP.md,
+  EVENT_MODEL.md i na diagramie architektury, Rejestr miał gotowego słuchacza — a **nikt go nigdy
+  nie emitował**. Po odinstalowaniu Intake w pozostałych wtyczkach zostawały wiersze wiszące na
+  nieistniejących sprawach. Uninstall emituje sygnał, Automator dostał brakującego słuchacza
+  (czyści terminy i checklisty; rejestr operacji zostaje jako historia).
+- **Sweep SLA nie zaleje hostingu.** Paczki ograniczały liczbę spraw, nie maili: do 500 wiadomości
+  sekwencyjnie w jednym żądaniu PHP (typowy hosting przepuszcza 200–500/godzinę). Dodany budżet
+  120 maili na przebieg (filtr `mp_sla_mail_budget`); reszta czeka na kolejny przebieg z nietkniętym
+  markerem, a przerwanie jest jawnie zapisane w rejestrze.
+- **„Przelicz SLA" nie wywróci się na dużej bazie.** Zapytanie szło bez limitu, a potem pętla robiła
+  zapytanie i UPDATE na każdy wiersz — przy 15 tys. spraw ~30 tys. zapytań w jednym żądaniu. Teraz
+  paczki po 200 z dokańczaniem w tle (hak sprzątany przy deaktywacji i odinstalowaniu).
+- **RODO: porzucone zgłoszenia znikają razem z danymi.** Kto wypełnił formularz i nie kliknął linku,
+  zostawiał sprawę wraz z e-mailem i telefonem **na zawsze** (okno potwierdzenia to 72 h, więc taka
+  sprawa i tak nie może ruszyć). Dzienny cron kasuje porzucone starsze niż 30 dni razem z plikami
+  załączników; próg zmienia filtr `mp_intake_pending_retention_days`.
+- **Zamknięta sprawa nie przyjmuje już przydziału ani zmiany pilności.** Bramka terminalna chroniła
+  wyłącznie kolumnę statusu — przydział zamkniętej sprawy wysyłał maila do pracownika i dopisywał
+  zdarzenie na jej osi. Do pracy sprawa wraca przez wznowienie, nie bocznymi drzwiami.
+- **Formularz publiczny nie wywali się na hostingu bez `mbstring`.** Walidator używał gołego
+  `mb_strlen()` — brak rozszerzenia oznaczał błąd krytyczny na każdym zgłoszeniu, a nie degradację.
+- **Polska odmiana liczb w komunikatach.** Rejestr pokazywał „Produkt ma 1 aktywnych spraw";
+  formy dobierane są teraz wg reguł języka (z wyjątkiem 12–14).
+- **Panel: teksty i czytelność (audyt ekranów 27.07).** Diagnostyka odsyłała do edycji reguły w
+  panelu, który jest tylko do odczytu — teraz podaje prawdziwą drogę (rola „Pracownik serwisu MP"
+  w Użytkownikach). Rejestr zdarzeń mówi po polsku („Brak pasującej reguły przydziału" zamiast
+  `ASSIGNMENT_UNMATCHED`), pokazuje numer sprawy zamiast wewnętrznego ID i czas lokalny zamiast UTC.
+  Pole e-mail przy ponownej wysyłce dostało nazwę dla czytników ekranu, a tekst pomocniczy
+  „nieprzydzielona" — kontrast zgodny z WCAG AA.
+- **Teksty dodawane JavaScriptem przechodzą przez tłumaczenia** (wiersze konfiguracji dodawane
+  przyciskiem miały etykiety i opisy dla czytników ekranu wpisane na sztywno).
 - Intake (C) — **nagłówki bezpieczeństwa docierały TYLKO na auto-stronę wtyczki.** Warunek brzmiał
   „jeśli to strona o ID zapisanym w opcji" — a dokumentowany sposób użycia to **wstawienie shortcode'u
   na własną podstronę**. Takie strony (czyli te, które realnie robi klient) szły **bez żadnego nagłówka**:
