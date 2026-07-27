@@ -29,17 +29,27 @@ for i in 1 2 3 4 5 6; do
 		VALUES ($CID, 'nowe', 1, '$PRZYSZLOSC', '$PRZESZLOSC', NULL, NULL, '$PRZESZLOSC')" >/dev/null 2>&1
 	IDS="$IDS $CID"
 done
+# Zakres TYLKO tych spraw: w tej samej pracy CI zyja sprawy z wczesniejszych
+# testow, a resync (audyt 27.07) dosypuje im wierszy terminu — asercje globalne
+# mierzylyby wtedy cudzy stan, nie skutek budzetu.
+W_ZAKRESIE="$(echo $IDS | tr ' ' ',')"
 
-DO_WYSLANIA=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE reminder_sent_at IS NULL AND warning_at <= UTC_TIMESTAMP() AND deadline_at > UTC_TIMESTAMP()")
+# Sprawy z wczesniejszych testow dostana wiersz terminu od resyncu przy pierwszym
+# przebiegu sweepa i konkurowalyby o budzet z naszymi. Robimy wiec resync TERAZ,
+# a cudze wiersze oznaczamy jako obsluzone — budzet ma mierzyc TYLKO nasza szostke.
+wp eval 'MP\Automator\Sla::reconcile_untracked(500);' >/dev/null 2>&1
+wp db query "UPDATE wp_mp_case_sla SET reminder_sent_at=UTC_TIMESTAMP(), escalated_at=UTC_TIMESTAMP() WHERE case_id NOT IN ($W_ZAKRESIE)" >/dev/null 2>&1
+
+DO_WYSLANIA=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id IN ($W_ZAKRESIE) AND reminder_sent_at IS NULL AND warning_at <= UTC_TIMESTAMP() AND deadline_at > UTC_TIMESTAMP()")
 [ "$DO_WYSLANIA" = "6" ] && ok "seed: 6 spraw czeka na przypomnienie" || bad "seed zly ($DO_WYSLANIA)"
 
 # ── 1. Budzet 2 => przebieg wysyla DOKLADNIE 2, reszta czeka ────────────────
 wp eval "add_filter('mp_sla_mail_budget', function(){ return 2; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
 
-WYSLANE=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE reminder_sent_at IS NOT NULL")
+WYSLANE=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id IN ($W_ZAKRESIE) AND reminder_sent_at IS NOT NULL")
 [ "$WYSLANE" = "2" ] && ok "budzet dotrzymany: wyslane 2 z 6" || bad "budzet zlamany (wyslane $WYSLANE, oczekiwane 2)"
 
-CZEKA=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE reminder_sent_at IS NULL")
+CZEKA=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id IN ($W_ZAKRESIE) AND reminder_sent_at IS NULL")
 [ "$CZEKA" = "4" ] && ok "pozostale 4 sprawy NIETKNIETE (marker pusty => nic nie przepadlo)" || bad "reszta w zlym stanie ($CZEKA)"
 
 LOG=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='SWEEP_RUN' AND payload LIKE '%\"przerwany_budzetem\":1%'")
@@ -50,7 +60,7 @@ LICZNIK=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='SWEEP_
 
 # ── 2. Kolejny przebieg dobiera reszte (nic nie zaginelo) ───────────────────
 wp eval "add_filter('mp_sla_mail_budget', function(){ return 100; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
-WYSLANE2=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE reminder_sent_at IS NOT NULL")
+WYSLANE2=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id IN ($W_ZAKRESIE) AND reminder_sent_at IS NOT NULL")
 [ "$WYSLANE2" = "6" ] && ok "kolejny przebieg dobral reszte (6/6 — zaleglosc schodzi)" || bad "reszta nie doszla ($WYSLANE2)"
 
 # ── 3. Kontrola: trzeci przebieg NIE wysyla nic drugi raz ───────────────────
