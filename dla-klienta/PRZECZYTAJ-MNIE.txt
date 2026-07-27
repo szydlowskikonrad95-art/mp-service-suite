@@ -22,8 +22,8 @@ CO JEST W PACZCE
                                  KOORDYNATOR  — kierownik zespołu
                                  ADMIN        — administrator systemu
                                (każda w wersji .md i .pdf)
-  diagramy/                    architektura, przepływ zgłoszenia, maszyna
-                               stanów, schemat bazy
+  diagramy/                    z czego składa się system, droga zgłoszenia,
+                               statusy sprawy, gdzie mieszkają Twoje dane
   RAPORT-A11Y-WCAG.md          wynik badania dostępności (WCAG 2.1 AA)
 
 WYMAGANIA

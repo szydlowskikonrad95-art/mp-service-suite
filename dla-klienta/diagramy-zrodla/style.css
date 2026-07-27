@@ -1,0 +1,68 @@
+/* Styl diagramow dla klienta — jeden system na wszystkie strony.
+   Zasada: TRESC prostym jezykiem, szczegol techniczny w malej plakietce pod spodem. */
+:root{
+  --blue:#2271b1; --blue-d:#0b4a75; --amber:#C8791E; --amber-d:#9c5c12;
+  --green:#3f8f5f; --green-d:#2f6f49; --red:#b32d2e; --red-d:#8a2223;
+  --ground:#F6F7F9; --panel:#FFFFFF; --ink:#1D2329; --ink-soft:#55606B;
+  --line:#DCE2E8; --code-bg:#EDF2F7; --radius:14px;
+  --shadow:0 1px 2px rgba(30,45,60,.06), 0 4px 16px rgba(30,45,60,.07);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding:44px 48px}
+.brand{display:flex;align-items:center;gap:.55rem;color:var(--blue);font-weight:700;
+  letter-spacing:.05em;font-size:.95rem;text-transform:uppercase}
+h1{font-size:2rem;line-height:1.12;margin:.5rem 0 .4rem;letter-spacing:-.02em}
+.sub{color:var(--ink-soft);font-size:1.02rem;max-width:74ch}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--amber-d);font-weight:600;display:flex;align-items:center;gap:.5rem;margin:0 0 .4rem}
+.eyebrow .num{background:var(--amber);color:#fff;width:1.4rem;height:1.4rem;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;font-size:.76rem}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);background:var(--code-bg);padding:.1rem .35rem;border-radius:4px;font-size:.85em;color:var(--blue-d)}
+
+/* karty przeplywu */
+.flow{display:flex;flex-direction:column;gap:0;margin-top:30px;max-width:860px}
+.node{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 22px;box-shadow:var(--shadow)}
+.node h3{font-size:1.12rem;display:flex;align-items:center;gap:.55rem}
+.node p{color:var(--ink-soft);font-size:.94rem;margin-top:.35rem}
+.node .chips{font-family:var(--mono);font-size:.76rem;color:var(--blue-d);margin-top:.6rem;
+  display:flex;flex-wrap:wrap;gap:.4rem}
+.node .chips span{background:var(--code-bg);padding:.2rem .5rem;border-radius:5px}
+.node.klient{border-left:4px solid var(--blue)}
+.node.system{border-left:4px solid var(--amber);background:#FDF8F2}
+.node.serwis{border-left:4px solid var(--green)}
+.kto{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.06em;
+  padding:.2rem .55rem;border-radius:5px;display:inline-block;margin-bottom:.45rem}
+.kto.klient{color:var(--blue-d);background:#E4EFF7}
+.kto.system{color:var(--amber-d);background:#FBEEDC}
+.kto.serwis{color:var(--green-d);background:#E6F2EA}
+.arrow{align-self:center;color:var(--blue);font-size:1.5rem;line-height:1;padding:.45rem 0;
+  font-weight:700;text-align:center}
+.arrow small{display:block;font-family:var(--mono);font-size:.68rem;color:var(--ink-soft);
+  font-weight:400;margin-top:.2rem}
+.note{margin-top:22px;max-width:860px;background:#E9F4EE;border:1px solid #A8D4BC;
+  border-left:4px solid var(--green-d);border-radius:11px;padding:15px 20px;font-size:.92rem;color:#245c3e}
+.note b{color:#1c6b45}
+
+/* tabela statusow */
+.statusy{margin-top:28px;max-width:900px;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.statusy table{border-collapse:collapse;width:100%}
+.statusy th{background:#EFF3F7;text-align:left;font-size:.78rem;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-soft);padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+.statusy td{padding:.85rem 1rem;border-bottom:1px solid var(--line);font-size:.94rem;
+  color:var(--ink-soft);vertical-align:top}
+.statusy tr:last-child td{border-bottom:0}
+.plakietka{display:inline-block;padding:.18rem .6rem;border-radius:999px;font-size:.82rem;
+  font-weight:600;color:#fff;white-space:nowrap}
+/* KOLORY DOKLADNIE JAK W PANELU (Statuses::COLORS) — diagram ma pokazywac to,
+   co klient widzi na ekranie, a nie zblizone barwy. */
+.p-nowe{background:#2563eb} .p-uzup{background:#a16207} .p-analiza{background:#7c3aed}
+.p-akcept{background:#15803d} .p-naprawa{background:#7c2d12} .p-odrzuc{background:#dc2626}
+.p-zamk{background:#4b5563}
+.koniec{font-family:var(--mono);font-size:.72rem;color:var(--red-d);font-weight:700}
+.zegar{font-family:var(--mono);font-size:.8rem;color:var(--blue-d)}

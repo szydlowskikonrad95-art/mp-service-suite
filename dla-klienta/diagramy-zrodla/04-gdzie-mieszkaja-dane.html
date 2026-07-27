@@ -1,0 +1,66 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<link rel="stylesheet" href="style.css">
+<style>body{width:1000px}</style>
+</head><body>
+
+<div class="brand"><span>🔧</span> MP Service Suite · dokumentacja</div>
+<div class="eyebrow"><span class="num">4</span> Twoje dane · gdzie leżą i co się z nimi dzieje</div>
+<h1>Gdzie system trzyma dane i co zostaje, gdy go wyłączysz</h1>
+<p class="sub">System nie wrzuca zgłoszeń między wpisy i strony WordPressa. Ma <b>własne tabele
+   w Twojej bazie</b> — u Ciebie na serwerze, nigdzie indziej. Żadne dane nie wychodzą na zewnątrz.</p>
+
+<div class="flow">
+
+  <div class="node serwis">
+    <span class="kto serwis">GDZIE</span>
+    <h3>Własne tabele w bazie Twojej strony</h3>
+    <p>Sprawy, klienci, wiadomości, załączniki, produkty i gwarancje, reguły automatu, historia
+       zdarzeń. Dzięki temu wyszukiwanie i raporty są szybkie także przy dziesiątkach tysięcy
+       rekordów, a wtyczka <b>nie miesza się z treścią Twojej strony</b>.</p>
+    <div class="chips"><span>16 tabel z przedrostkiem mp_</span><span>zero cudzych tabel</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="node system">
+    <span class="kto system">HISTORIA</span>
+    <h3>Oś zdarzeń, której nikt nie skasuje</h3>
+    <p>Każde przyjęcie sprawy, przydział, zmiana statusu, wiadomość i decyzja zapisują się na stałe —
+       także dla administratora. To Twój dowód przy sporze z klientem: <b>kto, co i kiedy</b>.</p>
+    <div class="chips"><span>zapis tylko dopisywany</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="node klient">
+    <span class="kto klient">RODO</span>
+    <h3>Usunięcie danych = anonimizacja, nie kasowanie sprawy</h3>
+    <p>Gdy klient poprosi o usunięcie danych, znikają dane osobowe: imię, telefon, e-mail i treści,
+       które je zawierają. Zostaje sama historia zdarzeń i statystyki — <b>bez możliwości
+       powiązania ich z osobą</b>. Jeśli sprawa jest w toku albo trwa gwarancja, system czeka
+       z usunięciem do jej zakończenia i mówi o tym wprost.</p>
+    <div class="chips"><span>panel klienta → Prywatność (RODO)</span><span>wymaga potwierdzenia</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="node serwis">
+    <span class="kto serwis">WYŁĄCZENIE</span>
+    <h3>Co się dzieje po odinstalowaniu wtyczki</h3>
+    <p><b>Domyślnie dane zostają.</b> Wyłączenie i odinstalowanie wtyczki niczego nie kasuje —
+       możesz ją wgrać ponownie i wszystko jest na miejscu. Dopiero gdy <b>świadomie zaznaczysz
+       opcję „usuń dane"</b>, przy odinstalowaniu znikają tabele, ustawienia, role i konta klientów
+       założone przez system.</p>
+    <div class="chips"><span>opcja domyślnie wyłączona</span></div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Po co osobne tabele, skoro WordPress ma swoje wpisy?</b> Bo zgłoszenie serwisowe to nie
+  artykuł na bloga: ma numer, termin, gwarancję, historię i osobne uprawnienia. Trzymane jako
+  zwykłe wpisy zwolniłoby stronę i wymieszało się z jej treścią — a przy usuwaniu danych klienta
+  trudno byłoby udowodnić, co dokładnie zniknęło.
+</div>
+
+</body></html>

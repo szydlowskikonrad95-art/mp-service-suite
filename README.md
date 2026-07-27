@@ -76,7 +76,7 @@ prostym językiem i ze zrzutami ekranu:
 | [`instrukcje/PRACOWNIK.md`](dla-klienta/instrukcje/PRACOWNIK.md) | serwisant — obsługa przydzielonych spraw |
 | [`instrukcje/KOORDYNATOR.md`](dla-klienta/instrukcje/KOORDYNATOR.md) | kierownik — rozdzielanie spraw, terminy, raporty |
 | [`instrukcje/ADMIN.md`](dla-klienta/instrukcje/ADMIN.md) | administrator — import produktów, gwarancje, diagnostyka |
-| [`diagramy/`](dla-klienta/diagramy/) | architektura, przepływ zgłoszenia, maszyna stanów, schemat tabel |
+| [`diagramy/`](dla-klienta/diagramy/) | z czego składa się system, droga zgłoszenia, statusy sprawy, gdzie mieszkają dane (źródła HTML w `diagramy-zrodla/`, render: `python3 build/render-diagramy.py`) |
 | [`RAPORT-A11Y-WCAG.md`](dla-klienta/RAPORT-A11Y-WCAG.md) | dowód dostępności (przebieg axe-core, WCAG 2.1 AA) |
 
 ## Czego ten system NIE robi (świadome granice)
