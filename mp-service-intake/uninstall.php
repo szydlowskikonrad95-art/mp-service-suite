@@ -18,7 +18,7 @@ require_once __DIR__ . '/includes/Autoloader.php';
 MP\Intake\Autoloader::register();
 
 // Warstwa (i) — auto-strona formularza: kasowana TYLKO gdy tresc nietknieta
-// (odcisk palca == oryginal). Recznie zredagowana strona ZOSTAJE (blad #5 kolegi).
+// (odcisk palca == oryginal). Recznie zredagowana strona ZOSTAJE.
 $mp_intake_page_id = (int) get_option( MP\Intake\Front\Frontend::PAGE_OPTION, 0 );
 
 if ( $mp_intake_page_id > 0 ) {

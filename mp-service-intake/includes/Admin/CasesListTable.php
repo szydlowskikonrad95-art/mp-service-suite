@@ -217,7 +217,7 @@ final class CasesListTable extends \WP_List_Table {
 			// Neutralny szary, NIE czerwony. Brak przydziału to zwykły stan
 			// początkowy, a nie awaria — gdy świecił na czerwono w każdym
 			// wierszu, oko przestawało go zauważać i realna pilność (termin
-			// po czasie) nie miała się czym wyróżnić (krytyk-recenzent 27.07).
+			// po czasie) nie miała się czym wyróżnić (audyt uzytecznosci).
 			return '<span style="color:#646970">' . esc_html__( 'nieprzydzielona', 'mp-service-intake' ) . '</span>';
 		}
 
@@ -243,7 +243,7 @@ final class CasesListTable extends \WP_List_Table {
 		$do_konca = strtotime( $deadline . ' UTC' ) - time();
 		$label    = esc_html( get_date_from_gmt( $deadline, 'Y-m-d H:i' ) );
 
-		// Trzy stany zamiast dwoch. Powod (krytyk-recenzent 27.07): koordynator
+		// Trzy stany zamiast dwoch. Powod (audyt uzytecznosci): koordynator
 		// obslugujacy 30 zgloszen dziennie musial liczyc daty W GLOWIE — sam
 		// termin bez sygnalu nie mowi nic o pilnosci, a czerwien pojawiala sie
 		// dopiero PO fakcie, gdy juz nic nie da sie uratowac.
@@ -273,7 +273,7 @@ final class CasesListTable extends \WP_List_Table {
 	 *
 	 * Bez tego lista pokazywala e-mail i rodzaj („reklamacja"), wiec zeby
 	 * dowiedziec sie O CO CHODZI, trzeba bylo wejsc w kazda sprawe osobno.
-	 * Przy 30 zgloszeniach dziennie to sama strata czasu (krytyk-recenzent 27.07).
+	 * Przy 30 zgloszeniach dziennie to sama strata czasu (audyt uzytecznosci).
 	 *
 	 * @param array<string, mixed> $item Wiersz sprawy.
 	 * @return string

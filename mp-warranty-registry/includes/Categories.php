@@ -18,7 +18,7 @@ namespace MP\Registry;
 final class Categories {
 
 	/**
-	 * Domyslny slownik slug => etykieta PL (klepniete Dzidek 21.07).
+	 * Domyslny slownik slug => etykieta PL (uzgodniony z zamawiajacym).
 	 */
 	private const DEFAULTS = array(
 		'audio'            => 'Elektronika audio',
