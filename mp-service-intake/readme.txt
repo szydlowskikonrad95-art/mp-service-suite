@@ -10,7 +10,7 @@ Service and warranty claim intake: dynamic request form, SRV case numbers, custo
 
 == Description ==
 
-Accepts service and warranty requests through a front-end form embedded on a WordPress page. Form fields and required attachments adapt to the request type (complaint, repair, technical question, return) and product category. Every case receives a race-safe SRV/YYYY/NNNNN number.
+Accepts service and warranty requests through a front-end form embedded on a WordPress page. Form fields and required attachments adapt to the request type (complaint, repair, technical question, return) and product category. Every case receives a race-safe SRV/YYYY/NNNN number.
 
 Key features:
 
@@ -64,7 +64,7 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 == Changelog ==
 
 = 0.5.0 =
-* Karta pracy personelu „MP: Sprawy" (lista spraw + karta: status/odpowiedź/przydział/checklista/oś czasu), sekcja Produkt i gwarancja. Numer sprawy w formacie SRV/RRRR/NNNNN (5 cyfr).
+* Karta pracy personelu „MP: Sprawy" (lista spraw + karta: status/odpowiedź/przydział/checklista/oś czasu), sekcja Produkt i gwarancja. Numer sprawy w formacie SRV/RRRR/NNNN.
 
 = 0.4.0 =
 * Contract functions for the Workflow Automator: case context, assignment, status change (optimistic-lock), paginated cases query (role-aware, minimized), checklist authorization (ownership + event), read-only status list.
