@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,12 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.0.0 =
+* Pierwsze wydanie dla klienta.
+* Poprawna odmiana liczb w komunikatach („Produkt ma 1 aktywną sprawę" zamiast „1 aktywnych spraw").
+* Sprzątanie plików importu odtwarza się samo, gdy zadanie cykliczne zniknie z WordPressa; Stan witryny ostrzega, gdy go brakuje.
+* Po odinstalowaniu modułu zgłoszeń wyjątki gwarancyjne przypięte do spraw są cofane (sygnał kontraktowy zaczął realnie działać).
 
 = 0.5.0 =
 * Kontrakt mp_product_details (detale produktu + status gwarancji dla karty sprawy w Intake). Bez zmian w danych rejestru.
