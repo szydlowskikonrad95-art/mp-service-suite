@@ -116,6 +116,12 @@ które ustawia własne nagłówki, może je tu przyciąć zamiast walczyć z dup
   dostaje **osobny rekord klienta**: jej zgłoszenie nie nadpisuje danych pierwszej osoby
   i nie dokleja się do jej historii. Ta sama osoba (różnice wielkości liter/spacji
   w nazwisku) trafia do swojego istniejącego rekordu.
+- **Usunięcie danych jest dwustopniowe**: `mp_intake_withdraw` niczego nie zmienia — przekierowuje
+  na ekran potwierdzenia (co zniknie / co zostaje / operacja nieodwracalna). Operację wykonuje
+  dopiero `mp_intake_withdraw_confirm`, z **własnym nonce**, więc token pierwszego kroku nie
+  wystarcza. Powód: przycisk sąsiadował z „Zapisz dane" i jedno pudło kciukiem kasowało dane
+  nieodwracalnie. Ten sam wzorzec, co przy potwierdzaniu zgłoszenia i logowaniu linkiem (GET nie
+  zmienia stanu). Strażnik: `testy/e2e/c27-rodo-potwierdzenie.sh`.
 - **Samoobsługa danych na koncie współdzielonym jest wyłączona**: gdy konto WP obsługuje
   więcej niż jeden rekord klienta, panel chowa formularze edycji danych i „Wycofaj zgodę
   i usuń moje dane", a POST-y odmawiają **po stronie serwera** (także ze starym, ważnym

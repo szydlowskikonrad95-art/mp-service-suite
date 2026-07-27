@@ -56,10 +56,17 @@ O każdej ważnej zmianie (przydział, zmiana statusu, decyzja) system powiadomi
 
 ## 4. Twoje dane (RODO)
 
-W panelu, w sekcji **Prywatność**, możesz poprawić dane kontaktowe, **wycofać zgodę** i poprosić
-o **usunięcie danych**:
+Dane kontaktowe poprawisz na górze panelu. Sekcja **Prywatność (RODO)** — wycofanie zgody
+i usunięcie danych — jest **na samym dole**, pod Twoimi zgłoszeniami:
 
 ![Dane i sekcja RODO w panelu](zdjecia/10-panel-klienta-dane-rodo.jpg)
+
+**Usunięcie danych wymaga dwóch kliknięć — przypadkiem tego nie zrobisz.** Po kliknięciu
+„Wycofaj zgodę i usuń moje dane" zobaczysz ekran, który mówi wprost, co zniknie, co zostanie
+i że tej operacji **nie da się cofnąć**. Dopiero przycisk na tym ekranie ją wykonuje, a obok
+jest „Anuluj":
+
+![Ekran potwierdzenia usunięcia danych](zdjecia/14-potwierdzenie-usuniecia-danych.jpg)
 
 - Jeśli masz **aktywną sprawę**, dane zostaną usunięte po jej zakończeniu (system to jasno powie).
 - Jeśli z jednego adresu e-mail korzysta **kilka osób** (np. sekretariat), samoobsługowe usuwanie
