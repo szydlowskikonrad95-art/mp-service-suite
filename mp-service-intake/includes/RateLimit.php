@@ -12,8 +12,12 @@
  * DUPLICATE KEY UPDATE + LAST_INSERT_ID jak SrvCounter) — odporny na wyscig
  * rownoleglych zadan (dawny transientowy read-modify-write przepuszczal N zadan
  * naraz, D3). Wygasle wiersze sprzata cron retencji (cleanup_expired).
- * DEDUP-MARKER dalej transient, ustawiany DOPIERO po UDANYM zgloszeniu
- * (mark_submitted) — retry po odrzuceniu NIE jest falszywym duplikatem.
+ * DEDUP = REZERWACJA (claim) na tej samej tabeli (znalezisko #4 audytu 27.07):
+ * atomowo zajmowana PRZED utworzeniem sprawy — dwa rownolegle POST-y tego
+ * samego zgloszenia nie przejda oba (dawny transientowy check-then-set
+ * przepuszczal obydwa: dwie sprawy, dwa maile). Semantyka D5 zachowana:
+ * blad walidacji ZWALNIA rezerwacje (release_claim) — retry po odrzuceniu
+ * NIE jest falszywym duplikatem; sukces przedluza okno (mark_submitted).
  *
  * @package MP\Intake
  */
@@ -86,7 +90,10 @@ final class RateLimit {
 		$serial = trim( $serial );
 		$limits = self::limits();
 
-		if ( false !== get_transient( self::dedup_key( $serial, $email, $kind ) ) ) {
+		// Dedup: rezerwacja w tabeli (nie transient — pod object-cache transient
+		// omija baze i dawal osobny wyscig). Tu tylko ODCZYT (szybka odpowiedz
+		// dla klienta); atomowa bramka = claim_submission przed utworzeniem sprawy.
+		if ( self::current_count( self::dedup_key( $serial, $email, $kind ) ) > 0 ) {
 			return self::BLOCK_DUPLICATE;
 		}
 
@@ -188,7 +195,72 @@ final class RateLimit {
 	}
 
 	/**
-	 * Ustawia marker dedup po UDANYM zgloszeniu (15 min).
+	 * Atomowa REZERWACJA dedup PRZED utworzeniem sprawy (znalezisko #4).
+	 *
+	 * Dwa rownolegle POST-y tego samego zgloszenia: pierwszy dostaje true
+	 * (licznik = 1), drugi false (licznik > 1 w aktywnym oknie). Wygasle okno
+	 * = rezerwacja od nowa. Ten sam wzorzec LAST_INSERT_ID co hit(), ale okno
+	 * NIE jest przedluzane cudza proba (liczy sie od pierwszej rezerwacji).
+	 *
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @param string $kind   Rodzaj.
+	 * @return bool True = rezerwacja nasza (mozna tworzyc sprawe).
+	 */
+	public static function claim_submission( string $email, string $serial, string $kind ): bool {
+		global $wpdb;
+
+		$key     = self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind );
+		$table   = Tables::full( Tables::RATE_COUNTERS );
+		$now     = gmdate( 'Y-m-d H:i:s' );
+		$expires = gmdate( 'Y-m-d H:i:s', time() + self::DEDUP_WINDOW );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowa rezerwacja pod unikalnym kluczem.
+		$wpdb->query(
+			$wpdb->prepare(
+				"INSERT INTO {$table} (rl_key, hits, window_expires_at)
+				VALUES (%s, LAST_INSERT_ID(1), %s)
+				ON DUPLICATE KEY UPDATE
+					hits = LAST_INSERT_ID( IF( window_expires_at <= %s, 1, hits + 1 ) ),
+					window_expires_at = IF( window_expires_at <= %s, VALUES(window_expires_at), window_expires_at )",
+				$key,
+				$expires,
+				$now,
+				$now
+			)
+		);
+
+		$count = (int) $wpdb->insert_id;
+		// phpcs:enable
+
+		return 1 === $count;
+	}
+
+	/**
+	 * Zwalnia rezerwacje dedup po ODRZUCONYM zgloszeniu (blad walidacji).
+	 *
+	 * D5: retry po odrzuceniu nie jest duplikatem — klient poprawia literowke
+	 * i wysyla ponownie bez czekania 15 min.
+	 *
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @param string $kind   Rodzaj.
+	 * @return void
+	 */
+	public static function release_claim( string $email, string $serial, string $kind ): void {
+		global $wpdb;
+
+		$key   = self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind );
+		$table = Tables::full( Tables::RATE_COUNTERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; zwolnienie rezerwacji.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE rl_key = %s", $key ) );
+		// phpcs:enable
+	}
+
+	/**
+	 * Utrwala marker dedup po UDANYM zgloszeniu: okno 15 min liczone od
+	 * SUKCESU (rezerwacja z claim_submission mogla powstac chwile wczesniej).
 	 *
 	 * @param string $email  E-mail.
 	 * @param string $serial Numer seryjny.
@@ -196,7 +268,23 @@ final class RateLimit {
 	 * @return void
 	 */
 	public static function mark_submitted( string $email, string $serial, string $kind ): void {
-		set_transient( self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind ), 1, self::DEDUP_WINDOW );
+		global $wpdb;
+
+		$key     = self::dedup_key( trim( $serial ), strtolower( trim( $email ) ), $kind );
+		$table   = Tables::full( Tables::RATE_COUNTERS );
+		$expires = gmdate( 'Y-m-d H:i:s', time() + self::DEDUP_WINDOW );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; utrwalenie markera dedup.
+		$wpdb->query(
+			$wpdb->prepare(
+				"INSERT INTO {$table} (rl_key, hits, window_expires_at)
+				VALUES (%s, 1, %s)
+				ON DUPLICATE KEY UPDATE window_expires_at = VALUES(window_expires_at)",
+				$key,
+				$expires
+			)
+		);
+		// phpcs:enable
 	}
 
 	/**
