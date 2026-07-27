@@ -133,6 +133,15 @@ final class SubmissionHandler {
 			);
 		}
 
+		// Atomowa REZERWACJA dedup PRZED utworzeniem sprawy (znalezisko #4):
+		// dwa rownolegle POST-y tego samego zgloszenia (podwojny klik, retry
+		// proxy) — pierwszy zajmuje klucz, drugi odpada jako duplikat. Dawny
+		// check-then-set (marker dopiero po sukcesie) przepuszczal oba: dwie
+		// sprawy w bazie, dwa maile do klienta.
+		if ( ! RateLimit::claim_submission( $email, $serial, $kind ) ) {
+			self::redirect_back( array( 'notice' => __( 'To zgłoszenie właśnie przyjęliśmy — sprawdź swoją skrzynkę e-mail.', 'mp-service-intake' ) ) );
+		}
+
 		$result = CaseRepo::create(
 			array(
 				'kind'     => $kind,
@@ -143,6 +152,10 @@ final class SubmissionHandler {
 		);
 
 		if ( isset( $result['error'] ) ) {
+			// D5: odrzucone zgloszenie zwalnia rezerwacje — poprawiony retry
+			// nie jest duplikatem i nie czeka 15 min.
+			RateLimit::release_claim( $email, $serial, $kind );
+
 			self::redirect_back(
 				array(
 					'errors' => self::flatten_errors( $result['validation'] ?? array() ),
