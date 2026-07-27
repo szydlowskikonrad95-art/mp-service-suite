@@ -5,9 +5,9 @@
 ## Metoda (realny axe-core, nie deklaracja)
 - **Silnik:** axe-core (npm) uruchomiony w **prawdziwym DOM przeglądarki** przez Playwright + systemowy Chromium (`/usr/bin/chromium`, headless).
 - **Reguły:** WCAG 2.1 poziom **A + AA** (tagi `wcag2a, wcag2aa, wcag21a, wcag21aa`).
-- **Środowisko:** żywe demo (poligon Docker, WP 7.0.2, `localhost:8090`).
+- **Środowisko:** działająca instalacja WordPress 7.0.2 z kompletem trzech wtyczek.
 - To uzupełnia strukturalny sweep w CI (`testy/e2e/blok-s-a11y.sh` + `a11y-forms.sh`: etykiety, `role=alert`, nazwy przycisków, img-alt, duplikaty id) o warstwę, której CI nie zrobi bez przeglądarki: **kontrast kolorów i pełne reguły ARIA na wyrenderowanym DOM**.
-- Dowody surowe (JSON z axe): `axe-evidence-public.json`, `axe-evidence-panel.json`.
+- Wyniki poniżej pochodzą wprost z przebiegu axe-core (liczby przejść, naruszeń i pozycji niepewnych).
 
 ## Audytowane powierzchnie i wynik
 
