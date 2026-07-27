@@ -85,6 +85,50 @@ $mp_intake_delete_data = ( '1' === get_option( 'mp_intake_delete_data', '0' ) );
 if ( $mp_intake_delete_data ) {
 	global $wpdb;
 
+	// ── Konta klientow zalozone przez wtyczke ────────────────────────────────
+	// Bez tego po odinstalowaniu zostawaly w `wp_users` adresy e-mail klientow
+	// koncowych — czyli DANE OSOBOWE przezywaly usuniecie systemu, mimo ze admin
+	// jawnie wlaczyl „usun wszystkie dane". Dla instytucji publicznej to zarzut
+	// wprost z RODO. Zbieramy ID PRZED skasowaniem tabeli `customers`, bo potem
+	// nie da sie juz powiazac konta z naszym systemem.
+	//
+	// Kasujemy WYLACZNIE konta, ktore spelniaja WSZYSTKIE warunki:
+	//   1. sa podpiete w NASZEJ tabeli klientow (my je zakladalismy),
+	//   2. maja rolę klienta i TYLKO ja (admin/personel z tym samym mailem —
+	//      Accounts::ensure_for_customer podpina bez zmiany rol — zostaje nietkniety),
+	//   3. nie maja zadnych trescii w WordPressie (wpisy/strony/zalaczniki),
+	// bo skasowanie cudzego konta jest nieodwracalne, a my mamy sprzatac PO SOBIE,
+	// nie po innych.
+	$mp_intake_customers = MP\Intake\Tables::full( MP\Intake\Tables::CUSTOMERS );
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall sciezka ON: wlasna tabela, nazwa ze stalych.
+	$mp_intake_user_ids = $wpdb->get_col( "SELECT DISTINCT wp_user_id FROM {$mp_intake_customers} WHERE wp_user_id IS NOT NULL AND wp_user_id > 0" );
+
+	if ( ! function_exists( 'wp_delete_user' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+	}
+
+	foreach ( (array) $mp_intake_user_ids as $mp_intake_uid ) {
+		$mp_intake_uid  = (int) $mp_intake_uid;
+		$mp_intake_user = get_userdata( $mp_intake_uid );
+
+		if ( ! $mp_intake_user ) {
+			continue;
+		}
+
+		// Warunek 2: dokladnie jedna rola i to nasza klieńcka.
+		if ( array( MP\Intake\Accounts::CLIENT_ROLE ) !== array_values( (array) $mp_intake_user->roles ) ) {
+			continue;
+		}
+
+		// Warunek 3: zero wlasnych tresci (nie chcemy osierocic cudzych wpisow).
+		if ( count_user_posts( $mp_intake_uid, 'any', true ) > 0 ) {
+			continue;
+		}
+
+		wp_delete_user( $mp_intake_uid );
+	}
+
 	$mp_intake_tables = array(
 		MP\Intake\Tables::CASE_EVENTS,
 		MP\Intake\Tables::MESSAGES,

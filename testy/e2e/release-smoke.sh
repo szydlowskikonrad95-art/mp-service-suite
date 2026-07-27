@@ -51,6 +51,19 @@ done
 [ "$VOK" = "1" ] && ok "wersja spojna per plugin (Version == Stable tag)" || bad "rozjazd wersji header vs readme"
 
 # ── 5. Uninstall grep-zero (opt-in delete-data) ─────────────────────────────
+# Konta klientow zakladamy MY, wiec MY je sprzatamy — inaczej po odinstalowaniu
+# zostaja w wp_users adresy e-mail klientow koncowych (PII przezywa system).
+# Jednoczesnie konto z INNA rola (personel/redaktor, ktory tez zlozyl zgloszenie)
+# ma przezyc: kasujemy po sobie, nie po innych.
+wp user create smoke-klient smoke-klient@example.com --role=mp_client --user_pass=x >/dev/null 2>&1
+wp user create smoke-redaktor smoke-redaktor@example.com --role=editor --user_pass=x >/dev/null 2>&1
+SMOKE_KLIENT=$(wp user get smoke-klient --field=ID 2>/dev/null)
+SMOKE_RED=$(wp user get smoke-redaktor --field=ID 2>/dev/null)
+CUST=$(wp eval 'global $wpdb; echo $wpdb->prefix;' 2>/dev/null)mp_customers
+wp db query "INSERT INTO ${CUST} (email, name, phone, wp_user_id, created_at, updated_at)
+	VALUES ('smoke-klient@example.com','Smoke','',${SMOKE_KLIENT},UTC_TIMESTAMP(),UTC_TIMESTAMP()),
+	       ('smoke-redaktor@example.com','Smoke R','',${SMOKE_RED},UTC_TIMESTAMP(),UTC_TIMESTAMP())" >/dev/null 2>&1
+
 wp option update mp_intake_delete_data 1 >/dev/null 2>&1
 wp option update mp_registry_delete_data 1 >/dev/null 2>&1
 wp option update mp_automator_delete_data 1 >/dev/null 2>&1
@@ -60,6 +73,12 @@ TBL=$(q "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATAB
 OPT=$(q "SELECT COUNT(*) FROM ${PFX}options WHERE option_name LIKE 'mp\\_%' OR option_name LIKE '\\_transient\\_mp\\_%' OR option_name LIKE '\\_transient\\_timeout\\_mp\\_%'")
 ROL=$(wp eval 'echo ( get_role("mp_client") || get_role("mp_agent") || get_role("mp_system_admin") || get_role("mp_coordinator") ) ? "1" : "0";' 2>/dev/null)
 { [ "${TBL:-1}" = "0" ] && [ "${OPT:-1}" = "0" ] && [ "$ROL" = "0" ]; } && ok "uninstall grep-zero: brak tabel/opcji mp_ i rol mp_*" || bad "slad po uninstall: tabele=$TBL opcje=$OPT role=$ROL"
+
+KLIENT_ZOSTAL=$(wp eval "echo get_user_by( 'id', ${SMOKE_KLIENT} ) ? '1' : '0';" 2>/dev/null)
+RED_ZOSTAL=$(wp eval "echo get_user_by( 'id', ${SMOKE_RED} ) ? '1' : '0';" 2>/dev/null)
+[ "$KLIENT_ZOSTAL" = "0" ] && ok "konto klienta usuniete razem z danymi (zero PII w wp_users)" || bad "po uninstall ZOSTAL e-mail klienta w wp_users"
+[ "$RED_ZOSTAL" = "1" ] && ok "konto z inna rola (redaktor) NIETKNIETE — sprzatamy po sobie, nie po innych" || bad "uninstall skasowal CUDZE konto (redaktor)"
+wp user delete "$SMOKE_RED" --yes >/dev/null 2>&1
 
 echo
 echo "WYNIK release-smoke: $PASS ok, $FAIL fail"
