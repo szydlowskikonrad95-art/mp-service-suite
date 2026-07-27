@@ -1,0 +1,62 @@
+# CZYSTY WORDPRESS — symulacja serwera kolegi. ZERO montowania zrodel wtyczek:
+# instalujemy WYLACZNIE z ZIP-ow wyjetych ze zbiorczej paczki dla klienta.
+# Celowo PHP 8.1 + MySQL 8 = deklarowane MINIMUM z PRZECZYTAJ-MNIE (poligon dev
+# chodzi na 8.4/MariaDB, wiec minimum nikt dotad nie sprawdzil na zywej instalacji).
+services:
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=caching_sha2_password
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp
+      MYSQL_ROOT_PASSWORD: root-test-only
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:6.9-php8.1-apache
+    depends_on:
+      - db
+      - mailpit
+    ports:
+      - "8097:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+      # WP_DEBUG + log do pliku: kazde PHP notice z naszego kodu ma byc widoczne.
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_DISPLAY', false );
+    volumes:
+      - wp_data:/var/www/html
+      - ../../docker/mu-plugins/mp-dev-mailpit.php:/var/www/html/wp-content/mu-plugins/mp-dev-mailpit.php:ro
+      - ./paczka:/paczka:ro
+
+  mailpit:
+    image: axllent/mailpit:v1.30.2
+    ports:
+      - "8098:8025"
+
+  cli:
+    image: wordpress:cli-php8.1
+    depends_on:
+      - wordpress
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+    entrypoint: ["bash", "-c", "sleep infinity"]
+    volumes:
+      - wp_data:/var/www/html
+      - ../../docker/mu-plugins/mp-dev-mailpit.php:/var/www/html/wp-content/mu-plugins/mp-dev-mailpit.php:ro
+      - ./paczka:/paczka:ro
+
+volumes:
+  db_data:
+  wp_data:
