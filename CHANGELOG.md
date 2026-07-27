@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [1.0.0] - 2026-07-27
 
+### Changed (sprawdzenie na najnowszym WordPressie)
+- **`Tested up to: 7.0`** we wszystkich trzech wtyczkach — paczka przeszła **instalację od zera na
+  WordPressie 7.0.2** (PHP 8.2, MySQL 8): ścieżka klienta 19/0, wgranie wtyczki przez panel 6/0,
+  zero PHP notice z naszego kodu. Wcześniej deklarowaliśmy 6.9, a oficjalny Plugin Check miał
+  **wyciszone** ostrzeżenie o nieaktualnym nagłówku — wyciszenie zdjęte, nagłówek pilnuje się sam.
+  Harness `testy/paczka-od-zera` przyjmuje teraz wersję WP przez `MP_WP_OBRAZ`, więc obie
+  kombinacje (minimum 6.9/PHP 8.1 i najnowsza 7.0/PHP 8.2) da się powtórzyć jednym poleceniem.
+
 ### Fixed (poprawki z przeglądu ekranów przed wydaniem)
 - **Zwrot przestał wyglądać na puste zgłoszenie.** Kolumna „Czego dotyczy" na liście spraw czytała
   wyłącznie opis usterki, a formularz zwrotu zbiera **powód zwrotu** — więc każdy zwrot pokazywał

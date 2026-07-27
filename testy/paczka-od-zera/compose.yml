@@ -1,7 +1,12 @@
 # CZYSTY WORDPRESS — symulacja serwera kolegi. ZERO montowania zrodel wtyczek:
 # instalujemy WYLACZNIE z ZIP-ow wyjetych ze zbiorczej paczki dla klienta.
-# Celowo PHP 8.1 + MySQL 8 = deklarowane MINIMUM z PRZECZYTAJ-MNIE (poligon dev
+#
+# DOMYSLNIE PHP 8.1 + MySQL 8 = deklarowane MINIMUM z PRZECZYTAJ-MNIE (poligon dev
 # chodzi na 8.4/MariaDB, wiec minimum nikt dotad nie sprawdzil na zywej instalacji).
+# Druga kombinacja do sprawdzenia przed oddaniem = NAJNOWSZY WordPress, bo na takim
+# postawi to klient. Obrazy WP 7.0 nie maja juz PHP 8.1 (start od 8.2):
+#   MP_WP_OBRAZ=wordpress:7.0.2-php8.2-apache MP_CLI_OBRAZ=wordpress:cli-php8.2 \
+#     bash testy/paczka-od-zera/uruchom.sh
 services:
   db:
     image: mysql:8.0
@@ -15,7 +20,7 @@ services:
       - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:6.9-php8.1-apache
+    image: ${MP_WP_OBRAZ:-wordpress:6.9-php8.1-apache}
     depends_on:
       - db
       - mailpit
@@ -42,7 +47,7 @@ services:
       - "8098:8025"
 
   cli:
-    image: wordpress:cli-php8.1
+    image: ${MP_CLI_OBRAZ:-wordpress:cli-php8.1}
     depends_on:
       - wordpress
     user: "33:33"
