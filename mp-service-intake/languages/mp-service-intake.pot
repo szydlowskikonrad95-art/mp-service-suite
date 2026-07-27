@@ -1,0 +1,1118 @@
+# Copyright (C) 2026 MP Service Suite
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MP Service Intake 0.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mp-service-intake\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-27T08:33:32+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mp-service-intake\n"
+
+#. Plugin Name of the plugin
+#: mp-service-intake.php
+msgid "MP Service Intake"
+msgstr ""
+
+#. Description of the plugin
+#: mp-service-intake.php
+msgid "Przyjmowanie zgloszen serwisowych i reklamacyjnych: dynamiczny formularz, numer sprawy SRV, konto klienta, ochrona przed spamem."
+msgstr ""
+
+#. Author of the plugin
+#: mp-service-intake.php
+msgid "MP Service Suite"
+msgstr ""
+
+#: includes/Admin/CaseActions.php:79
+msgid "Brak danych zmiany statusu."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:95
+msgid "Status zmieniony (klient i przypisany pracownik powiadomieni)."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:102
+msgid "Ktoś zmienił status w międzyczasie — odśwież stronę i spróbuj ponownie."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:104
+msgid "Odrzucenie wymaga podania powodu."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:106
+msgid "Niedozwolone przejście statusu (sprawę zamkniętą można tylko wznowić do „w analizie\")."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:108
+#: includes/Admin/CaseActions.php:139
+msgid "Sprawa nie istnieje lub niepotwierdzona."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:110
+msgid "Nie udało się zmienić statusu."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:133
+#: includes/Admin/UnverifiedScreen.php:150
+msgid "Brak sprawy."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:143
+#: includes/Front/AccountPage.php:487
+msgid "Wiadomość jest pusta."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:148
+msgid "Odpowiedź wysłana do klienta."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:170
+msgid "Wybierz pracownika do przydziału."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:176
+msgid "Sprawa przydzielona (pracownik powiadomiony)."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:177
+msgid "Nie udało się przydzielić sprawy."
+msgstr ""
+
+#: includes/Admin/CaseActions.php:189
+#: includes/Admin/UnverifiedScreen.php:142
+msgid "Brak uprawnień do tej operacji."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:35
+msgid "Zmiana statusu"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:36
+msgid "Zmiana priorytetu"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:37
+msgid "Przydział sprawy"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:38
+msgid "Wiadomość"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:39
+#: includes/Admin/CaseCard.php:431
+msgid "Checklista"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:40
+msgid "Wycofanie zgody (RODO)"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:41
+msgid "Wyjątek gwarancyjny"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:42
+msgid "Cofnięcie wyjątku gwarancyjnego"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:59
+msgid "Wróć do listy spraw"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:62
+msgid "Sprawa niedostępna"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:63
+msgid "Sprawa nie istnieje lub nie została jeszcze potwierdzona przez klienta."
+msgstr ""
+
+#. translators: %s: numer sprawy.
+#: includes/Admin/CaseCard.php:74
+#, php-format
+msgid "Sprawa %s"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:121
+#: includes/Admin/CasesListTable.php:64
+#: includes/Privacy.php:179
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:122
+#: includes/Admin/CasesListTable.php:63
+#: includes/Admin/UnverifiedScreen.php:105
+#: includes/Privacy.php:175
+msgid "Rodzaj"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:123
+msgid "Kategoria"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:124
+msgid "Priorytet"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:125
+#: includes/Admin/CasesListTable.php:65
+msgid "Przydzielony"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:125
+#: includes/Admin/CasesListTable.php:216
+msgid "nieprzydzielona"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:126
+msgid "Kraj / język"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:127
+msgid "Potwierdzono"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:128
+#: includes/Admin/CasesListTable.php:66
+msgid "Termin SLA"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:132
+#: includes/Privacy.php:196
+msgid "Sprawa"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:155
+msgid "Akcje"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:162
+#: includes/Front/AccountPage.php:387
+msgid "Status:"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:170
+msgid "Powód (odrzucenie):"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:176
+msgid "Zmień status"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:194
+msgid "Przydziel do:"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:199
+msgid "Przydziel"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:215
+#: includes/Admin/CaseCard.php:359
+#: includes/Admin/CasesListTable.php:62
+msgid "Klient"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:232
+msgid "Produkt i gwarancja"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:235
+msgid "Moduł rejestru produktów nieaktywny."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:243
+msgid "Brak powiązanego produktu w rejestrze."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:248
+msgid "aktywna"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:249
+msgid "wygasła"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:250
+msgid "brak danych"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:251
+msgid "do weryfikacji"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:258
+msgid "Model"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:259
+msgid "Nr seryjny"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:260
+msgid "Dokument zakupu"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:261
+#: includes/FormConfig.php:63
+msgid "Data zakupu"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:262
+msgid "Gwarancja do"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:270
+msgid "Status gwarancji"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:273
+msgid "⚠ Produkt zarchiwizowany w rejestrze."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:287
+msgid "Opis zgłoszenia"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:290
+msgid "Brak dodatkowych pól opisu."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:313
+#: includes/Privacy.php:183
+msgid "Załączniki"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:316
+msgid "Brak załączników."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:353
+msgid "Wiadomości"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:356
+#: includes/Front/AccountPage.php:408
+msgid "Brak wiadomości."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:360
+#: includes/Front/AccountPage.php:413
+msgid "Serwis"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:361
+#: includes/Front/AccountPage.php:414
+msgid "System"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:393
+msgid "Szablon odpowiedzi:"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:409
+msgid "Wyślij odpowiedź do klienta"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:434
+msgid "Brak checklisty dla tego rodzaju sprawy."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:474
+msgid "Historia sprawy"
+msgstr ""
+
+#: includes/Admin/CaseCard.php:477
+msgid "Brak zdarzeń."
+msgstr ""
+
+#: includes/Admin/CaseCard.php:487
+msgid "system"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:61
+msgid "Nr sprawy"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:67
+#: includes/Admin/UnverifiedScreen.php:106
+msgid "Utworzono"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:265
+msgid "Filtr statusu"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:266
+msgid "Status: wszystkie"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:279
+msgid "Filtr rodzaju"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:280
+msgid "Rodzaj: wszystkie"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:291
+msgid "Filtr przydzielenia"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:293
+msgid "Przydzielony: wszyscy"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:294
+msgid "Nieprzydzielone"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:295
+msgid "Moje sprawy"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:298
+msgid "Filtruj"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:308
+msgid "Brak spraw spełniających kryteria."
+msgstr ""
+
+#: includes/Admin/CasesScreen.php:62
+msgid "Sprawy serwisowe MP"
+msgstr ""
+
+#: includes/Admin/CasesScreen.php:63
+msgid "MP: Sprawy"
+msgstr ""
+
+#: includes/Admin/CasesScreen.php:80
+msgid "Brak uprawnień do spraw serwisowych."
+msgstr ""
+
+#: includes/Admin/CasesScreen.php:107
+msgid "Sprawy serwisowe"
+msgstr ""
+
+#: includes/Admin/CasesScreen.php:110
+msgid "Szukaj (nr sprawy / klient)"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:56
+msgid "Załączniki: rozpoznawanie typu plików działa"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:57
+msgid "Rozszerzenie PHP „fileinfo\" jest dostępne, więc typ pliku sprawdzamy po jego zawartości, a nie po nazwie."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:64
+msgid "Załączniki NIE DZIAŁAJĄ — brak rozszerzenia PHP „fileinfo\""
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:65
+msgid "Typ pliku sprawdzamy po zawartości. Bez rozszerzenia „fileinfo\" system nie potrafi tego zrobić i dla bezpieczeństwa odrzuca KAŻDY załącznik — klient zobaczy komunikat „Niedozwolony typ pliku\" nawet przy poprawnym zdjęciu."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:66
+msgid "Poproś hosting o włączenie rozszerzenia PHP „fileinfo\" (zwykle jedno kliknięcie w panelu albo linia w php.ini)."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:80
+msgid "Zdjęcia: dane EXIF są usuwane"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:81
+msgid "Serwer ma bibliotekę obrazów (Imagick lub GD), więc ze zdjęć usuwamy metadane — w tym lokalizację GPS."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:88
+msgid "Zdjęcia zachowują dane EXIF (w tym GPS)"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:89
+msgid "Serwer nie ma ani Imagick, ani GD. Zdjęcia usterek trafiają do systemu z metadanymi — w tym z lokalizacją, w której zrobiono zdjęcie. To dane osobowe, których nikt nie zamierzał zbierać."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:90
+msgid "Poproś hosting o włączenie rozszerzenia PHP „imagick\" albo „gd\"."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:104
+msgid "Połączenie szyfrowane (HTTPS)"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:105
+msgid "Strona działa po HTTPS, więc linki logowania i dane klientów są szyfrowane."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:112
+msgid "Brak HTTPS — dane klientów lecą otwartym tekstem"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:113
+msgid "Klient loguje się jednorazowym linkiem z e-maila i widzi swoje dane osobowe oraz historię spraw. Bez HTTPS ten link i te dane może przechwycić ktoś w tej samej sieci."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:114
+msgid "Włącz certyfikat SSL (na większości hostingów darmowy Let's Encrypt) i przestaw adres witryny na https://."
+msgstr ""
+
+#. translators: %s: adres e-mail nadawcy.
+#: includes/Admin/SiteHealthTests.php:131
+#, php-format
+msgid "Adres nadawcy ustawiony: %s"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:132
+msgid "Powiadomienia wychodzą z konkretnego adresu w Twojej domenie — to zmniejsza ryzyko trafienia do spamu."
+msgstr ""
+
+#. translators: %s: adres e-mail nadawcy.
+#: includes/Admin/SiteHealthTests.php:140
+#, php-format
+msgid "Poczta wychodzi z domyślnego adresu %s"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:141
+msgid "WordPress używa adresu „wordpress@\" + domena, gdy nikt nie ustawi innego. Taka skrzynka zwykle nie istnieje, więc filtry antyspamowe traktują wiadomość podejrzliwie, a odbicia nie mają dokąd wrócić. Jeśli klient nie dostanie linku logowania — nie wejdzie na swoje konto."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:142
+msgid "Ustaw istniejący adres w domenie strony (np. serwis@twojadomena.pl) — najprościej wtyczką SMTP, np. WP Mail SMTP, która przy okazji wysyła pocztę przez serwer Twojej skrzynki."
+msgstr ""
+
+#. translators: %s: limit rozmiaru pliku.
+#: includes/Admin/SiteHealthTests.php:160
+#, php-format
+msgid "Limit wgrywanych plików: %s"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:161
+msgid "Serwer przyjmie załączniki w rozmiarze, jakiego oczekuje formularz zgłoszenia."
+msgstr ""
+
+#. translators: 1: limit serwera, 2: limit wtyczki.
+#: includes/Admin/SiteHealthTests.php:169
+#, php-format
+msgid "Serwer przyjmuje mniejsze pliki (%1$s) niż formularz (%2$s)"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:170
+msgid "Formularz zapowiada klientowi załączniki do 8 MB, ale serwer utnie je wcześniej. Klient zobaczy błąd przy zdjęciu z telefonu, które dziś potrafi ważyć kilka megabajtów."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:171
+msgid "Poproś hosting o podniesienie „upload_max_filesize\" i „post_max_size\" do co najmniej 8 MB."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:192
+msgid "Środowisko produkcyjne"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:193
+msgid "To nie jest instalacja lokalna, więc poczta powinna wychodzić normalnie — o ile hosting ma skonfigurowaną wysyłkę."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:200
+msgid "Instalacja lokalna — e-maile prawdopodobnie nie będą wychodzić"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:201
+msgid "Wygląda to na WordPressa uruchomionego lokalnie (na komputerze). Takie instalacje zwykle nie mają serwera pocztowego, więc link potwierdzający i link logowania NIE PRZYJDĄ na skrzynkę. To ograniczenie środowiska, nie systemu — na hostingu z pocztą wszystko zadziała."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:202
+msgid "Żeby mimo to przejść całą ścieżkę klienta, wygeneruj link logowania komendą WP-CLI: wp mp login-link adres@example.com — otworzysz panel bez maila. Alternatywnie zainstaluj lokalny przechwytywacz poczty (np. Mailpit lub MailHog) i skonfiguruj wysyłkę przez SMTP na localhost."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:66
+#: includes/Admin/UnverifiedScreen.php:88
+msgid "Zgłoszenia niepotwierdzone"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:67
+msgid "MP: Niepotwierdzone"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:83
+msgid "Brak uprawnień."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:98
+msgid "Brak zgłoszeń oczekujących na potwierdzenie."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:104
+msgid "Numer"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:107
+msgid "Link ważny do"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:108
+msgid "Popraw e-mail i wyślij ponownie"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:127
+msgid "Wyślij ponownie"
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:157
+msgid "Ponowną wysyłkę można wykonać najwyżej raz na 5 minut dla danej sprawy."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:170
+msgid "Tej sprawy nie można ponowić (nie jest niepotwierdzona)."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:176
+msgid "Brak poprawnego adresu e-mail dla tej sprawy."
+msgstr ""
+
+#: includes/Admin/UnverifiedScreen.php:183
+msgid "Link weryfikacyjny wysłany ponownie (świeży token)."
+msgstr ""
+
+#. translators: %d: limit zalacznikow.
+#: includes/Attachments.php:75
+#, php-format
+msgid "Pominięto część plików — limit to %d załączników na zgłoszenie."
+msgstr ""
+
+#: includes/Attachments.php:89
+msgid "Serwer chwilowo nie przyjmuje nowych załączników (limit przestrzeni) — spróbuj później."
+msgstr ""
+
+#: includes/Attachments.php:96
+msgid "Nie udało się zapisać jednego z plików."
+msgstr ""
+
+#: includes/Attachments.php:122
+msgid "Plik nie wgrał się poprawnie — spróbuj ponownie."
+msgstr ""
+
+#: includes/Attachments.php:128
+msgid "Plik nie dotarł na serwer."
+msgstr ""
+
+#. translators: %s: limit rozmiaru.
+#: includes/Attachments.php:134
+#, php-format
+msgid "Plik przekracza limit %s."
+msgstr ""
+
+#: includes/Attachments.php:142
+msgid "Niedozwolony typ pliku — przyjmujemy tylko JPG, PNG, WebP i PDF."
+msgstr ""
+
+#: includes/Attachments.php:336
+msgid "MP Service Intake: serwer nie ma biblioteki obrazów (Imagick ani GD) — metadane EXIF/GPS z załączanych zdjęć NIE będą usuwane. Zainstaluj rozszerzenie PHP imagick lub gd."
+msgstr ""
+
+#: includes/CaseRepo.php:56
+#: includes/Front/FormRenderer.php:62
+msgid "Formularz zawiera błędy — popraw zaznaczone pola."
+msgstr ""
+
+#: includes/CaseRepo.php:125
+msgid "Nie udało się nadać numeru sprawy — spróbuj ponownie."
+msgstr ""
+
+#: includes/CaseRepo.php:141
+msgid "Brak tokenu weryfikacji."
+msgstr ""
+
+#: includes/CaseRepo.php:181
+msgid "To zgłoszenie zostało już potwierdzone."
+msgstr ""
+
+#: includes/CaseRepo.php:185
+msgid "Link weryfikacyjny wygasł lub jest nieprawidłowy."
+msgstr ""
+
+#: includes/CaseRepo.php:201
+msgid "Sprawa zniknęła w trakcie potwierdzania."
+msgstr ""
+
+#: includes/Consents.php:35
+msgid "Wyrażam zgodę na przetwarzanie moich danych osobowych podanych w zgłoszeniu w celu jego obsługi serwisowej, zgodnie z informacją o przetwarzaniu danych. Zgodę mogę wycofać w każdej chwili z poziomu mojego konta, co nie wpływa na zgodność z prawem przetwarzania sprzed wycofania."
+msgstr ""
+
+#: includes/FormConfig.php:49
+msgid "Numer seryjny produktu"
+msgstr ""
+
+#: includes/FormConfig.php:56
+msgid "Dokument zakupu (nr faktury/paragonu)"
+msgstr ""
+
+#: includes/FormConfig.php:70
+msgid "Opis usterki / sprawy"
+msgstr ""
+
+#: includes/FormConfig.php:86
+msgid "Powód zwrotu"
+msgstr ""
+
+#: includes/FormConfig.php:216
+msgid "Elektronika audio"
+msgstr ""
+
+#: includes/FormConfig.php:217
+msgid "AGD drobne"
+msgstr ""
+
+#: includes/FormConfig.php:218
+msgid "Elektronarzędzia"
+msgstr ""
+
+#: includes/FormConfig.php:219
+msgid "Inne"
+msgstr ""
+
+#: includes/FormConfig.php:248
+msgid "Objaw dźwięku (np. brak dźwięku, trzaski, jeden kanał)"
+msgstr ""
+
+#: includes/FormConfig.php:257
+msgid "Model / moc z tabliczki znamionowej"
+msgstr ""
+
+#: includes/FormConfig.php:266
+msgid "Nr partii / seria produktu"
+msgstr ""
+
+#: includes/Front/AccountPage.php:147
+msgid "Panel zgłoszeń serwisowych"
+msgstr ""
+
+#: includes/Front/AccountPage.php:148
+msgid "Podaj adres e-mail użyty w zgłoszeniu — wyślemy link do zalogowania."
+msgstr ""
+
+#: includes/Front/AccountPage.php:152
+msgid "Adres e-mail"
+msgstr ""
+
+#: includes/Front/AccountPage.php:154
+msgid "Wyślij link logowania"
+msgstr ""
+
+#. translators: %d: liczba minut waznosci linku logowania.
+#: includes/Front/AccountPage.php:161
+#, php-format
+msgid "Link będzie ważny %d minutę i zadziała tylko raz. Po tym czasie po prostu poproś o nowy."
+msgid_plural "Link będzie ważny %d minut i zadziała tylko raz. Po tym czasie po prostu poproś o nowy."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Front/AccountPage.php:185
+msgid "Moje zgłoszenia"
+msgstr ""
+
+#: includes/Front/AccountPage.php:186
+msgid "Wyloguj"
+msgstr ""
+
+#: includes/Front/AccountPage.php:199
+msgid "Nie znaleźliśmy zgłoszeń przypisanych do tego konta."
+msgstr ""
+
+#: includes/Front/AccountPage.php:204
+msgid "Twoje zgłoszenia"
+msgstr ""
+
+#: includes/Front/AccountPage.php:235
+msgid "Twoje dane kontaktowe"
+msgstr ""
+
+#: includes/Front/AccountPage.php:236
+msgid "E-mail:"
+msgstr ""
+
+#: includes/Front/AccountPage.php:240
+#: includes/Privacy.php:152
+msgid "Imię i nazwisko"
+msgstr ""
+
+#: includes/Front/AccountPage.php:242
+#: includes/Privacy.php:156
+msgid "Telefon"
+msgstr ""
+
+#: includes/Front/AccountPage.php:244
+msgid "Zapisz dane"
+msgstr ""
+
+#: includes/Front/AccountPage.php:262
+#: includes/Front/AccountPage.php:325
+#: includes/Front/AccountPage.php:476
+#: includes/Front/Login.php:88
+msgid "Sesja wygasła — spróbuj ponownie."
+msgstr ""
+
+#: includes/Front/AccountPage.php:272
+msgid "Dane kontaktowe zostały zapisane."
+msgstr ""
+
+#: includes/Front/AccountPage.php:298
+msgid "Prywatność (RODO)"
+msgstr ""
+
+#: includes/Front/AccountPage.php:299
+msgid "Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu."
+msgstr ""
+
+#: includes/Front/AccountPage.php:303
+msgid "Wycofaj zgodę i usuń moje dane"
+msgstr ""
+
+#: includes/Front/AccountPage.php:360
+msgid "Zgoda została wycofana, a Twoje dane osobowe zostały usunięte."
+msgstr ""
+
+#: includes/Front/AccountPage.php:362
+msgid "Zgoda została wycofana. Masz aktywne zgłoszenie — dane usuniemy po jego zakończeniu."
+msgstr ""
+
+#: includes/Front/AccountPage.php:364
+msgid "Zgoda została wycofana."
+msgstr ""
+
+#: includes/Front/AccountPage.php:412
+msgid "Ty"
+msgstr ""
+
+#: includes/Front/AccountPage.php:452
+msgid "Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy."
+msgstr ""
+
+#: includes/Front/AccountPage.php:455
+msgid "Napisz wiadomość do serwisu"
+msgstr ""
+
+#: includes/Front/AccountPage.php:457
+msgid "Wyślij"
+msgstr ""
+
+#: includes/Front/AccountPage.php:481
+msgid "Nie znaleziono zgłoszenia."
+msgstr ""
+
+#: includes/Front/AccountPage.php:492
+msgid "Wiadomość została wysłana do serwisu."
+msgstr ""
+
+#: includes/Front/AccountPage.php:554
+msgid "Panel zgłoszeń"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:54
+#: includes/Front/Frontend.php:126
+msgid "Zgłoszenie serwisowe"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:72
+msgid "Zostaw to pole puste"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:80
+msgid "Rodzaj zgłoszenia"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:88
+msgid "Kategoria produktu"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:96
+msgid "Twój e-mail"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:111
+msgid "Załączniki (opcjonalnie: zdjęcia, PDF — do 5 plików)"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:119
+msgid "Zgoda jest wymagana, aby przyjąć zgłoszenie."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:126
+msgid "Wskazówka: nie podawaj w opisie danych osobowych innych osób."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:127
+msgid "Wyślij zgłoszenie"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:263
+msgid "Reklamacja"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:264
+msgid "Naprawa"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:265
+msgid "Zapytanie"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:266
+msgid "Zwrot"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:287
+msgid "— wybierz kategorię —"
+msgstr ""
+
+#: includes/Front/FormRenderer.php:334
+msgid "To pole jest wymagane."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:335
+msgid "Podaj poprawny adres e-mail."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:336
+msgid "Podaj datę w formacie RRRR-MM-DD."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:337
+msgid "Data zakupu nie może być z przyszłości."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:338
+msgid "Data zakupu jest zbyt odległa — sprawdź ją."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:339
+msgid "Numer seryjny wygląda nieprawidłowo."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:340
+msgid "Numer dokumentu wygląda nieprawidłowo."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:341
+msgid "Podaj poprawny numer telefonu."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:342
+msgid "Wybierz poprawny rodzaj zgłoszenia."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:343
+msgid "Ten tekst jest za długi — skróć go i wyślij ponownie."
+msgstr ""
+
+#: includes/Front/FormRenderer.php:346
+msgid "Popraw to pole."
+msgstr ""
+
+#: includes/Front/Frontend.php:70
+msgid "Formularz zgłoszenia MP"
+msgstr ""
+
+#: includes/Front/Login.php:96
+msgid "Zbyt wiele prób logowania — odczekaj kilka minut i spróbuj ponownie."
+msgstr ""
+
+#: includes/Front/Login.php:106
+msgid "Jeśli konto istnieje, wysłaliśmy link do logowania na podany adres e-mail."
+msgstr ""
+
+#: includes/Front/Login.php:250
+msgid "Logowanie do panelu"
+msgstr ""
+
+#: includes/Front/Login.php:251
+msgid "Logowanie do panelu zgłoszeń"
+msgstr ""
+
+#: includes/Front/Login.php:252
+msgid "Kliknij przycisk, aby zalogować się do panelu swoich zgłoszeń."
+msgstr ""
+
+#: includes/Front/Login.php:258
+msgid "Zaloguj się"
+msgstr ""
+
+#: includes/Front/Login.php:270
+#: includes/Front/Login.php:271
+#: includes/Front/SubmissionHandler.php:254
+msgid "Link nieaktualny"
+msgstr ""
+
+#: includes/Front/Login.php:272
+msgid "Link logowania wygasł lub został już użyty. Poproś o nowy link ze strony logowania."
+msgstr ""
+
+#. translators: %s: nazwa firmy/strony.
+#: includes/Front/Mailer.php:39
+#, php-format
+msgid "Potwierdź swoje zgłoszenie serwisowe — %s"
+msgstr ""
+
+#. translators: 1: nazwa firmy/strony, 2: link potwierdzajacy, 3: liczba godzin waznosci linku.
+#: includes/Front/Mailer.php:44
+#, php-format
+msgid ""
+"Dziękujemy za zgłoszenie serwisowe w %1$s.\n"
+"\n"
+"Aby je potwierdzić i uruchomić obsługę, kliknij w link poniżej (ważny %3$d godz.):\n"
+"\n"
+"%2$s\n"
+"\n"
+"Jeśli to nie Ty wysłałeś to zgłoszenie, zignoruj tę wiadomość."
+msgstr ""
+
+#. translators: %s: nazwa firmy/strony.
+#: includes/Front/Mailer.php:76
+#, php-format
+msgid "Logowanie do panelu zgłoszeń — %s"
+msgstr ""
+
+#. translators: 1: link logowania, 2: liczba minut waznosci linku, 3: adres panelu zgloszen.
+#: includes/Front/Mailer.php:81
+#, php-format
+msgid ""
+"Aby zalogować się do panelu swoich zgłoszeń, otwórz link poniżej i kliknij przycisk logowania (link ważny %2$d minut, jednorazowy):\n"
+"\n"
+"%1$s\n"
+"\n"
+"Link wygasł? Poproś o nowy, podając swój adres e-mail na stronie: %3$s\n"
+"\n"
+"Jeśli to nie Ty prosiłeś o logowanie, zignoruj tę wiadomość — nikt nie uzyskał dostępu do konta."
+msgstr ""
+
+#. translators: %s: numer sprawy SRV.
+#: includes/Front/Mailer.php:100
+#, php-format
+msgid "Zgłoszenie %s zostało przyjęte"
+msgstr ""
+
+#. translators: 1: nazwa firmy/strony, 2: numer sprawy SRV, 3: adres panelu zgloszen.
+#: includes/Front/Mailer.php:105
+#, php-format
+msgid ""
+"Twoje zgłoszenie zostało potwierdzone i przyjęte do obsługi w %1$s.\n"
+"\n"
+"Numer sprawy: %2$s\n"
+"\n"
+"Podawaj ten numer w kontakcie z serwisem. Status sprawy możesz śledzić po zalogowaniu na swoje konto: %3$s"
+msgstr ""
+
+#: includes/Front/Mailer.php:126
+msgid "serwisie"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:78
+msgid "Sesja formularza wygasła — spróbuj ponownie."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:115
+msgid "To zgłoszenie właśnie przyjęliśmy — sprawdź swoją skrzynkę e-mail."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:116
+msgid "Zbyt wiele zgłoszeń w krótkim czasie. Spróbuj ponownie za jakiś czas."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:193
+msgid "Uwaga: część załączników nie została dołączona do zgłoszenia:"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:227
+msgid "Sesja wygasła"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:228
+msgid "Sesja potwierdzenia wygasła. Otwórz link z e-maila ponownie i kliknij „Potwierdzam\"."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:244
+msgid "Zgłoszenie potwierdzone"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:245
+msgid "Dziękujemy. Twoje zgłoszenie zostało potwierdzone — szczegóły i numer sprawy wysłaliśmy na Twój adres e-mail."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:254
+msgid "Zgłoszenie już potwierdzone"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:271
+msgid "Potwierdź zgłoszenie"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:275
+msgid "Aby potwierdzić swoje zgłoszenie serwisowe i uruchomić obsługę, kliknij przycisk poniżej."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:280
+msgid "Potwierdzam"
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:376
+msgid "Jeśli dane są poprawne, wysłaliśmy na podany adres e-mail link potwierdzający zgłoszenie."
+msgstr ""
+
+#: includes/Front/SubmissionHandler.php:476
+msgid "Przejdź do panelu zgłoszeń"
+msgstr ""
+
+#: includes/Lifecycle.php:98
+msgid "MP Service Intake: brak rozszerzenia PHP „fileinfo\" — załączniki nie będą przyjmowane (weryfikacja typu pliku po treści jest wymagana). Poproś administratora serwera o włączenie ext-fileinfo."
+msgstr ""
+
+#: includes/Privacy.php:40
+#: includes/Privacy.php:55
+#: includes/Privacy.php:167
+msgid "Zgłoszenia serwisowe MP"
+msgstr ""
+
+#: includes/Privacy.php:81
+msgid "Dane zatrzymane do zakończenia aktywnej sprawy serwisowej lub upływu okresu roszczeń (gwarancja/rękojmia)."
+msgstr ""
+
+#: includes/Privacy.php:115
+msgid "Dane osobowe powiązane ze zgłoszeniami serwisowymi zostały zanonimizowane."
+msgstr ""
+
+#: includes/Privacy.php:144
+msgid "Dane klienta (serwis MP)"
+msgstr ""
+
+#: includes/Privacy.php:148
+msgid "E-mail"
+msgstr ""
+
+#: includes/Privacy.php:171
+msgid "Numer sprawy"
+msgstr ""
+
+#: includes/Privacy.php:192
+msgid "Wiadomości w sprawach MP"
+msgstr ""
+
+#: includes/Privacy.php:200
+msgid "Treść"
+msgstr ""
+
+#: includes/Privacy.php:225
+msgid "brak"
+msgstr ""
+
+#: includes/Privacy.php:233
+msgid "pliki dostępne po zalogowaniu na konto."
+msgstr ""
