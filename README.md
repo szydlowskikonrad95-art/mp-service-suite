@@ -21,7 +21,7 @@ WordPress 6.x · PHP 8.1–8.5 (CI testuje każdą wersję) · MySQL 8 / MariaDB
 ## Szybki start
 
 1. Zainstaluj i aktywuj trzy ZIP-y z [Releases](../../releases) — **kolejność dowolna**: każda
-   wtyczka działa też sama i grzecznie ogranicza funkcje, gdy braci nie ma (nigdy biały ekran).
+   wtyczka działa też sama i ogranicza funkcje, gdy braci nie ma — zamiast błędu pokazuje komunikat.
 2. Aktywacja Intake sama tworzy strony **formularza zgłoszenia** i **panelu klienta** oraz role:
    *administrator systemu MP*, *koordynator serwisu*, *pracownik serwisu*, *klient*.
 3. Zajrzyj do **Narzędzia → Stan witryny** — dziesięć testów diagnostycznych mówi, czego
@@ -88,9 +88,11 @@ prostym językiem i ze zrzutami ekranu:
 - **Nie wystawia publicznego REST API.** Jedyne wejścia do systemu: formularz zgłoszenia,
   panel klienta i wp-admin dla personelu. Integracje między wtyczkami idą przez udokumentowane
   hooki ([`API-KONTRAKT.md`](dokumentacja-techniczna/API-KONTRAKT.md)) — to API wewnętrzne.
-- **Nie kasuje danych „na twardo".** Prawo do usunięcia (RODO) realizuje **anonimizacja**:
-  dane osobowe znikają, oś zdarzeń i statystyki zostają. Historia zdarzeń sprawy jest z
-  konstrukcji nieusuwalna (wymóg specyfikacji). Przy adresie e-mail współdzielonym przez
+- **Wniosku RODO nie realizuje przez kasowanie rekordów, tylko przez anonimizację**: dane
+  osobowe znikają, oś zdarzeń i statystyki zostają. Historia zdarzeń sprawy jest z
+  konstrukcji nieusuwalna (wymóg specyfikacji). ⚠️ To dotyczy **bieżącej pracy systemu** —
+  przy odinstalowaniu wtyczki z **włączoną** opcją „usuń dane" tabele, opcje, role i konta
+  klientów są kasowane trwale (domyślnie opcja jest wyłączona, dane przeżywają deaktywację). Przy adresie e-mail współdzielonym przez
   wiele osób samoobsługowe usunięcie jest wyłączone — wniosek rozpatruje personel (żeby jedna
   osoba nie skasowała danych drugiej).
 - **Nie liczy płatności, faktur ani magazynu** — rejestr produktów służy gwarancjom, nie sprzedaży.
