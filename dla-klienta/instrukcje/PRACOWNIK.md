@@ -1,0 +1,48 @@
+# Instrukcja: PRACOWNIK SERWISU
+
+> Dla serwisanta z rolą **Pracownik serwisu MP**. Obsługujesz sprawy, które system (albo koordynator)
+> Ci przydzielił.
+
+## 1. Twoje sprawy
+
+Panel WordPress → **MP: Sprawy**. Filtr **„Przydzielony: ja"** pokazuje tylko Twoje sprawy.
+Kolumny: numer sprawy, klient, rodzaj, pilność, status (kolorowa plakietka), termin SLA
+(czerwony = po terminie lub blisko).
+
+![Lista spraw serwisowych](zdjecia/admin-01-sprawy.png)
+> *Uwaga: zrzut poglądowy — aktualna wersja ma dodatkowo kolorowe plakietki statusów oraz
+> kolumnę pilności i tematu sprawy.*
+
+## 2. Karta sprawy — tu się pracuje
+
+Kliknij numer sprawy. Na karcie masz wszystko:
+
+![Karta sprawy](zdjecia/admin-02-karta-sprawy.png)
+
+- **Dane zgłoszenia** i wynik sprawdzenia gwarancji (z rejestru, z chwili zgłoszenia),
+- **Oś zdarzeń** — pełna, nieusuwalna historia (kto, co, kiedy),
+- **Checklista** dla rodzaju sprawy — odhaczaj kroki w miarę pracy; każde odhaczenie zapisuje się
+  w historii,
+- **Wiadomości** — rozmowa z klientem; możesz użyć gotowego szablonu odpowiedzi (pola typu numer
+  sprawy podstawiają się same),
+- **Zmiana statusu** — prowadź sprawę po statusach (nowe → w analizie → … → zamknięte).
+  Odrzucenie zawsze wymaga podania powodu — klient dostaje go w mailu.
+
+## 3. Terminy (SLA)
+
+- Przy każdej otwartej sprawie widzisz **termin pierwszej reakcji**.
+- **Przed terminem** system wyśle Ci przypomnienie mailem. **Po terminie** sprawa eskaluje
+  do koordynatora — nie chowaj trudnych spraw, po prostu pisz do klienta i zmieniaj statusy.
+
+## 4. Eksport
+
+**Automatyzacje MP → Eksport CSV** — pobierzesz zestawienie **swoich** spraw (tylko koordynator
+eksportuje wszystkie).
+
+## Zasady, które system egzekwuje za Ciebie
+
+- Nie zobaczysz spraw, których nie masz prawa widzieć.
+- Zamkniętej sprawy nie wznowisz — to decyzja koordynatora.
+- Wiadomość klienta na zamkniętej sprawie jest dozwolona i trafi do Ciebie mailem — status się
+  nie zmienia.
+- Dwuklik (podwójne wysłanie wiadomości, ponowny przydział) nie robi duplikatów.

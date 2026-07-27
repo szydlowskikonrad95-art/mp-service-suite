@@ -1,0 +1,35 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Maszyna stanów">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1050" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t" value="Maszyna stanów sprawy (ZAMROŻONA) — rdzeń 7 statusów + statusy własne od D" style="text;html=1;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="40" y="16" width="970" height="30" as="geometry"/></mxCell>
+        <mxCell id="n" value="Zmiana statusu WYŁĄCZNIE mp_case_change_status() (optimistic-lock). Czasy SLA = konfigurowalne defaulty × modyfikator priorytetu. Terminalność wg FLAGI 'czy-końcowy', nie nazwy." style="text;html=1;fontSize=11;fontStyle=2;align=center;" vertex="1" parent="1"><mxGeometry x="40" y="46" width="970" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="start" value="● narodziny" style="ellipse;whiteSpace=wrap;html=1;fillColor=#000000;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1"><mxGeometry x="90" y="120" width="90" height="40" as="geometry"/></mxCell>
+        <mxCell id="nullst" value="NULL (unverified)&#10;identity = pending&#10;BEZ eventów" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;dashed=1;" vertex="1" parent="1"><mxGeometry x="230" y="115" width="150" height="50" as="geometry"/></mxCell>
+        <mxCell id="nowe" value="nowe&#10;(SLA 24h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="800" y="115" width="130" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="cluster" value="STATUSY NIETERMINALNE — przejścia LIBERALNE (każdy → każdy; walidacja: status istnieje + optimistic-lock)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;dashed=1;fontSize=11;fontStyle=1;verticalAlign=top;spacingTop=6;" vertex="1" parent="1"><mxGeometry x="360" y="250" width="620" height="180" as="geometry"/></mxCell>
+        <mxCell id="c_nowe" value="nowe&#10;24h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="385" y="300" width="100" height="46" as="geometry"/></mxCell>
+        <mxCell id="c_uzup" value="do uzupełnienia&#10;72h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="505" y="300" width="110" height="46" as="geometry"/></mxCell>
+        <mxCell id="c_anal" value="w analizie&#10;48h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="635" y="300" width="100" height="46" as="geometry"/></mxCell>
+        <mxCell id="c_akc" value="zaakceptowane&#10;24h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="755" y="300" width="110" height="46" as="geometry"/></mxCell>
+        <mxCell id="c_nap" value="w naprawie&#10;120h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="885" y="300" width="80" height="46" as="geometry"/></mxCell>
+        <mxCell id="c_own" value="+ statusy WŁASNE od D (mp_registered_statuses) — nieterminalne, te same reguły" style="text;html=1;fontSize=10;fontStyle=2;align=center;" vertex="1" parent="1"><mxGeometry x="385" y="378" width="580" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="odrz" value="odrzucone ◼&#10;TERMINALNY · bez SLA&#10;WYMAGA rejection_reason_code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="360" y="600" width="230" height="60" as="geometry"/></mxCell>
+        <mxCell id="zamk" value="zamknięte ◼&#10;TERMINALNY · bez SLA&#10;D generuje RAPORT KOŃCOWY (krok 8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="600" width="260" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="e0" style="endArrow=block;html=1;" edge="1" parent="1" source="start" target="nullst"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e1" value="weryfikacja mailowa&#10;(atomowo, IS NULL)&#10;+CASE_CREATED · start SLA" style="endArrow=block;html=1;fontSize=10;strokeColor=#6c8ebf;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="nullst" target="nowe"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="wejście w obieg (mp_case_status_changed)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="nowe" target="cluster"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="→ odrzucone (z kodem powodu)" style="endArrow=block;html=1;fontSize=10;strokeColor=#b85450;exitX=0.1;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="cluster" target="odrz"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="→ zamknięte" style="endArrow=block;html=1;fontSize=10;strokeColor=#82b366;exitX=0.85;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="cluster" target="zamk"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="REOPEN → w analizie (TYLKO koordynator/admin; świeży SLA)" style="endArrow=block;html=1;fontSize=10;dashed=1;strokeColor=#9673a6;exitX=0.6;exitY=0;entryX=0.15;entryY=1;" edge="1" parent="1" source="odrz" target="cluster"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" value="REOPEN → w analizie (TYLKO koordynator/admin; świeży SLA)" style="endArrow=block;html=1;fontSize=10;dashed=1;strokeColor=#9673a6;exitX=0.4;exitY=0;entryX=0.85;entryY=1;" edge="1" parent="1" source="zamk" target="cluster"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,54 @@
+# Instrukcja: ADMINISTRATOR SYSTEMU
+
+> Dla właściciela/administratora z rolą **Administrator systemu MP** (lub konta administratora WP).
+> Masz wszystko, co koordynator (patrz `KOORDYNATOR.md`), plus rejestr produktów, import,
+> wyjątki gwarancyjne i utrzymanie.
+
+## 1. Instalacja i pierwsza konfiguracja
+
+Krok po kroku w **`INSTRUKCJA-KLIENTA.md`** (instalacja 3 ZIP-ów, co powstaje automatycznie,
+konfiguracja formularza, rejestru i Automatora, noty serwerowe: SMTP, nginx, systemowy cron).
+
+## 2. Rejestr produktów i gwarancji
+
+**Rejestr MP** — baza produktów, numerów seryjnych, partii i okresów gwarancyjnych; wyszukiwarka
+po serialu / kliencie / fakturze / modelu:
+
+![Rejestr produktów](zdjecia/admin-04-rejestr.png)
+
+**Import CSV** (Rejestr MP → Import) — porcjami, ze wznawianiem i raportem błędów per wiersz;
+na ekranie jest przykładowy plik do pobrania i lista kolumn:
+
+![Import CSV](zdjecia/admin-05-import-csv.png)
+
+Produktu z **aktywną sprawą nie da się usunąć** (blokada integralności) — najpierw zamknij sprawę
+albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
+
+## 3. Wyjątki gwarancyjne (tylko Ty)
+
+**Rejestr MP → Wyjątki** — ręczne przyznanie/cofnięcie gwarancji dla produktu lub konkretnej
+sprawy (np. gest dobrej woli po terminie). Każdy wyjątek ma powód (notatka wewnętrzna — klient
+jej nie widzi) i zostaje w historii produktu:
+
+![Wyjątki gwarancyjne](zdjecia/admin-06-wyjatki.png)
+
+## 4. RODO — obowiązki administratora
+
+- Wnioski o **eksport/usunięcie danych**: wbudowane narzędzia WordPressa
+  (**Narzędzia → Eksport / Usuwanie danych osobowych**) obejmują dane systemu serwisowego.
+- Usuwanie = **anonimizacja**: dane osobowe znikają (także konto klienta i e-mail w zgodach),
+  oś zdarzeń i statystyki zostają. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
+- **Wspólny adres wielu osób** (sekretariat): eraser po adresie obejmie wszystkie kartoteki
+  z tego adresu — przed uruchomieniem potwierdź tożsamość i zakres wniosku.
+- Retencja załączników i sprzątanie danych tymczasowych chodzą automatycznie (cron).
+
+## 5. Utrzymanie
+
+- **Narzędzia → Stan witryny** — 10 testów systemu (poczta, załączniki, HTTPS, pula przydziału,
+  wykonywanie się crona, sprawy poza automatyzacją…). Zielono = zdrowo; czerwono = instrukcja
+  naprawy w treści testu.
+- **Aktualizacje wtyczek**: standardowo przez ZIP; migracje bazy wykonują się same przy wejściu
+  do panelu, crony odtwarzają się same. Przed aktualizacją na produkcji zrób kopię bazy
+  (polityka: `dokumentacja-techniczna/MIGRATION_POLICY.md`).
+- **Odinstalowanie** sprząta wszystko swoje (tabele, opcje, role, crony, konta klientów założone
+  przez system) i nie rusza niczego cudzego.

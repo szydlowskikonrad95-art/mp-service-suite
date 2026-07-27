@@ -42,6 +42,43 @@ wiadomości w panelu (logowanie linkiem, bez hasła) → pracownik prowadzi chec
 zostaje na nieusuwalnej osi zdarzeń → SLA pilnuje terminów (przypomnienie przed, eskalacja po) →
 raporty i eksport CSV.
 
+## Jak to wygląda
+
+**Klient wysyła zgłoszenie** — formularz dopasowuje pola do rodzaju sprawy (reklamacja pyta o numer
+seryjny i dokument zakupu, pytanie techniczne tylko o opis):
+
+![Formularz zgłoszenia serwisowego](dla-klienta/instrukcje/zdjecia/02-formularz-pusty.jpg)
+
+**Klient śledzi sprawę bez zakładania hasła** — logowanie linkiem z maila, panel pokazuje status,
+historię wiadomości i narzędzia RODO:
+
+![Panel klienta](dla-klienta/instrukcje/zdjecia/11-panel-sprawa-srv10.jpg)
+
+**Serwis pracuje na liście spraw** — filtry, sortowanie, kolorowe statusy, termin SLA z licznikiem
+„zostało X godz." i widoczny przydział:
+
+![Lista spraw w panelu](dla-klienta/instrukcje/zdjecia/admin-01-sprawy.png)
+
+**Automatyzacje w jednym miejscu** — reguły przydziału, statusy, checklisty, szablony odpowiedzi
+i rejestr zdarzeń:
+
+![Panel automatyzacji](dla-klienta/instrukcje/zdjecia/admin-07-automatyzacje.png)
+
+## Co jest w paczce
+
+Katalog [`dla-klienta/`](dla-klienta/) — wszystko, czego potrzeba do wdrożenia i pracy z systemem,
+prostym językiem i ze zrzutami ekranu:
+
+| Co | Dla kogo |
+|---|---|
+| [`INSTRUKCJA-KLIENTA.md`](dla-klienta/INSTRUKCJA-KLIENTA.md) | osoba wdrażająca — instalacja, konfiguracja, noty serwerowe (SMTP, nagłówki), RODO |
+| [`instrukcje/KLIENT.md`](dla-klienta/instrukcje/KLIENT.md) | zgłaszający — jak wysłać sprawę i śledzić ją bez konta |
+| [`instrukcje/PRACOWNIK.md`](dla-klienta/instrukcje/PRACOWNIK.md) | serwisant — obsługa przydzielonych spraw |
+| [`instrukcje/KOORDYNATOR.md`](dla-klienta/instrukcje/KOORDYNATOR.md) | kierownik — rozdzielanie spraw, terminy, raporty |
+| [`instrukcje/ADMIN.md`](dla-klienta/instrukcje/ADMIN.md) | administrator — import produktów, gwarancje, diagnostyka |
+| [`diagramy/`](dla-klienta/diagramy/) | architektura, przepływ zgłoszenia, maszyna stanów, schemat tabel |
+| [`RAPORT-A11Y-WCAG.md`](dla-klienta/RAPORT-A11Y-WCAG.md) | dowód dostępności (przebieg axe-core, WCAG 2.1 AA) |
+
 ## Czego ten system NIE robi (świadome granice)
 
 - **Nie wysyła SMS-ów ani powiadomień push** — cała komunikacja to e-mail przez `wp_mail`.
@@ -71,6 +108,7 @@ mp-warranty-registry/     wtyczka B — rejestr produktów i gwarancji
 mp-workflow-automator/    wtyczka D — reguły, SLA, checklisty, raporty
 lib/mp-common/            wspólne klasy; przy budowie KOPIOWANE do każdej wtyczki
                           (u klienta są równo 3 paczki; CI pilnuje identyczności kopii)
+dla-klienta/              instrukcje ×4 role ze zrzutami, diagramy, raport dostępności
 dokumentacja-techniczna/  kontrakt hooków, baza, bezpieczeństwo, maszyna stanów, migracje
 testy/                    phpunit (czysta logika) + ~70 skryptów e2e na ŻYWYM WordPressie
 build/                    budowa ZIP-ów + linter zakazu dotykania cudzych tabel
