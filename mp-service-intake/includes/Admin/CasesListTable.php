@@ -59,6 +59,7 @@ final class CasesListTable extends \WP_List_Table {
 	public function get_columns(): array {
 		return array(
 			'case_number' => __( 'Nr sprawy', 'mp-service-intake' ),
+			'temat'       => __( 'Czego dotyczy', 'mp-service-intake' ),
 			'customer'    => __( 'Klient', 'mp-service-intake' ),
 			'kind'        => __( 'Rodzaj', 'mp-service-intake' ),
 			'status'      => __( 'Status', 'mp-service-intake' ),
@@ -213,7 +214,11 @@ final class CasesListTable extends \WP_List_Table {
 		$uid = isset( $item['assigned_to'] ) && null !== $item['assigned_to'] ? (int) $item['assigned_to'] : 0;
 
 		if ( 0 === $uid ) {
-			return '<span style="color:#a33">' . esc_html__( 'nieprzydzielona', 'mp-service-intake' ) . '</span>';
+			// Neutralny szary, NIE czerwony. Brak przydziału to zwykły stan
+			// początkowy, a nie awaria — gdy świecił na czerwono w każdym
+			// wierszu, oko przestawało go zauważać i realna pilność (termin
+			// po czasie) nie miała się czym wyróżnić (krytyk-recenzent 27.07).
+			return '<span style="color:#787c82">' . esc_html__( 'nieprzydzielona', 'mp-service-intake' ) . '</span>';
 		}
 
 		$user = get_userdata( $uid );
@@ -235,12 +240,66 @@ final class CasesListTable extends \WP_List_Table {
 		}
 
 		$deadline = (string) $sla['deadline_at'];
-		$overdue  = strtotime( $deadline . ' UTC' ) < time();
+		$do_konca = strtotime( $deadline . ' UTC' ) - time();
 		$label    = esc_html( get_date_from_gmt( $deadline, 'Y-m-d H:i' ) );
 
-		return $overdue
-			? '<span style="color:#a33;font-weight:600">' . $label . '</span>'
-			: $label;
+		// Trzy stany zamiast dwoch. Powod (krytyk-recenzent 27.07): koordynator
+		// obslugujacy 30 zgloszen dziennie musial liczyc daty W GLOWIE — sam
+		// termin bez sygnalu nie mowi nic o pilnosci, a czerwien pojawiala sie
+		// dopiero PO fakcie, gdy juz nic nie da sie uratowac.
+		if ( $do_konca < 0 ) {
+			return '<span style="color:#a33;font-weight:600" title="' . esc_attr__( 'Termin minął', 'mp-service-intake' ) . '">'
+				. $label . ' <strong>' . esc_html__( '· po terminie', 'mp-service-intake' ) . '</strong></span>';
+		}
+
+		if ( $do_konca < DAY_IN_SECONDS ) {
+			$godzin = max( 1, (int) round( $do_konca / HOUR_IN_SECONDS ) );
+
+			return '<span style="color:#8a5a00;font-weight:600">' . $label . ' <strong>'
+				. esc_html(
+					sprintf(
+						/* translators: %d: liczba godzin do konca terminu. */
+						_n( '· zostało %d godz.', '· zostało %d godz.', $godzin, 'mp-service-intake' ),
+						$godzin
+					)
+				) . '</strong></span>';
+		}
+
+		return $label;
+	}
+
+	/**
+	 * „Czego dotyczy" — pierwsze zdanie opisu zgloszenia.
+	 *
+	 * Bez tego lista pokazywala e-mail i rodzaj („reklamacja"), wiec zeby
+	 * dowiedziec sie O CO CHODZI, trzeba bylo wejsc w kazda sprawe osobno.
+	 * Przy 30 zgloszeniach dziennie to sama strata czasu (krytyk-recenzent 27.07).
+	 *
+	 * @param array<string, mixed> $item Wiersz sprawy.
+	 * @return string
+	 */
+	public function column_temat( $item ): string {
+		$pola = CaseRepo::form_data_for_case( (int) ( $item['id'] ?? 0 ) );
+
+		foreach ( (array) $pola as $pole ) {
+			$klucz = (string) $pole['key'];
+
+			if ( 'issue_description' !== $klucz ) {
+				continue;
+			}
+
+			$tekst = trim( preg_replace( '/\s+/u', ' ', (string) $pole['value'] ) ?? '' );
+
+			if ( '' === $tekst ) {
+				break;
+			}
+
+			$skrot = mb_substr( $tekst, 0, 70 );
+
+			return esc_html( mb_strlen( $tekst ) > 70 ? $skrot . '…' : $skrot );
+		}
+
+		return '<span style="color:#787c82">' . esc_html__( '— bez opisu', 'mp-service-intake' ) . '</span>';
 	}
 
 	/**
