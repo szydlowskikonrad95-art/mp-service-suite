@@ -23,6 +23,11 @@ jobs:
           php-version: '${{ matrix.php }}'
           tools: 'composer:v2'
       - run: composer install --prefer-dist --no-progress
+      - name: Build kopii wspólnego kodu (includes/Common — generowane, gitignorowane)
+        # Bez tego testy jednostkowe pracują na innym kształcie kodu niż produkcja:
+        # klasy MP\<Plugin>\Common\* po prostu nie istnieją, więc każde odwołanie do
+        # wspólnego helpera wywala się dopiero w CI (a lokalnie działa, bo build był).
+        run: bash build/build.sh
       - name: Lint skladni
         run: find mp-service-intake mp-warranty-registry mp-workflow-automator lib -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
       - name: PHPUnit

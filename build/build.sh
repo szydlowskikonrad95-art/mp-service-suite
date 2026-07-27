@@ -23,9 +23,12 @@ stamp_common() { # $1=katalog docelowy includes/Common, $2=segment namespace (In
   mkdir -p "$target"
   for src in lib/mp-common/src/*.php; do
     base="$(basename "$src")"
+    # Znacznik @generated w SAMYM PLIKU: kopia wyglada jak zwykly kod zrodlowy,
+    # a jest gitignorowana i nadpisywana przy kazdym buildzie. Bez tej linii
+    # poprawka naniesiona tutaj znika bez sladu i bez bledu (audyt 27.07).
     sed -e "s/namespace MP\\\\Common/namespace MP\\\\${ns}\\\\Common/" \
         -e "s/use MP\\\\Common\\\\/use MP\\\\${ns}\\\\Common\\\\/g" \
-        -e "s/@package MP\\\\Common/@package MP\\\\${ns}\\\\Common/" \
+        -e "s|@package MP\\\\Common|@generated PLIK GENEROWANY — NIE EDYTUJ. Zrodlo: lib/mp-common/src/${base}\n *\n * @package MP\\\\${ns}\\\\Common|" \
         "$src" > "$target/$base"
     php -l "$target/$base" > /dev/null
   done
