@@ -281,19 +281,29 @@ final class CasesListTable extends \WP_List_Table {
 	public function column_temat( $item ): string {
 		$pola = CaseRepo::form_data_for_case( (int) ( $item['id'] ?? 0 ) );
 
+		// ZWROT nie ma opisu usterki — klient wpisuje POWOD ZWROTU. Czytajac samo
+		// issue_description lista pokazywala „— bez opisu" przy kazdym zwrocie,
+		// mimo ze klient napisal, dlaczego oddaje (zlapane na zrzutach 27.07).
+		$zrodla = array();
+
 		foreach ( (array) $pola as $pole ) {
 			$klucz = (string) $pole['key'];
 
-			if ( 'issue_description' !== $klucz ) {
+			if ( 'issue_description' !== $klucz && 'return_reason' !== $klucz ) {
 				continue;
 			}
 
 			$tekst = trim( preg_replace( '/\s+/u', ' ', (string) $pole['value'] ) ?? '' );
 
-			if ( '' === $tekst ) {
-				break;
+			if ( '' !== $tekst ) {
+				$zrodla[ $klucz ] = $tekst;
 			}
+		}
 
+		// Opis usterki ma pierwszenstwo; powod zwrotu wchodzi, gdy opisu nie ma.
+		$tekst = $zrodla['issue_description'] ?? ( $zrodla['return_reason'] ?? '' );
+
+		if ( '' !== $tekst ) {
 			$skrot = mb_substr( $tekst, 0, 70 );
 
 			return esc_html( mb_strlen( $tekst ) > 70 ? $skrot . '…' : $skrot );

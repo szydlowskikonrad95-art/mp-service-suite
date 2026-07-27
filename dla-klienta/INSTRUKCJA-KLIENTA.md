@@ -50,6 +50,9 @@ Dla **każdego** z 3 plików ZIP:
 - Formularz ma wbudowaną ochronę: potwierdzenie e-mail (magic-link), pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
 
 ### 5.2 Rejestr gwarancji (produkty)
+- ⚠️ **Bazę produktów wgraj ZANIM udostępnisz formularz klientom.** Zgłoszenie łączy się z produktem
+  **w chwili przyjęcia** i to powiązanie nie jest uzupełniane wstecz. Sprawy przyjęte przed importem
+  zostaną bez produktu i bez statusu gwarancji (numer seryjny nadal będzie widoczny w opisie zgłoszenia).
 - **Import produktów z CSV**: Rejestr MP → Import. Obsługiwane duże pliki (dziesiątki tysięcy wierszy), wznawianie po przerwaniu.
 - 📎 **Gotowy przykład jest w paczce** — plik `przyklady/przyklad-import-produktow.csv` w folderze wtyczki, a na ekranie importu jest
   link **„Pobierz przykładowy plik CSV"**. Otwórz go w Excelu, podmień dane na swoje i wgraj.
