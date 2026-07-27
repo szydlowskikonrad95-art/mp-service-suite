@@ -17,6 +17,34 @@
 5. **Akcje mutujące emitowane PO COMMIT transakcji.**
 6. Z przykładowych payloadów niżej **generowane są mocki i testy kontraktowe** (spec bez przykładu =
    każdy plugin „zgodny" inaczej).
+7. **Filtry kontraktowe NIE sprawdzają uprawnień użytkownika — i tak ma być.** Autoryzacja siedzi
+   o warstwę wyżej, w miejscu wywołania (patrz niżej).
+
+## Gdzie jest autoryzacja (a gdzie jej celowo NIE ma)
+
+Filtry z tego pliku to **wewnętrzne API między wtyczkami**, nie publiczne wejście. Nie wołają
+`current_user_can()`, bo najczęstszy wywołujący to **cron** — sweep SLA i silnik reguł działają
+bez zalogowanego użytkownika. Gdyby filtr wymagał uprawnień, automatyzacja przestałaby działać
+o pierwszej w nocy.
+
+Uprawnienia sprawdza **warstwa, która przyjmuje żądanie od człowieka**:
+
+| Wejście | Kto pilnuje | Czego wymaga |
+|---|---|---|
+| Ekrany i akcje personelu (`admin_post_*`) | `MP\Intake\Admin\CaseActions` | nonce + `mp_agent` / `mp_coordinator` / `mp_system_admin` |
+| Panel klienta (front) | `MP\Intake\Front\AccountPage` | zalogowany `mp_client` + **własność sprawy** (ochrona przed podglądaniem cudzych) |
+| Formularz publiczny | `MP\Intake\Front\SubmissionHandler` | nonce + honeypot + pułapka czasowa + limity |
+| Reguły i SLA (cron) | — | brak użytkownika z założenia; działanie ograniczone kontraktem |
+
+**Konsekwencja praktyczna:** wywołanie `apply_filters( 'mp_case_change_status', ... )` z kodu PHP
+zmieni status **niezależnie od tego, kto jest zalogowany**. To nie jest luka — kto może wykonać PHP
+na serwerze, ten i tak ma pełny dostęp do bazy. Ale jeśli dopisujesz **nowy** endpoint (REST, AJAX,
+`admin_post`), to **Ty** odpowiadasz za sprawdzenie uprawnień przed wywołaniem filtra; kontrakt tego
+za Ciebie nie zrobi.
+
+Sprawdzone praktycznie (27.07.2026): anonimowy `POST` na `admin-post.php` z akcją zmiany statusu
+kończy się **HTTP 400 i zerową zmianą w bazie**; zalogowany klient przez kontraktowy
+`mp_cases_query` **nie widzi cudzych spraw**, a eksport CSV zwraca mu **zero** rekordów.
 
 ## A. Akcje (zdarzenia) — emitent → słuchacze
 
