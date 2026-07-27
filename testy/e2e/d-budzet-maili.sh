@@ -43,7 +43,10 @@ PRZED=$(q "$CZEKAJACE")
 [ "${PRZED:-0}" -ge 6 ] 2>/dev/null && ok "seed: co najmniej 6 spraw czeka na przypomnienie (jest $PRZED)" || bad "seed zly ($PRZED)"
 
 # ── 1. Budzet 2 => przebieg wysyla DOKLADNIE 2 maile, reszta czeka ──────────
-wp eval "add_filter('mp_sla_mail_budget', function(){ return 2; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
+# pre_wp_mail => true: w kontenerze CI NIE MA serwera poczty, wiec kazda wysylka
+# by padla, marker 'wyslano' nie zostalby postawiony (kod slusznie ponawia), a test
+# mierzylby ponawianie zamiast budzetu. Wymuszamy determinizm.
+wp eval "add_filter('pre_wp_mail', '__return_true'); add_filter('mp_sla_mail_budget', function(){ return 2; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
 PO=$(q "$CZEKAJACE")
 ROZNICA=$(( PRZED - PO ))
 [ "$ROZNICA" = "2" ] && ok "budzet dotrzymany: dokladnie 2 przypomnienia w przebiegu (bylo $PRZED, zostalo $PO)" || bad "budzet zlamany: wyslano $ROZNICA zamiast 2"
@@ -57,13 +60,13 @@ LICZNIK=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='SWEEP_
 [ "${LICZNIK:-0}" -ge 1 ] 2>/dev/null && ok "licznik pokazuje REALNIE wyslane (2), nie znalezione" || bad "licznik klamie o liczbie maili"
 
 # ── 2. Kolejny przebieg z wiekszym budzetem dobiera zaleglosc ───────────────
-wp eval "add_filter('mp_sla_mail_budget', function(){ return 500; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail', '__return_true'); add_filter('mp_sla_mail_budget', function(){ return 500; }); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
 PO2=$(q "$CZEKAJACE")
 [ "${PO2:-9}" = "0" ] && ok "kolejny przebieg dobral cala zaleglosc (kolejka pusta)" || bad "zaleglosc nie zeszla ($PO2)"
 
 # ── 3. Kontrola: pusty przebieg nie wysyla nic drugi raz ───────────────────
 PRZED3=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE event_type='SLA_REMINDER_SENT'")
-wp eval 'MP\Automator\Sweep::run();' >/dev/null 2>&1
+wp eval "add_filter('pre_wp_mail', '__return_true'); MP\\Automator\\Sweep::run();" >/dev/null 2>&1
 PO3=$(q "SELECT COUNT(*) FROM wp_mp_case_events WHERE event_type='SLA_REMINDER_SENT'")
 [ "$PRZED3" = "$PO3" ] && ok "zero podwojnych przypomnien przy pustym przebiegu" || bad "podwojna wysylka ($PRZED3 -> $PO3)"
 
