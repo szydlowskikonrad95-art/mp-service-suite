@@ -273,9 +273,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-bughunt.sh
       - name: BLOK-S a11y/WCAG sweep (guard img-alt + nazwy przycisków + dup-id na wszystkich powierzchniach)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/blok-s-a11y.sh
-      - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
-        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
-      # ── Audyt 27.07 (na KONIEC: ruszaja stan globalny — kontrakt czysci case_sla) ──
+      # ── Audyt 27.07: PRZED krokiem DoD (on odinstalowuje wtyczki i kasuje tabele),
+      #    ale po testach funkcjonalnych — kontrakt czysci case_sla i checklisty. ──
       - name: Testy C25 (awaria poczty widoczna — ślad na sprawie + alert w Stanie witryny)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-mail-awaria-widoczna.sh
       - name: Testy D26 (resync spraw potwierdzonych przy wyłączonym Automatorze)
@@ -290,6 +289,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
       - name: Testy C30 (RODO — retencja porzuconych zgłoszeń niepotwierdzonych)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
+      - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 
   # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:
