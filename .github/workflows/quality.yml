@@ -49,6 +49,8 @@ jobs:
         run: vendor/bin/phpcs
       - name: PHPStan (lvl 6 + wordpress-stubs)
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - name: Liczby w dokumentach zgodne z kodem (uwaga zamawiającego 3x)
+        run: bash testy/dokumenty/liczby-zgodne-z-kodem.sh
       - name: Linter cudzych tabel (tokenowy)
         run: php build/lint-cudze-tabele.php
 
@@ -86,8 +88,9 @@ jobs:
           # outdated_tested_upto_header ZDJETY 27.07: paczka przeszla instalacje od zera
           #   na WP 7.0.2 (19/0 sciezka klienta, 6/0 panel), wiec "Tested up to: 7.0"
           #   jest prawda, a nie deklaracja — nagłowek pilnuje sie teraz sam.
-          # load_plugin_textdomainFound: auto-tlumaczenia WP dzialaja TYLKO dla pluginow z katalogu
-          #   wp.org; nasze .mo leza lokalnie w languages/ => wywolanie jest konieczne.
+          # load_plugin_textdomainFound: jezykiem ZRODLOWYM wtyczek jest polski (teksty w kodzie
+          #   sa po polsku), a languages/ trzyma tylko szablon .pot — plikow .mo NIE MA i nie sa
+          #   potrzebne. Wywolanie zostaje, zeby ktos mogl dolozyc wlasne tlumaczenie bez ruszania kodu.
           ignore-codes: 'PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound'
 
   # skan sekretow (maszyna; lokalny pre-commit to tylko pierwsza linia)
