@@ -286,6 +286,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/kontrakt-dane-skasowane.sh
       - name: Testy D28 (Przelicz SLA paczkami — bez timeoutu przy dużej bazie)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-recalc-paczkami.sh
+      - name: Testy C29 (zamknięta sprawa — bramka na przydział i pilność)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
 
   # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:

@@ -437,7 +437,7 @@ final class CaseRepo {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT assigned_to FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				"SELECT assigned_to, status FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
 				$case_id
 			),
 			ARRAY_A
@@ -450,6 +450,20 @@ final class CaseRepo {
 			return array(
 				'success'    => false,
 				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		// Audyt maszyny stanow 27.07: bramka terminalna chronila TYLKO kolumne status.
+		// Sprawa ZAMKNIETA/ODRZUCONA dawala sie dalej przydzielic — leciala akcja
+		// mp_case_assigned, mail do pracownika i wpis na osi zamknietej sprawy.
+		// Zamknieta sprawa nie jest w robocie, wiec nie ma jej komu przydzielac;
+		// do pracy wraca przez WZNOWIENIE (koordynator, REOPEN_TARGET).
+		if ( Statuses::is_terminal( (string) $row['status'] ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_CLOSED',
 			);
 		}
 
@@ -541,12 +555,15 @@ final class CaseRepo {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytania przygotowane.
 		$wpdb->query( 'START TRANSACTION' );
 
-		$current = $wpdb->get_var(
+		$biezace = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT priority FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
+				"SELECT priority, status FROM {$cases} WHERE id = %d AND identity_status = 'verified' FOR UPDATE",
 				$case_id
-			)
+			),
+			ARRAY_A
 		);
+
+		$current = is_array( $biezace ) ? $biezace['priority'] : null;
 
 		if ( null === $current ) {
 			$wpdb->query( 'ROLLBACK' );
@@ -555,6 +572,17 @@ final class CaseRepo {
 			return array(
 				'success'    => false,
 				'error_code' => 'CASE_NOT_FOUND',
+			);
+		}
+
+		// Audyt maszyny stanow 27.07 (jak przy przydziale): sprawa zamknieta/odrzucona
+		// nie jest w robocie — zmiana pilnosci nie ma tam sensu i tylko zasmieca os.
+		if ( Statuses::is_terminal( (string) $biezace['status'] ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+			return array(
+				'success'    => false,
+				'error_code' => 'CASE_CLOSED',
 			);
 		}
 

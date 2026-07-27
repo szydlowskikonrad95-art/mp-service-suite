@@ -110,6 +110,26 @@ final class PanelScreen {
 			self::asset_ver( 'assets/js/panel-config.js' ),
 			true
 		);
+
+		// Audyt jezykowy 27.07: wiersze DODAWANE przyciskiem powstaja w JS, wiec ich
+		// etykiety i opisy dla czytnikow ekranu omijaly tlumaczenia — po zmianie jezyka
+		// interfejsu stare wiersze byly przetlumaczone, a nowe nie. Teksty ida teraz
+		// z PHP (ten sam wzorzec co ekran importu w Rejestrze).
+		wp_localize_script(
+			'mp-automator-panel-config',
+			'mpAutomatorCfg',
+			array(
+				'i18n' => array(
+					'klucz'        => __( 'klucz', 'mp-workflow-automator' ),
+					'kluczLabel'   => __( 'Klucz', 'mp-workflow-automator' ),
+					'etykieta'     => __( 'etykieta', 'mp-workflow-automator' ),
+					'etykietaAria' => __( 'Etykieta', 'mp-workflow-automator' ),
+					'tresc'        => __( 'treść (markery {{...}})', 'mp-workflow-automator' ),
+					'trescAria'    => __( 'Treść szablonu', 'mp-workflow-automator' ),
+					'usunWiersz'   => __( 'Usuń wiersz', 'mp-workflow-automator' ),
+				),
+			)
+		);
 	}
 
 	/**

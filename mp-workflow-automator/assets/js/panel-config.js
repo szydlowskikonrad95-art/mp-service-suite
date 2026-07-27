@@ -39,6 +39,14 @@
 		return data;
 	}
 
+	// Teksty z PHP (wp_localize_script) — bez tego wiersze dodawane przyciskiem
+	// mialyby etykiety na sztywno po polsku, takze dla czytnikow ekranu (audyt 27.07).
+	var T = ( window.mpAutomatorCfg && window.mpAutomatorCfg.i18n ) ? window.mpAutomatorCfg.i18n : {};
+
+	function txt( klucz, zapas ) {
+		return T[ klucz ] || zapas;
+	}
+
 	function mkInput( cls, placeholder, label ) {
 		var el = document.createElement( 'input' );
 		el.type = 'text';
@@ -52,20 +60,20 @@
 		// Bez innerHTML — czysty DOM (zero powierzchni na XSS; wartosci wpisuje user przez .value).
 		var row = document.createElement( 'div' );
 		row.className = 'mp-cfg-row';
-		row.appendChild( mkInput( 'mp-cfg-key regular-text', 'klucz', 'Klucz' ) );
-		row.appendChild( mkInput( 'mp-cfg-label regular-text', 'etykieta', 'Etykieta' ) );
+		row.appendChild( mkInput( 'mp-cfg-key regular-text', txt( 'klucz', 'klucz' ), txt( 'kluczLabel', 'Klucz' ) ) );
+		row.appendChild( mkInput( 'mp-cfg-label regular-text', txt( 'etykieta', 'etykieta' ), txt( 'etykietaAria', 'Etykieta' ) ) );
 		if ( hasBody ) {
 			var ta = document.createElement( 'textarea' );
 			ta.className = 'mp-cfg-body large-text';
 			ta.rows = 2;
-			ta.placeholder = 'treść (markery {{...}})';
-			ta.setAttribute( 'aria-label', 'Treść szablonu' );
+			ta.placeholder = txt( 'tresc', 'treść (markery {{...}})' );
+			ta.setAttribute( 'aria-label', txt( 'trescAria', 'Treść szablonu' ) );
 			row.appendChild( ta );
 		}
 		var btn = document.createElement( 'button' );
 		btn.type = 'button';
 		btn.className = 'button-link mp-cfg-remove';
-		btn.setAttribute( 'aria-label', 'Usuń wiersz' );
+		btn.setAttribute( 'aria-label', txt( 'usunWiersz', 'Usuń wiersz' ) );
 		btn.textContent = '×';
 		row.appendChild( btn );
 		return row;
