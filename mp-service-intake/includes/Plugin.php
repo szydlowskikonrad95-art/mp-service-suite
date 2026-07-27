@@ -56,6 +56,17 @@ final class Plugin {
 		// notice wola o pomoc, diagnostyka mowi JAK naprawic.
 		Admin\SiteHealthTests::register();
 
+		// Reconcile sierot weryfikacji (audyt #1): na ticku sweepa SLA (kontrakt
+		// z D) doszywamy sprawy zweryfikowane, ktorym awaria urwala zdarzenie
+		// narodzin — bez tego Automator nigdy sie o nich nie dowie (SLA stoi,
+		// nikt nie przydziela, klient czeka; cicha awaria nie do wykrycia okiem).
+		add_action(
+			'mp_sla_sweep_tick',
+			static function (): void {
+				CaseRepo::reconcile_unlaunched();
+			}
+		);
+
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
 			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).

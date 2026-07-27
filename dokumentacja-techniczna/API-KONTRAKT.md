@@ -103,6 +103,17 @@ rejestr historyczny). B: wyjątki z `case_id NOT NULL` → revoked + event (glob
 do_action( 'mp_cases_data_erased' );
 ```
 
+### `mp_sla_sweep_tick()` — D → C (bez argumentów)
+Tick na starcie każdego przebiegu sweepa SLA (co 5 min, pod GET_LOCK). Daje słuchaczom okazję
+doszyć zaległości ZANIM przebieg wybierze wymagalne terminy. C: reconcile sierot weryfikacji
+(audyt #1 — sprawa potwierdzona, której awaria urwała `CASE_CREATED`, dostaje dosyłkę zdarzenia
+i akcji `mp_case_created`; doszyta sprawa prowizjonuje SLA/przydział natychmiast, jej terminy
+łapie kolejny przebieg). Bez D nikt nie nasłuchuje `mp_case_created`, więc i tick nie jest
+potrzebny — diagnostykę zaległości daje test „Stanu witryny" w C.
+```php
+do_action( 'mp_sla_sweep_tick' );
+```
+
 ## B. Filtry — pytania o dane (właściciel odpowiada)
 
 ### `mp_warranty_check( $result, $serial, $case_id = null, $verify = null )` — pyta C (i inni), odpowiada B
