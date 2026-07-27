@@ -95,13 +95,13 @@ final class Privacy {
 
 			// Ktos zdazyl zanonimizowac przed nami — nic do roboty.
 			if ( null === $locked ) {
-				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 				continue;
 			}
 
 			// Sprawa aktywna / okno roszczen => ODROCZENIE EN BLOC (nic nie tykamy).
 			if ( CaseRepo::has_active_case( $customer_id ) ) {
-				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 				$retained   = true;
 				$messages[] = $deferral;
 				continue;
@@ -129,7 +129,7 @@ final class Privacy {
 			$ids_after = array_map( static fn( array $c ): int => (int) $c['id'], CaseRepo::for_customer( $customer_id ) );
 
 			if ( array() !== array_diff( $ids_after, $case_ids ) ) {
-				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 				$retained   = true;
 				$messages[] = $deferral;
 				continue;
@@ -142,7 +142,7 @@ final class Privacy {
 			// FLAGA #6: redakcja e-maila (PII) w zgodach — rozliczalnosc art. 7 zostaje (tekst+daty).
 			Consents::redact_email_for_customer( $customer_id );
 
-			$wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- zamkniecie transakcji.
+			$wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			// PO COMMIT — operacje nieodwracalne lub poza naszymi tabelami.
 			// Pliki: idempotentne; gdyby proces padl tuz po commicie, retencja
