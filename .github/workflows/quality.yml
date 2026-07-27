@@ -181,6 +181,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c23-reconcile-sierota.sh
       - name: Testy C24 (diagnostyka cron — wykonanie, nie sam plan)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c24-diagnostyka-cron-wykonanie.sh
+      - name: Testy C28 (RODO — eksport oddaje treści z formularza)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c28-eksport-rodo-kompletny.sh
       - name: Testy C27 (RODO — krok potwierdzenia przed usunięciem danych)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c27-rodo-potwierdzenie.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)

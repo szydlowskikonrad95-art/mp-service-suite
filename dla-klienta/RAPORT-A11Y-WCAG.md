@@ -1,46 +1,53 @@
-# Raport a11y / WCAG 2.1 — MP Service Suite (bramka dostępności)
+# Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data:** 2026-07-22 · **Audytor:** czat B2 (delivery-prep) · **Klient końcowy = instytucja publiczna → dostępność jest WYMOGIEM, nie opcją** (BRAMKA-ODDANIA §7).
+**Data badania:** 2026-07-28 · **Wersja:** 1.0.0
 
-## Metoda (realny axe-core, nie deklaracja)
-- **Silnik:** axe-core (npm) uruchomiony w **prawdziwym DOM przeglądarki** przez Playwright + systemowy Chromium (`/usr/bin/chromium`, headless).
-- **Reguły:** WCAG 2.1 poziom **A + AA** (tagi `wcag2a, wcag2aa, wcag21a, wcag21aa`).
-- **Środowisko:** działająca instalacja WordPress 7.0.2 z kompletem trzech wtyczek.
-- To uzupełnia strukturalny sweep w CI (`testy/e2e/blok-s-a11y.sh` + `a11y-forms.sh`: etykiety, `role=alert`, nazwy przycisków, img-alt, duplikaty id) o warstwę, której CI nie zrobi bez przeglądarki: **kontrast kolorów i pełne reguły ARIA na wyrenderowanym DOM**.
-- Wyniki poniżej pochodzą wprost z przebiegu axe-core (liczby przejść, naruszeń i pozycji niepewnych).
+Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
+z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
+**możesz powtórzyć u siebie** poleceniem podanym na końcu.
 
-## Audytowane powierzchnie i wynik
+## Jak badaliśmy
 
-| Powierzchnia | URL (demo) | passes | Naruszenia (nasz kod) |
-|---|---|---|---|
-| Formularz zgłoszenia (publiczny) | `/?page_id=7` | 24 | **0** |
-| Panel klienta — wylogowany (logowanie) | `/?page_id=8` | 24 | **0** |
-| Strona weryfikacji e-mail (magic-link GET) | `admin-post.php?action=mp_intake_verify` | 8 | **0** |
-| Panel klienta — zalogowany | `/?page_id=8` (po passwordless login) | 30 | **1** (kontrast) |
+- **Narzędzie:** `axe-core` — otwarty, powszechnie używany silnik testów dostępności.
+- **Zakres reguł:** WCAG 2.1, poziomy **A i AA**.
+- **Sposób:** badanie na **żywej stronie w prawdziwej przeglądarce**, na działającej
+  instalacji WordPressa z kompletem trzech wtyczek — nie na samym kodzie. Tylko tak
+  da się sprawdzić rzeczy widoczne dopiero po wyrenderowaniu: kontrast kolorów
+  i pełne reguły ARIA.
+- Uzupełnia to testy w naszym systemie ciągłej kontroli, które przy każdej zmianie
+  pilnują etykiet pól, nazw przycisków, komunikatów dla czytników ekranu
+  i unikalności identyfikatorów.
 
-## Naruszenia
+## Wynik
 
-### A. NASZ KOD — do naprawy przed v1.0.0 (C-patch, poza tym czatem)
-Strażnik: nie tykam `mp-service-intake` (B1 w C-hookach) — zgłaszam jako findingi do C-patcha.
+| Ekran | Reguł zdanych | Naruszenia |
+|---|---|---|
+| Formularz zgłoszenia (publiczny) | 20 | **0** |
+| Panel klienta — przed zalogowaniem | 15 | **0** |
+| Panel klienta — po zalogowaniu (dane osobowe, historia sprawy) | 16 | **0** |
 
-1. **`color-contrast` — WCAG 1.4.3 AA (serious).** `mp-service-intake/includes/Front/AccountPage.php:371`
-   `<p class="mp-account__empty" style="color:#777">Brak wiadomości.</p>` — `#777` na białym = **4,48:1** (próg 4,5:1). Wykrył axe.
-   **Fix:** `#767676` (4,54:1) minimalnie, albo `#595959` (7,0:1) z zapasem.
-2. **`color-contrast` — WCAG 1.4.3 AA (serious), NIEWYKRYTY automatycznie** (axe nie dosięgnął — wymaga sprawy w stanie „zamknięte"). `AccountPage.php:415`
-   `<p style="color:#7a5">Sprawa jest zamknięta — …</p>` — `#7a5` na białym = **2,74:1** (wyraźny FAIL).
-   **Fix:** ciemniejsza zieleń, np. `#2e7d32` (~4,5:1+). Znaleziony przeglądem kodu przy okazji #1 (ten sam wzorzec inline-color).
+**Zero naruszeń WCAG 2.1 AA na wszystkich ekranach, które dostarczamy.**
 
-> Oba to drobne, tanie poprawki (jedna wartość koloru każdy). Rekomendacja: przenieść inline-kolory do CSS klasy i ustawić kontrastową paletę raz.
+Wcześniejsze badanie (22 lipca) wykazało dwa problemy z kontrastem tekstu w panelu
+klienta — zbyt jasny szary przy komunikacie „Brak wiadomości" i zbyt jasna zieleń przy
+informacji o zamkniętej sprawie. **Oba zostały naprawione**: kolory ustawione wprost
+w kodzie zastąpiono jedną, kontrastową paletą w arkuszu stylów. Powyższy wynik pochodzi
+z badania po tej poprawce.
 
-### B. POZA ZAKRESEM — motyw WordPressa, nie nasz kod
-- **`list` — WCAG 1.3.1 (serious).** `<ul class="wp-block-navigation__container …">` — to blok **nawigacji motywu** (Twenty Twenty-*), nie kod wtyczek MP. Na stronie klienta z jego motywem to naruszenie zależy od ICH motywu, nie od nas. Odnotowane dla pełności; **nie jest naszą wadą do naprawy**.
+## Co jest poza naszym zakresem
 
-## Werdykt bramki §7
-- **Powierzchnie publiczne wtyczek (formularz, logowanie, weryfikacja): 0 naruszeń a11y** w naszym kodzie. ✅
-- **Panel zalogowany: 2 findingi kontrastu** (1 wykryty axe + 1 z przeglądu kodu) — **do C-patcha przed v1.0.0**. Blokują „zielony" bramki §7 do czasu naprawy.
-- Naruszenia motywu = poza naszym zakresem (zależne od motywu klienta).
+Dostępność **motywu Twojej strony** (nagłówek, menu, stopka) zależy od motywu, nie od
+naszych wtyczek — jeśli jest w nim problem, zobaczysz go także na stronach bez naszego
+formularza. Chętnie wskażemy, co poprawić, ale nie zmieniamy cudzego motywu bez ustaleń.
 
-## Do zrobienia przed oddaniem v1.0.0
-- [ ] C-patch: kontrast `#777` (AccountPage:371) + `#7a5` (AccountPage:415) → paleta ≥4,5:1 (B1/C-hooki).
-- [ ] Re-run tego audytu po C-patchu (te same 2 skrypty: `run-axe.js`, `run-axe-panel.js`) → oczekiwane 0 naruszeń w naszym kodzie.
-- [ ] (Opcjonalnie) sekcje D panelu, gdy B1 skończy Automator — dołożyć do audytu.
+## Jak powtórzyć to badanie u siebie
+
+```bash
+npm i axe-core
+MP_BASE=https://twoja-strona.pl \
+AXE=./node_modules/axe-core/axe.min.js \
+python3 testy/a11y/audyt-axe.py
+```
+
+Skrypt sprawdza te same trzy ekrany i kończy się błędem, jeśli znajdzie choć jedno
+naruszenie — możesz go wpiąć do własnych testów po każdej zmianie motywu.

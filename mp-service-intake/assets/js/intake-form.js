@@ -113,19 +113,112 @@
 	}
 
 	/**
-	 * Przelicza formularz wg aktualnych wyborów rodzaju i kategorii.
+	 * Obszar, ktorym mowimy czytnikowi ekranu, ze formularz sie zmienil.
 	 *
+	 * Bez tego pola dochodza i znikaja BEZ SLOWA: osoba niewidoma wybiera rodzaj
+	 * sprawy, formularz cicho dokłada „numer seryjny" i „dokument zakupu", a ona
+	 * dowiaduje sie o nich dopiero przy probie wyslania. axe tego nie wykryje —
+	 * to zachowanie w czasie, nie blad w statycznym HTML.
+	 *
+	 * @return {HTMLElement} Element komunikatow (tworzony raz, potem zwracany).
+	 */
+	function announcer() {
+		var el = document.getElementById( 'mp-intake-announcer' );
+
+		if ( ! el ) {
+			el = document.createElement( 'p' );
+			el.id = 'mp-intake-announcer';
+			el.className = 'mp-intake-sr-only';
+			el.setAttribute( 'role', 'status' );
+			el.setAttribute( 'aria-live', 'polite' );
+			form.insertBefore( el, form.firstChild );
+		}
+
+		return el;
+	}
+
+	/**
+	 * Ogłasza, ktore pola sa teraz w formularzu (tylko po ZMIANIE, nie przy starcie).
+	 *
+	 * @param {Array<string>} etykiety Widoczne etykiety pol.
 	 * @return {void}
 	 */
-	function refresh() {
-		apply( select.value, catSelect ? catSelect.value : '' );
+	function ogloszenie( etykiety ) {
+		var el = announcer();
+		var tresc = etykiety.length
+			? 'Formularz dopasowany. Pola do wypełnienia: ' + etykiety.join( ', ' ) + '.'
+			: 'Formularz dopasowany.';
+
+		// Ta sama tresc nie zostalaby ogloszona ponownie — czyscimy przed wpisem.
+		el.textContent = '';
+		window.setTimeout( function () {
+			el.textContent = tresc;
+		}, 60 );
 	}
 
-	refresh();
+	/**
+	 * Etykiety pol widocznych w tej chwili.
+	 *
+	 * @return {Array<string>} Lista etykiet.
+	 */
+	function widoczneEtykiety() {
+		var lista = [];
 
-	select.addEventListener( 'change', refresh );
+		cfg.allFields.forEach( function ( key ) {
+			var wrap = wrapFor( key );
+			var label;
+
+			if ( ! wrap || wrap.hidden ) {
+				return;
+			}
+
+			label = wrap.querySelector( 'label' );
+
+			if ( label ) {
+				lista.push( label.textContent.trim().replace( /\s*\*$/, '' ) );
+			}
+		} );
+
+		return lista;
+	}
+
+	/**
+	 * Przelicza formularz wg aktualnych wyborow rodzaju i kategorii.
+	 *
+	 * @param {boolean} oglaszaj Czy powiedziec czytnikowi ekranu, co sie zmienilo
+	 *                           (przy pierwszym przeliczeniu NIE — nic sie jeszcze nie zmienilo).
+	 * @return {void}
+	 */
+	function refresh( oglaszaj ) {
+		apply( select.value, catSelect ? catSelect.value : '' );
+
+		if ( oglaszaj ) {
+			ogloszenie( widoczneEtykiety() );
+		}
+	}
+
+	refresh( false );
+
+	select.addEventListener( 'change', function () {
+		refresh( true );
+	} );
 
 	if ( catSelect ) {
-		catSelect.addEventListener( 'change', refresh );
+		catSelect.addEventListener( 'change', function () {
+			refresh( true );
+		} );
 	}
+
+	// Po wyslaniu formularza strona wraca z komunikatem. Tresc obecna JUZ przy
+	// wczytaniu nie jest ogłaszana przez czytnik (obszary live mowia o ZMIANACH),
+	// wiec przenosimy na nia fokus — inaczej osoba niewidoma nie wie, czy zgloszenie
+	// przeszlo, i szuka po omacku.
+	window.setTimeout( function () {
+		var komunikat = document.querySelector( '.mp-intake-error-summary, .mp-intake-notice' );
+
+		if ( komunikat ) {
+			komunikat.setAttribute( 'tabindex', '-1' );
+			komunikat.focus();
+		}
+	}, 120 );
 }() );

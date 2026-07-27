@@ -7,7 +7,7 @@
  * + kasacja zalacznikow + odpiecie konta WP + redakcja reason wyjatkow (B przez
  * filter) + eventy. Sprawa AKTYWNA / okno roszczen => ODROCZENIE EN BLOC
  * (items_retained, jedna operacja). Exporter: dane klienta + sprawy + wiadomosci
- * + metadane zalacznikow (bez binarki — dostep przez konto, art. 15).
+ * + tresci z formularza + metadane zalacznikow (bez binarki — dostep przez konto, art. 15).
  *
  * @package MP\Intake
  */
@@ -172,7 +172,10 @@ final class Privacy {
 	}
 
 	/**
-	 * Exporter: dane klienta + sprawy + wiadomosci + metadane zalacznikow.
+	 * Exporter: dane klienta + sprawy + TRESCI Z FORMULARZA + wiadomosci + metadane zalacznikow.
+	 *
+	 * Zasada (audyt 28.07): co redagujemy przy USUWANIU jako dane wrazliwe, to musi
+	 * byc oddane przy ZADANIU DOSTEPU. Straznik: testy/e2e/c28-eksport-rodo-kompletny.sh.
 	 *
 	 * @param string $email E-mail.
 	 * @param int    $page  Strona.
@@ -233,6 +236,44 @@ final class Privacy {
 						),
 					),
 				);
+
+				// Tresci, ktore klient WPISAL w formularzu (opis usterki, numer
+				// seryjny, dokument zakupu, powod zwrotu, pola kategorii).
+				// Bez tego eksport art. 15 byl niespojny z eraserem: przy USUWANIU
+				// redagujemy te pola jako dane wrazliwe, a przy ZADANIU DOSTEPU
+				// ich nie oddawalismy (audyt 28.07, straznik: c28-eksport-rodo-kompletny.sh).
+				// Etykiety biore te same, ktore klient widzial w formularzu.
+				$pola_formularza = array();
+
+				foreach ( CaseRepo::form_data_for_case( $case_id ) as $pole ) {
+					$wartosc = trim( (string) $pole['value'] );
+
+					if ( '' === $wartosc ) {
+						continue;
+					}
+
+					$pola_formularza[] = array(
+						'name'  => '' !== $pole['label'] ? $pole['label'] : $pole['key'],
+						'value' => $wartosc,
+					);
+				}
+
+				if ( array() !== $pola_formularza ) {
+					$export[] = array(
+						'group_id'    => 'mp_case_form',
+						'group_label' => __( 'Treść zgłoszeń MP (dane z formularza)', 'mp-service-intake' ),
+						'item_id'     => 'case-form-' . $case_id,
+						'data'        => array_merge(
+							array(
+								array(
+									'name'  => __( 'Numer sprawy', 'mp-service-intake' ),
+									'value' => (string) $case['case_number'],
+								),
+							),
+							$pola_formularza
+						),
+					);
+				}
 
 				foreach ( Messages::for_case( $case_id ) as $msg ) {
 					$export[] = array(

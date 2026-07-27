@@ -36,8 +36,9 @@ Kliknij numer sprawy. Na karcie masz wszystko:
 
 ## 4. Eksport
 
-**Automatyzacje MP → Eksport CSV** — pobierzesz zestawienie **swoich** spraw (tylko koordynator
-eksportuje wszystkie).
+Eksport zestawień do pliku CSV robi **koordynator albo administrator** — Ty go nie zobaczysz.
+To celowe: plik z listą spraw zawiera dane osobowe klientów, więc wychodzi z systemu tylko
+przez osobę, która za to odpowiada. Potrzebujesz zestawienia — poproś koordynatora.
 
 ## Zasady, które system egzekwuje za Ciebie
 

@@ -40,7 +40,10 @@ Dla **każdego** z 3 plików ZIP:
 - Powstają **4 role** użytkowników (patrz §6). Twoje konto administratora dostaje pełne uprawnienia do ekranów systemu.
 - W menu pojawiają się ekrany: **Zgłoszenia / sprawy**, **Rejestr MP** (produkty/gwarancje), **Automatyzacje MP**.
 
-> Nic nie trzeba „ustawiać ręcznie", żeby ruszyło — strony i uprawnienia zakładają się same przy włączeniu.
+> Strony, role i uprawnienia zakładają się **same** przy włączeniu — system rusza od razu.
+> Żeby jednak zaczął pracować za Ciebie (przydzielać sprawy, liczyć terminy, sprawdzać gwarancje),
+> wykonaj kroki z sekcji 5 — najważniejszy to **wskazanie pracowników serwisu**, bo bez nich
+> zgłoszenia będą tylko czekać na liście.
 
 ## 5. Konfiguracja
 
@@ -69,6 +72,9 @@ Dla **każdego** z 3 plików ZIP:
 | `data_zakupu` | nie | data zakupu | `purchase_date` |
 | `gwarancja_do` | **zalecana** | data końca gwarancji | `warranty_until`, `koniec_gwarancji` |
 | `kategoria` | nie | `audio`, `agd`, `elektronarzedzia`, `inne` | `category`, `kategoria_produktu` |
+
+> ⚠️ Te cztery kategorie są **wbudowane**. Dołożenie własnej (np. „rowery elektryczne")
+> to kilka linijek dla programisty — nie ma na to ekranu ustawień.
 
 **Zasady, które warto znać (tak działa system):**
 - **Tylko `numer_seryjny` jest obowiązkowy.** Pozostałe pola mogą być puste — wiersz i tak wejdzie.
@@ -132,12 +138,12 @@ Dla **każdego** z 3 plików ZIP:
 
 ## 7. Noty dla serwera (ważne przy wdrożeniu)
 
-### 7.1 Dostarczanie maili (SMTP) — flaga #2
+### 7.1 Dostarczanie maili (SMTP)
 System wysyła maile (potwierdzenia, magic-link, powiadomienia) standardową funkcją WordPressa. Na wielu hostingach
 maile z `wp_mail()` **lądują w spamie lub nie dochodzą**. **Zalecane:** zainstaluj wtyczkę SMTP (np. darmowe *WP Mail SMTP*)
 i podłącz skrzynkę nadawczą Twojej firmy. To sprawa hostingu/skrzynki — nie kodu systemu.
 
-### 7.2 Ochrona załączników na nginx — flaga #4
+### 7.2 Ochrona załączników na nginx
 Załączniki są chronione **na dwa sposoby**: bramką PHP (działa zawsze) oraz plikiem `.htaccess` (działa tylko na Apache/LiteSpeed).
 **Jeśli Twój serwer to nginx**, `.htaccess` jest ignorowany — dodaj do konfiguracji serwera:
 ```nginx
@@ -145,7 +151,7 @@ location ^~ /wp-content/uploads/mp-attachments/ { deny all; return 403; }
 ```
 (Pobieranie plików i tak przechodzi przez bezpieczny endpoint z kontrolą uprawnień — to dodatkowa warstwa.)
 
-### 7.3 Pilnowanie terminów wymaga crona — flaga #11
+### 7.3 Pilnowanie terminów wymaga crona
 Przypomnienia i eskalacje SLA sprawdzają się **co 5 minut** przez WP-Cron, a WP-Cron uruchamia się
 przy odwiedzinach strony. **Bez ruchu (np. nocą) terminy stoją**, choć wszystko wygląda na sprawne.
 **Na produkcji ustaw w panelu hostingu zadanie systemowe (cron):**
