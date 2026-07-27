@@ -268,7 +268,7 @@ final class CaseRepo {
 	 * @param string               $kind     Rodzaj sprawy.
 	 * @param array<string, mixed> $values   Wartosci pol.
 	 * @param string               $category Slug kategorii (pusty = tylko pola rodzaju).
-	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 * @return array<string, array{key: string, label: string, value: string, pii_sensitive: bool}>
 	 */
 	public static function form_data_from_values( string $kind, array $values, string $category = '' ): array {
 		$out = array();
@@ -282,6 +282,7 @@ final class CaseRepo {
 			}
 
 			$out[ $key ] = array(
+				'key'           => (string) $key,
 				'label'         => $field['label'],
 				'value'         => $value,
 				'pii_sensitive' => $field['pii_sensitive'],
@@ -1457,7 +1458,7 @@ final class CaseRepo {
 	 * zlozenia -> render historyczny NIE zalezy od biezacej mapy formularza.
 	 *
 	 * @param mixed $raw Dane z formularza (mapa klucz => {label,value,pii_sensitive}).
-	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 * @return array<string, array{key: string, label: string, value: string, pii_sensitive: bool}>
 	 */
 	public static function normalize_form_data( $raw ): array {
 		if ( ! is_array( $raw ) ) {
@@ -1472,6 +1473,11 @@ final class CaseRepo {
 			}
 
 			$out[ (string) $key ] = array(
+				// Klucz pola JEDZIE ZE ZWROTKA: bez niego odbiorca musi zgadywac
+				// po etykiecie („Opis usterki / sprawy"), a etykieta zalezy od
+				// konfiguracji i tlumaczenia — czyli kruszy sie przy pierwszej
+				// zmianie tekstu. Lista spraw wybiera po nim opis zgloszenia.
+				'key'           => (string) $key,
 				'label'         => (string) ( $field['label'] ?? $key ),
 				'value'         => (string) ( $field['value'] ?? '' ),
 				'pii_sensitive' => ! empty( $field['pii_sensitive'] ),
@@ -1487,7 +1493,7 @@ final class CaseRepo {
 	 * escaping robi warstwa render (esc_html). Pusta gdy sprawa/opis brak.
 	 *
 	 * @param int $case_id ID sprawy.
-	 * @return array<string, array{label: string, value: string, pii_sensitive: bool}>
+	 * @return array<string, array{key: string, label: string, value: string, pii_sensitive: bool}>
 	 */
 	public static function form_data_for_case( int $case_id ): array {
 		global $wpdb;
