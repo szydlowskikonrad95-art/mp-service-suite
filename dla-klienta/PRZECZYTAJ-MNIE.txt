@@ -1,0 +1,39 @@
+MP SERVICE SUITE {{WERSJA}} — system obsługi zgłoszeń serwisowych i reklamacyjnych
+==============================================================================
+
+OD CZEGO ZACZĄĆ
+---------------
+1. Otwórz INSTRUKCJA-KLIENTA.pdf (albo .md) — instalacja krok po kroku,
+   konfiguracja i noty dla serwera. To jedyny dokument potrzebny do wdrożenia.
+2. Zainstaluj trzy wtyczki (pliki .zip) w panelu WordPressa:
+   Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer.
+   Kolejność nie ma znaczenia — moduły dogadują się same.
+
+CO JEST W PACZCE
+----------------
+  mp-service-intake.zip        przyjmowanie zgłoszeń, konto klienta, RODO
+  mp-warranty-registry.zip     produkty, numery seryjne, gwarancje, import CSV
+  mp-workflow-automator.zip    przydział spraw, statusy, terminy SLA, raporty
+
+  INSTRUKCJA-KLIENTA.pdf/.md   wdrożenie: instalacja, konfiguracja, serwer, RODO
+  instrukcje/                  osobna instrukcja dla każdej roli, ze zrzutami:
+                                 KLIENT       — osoba zgłaszająca
+                                 PRACOWNIK    — serwisant
+                                 KOORDYNATOR  — kierownik zespołu
+                                 ADMIN        — administrator systemu
+                               (każda w wersji .md i .pdf)
+  diagramy/                    architektura, przepływ zgłoszenia, maszyna
+                               stanów, schemat bazy
+  RAPORT-A11Y-WCAG.md          wynik badania dostępności (WCAG 2.1 AA)
+
+WYMAGANIA
+---------
+  WordPress 6.0 lub nowszy (sprawdzone na 6.9)
+  PHP 8.1 lub nowszy, z rozszerzeniem fileinfo
+  MySQL 8 albo MariaDB 10.6+ (sprawdzone na obu)
+  HTTPS oraz działający WP-Cron — szczegóły w instrukcji, sekcja 7
+
+PO INSTALACJI
+-------------
+Wejdź w Narzędzia → Stan witryny. Wtyczki dopisują tam własne testy i same
+powiedzą, czego brakuje na serwerze (poczta, uprawnienia, zadania cykliczne).
