@@ -89,7 +89,7 @@ final class Validator {
 		// usterki miesci sie w 300-800 znakach.
 		$limit = self::limit_znakow( $type );
 
-		if ( $limit > 0 && mb_strlen( $value ) > $limit ) {
+		if ( $limit > 0 && Common\Str::len( $value ) > $limit ) {
 			return 'TOO_LONG';
 		}
 
@@ -163,7 +163,7 @@ final class Validator {
 	 * @return string|null Kod bledu albo null.
 	 */
 	public static function validate_serial( string $value ): ?string {
-		if ( mb_strlen( $value ) < 2 || mb_strlen( $value ) > 100 ) {
+		if ( Common\Str::len( $value ) < 2 || Common\Str::len( $value ) > 100 ) {
 			return 'SERIAL_INVALID';
 		}
 
@@ -177,7 +177,7 @@ final class Validator {
 	 * @return string|null Kod bledu albo null.
 	 */
 	public static function validate_document( string $value ): ?string {
-		if ( mb_strlen( $value ) > 190 ) {
+		if ( Common\Str::len( $value ) > 190 ) {
 			return 'DOCUMENT_INVALID';
 		}
 

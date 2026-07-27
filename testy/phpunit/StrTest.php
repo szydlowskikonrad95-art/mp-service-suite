@@ -52,4 +52,47 @@ final class StrTest extends TestCase {
 			Str::normalize_serial( 'abc 123' )
 		);
 	}
+
+	/**
+	 * Polska odmiana wg liczby — klient nie ma czytac „ma 1 aktywnych spraw".
+	 *
+	 * @return array<string, array{int, string}>
+	 */
+	public static function odmiana_provider(): array {
+		return array(
+			'jeden'                 => array( 1, 'sprawę' ),
+			'dwa'                   => array( 2, 'sprawy' ),
+			'cztery'                => array( 4, 'sprawy' ),
+			'piec'                  => array( 5, 'spraw' ),
+			'zero'                  => array( 0, 'spraw' ),
+			'dwanascie (wyjatek)'   => array( 12, 'spraw' ),
+			'trzynascie (wyjatek)'  => array( 13, 'spraw' ),
+			'czternascie (wyjatek)' => array( 14, 'spraw' ),
+			'dwadziescia dwa'       => array( 22, 'sprawy' ),
+			'sto dwanascie'         => array( 112, 'spraw' ),
+			'sto dwadziescia trzy'  => array( 123, 'sprawy' ),
+			'sto'                   => array( 100, 'spraw' ),
+		);
+	}
+
+	/**
+	 * Kazda liczba dostaje wlasciwa forme.
+	 *
+	 * @dataProvider odmiana_provider
+	 *
+	 * @param int    $n        Liczba.
+	 * @param string $expected Oczekiwana forma.
+	 */
+	public function test_odmiana( int $n, string $expected ): void {
+		self::assertSame( $expected, Str::odmiana( $n, 'sprawę', 'sprawy', 'spraw' ) );
+	}
+
+	/**
+	 * Dlugosc liczona w ZNAKACH, nie bajtach (polskie znaki nie zjadaja limitu 2x).
+	 */
+	public function test_len_liczy_znaki_nie_bajty(): void {
+		self::assertSame( 6, Str::len( 'zażółć' ) );
+		self::assertGreaterThan( Str::len( 'zażółć' ), strlen( 'zażółć' ) );
+		self::assertSame( 0, Str::len( '' ) );
+	}
 }

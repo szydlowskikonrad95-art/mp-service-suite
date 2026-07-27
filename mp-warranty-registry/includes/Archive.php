@@ -48,12 +48,20 @@ final class Archive {
 		}
 
 		if ( (int) $count > 0 ) {
+			// Trzy formy polskiej odmiany — bez tego klient widzial „ma 1 aktywnych
+			// spraw" (audyt 27.07, soczewka jezykowa). Przypadek n=1 jest tu NORMALNY,
+			// nie skrajny: wystarczy jedna otwarta sprawa, zeby blokada zadzialala.
+			$fraza = Common\Str::odmiana(
+				(int) $count,
+				__( 'Produkt ma 1 aktywną sprawę — najpierw ją zamknij.', 'mp-warranty-registry' ),
+				/* translators: %d: liczba aktywnych spraw (2-4). */
+				__( 'Produkt ma %d aktywne sprawy — najpierw je zamknij.', 'mp-warranty-registry' ),
+				/* translators: %d: liczba aktywnych spraw (5 i wiecej). */
+				__( 'Produkt ma %d aktywnych spraw — najpierw je zamknij.', 'mp-warranty-registry' )
+			);
+
 			return array(
-				'error' => sprintf(
-					/* translators: %d: liczba aktywnych spraw. */
-					__( 'Produkt ma %d aktywnych spraw — najpierw je zamknij.', 'mp-warranty-registry' ),
-					(int) $count
-				),
+				'error' => sprintf( $fraza, (int) $count ),
 			);
 		}
 
