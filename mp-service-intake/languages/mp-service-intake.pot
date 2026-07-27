@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-27T08:33:32+00:00\n"
+"POT-Creation-Date: 2026-07-27T09:37:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mp-service-intake\n"
@@ -64,7 +64,7 @@ msgid "Brak sprawy."
 msgstr ""
 
 #: includes/Admin/CaseActions.php:143
-#: includes/Front/AccountPage.php:487
+#: includes/Front/AccountPage.php:535
 msgid "Wiadomość jest pusta."
 msgstr ""
 
@@ -141,13 +141,13 @@ msgid "Sprawa %s"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:121
-#: includes/Admin/CasesListTable.php:64
+#: includes/Admin/CasesListTable.php:65
 #: includes/Privacy.php:179
 msgid "Status"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:122
-#: includes/Admin/CasesListTable.php:63
+#: includes/Admin/CasesListTable.php:64
 #: includes/Admin/UnverifiedScreen.php:105
 #: includes/Privacy.php:175
 msgid "Rodzaj"
@@ -162,12 +162,12 @@ msgid "Priorytet"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:125
-#: includes/Admin/CasesListTable.php:65
+#: includes/Admin/CasesListTable.php:66
 msgid "Przydzielony"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:125
-#: includes/Admin/CasesListTable.php:216
+#: includes/Admin/CasesListTable.php:221
 msgid "nieprzydzielona"
 msgstr ""
 
@@ -180,7 +180,7 @@ msgid "Potwierdzono"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:128
-#: includes/Admin/CasesListTable.php:66
+#: includes/Admin/CasesListTable.php:67
 msgid "Termin SLA"
 msgstr ""
 
@@ -194,7 +194,7 @@ msgid "Akcje"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:162
-#: includes/Front/AccountPage.php:387
+#: includes/Front/AccountPage.php:435
 msgid "Status:"
 msgstr ""
 
@@ -216,7 +216,7 @@ msgstr ""
 
 #: includes/Admin/CaseCard.php:215
 #: includes/Admin/CaseCard.php:359
-#: includes/Admin/CasesListTable.php:62
+#: includes/Admin/CasesListTable.php:63
 msgid "Klient"
 msgstr ""
 
@@ -299,17 +299,17 @@ msgid "Wiadomości"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:356
-#: includes/Front/AccountPage.php:408
+#: includes/Front/AccountPage.php:456
 msgid "Brak wiadomości."
 msgstr ""
 
 #: includes/Admin/CaseCard.php:360
-#: includes/Front/AccountPage.php:413
+#: includes/Front/AccountPage.php:461
 msgid "Serwis"
 msgstr ""
 
 #: includes/Admin/CaseCard.php:361
-#: includes/Front/AccountPage.php:414
+#: includes/Front/AccountPage.php:462
 msgid "System"
 msgstr ""
 
@@ -341,48 +341,72 @@ msgstr ""
 msgid "Nr sprawy"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:67
+#: includes/Admin/CasesListTable.php:62
+msgid "Czego dotyczy"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:68
 #: includes/Admin/UnverifiedScreen.php:106
 msgid "Utworzono"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:265
+#: includes/Admin/CasesListTable.php:251
+msgid "Termin minął"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:252
+msgid "· po terminie"
+msgstr ""
+
+#. translators: %d: liczba godzin do konca terminu.
+#: includes/Admin/CasesListTable.php:262
+#, php-format
+msgid "· zostało %d godz."
+msgid_plural "· zostało %d godz."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/CasesListTable.php:302
+msgid "— bez opisu"
+msgstr ""
+
+#: includes/Admin/CasesListTable.php:324
 msgid "Filtr statusu"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:266
+#: includes/Admin/CasesListTable.php:325
 msgid "Status: wszystkie"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:279
+#: includes/Admin/CasesListTable.php:338
 msgid "Filtr rodzaju"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:280
+#: includes/Admin/CasesListTable.php:339
 msgid "Rodzaj: wszystkie"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:291
+#: includes/Admin/CasesListTable.php:350
 msgid "Filtr przydzielenia"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:293
+#: includes/Admin/CasesListTable.php:352
 msgid "Przydzielony: wszyscy"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:294
+#: includes/Admin/CasesListTable.php:353
 msgid "Nieprzydzielone"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:295
+#: includes/Admin/CasesListTable.php:354
 msgid "Moje sprawy"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:298
+#: includes/Admin/CasesListTable.php:357
 msgid "Filtruj"
 msgstr ""
 
-#: includes/Admin/CasesListTable.php:308
+#: includes/Admin/CasesListTable.php:367
 msgid "Brak spraw spełniających kryteria."
 msgstr ""
 
@@ -716,104 +740,108 @@ msgid_plural "Link będzie ważny %d minut i zadziała tylko raz. Po tym czasie 
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Front/AccountPage.php:185
+#: includes/Front/AccountPage.php:188
 msgid "Moje zgłoszenia"
 msgstr ""
 
-#: includes/Front/AccountPage.php:186
+#: includes/Front/AccountPage.php:189
 msgid "Wyloguj"
 msgstr ""
 
-#: includes/Front/AccountPage.php:199
+#: includes/Front/AccountPage.php:202
 msgid "Nie znaleźliśmy zgłoszeń przypisanych do tego konta."
 msgstr ""
 
-#: includes/Front/AccountPage.php:204
+#: includes/Front/AccountPage.php:207
 msgid "Twoje zgłoszenia"
 msgstr ""
 
-#: includes/Front/AccountPage.php:235
+#: includes/Front/AccountPage.php:241
 msgid "Twoje dane kontaktowe"
 msgstr ""
 
-#: includes/Front/AccountPage.php:236
+#: includes/Front/AccountPage.php:242
 msgid "E-mail:"
 msgstr ""
 
-#: includes/Front/AccountPage.php:240
+#: includes/Front/AccountPage.php:252
 #: includes/Privacy.php:152
 msgid "Imię i nazwisko"
 msgstr ""
 
-#: includes/Front/AccountPage.php:242
+#: includes/Front/AccountPage.php:254
 #: includes/Privacy.php:156
 msgid "Telefon"
 msgstr ""
 
-#: includes/Front/AccountPage.php:244
+#: includes/Front/AccountPage.php:256
 msgid "Zapisz dane"
 msgstr ""
 
-#: includes/Front/AccountPage.php:262
-#: includes/Front/AccountPage.php:325
-#: includes/Front/AccountPage.php:476
+#: includes/Front/AccountPage.php:274
+#: includes/Front/AccountPage.php:363
+#: includes/Front/AccountPage.php:524
 #: includes/Front/Login.php:88
 msgid "Sesja wygasła — spróbuj ponownie."
 msgstr ""
 
-#: includes/Front/AccountPage.php:272
+#: includes/Front/AccountPage.php:292
 msgid "Dane kontaktowe zostały zapisane."
 msgstr ""
 
-#: includes/Front/AccountPage.php:298
+#: includes/Front/AccountPage.php:301
+msgid "Z tego adresu e-mail korzysta więcej niż jedna osoba, więc samodzielna edycja i usuwanie danych są wyłączone. Napisz wiadomość w swojej sprawie — pracownik serwisu zaktualizuje lub usunie Twoje dane po potwierdzeniu tożsamości."
+msgstr ""
+
+#: includes/Front/AccountPage.php:329
 msgid "Prywatność (RODO)"
 msgstr ""
 
-#: includes/Front/AccountPage.php:299
+#: includes/Front/AccountPage.php:337
 msgid "Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu."
 msgstr ""
 
-#: includes/Front/AccountPage.php:303
+#: includes/Front/AccountPage.php:341
 msgid "Wycofaj zgodę i usuń moje dane"
 msgstr ""
 
-#: includes/Front/AccountPage.php:360
+#: includes/Front/AccountPage.php:408
 msgid "Zgoda została wycofana, a Twoje dane osobowe zostały usunięte."
 msgstr ""
 
-#: includes/Front/AccountPage.php:362
+#: includes/Front/AccountPage.php:410
 msgid "Zgoda została wycofana. Masz aktywne zgłoszenie — dane usuniemy po jego zakończeniu."
 msgstr ""
 
-#: includes/Front/AccountPage.php:364
+#: includes/Front/AccountPage.php:412
 msgid "Zgoda została wycofana."
 msgstr ""
 
-#: includes/Front/AccountPage.php:412
+#: includes/Front/AccountPage.php:460
 msgid "Ty"
 msgstr ""
 
-#: includes/Front/AccountPage.php:452
+#: includes/Front/AccountPage.php:500
 msgid "Sprawa jest zamknięta — wiadomość trafi do serwisu, ale nie zmienia statusu sprawy."
 msgstr ""
 
-#: includes/Front/AccountPage.php:455
+#: includes/Front/AccountPage.php:503
 msgid "Napisz wiadomość do serwisu"
 msgstr ""
 
-#: includes/Front/AccountPage.php:457
+#: includes/Front/AccountPage.php:505
 msgid "Wyślij"
 msgstr ""
 
-#: includes/Front/AccountPage.php:481
+#: includes/Front/AccountPage.php:529
 msgid "Nie znaleziono zgłoszenia."
 msgstr ""
 
-#: includes/Front/AccountPage.php:492
+#: includes/Front/AccountPage.php:540
 msgid "Wiadomość została wysłana do serwisu."
 msgstr ""
 
-#: includes/Front/AccountPage.php:554
+#: includes/Front/AccountPage.php:602
 msgid "Panel zgłoszeń"
 msgstr ""
 

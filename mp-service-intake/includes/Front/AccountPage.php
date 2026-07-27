@@ -181,6 +181,9 @@ final class AccountPage {
 	private static function render_panel( int $wp_user_id ): string {
 		$cases = self::own_cases( $wp_user_id );
 
+		// Wspolna skrzynka wielu osob: samoobsluga danych wylaczona (#10).
+		$shared = count( Customers::ids_by_wp_user( $wp_user_id ) ) > 1;
+
 		$out  = '<div class="mp-account mp-account--panel">';
 		$out .= '<h2>' . esc_html__( 'Moje zgłoszenia', 'mp-service-intake' ) . '</h2>';
 		$out .= '<p><a href="' . esc_url( wp_logout_url( self::url() ) ) . '">' . esc_html__( 'Wyloguj', 'mp-service-intake' ) . '</a></p>';
@@ -192,8 +195,8 @@ final class AccountPage {
 			$out .= '<p class="mp-account__notice" role="status">' . esc_html( $notice ) . '</p>';
 		}
 
-		$out .= self::render_contact_form( $wp_user_id );
-		$out .= self::render_privacy_form();
+		$out .= self::render_contact_form( $wp_user_id, $shared );
+		$out .= self::render_privacy_form( $shared );
 
 		if ( array() === $cases ) {
 			$out .= '<p>' . esc_html__( 'Nie znaleźliśmy zgłoszeń przypisanych do tego konta.', 'mp-service-intake' ) . '</p></div>';
@@ -216,11 +219,14 @@ final class AccountPage {
 	 * Formularz edycji danych kontaktowych (art. 16 — sprostowanie).
 	 *
 	 * E-mail pokazany tylko do odczytu (klucz tozsamosci). Prefill z rekordu klienta.
+	 * Konto wspoldzielone (wspolny e-mail wielu osob): bez formularza i bez
+	 * prefillu — nie pokazujemy jednej osobie danych kontaktowych drugiej (#10).
 	 *
-	 * @param int $wp_user_id ID biezacego uzytkownika.
+	 * @param int  $wp_user_id ID biezacego uzytkownika.
+	 * @param bool $shared     Czy konto obsluguje wiecej niz jedna osobe.
 	 * @return string HTML.
 	 */
-	private static function render_contact_form( int $wp_user_id ): string {
+	private static function render_contact_form( int $wp_user_id, bool $shared ): string {
 		$customer = self::primary_customer( $wp_user_id );
 
 		if ( null === $customer ) {
@@ -234,6 +240,12 @@ final class AccountPage {
 		$out  = '<section class="mp-account__contact">';
 		$out .= '<h3>' . esc_html__( 'Twoje dane kontaktowe', 'mp-service-intake' ) . '</h3>';
 		$out .= '<p class="mp-account__meta">' . esc_html__( 'E-mail:', 'mp-service-intake' ) . ' ' . esc_html( $email ) . '</p>';
+
+		if ( $shared ) {
+			$out .= '<p class="mp-account__meta">' . esc_html( self::shared_mailbox_notice() ) . '</p></section>';
+
+			return $out;
+		}
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__contact-form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_update_contact" />';
 		$out .= wp_nonce_field( 'mp_intake_update_contact', '_mp_nonce', true, false );
@@ -262,14 +274,31 @@ final class AccountPage {
 			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
 		}
 
+		$customer_ids = Customers::ids_by_wp_user( $user_id );
+
+		// Wspolna skrzynka (znalezisko #10): edycja hurtem nadpisalaby dane
+		// INNYCH osob korzystajacych z tego adresu — sprostowanie przez serwis.
+		if ( count( $customer_ids ) > 1 ) {
+			self::redirect_notice( self::shared_mailbox_notice() );
+		}
+
 		$name  = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['name'] ) ) : '';
 		$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['phone'] ) ) : '';
 
-		foreach ( Customers::ids_by_wp_user( $user_id ) as $customer_id ) {
+		foreach ( $customer_ids as $customer_id ) {
 			Customers::update_contact( $customer_id, $name, $phone );
 		}
 
 		self::redirect_notice( __( 'Dane kontaktowe zostały zapisane.', 'mp-service-intake' ) );
+	}
+
+	/**
+	 * Komunikat dla konta wspoldzielonego (wspolny e-mail wielu osob).
+	 *
+	 * @return string
+	 */
+	private static function shared_mailbox_notice(): string {
+		return __( 'Z tego adresu e-mail korzysta więcej niż jedna osoba, więc samodzielna edycja i usuwanie danych są wyłączone. Napisz wiadomość w swojej sprawie — pracownik serwisu zaktualizuje lub usunie Twoje dane po potwierdzeniu tożsamości.', 'mp-service-intake' );
 	}
 
 	/**
@@ -290,12 +319,21 @@ final class AccountPage {
 
 	/**
 	 * Sekcja RODO: wycofanie zgody + usuniecie danych (art. 7(3) + art. 17).
+	 * Konto wspoldzielone: zamiast przycisku wyjasnienie (POST i tak odmowi).
 	 *
+	 * @param bool $shared Czy konto obsluguje wiecej niz jedna osobe.
 	 * @return string HTML.
 	 */
-	private static function render_privacy_form(): string {
+	private static function render_privacy_form( bool $shared ): string {
 		$out  = '<section class="mp-account__privacy">';
 		$out .= '<h3>' . esc_html__( 'Prywatność (RODO)', 'mp-service-intake' ) . '</h3>';
+
+		if ( $shared ) {
+			$out .= '<p class="mp-account__meta">' . esc_html( self::shared_mailbox_notice() ) . '</p></section>';
+
+			return $out;
+		}
+
 		$out .= '<p class="mp-account__meta">' . esc_html__( 'Możesz wycofać zgodę na przetwarzanie danych i poprosić o ich usunięcie. Jeśli masz aktywne zgłoszenie lub trwa okres roszczeń (gwarancja/rękojmia), dane usuniemy dopiero po jego zakończeniu.', 'mp-service-intake' ) . '</p>';
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-account__privacy-form">';
 		$out .= '<input type="hidden" name="action" value="mp_intake_withdraw" />';
@@ -325,9 +363,19 @@ final class AccountPage {
 			self::redirect_notice( __( 'Sesja wygasła — spróbuj ponownie.', 'mp-service-intake' ) );
 		}
 
+		$customer_ids = Customers::ids_by_wp_user( $user_id );
+
+		// Wspolna skrzynka (znalezisko #10): konto obslugujace WIECEJ NIZ JEDNA
+		// osobe nie moze jednym klikiem wycofac zgod i skasowac danych CUDZYCH.
+		// Wniosek przechodzi wtedy przez czlowieka (wiadomosc w sprawie /
+		// wbudowany eraser WP uruchamiany przez administratora per osoba).
+		if ( count( $customer_ids ) > 1 ) {
+			self::redirect_notice( self::shared_mailbox_notice() );
+		}
+
 		$emails = array();
 
-		foreach ( Customers::ids_by_wp_user( $user_id ) as $customer_id ) {
+		foreach ( $customer_ids as $customer_id ) {
 			Consents::withdraw( $customer_id, Consents::KEY_PROCESSING );
 
 			// CONSENT_WITHDRAWN na KAZDEJ sprawie klienta (audit-trail art. 7).

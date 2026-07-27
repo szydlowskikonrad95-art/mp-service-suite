@@ -97,3 +97,23 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
       return $ip; // brak zaufanego nagłówka → REMOTE_ADDR (domyślka).
   } );
   ```
+
+## 8. Wspólny adres e-mail wielu osób (skrzynka sekretariatu) — model tożsamości
+
+- **Tożsamość klienta = e-mail + nazwisko**, nie sam e-mail (`Customers::upsert_by_email`
+  + `same_person`). Druga osoba pisząca z tego samego adresu (sekretariat, recepcja, rodzina)
+  dostaje **osobny rekord klienta**: jej zgłoszenie nie nadpisuje danych pierwszej osoby
+  i nie dokleja się do jej historii. Ta sama osoba (różnice wielkości liter/spacji
+  w nazwisku) trafia do swojego istniejącego rekordu.
+- **Samoobsługa danych na koncie współdzielonym jest wyłączona**: gdy konto WP obsługuje
+  więcej niż jeden rekord klienta, panel chowa formularze edycji danych i „Wycofaj zgodę
+  i usuń moje dane", a POST-y odmawiają **po stronie serwera** (także ze starym, ważnym
+  nonce). Powód: jedna osoba nie może jednym klikiem skasować ani nadpisać danych drugiej.
+  Wniosek RODO przechodzi wtedy przez człowieka — wiadomość w sprawie albo wbudowany
+  eraser WP uruchamiany przez administratora (per osoba, po potwierdzeniu tożsamości).
+- **Świadoma granica**: kto ma dostęp do skrzynki, ten odczyta każdy magic-link — przy
+  logowaniu przez e-mail współdzielona skrzynka oznacza współdzielony **podgląd** listy
+  spraw (jak w każdym systemie z resetem hasła przez e-mail). Chronimy to, co da się
+  chronić po stronie aplikacji: dane kontaktowe drugiej osoby nie są prezentowane
+  w formularzach, a operacje modyfikujące/kasujące są zablokowane. Dowód: e2e
+  `testy/e2e/c19-wspolny-email.sh` (CI).

@@ -158,6 +158,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6b2-dane-kontaktowe.sh
       - name: Testy C6b-2b (wycofanie zgody + eraser + FLAGA #6 RODO)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6b2b-wycofanie-zgody.sh
+      - name: Testy C19 (wspólny e-mail — tożsamość osób + odmowa wycofania)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c19-wspolny-email.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)
