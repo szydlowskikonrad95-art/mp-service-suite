@@ -46,6 +46,19 @@ final class Sweep {
 	private const MAX_ROUNDS = 10;
 
 	/**
+	 * Budzet MAILI na jeden przebieg (audyt kosztu 27.07).
+	 *
+	 * Same paczki tego nie ograniczaly: BATCH 50 x MAX_ROUNDS 10 to do 500
+	 * wiadomosci wyslanych sekwencyjnie w JEDNYM zadaniu PHP. Zwykly hosting
+	 * przepuszcza 200-500 maili na godzine, a 500 polaczen SMTP po ~0,3 s to
+	 * kilka minut pracy — czyli takze realne ryzyko urwania przez limit czasu
+	 * wykonania w polowie wysylki. Reszta poczeka na kolejny przebieg (5 minut);
+	 * markery w tabeli terminow gwarantuja, ze nic nie przepadnie ani nie pojdzie
+	 * dwa razy. Filtr pozwala hostingowi z wyzszym limitem podniesc prog.
+	 */
+	private const MAIL_BUDGET = 120;
+
+	/**
 	 * Rejestruje interwal + hak crona (wolane z Plugin::boot).
 	 *
 	 * @return void
@@ -156,6 +169,16 @@ final class Sweep {
 			$sum_sup = 0;
 			$sum_esc = 0;
 
+			/**
+			 * Budzet maili na przebieg (audyt kosztu 27.07) — hosting klienta ma
+			 * swoj limit godzinowy, a jedno zadanie PHP swoj limit czasu.
+			 *
+			 * @param int $budget Domyslnie MAIL_BUDGET.
+			 */
+			$budzet_maili = (int) apply_filters( 'mp_sla_mail_budget', self::MAIL_BUDGET );
+			$budzet_maili = max( 1, $budzet_maili );
+			$przerwane    = false;
+
 			do {
 				++$rounds;
 
@@ -174,8 +197,18 @@ final class Sweep {
 					)
 				);
 
+				$wyslane = 0;
+
 				foreach ( $reminders as $case_id ) {
+					if ( $sum_rem + $wyslane >= $budzet_maili ) {
+						// Budzet wyczerpany: reszta ma marker NIETKNIETY, wiec kolejny
+						// przebieg (za 5 minut) wezmie ja od tego samego miejsca.
+						$przerwane = true;
+						break;
+					}
+
 					Sla::notify( (int) $case_id, Sla::KIND_REMINDER );
+					++$wyslane;
 				}
 
 				// TLUMIENIE flagi #8: sprawy po terminie z niewyslanym przypomnieniem —
@@ -201,10 +234,14 @@ final class Sweep {
 				$last_rem = count( $reminders );
 				$last_esc = count( $escalations );
 
-				$sum_rem += $last_rem;
+				// Liczymy REALNIE wyslane, nie znalezione — inaczej licznik w rejestrze
+				// klamalby po przerwaniu budzetem (i zasugerowalby wyslanie maili,
+				// ktore czekaja na nastepny przebieg).
+				$sum_rem += $wyslane;
 				$sum_sup += (int) $suppressed;
 				$sum_esc += $last_esc;
-			} while ( $rounds < self::MAX_ROUNDS
+			} while ( ! $przerwane
+				&& $rounds < self::MAX_ROUNDS
 				&& ( self::BATCH === $last_rem || self::BATCH === $last_esc ) );
 
 			WorkflowEvents::log(
@@ -214,6 +251,8 @@ final class Sweep {
 					'reminders_suppressed' => $sum_sup,
 					'escalations'          => $sum_esc,
 					'rounds'               => $rounds,
+					'budzet_maili'         => $budzet_maili,
+					'przerwany_budzetem'   => $przerwane ? 1 : 0,
 				)
 			);
 		} finally {

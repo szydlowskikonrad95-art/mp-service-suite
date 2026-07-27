@@ -179,6 +179,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-mail-awaria-widoczna.sh
       - name: Testy D26 (resync spraw potwierdzonych przy wyłączonym Automatorze)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-resync-nieznane-sprawy.sh
+      - name: Testy D27 (budżet maili na przebieg — hosting nie dostaje lawiny)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-budzet-maili.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c6c-ochrona-zgloszen.sh
       - name: Testy formularz dynamiczny (#15 — render unii pól + config JS + submit każdego rodzaju)
