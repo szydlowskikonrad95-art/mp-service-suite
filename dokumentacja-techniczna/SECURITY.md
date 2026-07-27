@@ -50,7 +50,7 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 
 | Endpoint (admin-post + ajax) | anon | subscriber | mp_client |
 |------------------------------|------|-----------|-----------|
-| wszystkie 9 endpointów personelu | **403** | **403** | **403** |
+| wszystkie endpointy personelu (9 w Intake + 4 AJAX Automatora) | **403** | **403** | **403** |
 
 Żadna nieuprawniona rola nie wykonuje akcji ani nie odczytuje cudzych danych.
 

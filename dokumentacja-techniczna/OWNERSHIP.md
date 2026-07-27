@@ -30,7 +30,7 @@
   BEZPOŚREDNIO `$wpdb` (pominięcie cache — dwa równoległe uninstalle). Kolejność odporna na
   przerwanie: remap userów partiami PRZED zdjęciem roli; WŁASNY marker kasowany na SAMYM KOŃCU.
   Kierunek błędu bezpieczny: FTP‑delete/`wp plugin delete --skip-plugins` → marker‑sierota → role
-  ZOSTAJĄ (wentyl: `wp mp cleanup --roles` + nota README). Przy zdjęciu ról: user bez innej roli →
+  ZOSTAJĄ. Nie ma komendy sprzątającej — administrator zdejmuje rolę ręcznie (Użytkownicy). Przy zdjęciu ról: user bez innej roli →
   `subscriber`. Multisite: poza zakresem v1 (README „czego system NIE robi").
 - **Wspólny kod `lib/mp-common`**: jedyne źródło w repo; kopie w pluginach GENEROWANE przez build
   (stempel namespace), gitignorowane; edycja kopii = błąd; release ZIP wyłącznie artefaktem CI
@@ -62,7 +62,7 @@
   C skasowany BEZ sygnału → sieroty sprząta defensywa sweepa D (`not_found` → wiersz sla czyszczony).
 - **Integralność międzytabelowa w KODZIE (bez FK)**: usunięcie produktu z aktywną sprawą = odmowa
   (pyta `mp_product_active_cases_count`; **FAIL‑CLOSED**: C nieaktywne → też odmowa); usuwanie z UI =
-  SOFT DELETE (archived); hard delete tylko WP‑CLI z `--confirm=<SERIAL>`.
+  SOFT DELETE (archived). Twardego usuwania produktu **nie ma w ogóle** — ani z panelu, ani z WP‑CLI.
 
 ## 5. Egzekwowanie (maszyny, nie umowy)
 
