@@ -63,6 +63,15 @@ final class Lifecycle {
 	 * @return void
 	 */
 	public static function maybe_upgrade(): void {
+		// Cron POZA bramka wersji schematu. Powod z realnego przebiegu (27.07):
+		// aktualizacja 0.4.0 -> nowsza zostawiala system BEZ zaplanowanego sweepa,
+		// bo schemat D sie nie zmienil, wiec cala funkcja wychodzila w pierwszej
+		// linii. Klient, ktory zainstalowal wersje z zdjetym cronem (blad #103),
+		// po aktualizacji NADAL nie mial pilnowania terminow — a system wyglada
+		// na sprawny. `schedule()` jest idempotentne (sprawdza wp_next_scheduled),
+		// wiec wolanie go przy kazdym wejsciu do panelu nic nie kosztuje.
+		Sweep::schedule();
+
 		if ( (int) get_option( Schema::VERSION_OPTION, 0 ) >= Schema::LATEST ) {
 			return;
 		}
@@ -70,7 +79,6 @@ final class Lifecycle {
 		Roles::ensure();
 		Schema::migrate();
 		Rules::maybe_seed_defaults();
-		Sweep::schedule();
 	}
 
 	/**
