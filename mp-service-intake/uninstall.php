@@ -93,11 +93,11 @@ if ( $mp_intake_delete_data ) {
 	// nie da sie juz powiazac konta z naszym systemem.
 	//
 	// Kasujemy WYLACZNIE konta, ktore spelniaja WSZYSTKIE warunki:
-	//   1. sa podpiete w NASZEJ tabeli klientow (my je zakladalismy),
-	//   2. maja rolę klienta i TYLKO ja (admin/personel z tym samym mailem —
-	//      Accounts::ensure_for_customer podpina bez zmiany rol — zostaje nietkniety),
-	//   3. nie maja zadnych trescii w WordPressie (wpisy/strony/zalaczniki),
-	// bo skasowanie cudzego konta jest nieodwracalne, a my mamy sprzatac PO SOBIE,
+	// (1) sa podpiete w NASZEJ tabeli klientow, czyli my je zakladalismy;
+	// (2) maja rolę klienta i TYLKO ja — admin/personel z tym samym mailem
+	// (Accounts::ensure_for_customer podpina bez zmiany rol) zostaje nietkniety;
+	// (3) nie maja zadnych wlasnych tresci w WordPressie.
+	// Bo skasowanie cudzego konta jest nieodwracalne, a my mamy sprzatac PO SOBIE,
 	// nie po innych.
 	$mp_intake_customers = MP\Intake\Tables::full( MP\Intake\Tables::CUSTOMERS );
 
