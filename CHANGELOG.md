@@ -6,6 +6,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [1.0.0] - 2026-07-27
 
+### Fixed (poprawki z przeglądu ekranów przed wydaniem)
+- **Zwrot przestał wyglądać na puste zgłoszenie.** Kolumna „Czego dotyczy" na liście spraw czytała
+  wyłącznie opis usterki, a formularz zwrotu zbiera **powód zwrotu** — więc każdy zwrot pokazywał
+  koordynatorowi „— bez opisu", mimo że klient napisał, dlaczego oddaje produkt. Teraz kolumna bierze
+  opis usterki, a gdy go nie ma — powód zwrotu (pierwszeństwo opisu bez zmian).
+- **Koniec surowego `CASE_CREATED` w historii sprawy.** Mapa etykiet nie miała wpisu dla zdarzenia
+  narodzin sprawy, więc **każda karta** zaczynała się technicznym kodem w otoczeniu polskich wpisów.
+  Uzupełniono komplet typów z `CaseEvents` (zgody RODO, usunięcie danych, przypomnienia i eskalacja SLA,
+  nieudana wysyłka e-maila).
+- **Priorytet po polsku** — karta sprawy pokazywała wartość z bazy (`normal`) zamiast „normalny".
+- Dokumentacja klienta: jawne ostrzeżenie, że **bazę produktów trzeba wgrać przed udostępnieniem
+  formularza** — powiązanie sprawy z produktem powstaje w chwili przyjęcia i nie jest uzupełniane wstecz.
+
 **Pierwsze wydanie dla klienta.** Kompletny system obsługi zgłoszeń serwisowych i reklamacyjnych:
 przyjmowanie zgłoszeń z weryfikacją mailową i kontem klienta bez hasła, rejestr produktów
 i gwarancji z importem CSV, automatyczny przydział spraw, pilnowanie terminów SLA z przypomnieniami

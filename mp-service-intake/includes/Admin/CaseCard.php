@@ -31,16 +31,41 @@ final class CaseCard {
 	 * @return array<string, string>
 	 */
 	private static function event_labels(): array {
+		// KOMPLET typow z CaseEvents — brak wpisu = klient widzi surowy kod
+		// (CASE_CREATED swiecil na KAZDEJ karcie jako pierwszy wpis historii).
 		return array(
+			'CASE_CREATED'           => __( 'Zgłoszenie przyjęte', 'mp-service-intake' ),
 			'STATUS_CHANGED'         => __( 'Zmiana statusu', 'mp-service-intake' ),
 			'PRIORITY_CHANGED'       => __( 'Zmiana priorytetu', 'mp-service-intake' ),
 			'CASE_ASSIGNED'          => __( 'Przydział sprawy', 'mp-service-intake' ),
 			'MESSAGE_ADDED'          => __( 'Wiadomość', 'mp-service-intake' ),
 			'CHECKLIST_ITEM_TOGGLED' => __( 'Checklista', 'mp-service-intake' ),
+			'CONSENT_RECORDED'       => __( 'Zgoda RODO udzielona', 'mp-service-intake' ),
 			'CONSENT_WITHDRAWN'      => __( 'Wycofanie zgody (RODO)', 'mp-service-intake' ),
+			'PII_REDACTION'          => __( 'Usunięcie danych osobowych', 'mp-service-intake' ),
 			'EXCEPTION_APPLIED'      => __( 'Wyjątek gwarancyjny', 'mp-service-intake' ),
 			'EXCEPTION_REVOKED'      => __( 'Cofnięcie wyjątku gwarancyjnego', 'mp-service-intake' ),
+			'SLA_REMINDER_SENT'      => __( 'Przypomnienie o terminie', 'mp-service-intake' ),
+			'SLA_ESCALATED'          => __( 'Termin przekroczony (eskalacja)', 'mp-service-intake' ),
+			'MAIL_FAILED'            => __( 'Nieudana wysyłka e-maila', 'mp-service-intake' ),
 		);
+	}
+
+	/**
+	 * Priorytet po polsku. W bazie siedza wartosci techniczne (low/normal/high)
+	 * i w takiej postaci trafialy na karte — obcy wtret w polskim ekranie.
+	 *
+	 * @param string $priorytet Wartosc z bazy.
+	 * @return string
+	 */
+	private static function priority_label( string $priorytet ): string {
+		$mapa = array(
+			'low'    => __( 'niski', 'mp-service-intake' ),
+			'normal' => __( 'normalny', 'mp-service-intake' ),
+			'high'   => __( 'wysoki', 'mp-service-intake' ),
+		);
+
+		return $mapa[ $priorytet ] ?? $priorytet;
 	}
 
 	/**
@@ -121,7 +146,7 @@ final class CaseCard {
 			__( 'Status', 'mp-service-intake' ) => Statuses::label( (string) ( $ctx['status'] ?? '' ) ),
 			__( 'Rodzaj', 'mp-service-intake' ) => (string) ( $ctx['rodzaj'] ?? '' ),
 			__( 'Kategoria', 'mp-service-intake' ) => (string) ( $ctx['kategoria'] ?? '' ),
-			__( 'Priorytet', 'mp-service-intake' ) => (string) ( $ctx['priority'] ?? '' ),
+			__( 'Priorytet', 'mp-service-intake' ) => self::priority_label( (string) ( $ctx['priority'] ?? '' ) ),
 			__( 'Przydzielony', 'mp-service-intake' ) => $user ? (string) $user->display_name : __( 'nieprzydzielona', 'mp-service-intake' ),
 			__( 'Kraj / język', 'mp-service-intake' ) => trim( (string) ( $ctx['kraj'] ?? '' ) . ' / ' . (string) ( $ctx['jezyk'] ?? '' ), ' /' ),
 			__( 'Potwierdzono', 'mp-service-intake' ) => self::fmt_date( (string) ( $ctx['verified_at'] ?? '' ) ),
