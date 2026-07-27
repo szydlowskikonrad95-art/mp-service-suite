@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,16 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.0.0 =
+* Pierwsze wydanie dla klienta.
+* Awaria wysyłki maila zostawia ślad na sprawie i alert w Narzędzia → Stan witryny (dotąd była całkowicie niewidoczna: klient nie dostawał linku, a panel milczał).
+* Sprawy potwierdzone przy wyłączonym module automatyzacji są doszywane automatycznie (nie zostają bez przydziału i terminu).
+* RODO: porzucone zgłoszenia niepotwierdzone znikają wraz z danymi kontaktowymi i załącznikami po 30 dniach (próg zmienia filtr).
+* Zamknięta sprawa nie przyjmuje już przydziału ani zmiany pilności.
+* Formularz działa także na hostingu bez rozszerzenia mbstring.
+* Numer sprawy w formacie ze specyfikacji: SRV/RRRR/NNNN.
+* Sprzątanie starych danych odtwarza się samo, gdy zadanie cykliczne zniknie z WordPressa; Stan witryny ostrzega, gdy go brakuje.
 
 = 0.5.0 =
 * Karta pracy personelu „MP: Sprawy" (lista spraw + karta: status/odpowiedź/przydział/checklista/oś czasu), sekcja Produkt i gwarancja. Numer sprawy w formacie SRV/RRRR/NNNN.

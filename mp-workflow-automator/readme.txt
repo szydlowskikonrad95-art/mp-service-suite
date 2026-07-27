@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,14 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.0.0 =
+* Pierwsze wydanie dla klienta.
+* Budżet wiadomości na jeden przebieg — hosting nie dostaje lawiny maili przy dużej liczbie zaległych terminów; reszta czeka na kolejny przebieg.
+* „Przelicz SLA" pracuje paczkami i dokańcza w tle, więc nie przerywa się przy dużej bazie spraw.
+* Rejestr zdarzeń mówi po polsku, pokazuje numer sprawy zamiast identyfikatora wewnętrznego i czas lokalny zamiast UTC.
+* Diagnostyka podpowiada, jak realnie włączyć automatyczny przydział (nadanie roli), zamiast odsyłać do ekranu tylko do odczytu.
+* Po odinstalowaniu modułu zgłoszeń czyszczone są terminy i checklisty; rejestr operacji zostaje jako historia.
 
 = 0.5.0 =
 * Powiadomienie e-mail pracownika przy zmianie statusu (self-skip dla autora zmiany). Walidacja JSON konfiguracji (bez cichej utraty), filtr SWEEP_RUN w domyślnym widoku rejestru zdarzeń.

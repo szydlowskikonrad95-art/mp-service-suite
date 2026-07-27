@@ -4,6 +4,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-27
+
+**Pierwsze wydanie dla klienta.** Kompletny system obsługi zgłoszeń serwisowych i reklamacyjnych:
+przyjmowanie zgłoszeń z weryfikacją mailową i kontem klienta bez hasła, rejestr produktów
+i gwarancji z importem CSV, automatyczny przydział spraw, pilnowanie terminów SLA z przypomnieniami
+i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
+
 ### Added
 - Registry (B) — **przykładowy plik importu w paczce + opis kolumn na ekranie.** Wtyczka wozi
   `przyklady/przyklad-import-produktow.csv` (8 wierszy pokazujących WSZYSTKIE obsługiwane kolumny, oba formaty
