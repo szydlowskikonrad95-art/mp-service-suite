@@ -1,0 +1,683 @@
+# Copyright (C) 2026 MP Service Suite
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MP Workflow Automator 0.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mp-workflow-automator\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-27T08:33:34+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mp-workflow-automator\n"
+
+#. Plugin Name of the plugin
+#: mp-workflow-automator.php
+msgid "MP Workflow Automator"
+msgstr ""
+
+#. Description of the plugin
+#: mp-workflow-automator.php
+msgid "Silnik regul serwisu: automatyczny przydzial spraw, statusy, powiadomienia e-mail, terminy SLA z eskalacja, checklisty i eksport raportow."
+msgstr ""
+
+#. Author of the plugin
+#: mp-workflow-automator.php
+msgid "MP Service Suite"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:78
+#: includes/Admin/PanelScreen.php:79
+#: includes/Admin/PanelScreen.php:146
+msgid "Automatyzacje MP"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:138
+msgid "Brak uprawnień do panelu automatyzacji."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:147
+msgid "Panel administracyjny modułu automatyzacji: akcje serwisowe oraz podgląd reguł, statusów i rejestru zdarzeń."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:170
+msgid "szablonów odpowiedzi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:171
+msgid "checklisty"
+msgstr ""
+
+#. translators: %s = nazwa konfiguracji (checklisty / szablonow odpowiedzi)
+#: includes/Admin/PanelScreen.php:179
+#, php-format
+msgid "Nieprawidłowy JSON — konfiguracja %s NIE została zapisana (poprzednia zachowana). Popraw format i zapisz ponownie."
+msgstr ""
+
+#. translators: %d = liczba przeliczonych spraw
+#: includes/Admin/PanelScreen.php:203
+#, php-format
+msgid "Przeliczono SLA dla %d sprawy."
+msgid_plural "Przeliczono SLA dla %d spraw."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/PanelScreen.php:221
+msgid "Akcje"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:226
+msgid "Przelicz SLA"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:227
+msgid "Przelicza terminy otwartych spraw wg bieżącej konfiguracji (nie wysyła ponownie już wysłanych powiadomień)."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:234
+msgid "Eksport CSV"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:235
+msgid "Pobiera zestawienie spraw w formacie CSV."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:258
+msgid "Reguły przydziału"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:260
+msgid "Lista reguł przydziału automatyzacji"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:263
+#: includes/Admin/PanelScreen.php:526
+msgid "ID"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:264
+msgid "Kiedy działa"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:265
+msgid "Warunek"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:266
+msgid "Co robi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:267
+msgid "Priorytet"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:268
+msgid "Aktywna"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:269
+msgid "Źródło"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:274
+msgid "Brak reguł."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:283
+#: includes/Admin/PanelScreen.php:463
+msgid "tak"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:283
+#: includes/Admin/PanelScreen.php:463
+msgid "nie"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:284
+msgid "wbudowana"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:284
+msgid "własna"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:306
+msgid "gdy wpłynie nowe zgłoszenie"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:308
+msgid "gdy zmieni się status sprawy"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:310
+msgid "gdy pojawi się nowa wiadomość"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:326
+msgid "zawsze"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:330
+msgid "autor wiadomości"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:331
+msgid "kategoria produktu"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:332
+msgid "kraj"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:333
+msgid "język"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:334
+msgid "priorytet"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:338
+msgid "klient"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:339
+msgid "pracownik"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:343
+msgid "to"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:344
+msgid "to nie"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:345
+msgid "jest jednym z"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:346
+msgid "jest pusty"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:347
+msgid "jest wypełniony"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:389
+msgid "przydziela sprawę pracownikowi — UWAGA: lista pracowników jest pusta, więc nikt jej nie dostanie"
+msgstr ""
+
+#. translators: %s: lista imion pracownikow w puli.
+#: includes/Admin/PanelScreen.php:394
+#, php-format
+msgid "przydziela sprawę po kolei: %s"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:403
+msgid "wysyła powiadomienie klientowi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:407
+msgid "wysyła powiadomienie pracownikowi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:410
+msgid "wysyła powiadomienie"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:414
+msgid "zmienia status sprawy"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:418
+msgid "ustawia priorytet sprawy"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:441
+msgid "Statusy spraw"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:443
+msgid "Moduł zgłoszeń (mp-service-intake) jest nieaktywny — pokazuję tylko statusy własne. Rdzeń statusów pojawi się po jego aktywacji."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:446
+msgid "Lista statusów spraw"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:449
+#: includes/CsvExport.php:174
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:450
+#: includes/Admin/PanelScreen.php:736
+msgid "Etykieta"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:451
+msgid "Terminalny"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:456
+msgid "Brak statusów."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:516
+msgid "Ukryj techniczne (SWEEP_RUN)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:517
+msgid "Pokaż techniczne (SWEEP_RUN)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:519
+msgid "Rejestr zdarzeń"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:523
+msgid "Rejestr zdarzeń automatyzacji (tylko do odczytu)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:527
+msgid "Zdarzenie"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:528
+msgid "Sprawa"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:529
+msgid "Wykonawca"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:530
+msgid "Kiedy (UTC)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:531
+msgid "Szczegóły"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:536
+msgid "Brak zdarzeń."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:565
+msgid "system"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:630
+msgid "Paginacja rejestru zdarzeń"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:632
+msgid "Poprzednia"
+msgstr ""
+
+#. translators: 1 = strona biezaca, 2 = liczba stron, 3 = laczna liczba zdarzen
+#: includes/Admin/PanelScreen.php:639
+#, php-format
+msgid "Strona %1$d z %2$d (%3$d zdarzeń)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:648
+msgid "Następna"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:661
+msgid "Checklisty i szablony odpowiedzi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:667
+msgid "Konfiguracja checklist i szablonów odpowiedzi jest dostępna dla administratora systemu."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:674
+msgid "Checklisty per typ sprawy"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:675
+msgid "Dodaj kroki checklisty dla każdego rodzaju sprawy (klucz techniczny + etykieta widoczna dla personelu)."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:678
+msgid "Zapisz checklisty"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:685
+msgid "Szablony odpowiedzi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:686
+msgid "Dodaj szablony odpowiedzi dla każdego rodzaju sprawy (klucz + etykieta + treść z markerami {{...}})."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:689
+msgid "Zapisz szablony"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:735
+msgid "klucz"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:735
+msgid "Klucz"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:736
+msgid "etykieta"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:738
+msgid "treść (markery {{...}})"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:738
+msgid "Treść szablonu"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:740
+msgid "Usuń wiersz"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:744
+msgid "+ dodaj"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:749
+msgid "Zaawansowane: edytuj jako JSON"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:752
+msgid "Formularz powyżej zapisuje ten JSON automatycznie. Edytuj tu ręcznie tylko gdy potrzebujesz."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:768
+msgid "Reklamacja"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:769
+msgid "Naprawa"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:770
+msgid "Zapytanie techniczne"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:771
+msgid "Zwrot"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:786
+msgid "Dostępne markery szablonów (whitelist)"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:787
+msgid "Tylko poniższe markery są podstawiane w treści szablonu — inne zostają pominięte."
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:789
+msgid "Lista dostępnych markerów szablonów odpowiedzi"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:792
+msgid "Marker"
+msgstr ""
+
+#: includes/Admin/PanelScreen.php:793
+msgid "Znaczenie"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:73
+msgid "Automatyczny przydział spraw jest wyłączony"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:74
+msgid "Nie ma włączonej reguły przydzielającej nowe zgłoszenia. Sprawy będą czekać, aż ktoś przypisze je ręcznie na liście zgłoszeń."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:75
+msgid "Jeśli chcesz przydział automatyczny, włącz regułę w Automator → Reguły."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:83
+msgid "Nowe zgłoszenia nie trafiają do nikogo — pusta lista pracowników"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:84
+msgid "Reguła automatycznego przydziału jest włączona, ale nie wskazano ani jednego pracownika serwisu (albo wskazane osoby straciły uprawnienia). Zgłoszenia będą przyjmowane i widoczne na liście, lecz nikt nie dostanie ich do obsługi ani powiadomienia mailem."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:85
+msgid "Wejdź w Automator → Reguły, otwórz regułę przydziału i wskaż pracowników serwisu, między których mają być rozdzielane zgłoszenia."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:92
+msgid "Nowe zgłoszenia są automatycznie przydzielane"
+msgstr ""
+
+#. translators: %d: liczba pracownikow w puli przydzialu.
+#: includes/Admin/SiteHealthTests.php:95
+#, php-format
+msgid "Zgłoszenia są rozdzielane po kolei między %d pracownika serwisu."
+msgid_plural "Zgłoszenia są rozdzielane po kolei między %d pracowników serwisu."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/SiteHealthTests.php:124
+msgid "Terminy SLA i przypomnienia NIE DZIAŁAJĄ — wyłączony WP-Cron"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:125
+msgid "W konfiguracji strony ustawiono DISABLE_WP_CRON. System dalej przyjmuje zgłoszenia, ale nie pilnuje terminów: nie wyśle przypomnienia przed upływem SLA ani nie zgłosi eskalacji po terminie. Awaria jest niewidoczna — wygląda, jakby wszystko działało."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:126
+msgid "Jeśli hosting wyłączył WP-Cron celowo, ustaw w panelu zadanie systemowe (cron) wywołujące wp-cron.php co 5 minut. To standardowa i zalecana konfiguracja."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:134
+msgid "Brak zaplanowanego zadania pilnującego terminów SLA"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:135
+msgid "WP-Cron działa, ale zadanie Automatora nie jest zaplanowane — mógł je usunąć inny dodatek albo aktywacja nie dokończyła się poprawnie. Skutek jest ten sam: terminy i eskalacje stoją."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:136
+msgid "Wyłącz i włącz ponownie wtyczkę „MP Workflow Automator\" — zadanie zaplanuje się od nowa."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:145
+msgid "Terminy SLA są pilnowane"
+msgstr ""
+
+#. translators: %s: data i godzina nastepnego uruchomienia.
+#: includes/Admin/SiteHealthTests.php:148
+#, php-format
+msgid "Zadanie sprawdzające terminy jest zaplanowane. Najbliższe uruchomienie: %s."
+msgstr ""
+
+#: includes/Admin/SlaRecalcAction.php:59
+msgid "Brak uprawnień do przeliczenia SLA."
+msgstr ""
+
+#: includes/Checklists.php:57
+msgid "Brak uprawnień do checklisty."
+msgstr ""
+
+#: includes/Checklists.php:72
+msgid "Brak sprawy lub kroku."
+msgstr ""
+
+#: includes/Checklists.php:79
+msgid "Sprawa nie istnieje."
+msgstr ""
+
+#: includes/Checklists.php:86
+msgid "Krok spoza szablonu checklisty tego rodzaju sprawy."
+msgstr ""
+
+#. translators: %s: kod bledu autoryzacji.
+#: includes/Checklists.php:94
+#, php-format
+msgid "Brak autoryzacji (%s)."
+msgstr ""
+
+#: includes/Checklists.php:99
+msgid "Zapisano stan checklisty."
+msgstr ""
+
+#: includes/ChecklistTemplates.php:209
+msgid "Brak uprawnień do konfiguracji checklist."
+msgstr ""
+
+#. translators: %s: numer sprawy SRV.
+#: includes/ClosingReport.php:86
+#, php-format
+msgid "Sprawa %s została zamknięta."
+msgstr ""
+
+#. translators: %s: rodzaj zgloszenia.
+#: includes/ClosingReport.php:92
+#, php-format
+msgid "Rodzaj zgłoszenia: %s"
+msgstr ""
+
+#. translators: %s: data zamkniecia w czasie lokalnym.
+#: includes/ClosingReport.php:98
+#, php-format
+msgid "Data zamknięcia: %s"
+msgstr ""
+
+#. translators: %s: czas obslugi (np. „2 dni 3 godz").
+#: includes/ClosingReport.php:107
+#, php-format
+msgid "Czas obsługi: %s"
+msgstr ""
+
+#: includes/ClosingReport.php:110
+msgid "Dziękujemy za zgłoszenie."
+msgstr ""
+
+#. translators: 1: liczba dni, 2: liczba godzin.
+#: includes/ClosingReport.php:140
+#, php-format
+msgid "%1$d dni %2$d godz"
+msgstr ""
+
+#. translators: %d: liczba godzin.
+#: includes/ClosingReport.php:145
+#, php-format
+msgid "%d godz"
+msgstr ""
+
+#: includes/ClosingReport.php:148
+msgid "poniżej godziny"
+msgstr ""
+
+#: includes/CsvExport.php:70
+msgid "Brak uprawnień do eksportu spraw."
+msgstr ""
+
+#: includes/CsvExport.php:173
+msgid "Nr sprawy"
+msgstr ""
+
+#: includes/CsvExport.php:175
+msgid "Rodzaj"
+msgstr ""
+
+#: includes/CsvExport.php:176
+msgid "Kraj"
+msgstr ""
+
+#: includes/CsvExport.php:177
+msgid "Język"
+msgstr ""
+
+#: includes/CsvExport.php:178
+msgid "Data utworzenia (UTC)"
+msgstr ""
+
+#: includes/CsvExport.php:179
+msgid "Data zamknięcia (UTC)"
+msgstr ""
+
+#: includes/CsvExport.php:180
+msgid "Czas obsługi (godz.)"
+msgstr ""
+
+#: includes/CsvExport.php:181
+msgid "Powód odrzucenia (kod)"
+msgstr ""
+
+#: includes/CsvExport.php:182
+msgid "Powód odrzucenia"
+msgstr ""
+
+#: includes/CsvExport.php:213
+msgid "ZESTAWIENIE"
+msgstr ""
+
+#: includes/CsvExport.php:214
+msgid "Łączna liczba spraw"
+msgstr ""
+
+#: includes/CsvExport.php:217
+msgid "Liczba spraw wg statusu"
+msgstr ""
+
+#: includes/CsvExport.php:223
+msgid "Czas obsługi (sprawy zamknięte)"
+msgstr ""
+
+#: includes/CsvExport.php:224
+msgid "Liczba spraw zamkniętych"
+msgstr ""
+
+#: includes/CsvExport.php:225
+msgid "Średni czas obsługi (godz.)"
+msgstr ""
+
+#: includes/CsvExport.php:226
+msgid "Łączny czas obsługi (godz.)"
+msgstr ""
+
+#: includes/CsvExport.php:229
+msgid "Rozkład powodów odrzuceń"
+msgstr ""
+
+#: includes/CsvExport.php:231
+msgid "(brak spraw odrzuconych)"
+msgstr ""
+
+#: includes/ResponseTemplates.php:58
+msgid "Numer sprawy (SRV/RRRR/NNNNN)"
+msgstr ""
+
+#: includes/ResponseTemplates.php:59
+msgid "Aktualny status sprawy"
+msgstr ""
+
+#: includes/ResponseTemplates.php:60
+msgid "Rodzaj sprawy"
+msgstr ""
+
+#: includes/ResponseTemplates.php:61
+msgid "Bieżąca data"
+msgstr ""
+
+#: includes/ResponseTemplates.php:250
+msgid "Brak uprawnień do konfiguracji szablonów."
+msgstr ""
+
+#: includes/Sweep.php:64
+msgid "Co 5 minut (MP SLA)"
+msgstr ""

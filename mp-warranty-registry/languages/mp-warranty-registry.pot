@@ -1,0 +1,570 @@
+# Copyright (C) 2026 MP Service Suite
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MP Warranty & Serial Registry 0.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mp-warranty-registry\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-27T08:33:33+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mp-warranty-registry\n"
+
+#. Plugin Name of the plugin
+#: mp-warranty-registry.php
+msgid "MP Warranty & Serial Registry"
+msgstr ""
+
+#. Description of the plugin
+#: mp-warranty-registry.php
+msgid "Rejestr produktow, numerow seryjnych, partii i okresow gwarancyjnych: import CSV, statusy gwarancji, wyjatki gwarancyjne, wyszukiwarka."
+msgstr ""
+
+#. Author of the plugin
+#: mp-warranty-registry.php
+msgid "MP Service Suite"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:55
+#: includes/Admin/ExceptionsScreen.php:56
+#: includes/Admin/ExceptionsScreen.php:102
+#: includes/Admin/ExceptionsScreen.php:110
+msgid "Wyjątki gwarancyjne"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:70
+msgid "Brak uprawnień do wyjątków gwarancyjnych."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:103
+msgid "Wybierz produkt z listy Rejestru MP (kolumna Akcje → „wyjątki\")."
+msgstr ""
+
+#. translators: 1: numer seryjny, 2: model.
+#: includes/Admin/ExceptionsScreen.php:120
+#, php-format
+msgid "Produkt %1$s (%2$s)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:131
+msgid "Zakres"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:132
+#: includes/Admin/ImportScreen.php:294
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:133
+msgid "Ważny do (UTC)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:134
+msgid "Powód"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:135
+msgid "Akcja"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:140
+msgid "Brak wyjątków dla tego produktu."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:152
+msgid "globalny"
+msgstr ""
+
+#. translators: %d: numer sprawy.
+#: includes/Admin/ExceptionsScreen.php:153
+#, php-format
+msgid "sprawa #%d"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:159
+msgid "przeterminowany (wyliczone z daty)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:161
+msgid "aktywny"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:163
+msgid "cofnięty"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:167
+msgid "bezterminowo"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:172
+msgid "cofnij"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:183
+#: includes/Admin/ExceptionsScreen.php:211
+msgid "Przyznaj wyjątek"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:190
+msgid "Sprawa (opcjonalnie)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:193
+msgid "Puste = wyjątek globalny na produkt. Z numerem sprawy działa TYLKO dla tej sprawy."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:197
+msgid "Ważny do (opcjonalnie)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:200
+msgid "Puste = bezterminowo. Data musi być w przyszłości (koniec dnia UTC)."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:204
+msgid "Powód (wymagany)"
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:207
+msgid "Notatka wewnętrzna, do 500 znaków. Nie trafia do historii zdarzeń ani do innych modułów."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:228
+#: includes/Admin/ExceptionsScreen.php:268
+#: includes/Admin/ImportEndpoints.php:119
+#: includes/Admin/ImportEndpoints.php:147
+#: includes/Admin/ProductsScreen.php:194
+msgid "Brak uprawnień."
+msgstr ""
+
+#. translators: %d: ID wyjatku.
+#: includes/Admin/ExceptionsScreen.php:247
+#, php-format
+msgid "Wyjątek #%d przyznany."
+msgstr ""
+
+#: includes/Admin/ExceptionsScreen.php:278
+msgid "Wyjątek cofnięty."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:52
+#: includes/Admin/ImportScreen.php:151
+msgid "Brak uprawnień do importu produktów."
+msgstr ""
+
+#. translators: %s: limit uploadu serwera.
+#: includes/Admin/ImportEndpoints.php:63
+#, php-format
+msgid "Plik jest większy niż limit uploadu serwera (%s) — żądanie zostało ucięte. Podziel CSV na mniejsze części."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:82
+msgid "Plik nie dotarł na serwer — spróbuj ponownie."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:88
+msgid "Dozwolone są tylko pliki .csv (ewentualnie .txt z danymi CSV)."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:126
+msgid "Niepełne dane batcha."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:153
+msgid "Niepełne dane wznowienia."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:159
+msgid "Nie można wznowić: job nie istnieje albo jego plik roboczy został już usunięty."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:165
+msgid "Nie można wznowić: import jest już zakończony."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:189
+msgid "Brak uprawnień do raportu importu."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:195
+msgid "Job importu nie istnieje."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:202
+msgid "Raport błędów nie istnieje."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:247
+msgid "Plik przekracza limit uploadu serwera — podziel CSV na mniejsze części."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:249
+msgid "Plik wgrał się tylko częściowo — spróbuj ponownie."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:251
+msgid "Nie wybrano pliku."
+msgstr ""
+
+#: includes/Admin/ImportEndpoints.php:253
+msgid "Serwer nie przyjął pliku (błąd zapisu tymczasowego) — spróbuj ponownie lub skontaktuj się z administratorem."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:64
+#: includes/Admin/ImportScreen.php:172
+msgid "Import produktów z CSV"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:65
+msgid "Import CSV"
+msgstr ""
+
+#. translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow.
+#: includes/Admin/ImportScreen.php:134
+#: includes/Admin/ImportScreen.php:190
+#, php-format
+msgid "Przetworzono %1$s z %2$s wierszy (błędy: %3$s)."
+msgstr ""
+
+#. translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow.
+#: includes/Admin/ImportScreen.php:136
+#, php-format
+msgid "Import zakończony: %1$s z %2$s wierszy, błędy: %3$s."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:137
+msgid "Pobierz raport błędów poniżej (tabela „Ostatnie importy\")."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:138
+msgid "Błąd połączenia — import NIE przepadł. Kliknij „Wznów import\", żeby kontynuować od miejsca przerwania."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:139
+msgid "Wznawiam import…"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:176
+msgid "Serwer nie ma rozszerzenia iconv ani intl — import przyjmie wyłącznie pliki zapisane w UTF-8. Plik z polskiego Excela (Windows-1250) zostanie uczciwie odrzucony zamiast przekłamać polskie znaki."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:203
+#: includes/Admin/ImportScreen.php:221
+msgid "Wznów import"
+msgstr ""
+
+#. translators: 1: numer joba, 2: przetworzone, 3: wszystkie wiersze.
+#: includes/Admin/ImportScreen.php:214
+#, php-format
+msgid "Import #%1$s został przerwany (%2$s z %3$s wierszy). Możesz go wznowić — ruszy od miejsca przerwania."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:227
+msgid "Wgraj plik CSV"
+msgstr ""
+
+#. translators: %s: maksymalny rozmiar pliku.
+#: includes/Admin/ImportScreen.php:232
+#, php-format
+msgid "Wymagana kolumna: serial (aliasy: numer_seryjny, sn). Separator ; lub , — kodowanie UTF-8 albo Windows-1250 (polski Excel). Maksymalny rozmiar pliku: %s."
+msgstr ""
+
+#. translators: %s: lista dozwolonych slugow kategorii.
+#: includes/Admin/ImportScreen.php:241
+#, php-format
+msgid "Kolumny opcjonalne: model, partia, faktura (albo dokument_zakupu), data_zakupu, gwarancja_do, kategoria. Daty w formacie 2026-04-12 albo 12.04.2026; puste pole jest dozwolone. Kategoria — jedna z: %s (wartość spoza listy trafia do „inne\"). Bez kolumny gwarancja_do rejestr nie policzy statusu gwarancji."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:247
+msgid "Import DODAJE produkty do rejestru. Numer seryjny, który już w nim jest, trafia do raportu błędów i NIE nadpisuje istniejącego wpisu. Przy porównywaniu seriali spacje i myślniki są pomijane, a wielkość liter nie ma znaczenia."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:251
+msgid "Pobierz przykładowy plik CSV (8 wierszy, gotowy do wgrania)"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:257
+msgid "Plik CSV z produktami"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:259
+msgid "Rozpocznij import"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:262
+msgid "Ostatnie importy"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:277
+msgid "Brak importów."
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:283
+msgid "oczekuje"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:284
+msgid "w trakcie"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:285
+msgid "przerwany"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:286
+msgid "zakończony"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:287
+msgid "nieudany"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:293
+msgid "Job"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:295
+msgid "Wiersze"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:296
+msgid "Błędy"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:297
+msgid "Utworzony (UTC)"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:298
+msgid "Raport błędów"
+msgstr ""
+
+#: includes/Admin/ImportScreen.php:312
+msgid "pobierz CSV"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:83
+#: includes/Admin/ProductsScreen.php:124
+msgid "Rejestr produktów MP"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:84
+msgid "Rejestr MP"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:99
+msgid "Brak uprawnień do rejestru produktów."
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:131
+msgid "Wynik wyszukiwania po kliencie został przycięty — doprecyzuj zapytanie (np. pełny e-mail zamiast fragmentu nazwiska)."
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:135
+msgid "Wyszukiwanie po kliencie wymaga aktywnego modułu zgłoszeń (mp-service-intake) — filtr klienta został pominięty."
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:141
+msgid "Serial"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:143
+#: includes/Admin/ProductsTable.php:66
+msgid "Model"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:145
+msgid "Faktura"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:147
+msgid "Klient"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:151
+msgid "Wymaga aktywnego modułu zgłoszeń (mp-service-intake)."
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:154
+msgid "pokaż archiwalne"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:155
+msgid "Szukaj"
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:205
+msgid "Produkt zarchiwizowany."
+msgstr ""
+
+#: includes/Admin/ProductsScreen.php:206
+msgid "Produkt przywrócony z archiwum."
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:65
+msgid "Numer seryjny"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:67
+msgid "Partia"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:68
+msgid "Status gwarancji"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:69
+msgid "Gwarancja do"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:70
+msgid "Sprawy"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:71
+msgid "Akcje"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:108
+msgid "archiwum"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:126
+msgid "aktywna"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:127
+msgid "wygasła"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:128
+msgid "brak danych"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:129
+msgid "wymagana weryfikacja"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:137
+msgid "wyjątek"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:153
+msgid "brak danych (moduł spraw nieaktywny)"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:178
+msgid "wyjątki"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:182
+msgid "przywróć"
+msgstr ""
+
+#: includes/Admin/ProductsTable.php:183
+msgid "archiwizuj"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:47
+msgid "Import CSV: pliki z polskiego Excela są obsługiwane"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:48
+msgid "Serwer ma konwerter kodowania (iconv lub intl), więc plik zapisany przez Excela w Windows-1250 zostanie poprawnie odczytany razem z polskimi znakami."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:55
+msgid "Import CSV przyjmie tylko pliki UTF-8"
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:56
+msgid "Serwer nie ma ani rozszerzenia „iconv\", ani „intl\". Plik zapisany przez polskiego Excela (Windows-1250) zostanie odrzucony — celowo, żeby nie przekłamać polskich znaków w nazwach produktów."
+msgstr ""
+
+#: includes/Admin/SiteHealthTests.php:57
+msgid "Poproś hosting o włączenie rozszerzenia PHP „iconv\" (albo „intl\"). Alternatywnie zapisuj plik w Excelu przez „Zapisz jako → CSV UTF-8\"."
+msgstr ""
+
+#: includes/Archive.php:27
+msgid "Archiwizować produkty może wyłącznie administrator systemu MP."
+msgstr ""
+
+#: includes/Archive.php:33
+#: includes/Archive.php:79
+msgid "Produkt o tym ID nie istnieje."
+msgstr ""
+
+#: includes/Archive.php:37
+msgid "Ten produkt jest już w archiwum."
+msgstr ""
+
+#: includes/Archive.php:41
+msgid "Nie można potwierdzić braku aktywnych spraw (moduł spraw nieaktywny) — archiwizacja odmówiona."
+msgstr ""
+
+#: includes/Archive.php:47
+msgid "Moduł spraw nie odpowiedział jednoznacznie — archiwizacja odmówiona (FAIL-CLOSED)."
+msgstr ""
+
+#. translators: %d: liczba aktywnych spraw.
+#: includes/Archive.php:54
+#, php-format
+msgid "Produkt ma %d aktywnych spraw — najpierw je zamknij."
+msgstr ""
+
+#: includes/Archive.php:73
+msgid "Przywracać produkty może wyłącznie administrator systemu MP."
+msgstr ""
+
+#: includes/Archive.php:83
+msgid "Ten produkt nie jest w archiwum."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:43
+msgid "Wyjątki gwarancyjne może przyznawać wyłącznie administrator systemu MP."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:68
+msgid "Produkt o tym ID nie istnieje w rejestrze."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:96
+msgid "W tym zakresie (produkt + sprawa albo produkt globalnie) jest już AKTYWNY wyjątek — najpierw go cofnij."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:116
+msgid "Błąd zapisu wyjątku do bazy."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:150
+msgid "Wyjątki gwarancyjne może cofać wyłącznie administrator systemu MP."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:165
+msgid "Wyjątek o tym ID nie istnieje."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:183
+msgid "Ten wyjątek jest już cofnięty."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:311
+msgid "Powód wyjątku jest wymagany."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:315
+msgid "Powód wyjątku może mieć najwyżej 500 znaków."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:350
+msgid "Termin ważności podaj jako RRRR-MM-DD (albo RRRR-MM-DD GG:MM:SS, czas UTC)."
+msgstr ""
+
+#: includes/WarrantyExceptions.php:357
+msgid "Termin ważności wyjątku musi być w przyszłości."
+msgstr ""
