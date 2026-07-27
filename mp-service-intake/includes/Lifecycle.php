@@ -123,6 +123,9 @@ final class Lifecycle {
 				try {
 					Attachments::run_retention_sweep();
 					RateLimit::cleanup_expired();
+					// RODO (audyt 27.07): porzucone zgloszenia niepotwierdzone
+					// zostawaly w bazie RAZEM z danymi kontaktowymi na zawsze.
+					CaseRepo::purge_abandoned_pending();
 				} finally {
 					$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'mp_intake_retention' ) );
 					// phpcs:enable

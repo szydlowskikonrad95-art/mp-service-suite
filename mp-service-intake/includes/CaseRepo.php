@@ -1659,6 +1659,74 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Kasuje PORZUCONE zgloszenia niepotwierdzone (RODO — audyt kosztu 27.07).
+	 *
+	 * Kto wypelnil formularz i nie kliknal linku, zostawial w bazie sprawe RAZEM
+	 * z danymi kontaktowymi (e-mail, imie, telefon w opcji `mp_pending_contact_*`)
+	 * — NA ZAWSZE. Okno potwierdzenia to 72 h, wiec po nim taka sprawa nie ma juz
+	 * jak ruszyc: zostaje martwy rekord z danymi osobowymi bez podstawy retencji.
+	 * Kasujemy z duzym zapasem (domyslnie 30 dni), zeby nie ruszyc niczego, co
+	 * klient moglby jeszcze reklamowac; prog zmienia filtr.
+	 *
+	 * @param int $days  Wiek w dniach (od utworzenia).
+	 * @param int $limit Maksymalna liczba spraw na przebieg.
+	 * @return int Liczba skasowanych spraw.
+	 */
+	public static function purge_abandoned_pending( int $days = 0, int $limit = 200 ): int {
+		global $wpdb;
+
+		/**
+		 * Ile dni trzymamy porzucone (niepotwierdzone) zgloszenia.
+		 *
+		 * @param int $days Domyslnie 30.
+		 */
+		$days = $days > 0 ? $days : (int) apply_filters( 'mp_intake_pending_retention_days', 30 );
+		$days = max( 1, $days );
+
+		$cases  = Tables::full( Tables::CASES );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabele wlasne; lista %d w IN() z count().
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$cases}
+				WHERE identity_status = 'pending' AND created_at <= %s
+				ORDER BY id ASC LIMIT %d",
+				$cutoff,
+				max( 1, min( 500, $limit ) )
+			)
+		);
+
+		$ids = array_map( 'intval', (array) $ids );
+
+		if ( array() === $ids ) {
+			// phpcs:enable
+			return 0;
+		}
+
+		// Zalaczniki NAJPIERW: kasuja tez PLIKI z dysku (sam DELETE wiersza
+		// zostawilby zdjecia klienta w uploads na zawsze).
+		Attachments::delete_for_cases( $ids );
+
+		foreach ( $ids as $case_id ) {
+			delete_option( 'mp_pending_contact_' . $case_id );
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabele wlasne; lista %d w IN() z count().
+		foreach ( array( Tables::CASE_EVENTS, Tables::MESSAGES, Tables::CONSENTS ) as $tabela ) {
+			$pelna = Tables::full( $tabela );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$pelna} WHERE case_id IN ({$placeholders})", $ids ) );
+		}
+
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$cases} WHERE id IN ({$placeholders})", $ids ) );
+		// phpcs:enable
+
+		return count( $ids );
+	}
+
+	/**
 	 * ID spraw ZWERYFIKOWANYCH w ostatnich dniach (funkcja kontraktowa
 	 * `mp_cases_verified_ids`) — do resynchronizacji Automatora (audyt 27.07).
 	 *

@@ -288,6 +288,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-recalc-paczkami.sh
       - name: Testy C29 (zamknięta sprawa — bramka na przydział i pilność)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-zamknieta-sprawa-bramka.sh
+      - name: Testy C30 (RODO — retencja porzuconych zgłoszeń niepotwierdzonych)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
 
   # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:
