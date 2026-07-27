@@ -44,8 +44,11 @@ for t in mp_customers mp_service_cases mp_case_events mp_messages mp_attachments
 done
 [ -z "$MISS" ] && ok "upgrade BEZ reaktywacji: 8 tabel intake STWORZONYCH (maybe_upgrade, w tym mp_rate_counters v2)" || bad "brak tabel intake po upgrade:$MISS"
 
+# Wersja z kodu, nie literal — literal 2 wybuchl przy migracji v3 (PR #118),
+# a wybuchalby przy KAZDEJ kolejnej; wzorzec z registry-maybe-upgrade.sh.
 SV=$(wp option get mp_intake_schema_version 2>/dev/null)
-[ "$SV" = "2" ] && ok "schema_version = 2 (migracje v1+v2 odnotowane)" || bad "schema_version = $SV"
+LATEST=$(wp eval 'echo (int) MP\Intake\Schema::LATEST;' 2>/dev/null)
+{ [ -n "$LATEST" ] && [ "$SV" = "$LATEST" ]; } && ok "schema_version = $LATEST (== Schema::LATEST, wszystkie migracje odnotowane)" || bad "schema_version = $SV (oczekiwane $LATEST)"
 
 PROD_AFTER=$(q "SELECT COUNT(*) FROM ${PFX}mp_product_registry")
 { [ -n "$PROD_AFTER" ] && [ "$PROD_AFTER" = "$PROD_BEFORE" ]; } && ok "dane registry PRZETRWALY upgrade ($PROD_AFTER)" || bad "dane registry zgubione (przed=$PROD_BEFORE po=$PROD_AFTER)"
