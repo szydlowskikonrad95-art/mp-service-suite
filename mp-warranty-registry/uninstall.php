@@ -43,5 +43,5 @@ if ( $mp_registry_delete_data ) {
 MP\Registry\Common\Uninstall::run(
 	'mp_module_registry',
 	array( 'mp_registry_delete_data' ),
-	array()
+	MP\Registry\Lifecycle::CRON_HOOKS
 );

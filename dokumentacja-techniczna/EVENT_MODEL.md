@@ -69,7 +69,9 @@ Zapis eventu i mutacja stanu = JEDNA transakcja (status bez eventu NIGDY); akcje
 | MAIL_SKIPPED_NO_RECIPIENT | {case_id, template_key} (klient zanonimizowany = stan legalny) |
 | EXPORT_GENERATED | {user_id, liczba wierszy, hash filtrów} — bez PII |
 | CRUD konfiguracji | {obiekt, id, actor} (reguły/szablony/statusy/SLA) |
-| przebiegi sweepa / resync / „Przelicz SLA" | {statystyki przebiegu} |
+| CLOSING_REPORT_GENERATED | {case_id} — raport końcowy po zamknięciu sprawy (krok 8 kartki) |
+| MAIL_DEDUPED | {case_id, template_key} — identyczna wiadomość w oknie dedupu |
+| przebiegi sweepa / resync / „Przelicz SLA" | {statystyki przebiegu; przy przerwaniu budżetem maili także `budzet_maili` i `przerwany_budzetem`} |
 
 `wp_mp_workflow_events` przy uninstallu C (sygnał `mp_cases_data_erased`) ZOSTAJE — rejestr
 operacji D jest historyczny, nie wskazuje „na żywo".
