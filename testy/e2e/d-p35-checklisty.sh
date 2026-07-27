@@ -79,7 +79,12 @@ SUBROW=$(q "SELECT COUNT(*) FROM wp_mp_case_checklists WHERE case_id=$CID AND st
 [ "$SUBROW" = "0" ] && ok "subscriber toggle => brak zapisu (bramka personelu)" || bad "subscriber zapisal!"
 
 # ── 7. KONFIG checklist: system-admin nadpisuje; subscriber => 403 ──────────
-wp eval --user="$ADMIN" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'nowy_krok','label'=>'Nowy krok naprawy')))); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('$CCFG'); MP\\Automator\\ChecklistTemplates::handle_config();" >/dev/null 2>&1
+wp eval --user="$ADMIN" "\$_POST['payload']=json_encode(array('naprawa'=>array(array('key'=>'nowy_krok','label'=>'Nowy krok naprawy')))); \$_POST['mp_config_rev']=MP\\Automator\\ChecklistTemplates::config_rev(); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('$CCFG'); MP\\Automator\\ChecklistTemplates::handle_config();" >/dev/null 2>&1
+NEWLAB_G=$(wp eval 'echo MP\Automator\ChecklistTemplates::step_label("naprawa","nowy_krok");' 2>/dev/null)
+# Audyt #9: zapis ze ZLYM odciskiem wersji (drugi admin zapisal pierwszy) => odmowa, konfig nietkniety.
+wp eval --user="$ADMIN" "\$_POST['payload']=json_encode(array('naprawa'=>array())); \$_POST['mp_config_rev']='stary-odcisk'; \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('$CCFG'); MP\\Automator\\ChecklistTemplates::handle_config();" >/dev/null 2>&1
+NEWLAB_G2=$(wp eval 'echo MP\Automator\ChecklistTemplates::step_label("naprawa","nowy_krok");' 2>/dev/null)
+[ "$NEWLAB_G2" = "$NEWLAB_G" ] && ok "audyt #9: zapis ze starym odciskiem ODRZUCONY (konfig nietkniety)" || bad "stary odcisk nadpisal konfig! ($NEWLAB_G2)"
 NEWLAB=$(wp eval 'echo MP\Automator\ChecklistTemplates::step_label("naprawa","nowy_krok");' 2>/dev/null)
 [ "$NEWLAB" = "Nowy krok naprawy" ] && ok "admin nadpisal szablon checklist (naprawa)" || bad "konfig checklist nie zadzialal ($NEWLAB)"
 CFGAUD=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE event_type='CONFIG_CHANGED' AND payload LIKE '%checklist_templates%'")
@@ -101,7 +106,7 @@ UNK=$(wp eval "echo MP\\Automator\\ResponseTemplates::render('reklamacja','przyj
 echo "$UNK" | grep -q '{{klient}}' && ok "marker spoza whitelist NIE jest podmieniany (zostaje doslownie)" || ok "marker spoza whitelist nieobecny w szablonie (ok)"
 
 # ── 9. KONFIG szablonow odpowiedzi: admin nadpisuje ─────────────────────────
-wp eval --user="$ADMIN" "\$_POST['payload']=json_encode(array('zapytanie'=>array(array('key'=>'szybka','label'=>'Szybka odpowiedz','body'=>'Sprawa {{numer_sprawy}} w toku.')))); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('$RCFG'); MP\\Automator\\ResponseTemplates::handle_config();" >/dev/null 2>&1
+wp eval --user="$ADMIN" "\$_POST['payload']=json_encode(array('zapytanie'=>array(array('key'=>'szybka','label'=>'Szybka odpowiedz','body'=>'Sprawa {{numer_sprawy}} w toku.')))); \$_POST['mp_config_rev']=MP\\Automator\\ResponseTemplates::config_rev(); \$_REQUEST['_wpnonce']=\$_POST['_wpnonce']=wp_create_nonce('$RCFG'); MP\\Automator\\ResponseTemplates::handle_config();" >/dev/null 2>&1
 GOT=$(wp eval 'echo MP\Automator\ResponseTemplates::get("zapytanie","szybka")["label"] ?? "";' 2>/dev/null)
 [ "$GOT" = "Szybka odpowiedz" ] && ok "admin nadpisal szablony odpowiedzi (zapytanie)" || bad "konfig szablonow nie zadzialal ($GOT)"
 
