@@ -1597,4 +1597,105 @@ final class CaseRepo {
 
 		return $customer_id;
 	}
+
+	/**
+	 * Sprawy ZWERYFIKOWANE bez zdarzenia narodzin (CASE_CREATED) — sieroty po
+	 * awarii w trakcie weryfikacji (audyt #1).
+	 *
+	 * Ciag po UPDATE weryfikacji (klient -> konto -> zdarzenie -> akcja) nie
+	 * jest transakcyjny w calosci; pad w srodku zostawia sprawe, o ktorej
+	 * Automator nigdy sie nie dowie. Powtorny klik linku trafia w galaz „juz
+	 * potwierdzone" i NICZEGO nie doslesie — sierota jest trwala. Bufor
+	 * wieku odsiewa weryfikacje trwajace wlasnie teraz.
+	 *
+	 * @param int $older_than_minutes Minimalny wiek weryfikacji w minutach.
+	 * @param int $limit              Maksymalna liczba spraw.
+	 * @return array<int, int>
+	 */
+	public static function unlaunched_ids( int $older_than_minutes = 10, int $limit = 20 ): array {
+		global $wpdb;
+
+		$cases  = Tables::full( Tables::CASES );
+		$events = Tables::full( Tables::CASE_EVENTS );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $older_than_minutes * MINUTE_IN_SECONDS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT c.id FROM {$cases} c
+				LEFT JOIN {$events} e ON e.case_id = c.id AND e.event_type = %s
+				WHERE c.identity_status = 'verified' AND e.id IS NULL
+					AND c.verified_at IS NOT NULL AND c.verified_at <= %s
+				ORDER BY c.id ASC LIMIT %d",
+				CaseEvents::CASE_CREATED,
+				$cutoff,
+				$limit
+			)
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
+	 * Doszywa sieroty weryfikacji (audyt #1) — wzorzec reconcile.
+	 *
+	 * Dla kazdej sprawy zweryfikowanej bez CASE_CREATED: dopina klienta,
+	 * jesli pad urwal przed dopieciem (dane kontaktowe wciaz czekaja w
+	 * mp_pending_contact_*), spina zgode i DOSYLA zdarzenie narodzin + akcje
+	 * `mp_case_created` — Automator prowizjonuje SLA/przydzial jak przy
+	 * normalnej weryfikacji. Wolane z ticka sweepa SLA (mp_sla_sweep_tick).
+	 *
+	 * @param int $limit Maksymalna liczba spraw na przebieg.
+	 * @return int Liczba doszytych spraw.
+	 */
+	public static function reconcile_unlaunched( int $limit = 20 ): int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::CASES );
+		$count = 0;
+
+		foreach ( self::unlaunched_ids( 10, $limit ) as $case_id ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+			$row = $wpdb->get_row(
+				$wpdb->prepare( "SELECT case_number, kind, product_registry_id, customer_id FROM {$table} WHERE id = %d", $case_id ),
+				ARRAY_A
+			);
+			// phpcs:enable
+
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			// Pad przed dopieciem klienta: dane kontaktowe wciaz w opcji pending.
+			$customer_id = (int) ( $row['customer_id'] ?? 0 );
+
+			if ( 0 === $customer_id ) {
+				$customer_id = self::attach_customer_on_verify( $case_id );
+			}
+
+			if ( $customer_id > 0 && Consents::attach_case_to_customer( $case_id, $customer_id ) > 0 ) {
+				CaseEvents::log( $case_id, CaseEvents::CONSENT_RECORDED, array( 'consent_key' => Consents::KEY_PROCESSING ), null );
+			}
+
+			// Dosylka narodzin — payload jak w verify() + slad, ze to reconcile.
+			CaseEvents::log(
+				$case_id,
+				CaseEvents::CASE_CREATED,
+				array(
+					'case_number'         => (string) ( $row['case_number'] ?? '' ),
+					'rodzaj'              => (string) ( $row['kind'] ?? '' ),
+					'product_registry_id' => null === $row['product_registry_id'] ? null : (int) $row['product_registry_id'],
+					'reconcile'           => true,
+				),
+				null
+			);
+
+			do_action( 'mp_case_created', $case_id );
+
+			++$count;
+		}
+
+		return $count;
+	}
 }

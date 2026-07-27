@@ -123,6 +123,14 @@ final class Sweep {
 		}
 
 		try {
+			/**
+			 * Tick sweepa SLA (kontrakt, patrz API-KONTRAKT.md): odbiorcy moga
+			 * doszyc zaleglosci ZANIM przebieg wybierze wymagalne terminy.
+			 * Intake (C) uzywa go do reconcile spraw zweryfikowanych, ktorym
+			 * awaria urwala zdarzenie narodzin (audyt #1) — doszyte sprawy
+			 * dostaja SLA/przydzial natychmiast, terminy lapie kolejny przebieg.
+			 */
+			do_action( 'mp_sla_sweep_tick' );
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 

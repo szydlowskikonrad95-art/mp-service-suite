@@ -34,7 +34,49 @@ final class SiteHealthTests {
 				'nadawca'      => array( self::class, 'test_nadawca' ),
 				'upload_limit' => array( self::class, 'test_limit_uploadu' ),
 				'poczta_lokal' => array( self::class, 'test_srodowisko_lokalne' ),
+				'sieroty'      => array( self::class, 'test_sieroty_weryfikacji' ),
 			)
+		);
+	}
+
+	/**
+	 * Sieroty weryfikacji: sprawy potwierdzone, o ktorych automatyzacja nie wie.
+	 *
+	 * Awaria w trakcie potwierdzania (pad PHP/restart bazy) mogla urwac
+	 * zdarzenie narodzin sprawy — SLA nie ruszy, nikt nie przydzieli, klient
+	 * czeka, a na oko wszystko wyglada dobrze (audyt #1). Sweep SLA doszywa
+	 * takie sprawy co 5 minut; ten test swieci, gdyby doszywanie nie dzialalo
+	 * (np. Automator wylaczony) i zaleglosc rosla.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_sieroty_weryfikacji(): array {
+		$ile = count( \MP\Intake\CaseRepo::unlaunched_ids( 10, 20 ) );
+
+		if ( 0 === $ile ) {
+			return SiteHealth::wynik(
+				'mp_intake_sieroty',
+				'good',
+				__( 'Zgłoszenia: każda potwierdzona sprawa trafiła do automatyzacji', 'mp-service-intake' ),
+				__( 'Nie ma spraw potwierdzonych, które ominęły automatyczny przydział i pilnowanie terminów.', 'mp-service-intake' )
+			);
+		}
+
+		return SiteHealth::wynik(
+			'mp_intake_sieroty',
+			'critical',
+			sprintf(
+				/* translators: %d: liczba spraw. */
+				_n(
+					'%d potwierdzona sprawa czeka poza automatyzacją',
+					'%d potwierdzonych spraw czeka poza automatyzacją',
+					$ile,
+					'mp-service-intake'
+				),
+				$ile
+			),
+			__( 'Te sprawy zostały potwierdzone przez klientów, ale automatyzacja o nich nie wie: nikt ich nie przydzieli i nie pilnuje ich terminów. Zwykle znaczy to, że wtyczka MP Workflow Automator jest wyłączona albo jej zadanie cykliczne (WP-Cron) nie chodzi.', 'mp-service-intake' ),
+			__( 'Włącz wtyczkę MP Workflow Automator i sprawdź w tym ekranie test „cykliczne sprawdzanie terminów". Po najbliższym przebiegu (do 5 minut) sprawy zostaną doszyte automatycznie.', 'mp-service-intake' )
 		);
 	}
 
