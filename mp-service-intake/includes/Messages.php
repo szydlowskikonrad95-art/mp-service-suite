@@ -41,10 +41,12 @@ final class Messages {
 		$odcisk = 'mp_rl_msg_' . md5( $case_id . '|' . $author_type . '|' . (string) ( $author_id ?? 0 ) . '|' . sha1( $body ) );
 
 		if ( ! RateLimit::claim_window( $odcisk, MINUTE_IN_SECONDS ) ) {
+			$table = Tables::full( Tables::MESSAGES );
+
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 			$existing = $wpdb->get_var(
 				$wpdb->prepare(
-					'SELECT id FROM ' . Tables::full( Tables::MESSAGES ) . ' WHERE case_id = %d AND author_type = %s AND body = %s ORDER BY id DESC LIMIT 1',
+					"SELECT id FROM {$table} WHERE case_id = %d AND author_type = %s AND body = %s ORDER BY id DESC LIMIT 1",
 					$case_id,
 					$author_type,
 					$body

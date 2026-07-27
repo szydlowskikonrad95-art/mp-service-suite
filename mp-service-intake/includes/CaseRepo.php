@@ -460,8 +460,7 @@ final class CaseRepo {
 		// Ta sama ochrona, ktora set_priority mial od zawsze (asymetria zlapana
 		// przez audyt idempotencji).
 		if ( $from === $user_id ) {
-			$wpdb->query( 'ROLLBACK' );
-			// phpcs:enable
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			return array(
 				'success' => true,
