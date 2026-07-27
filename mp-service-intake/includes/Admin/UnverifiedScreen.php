@@ -123,7 +123,20 @@ final class UnverifiedScreen {
 			echo '<input type="hidden" name="action" value="mp_intake_resend" />';
 			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
 			wp_nonce_field( 'mp_intake_resend_' . $case_id );
-			echo '<input type="email" name="email" value="' . esc_attr( $email ) . '" style="min-width:16rem" />';
+			// Audyt dostepnosci 27.07: pole bylo BEZ nazwy dla czytnika ekranu — uzytkownik
+			// slyszal samo „pole edycyjne", nie wiedzac, czego dotyczy (a to adres klienta).
+			printf(
+				'<label class="screen-reader-text" for="mp-resend-email-%1$d">%2$s</label>',
+				(int) $case_id,
+				esc_html(
+					sprintf(
+						/* translators: %s = numer sprawy SRV. */
+						__( 'Adres e-mail klienta dla zgłoszenia %s', 'mp-service-intake' ),
+						(string) ( $row['case_number'] ?? '' )
+					)
+				)
+			);
+			echo '<input type="email" id="mp-resend-email-' . esc_attr( (string) $case_id ) . '" name="email" value="' . esc_attr( $email ) . '" style="min-width:16rem" />';
 			echo '<button type="submit" class="button">' . esc_html__( 'Wyślij ponownie', 'mp-service-intake' ) . '</button>';
 			echo '</form></td>';
 			echo '</tr>';

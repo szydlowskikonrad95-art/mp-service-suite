@@ -571,7 +571,7 @@ final class PanelScreen {
 					<th scope="col"><?php esc_html_e( 'Zdarzenie', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Sprawa', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Wykonawca', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Kiedy (UTC)', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Kiedy', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Szczegóły', 'mp-workflow-automator' ); ?></th>
 				</tr>
 			</thead>
@@ -582,10 +582,10 @@ final class PanelScreen {
 					<?php foreach ( $rows as $e ) : ?>
 						<tr>
 							<td><?php echo esc_html( (string) $e->id ); ?></td>
-							<td><code><?php echo esc_html( (string) $e->event_type ); ?></code></td>
-							<td><?php echo null !== $e->case_id ? esc_html( '#' . (string) (int) $e->case_id ) : '—'; ?></td>
+							<td><?php echo esc_html( self::etykieta_zdarzenia( (string) $e->event_type ) ); ?></td>
+							<td><?php echo null !== $e->case_id ? esc_html( self::numer_sprawy( (int) $e->case_id ) ) : '—'; ?></td>
 							<td><?php echo esc_html( self::actor_label( $e->actor_id ) ); ?></td>
-							<td><?php echo esc_html( (string) $e->created_at ); ?></td>
+							<td><?php echo esc_html( get_date_from_gmt( (string) $e->created_at, 'Y-m-d H:i' ) ); ?></td>
 							<td class="mp-automator-payload"><?php echo esc_html( self::payload_summary( (string) $e->payload ) ); ?></td>
 						</tr>
 					<?php endforeach; ?>
@@ -594,6 +594,55 @@ final class PanelScreen {
 		</table>
 		<?php
 		self::render_pagination( $page, $pages, $total, $show_technical );
+	}
+
+	/**
+	 * Zdarzenie po ludzku (audyt ekranow 27.07).
+	 *
+	 * Rejestr pokazywal surowy kod techniczny (`ASSIGNMENT_UNMATCHED`), a czyta go
+	 * koordynator bez zaplecza informatycznego. Nieznane kody zostaja jak byly —
+	 * lepiej pokazac kod niz zgadywac znaczenie.
+	 *
+	 * @param string $kod Kod zdarzenia.
+	 * @return string
+	 */
+	private static function etykieta_zdarzenia( string $kod ): string {
+		$slownik = array(
+			'RULE_EXECUTED'             => __( 'Reguła wykonana', 'mp-workflow-automator' ),
+			'RULE_LOOP_BLOCKED'         => __( 'Zatrzymano pętlę reguł', 'mp-workflow-automator' ),
+			'RULE_LIMIT_HIT'            => __( 'Osiągnięto limit akcji reguł', 'mp-workflow-automator' ),
+			'ASSIGNMENT_UNMATCHED'      => __( 'Brak pasującej reguły przydziału', 'mp-workflow-automator' ),
+			'MAIL_FAILED'               => __( 'Nieudana wysyłka maila (ponowimy)', 'mp-workflow-automator' ),
+			'MAIL_FAILED_FINAL'         => __( 'Mail nie wyszedł po kilku próbach', 'mp-workflow-automator' ),
+			'MAIL_SKIPPED_NO_RECIPIENT' => __( 'Pominięto mail — brak odbiorcy', 'mp-workflow-automator' ),
+			'MAIL_DEDUPED'              => __( 'Pominięto powtórzony mail', 'mp-workflow-automator' ),
+			'EXPORT_GENERATED'          => __( 'Wygenerowano eksport CSV', 'mp-workflow-automator' ),
+			'CONFIG_CHANGED'            => __( 'Zmieniono konfigurację', 'mp-workflow-automator' ),
+			'SWEEP_RUN'                 => __( 'Przebieg pilnowania terminów', 'mp-workflow-automator' ),
+			'SLA_RECALCULATED'          => __( 'Przeliczono terminy SLA', 'mp-workflow-automator' ),
+		);
+
+		return $slownik[ $kod ] ?? $kod;
+	}
+
+	/**
+	 * Numer sprawy zamiast wewnetrznego ID (audyt ekranow 27.07).
+	 *
+	 * Rejestr pokazywal „#151", a wszedzie indziej sprawa nazywa sie SRV/2026/00003 —
+	 * nie dalo sie powiazac wpisu w logu ze sprawa na liscie.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string
+	 */
+	private static function numer_sprawy( int $case_id ): string {
+		$ctx = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+
+		if ( is_array( $ctx ) && ! empty( $ctx['case_number'] ) ) {
+			return (string) $ctx['case_number'];
+		}
+
+		/* translators: %d = wewnetrzny numer sprawy (gdy Intake nie odpowiada). */
+		return sprintf( __( 'sprawa #%d', 'mp-workflow-automator' ), $case_id );
 	}
 
 	/**

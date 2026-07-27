@@ -218,7 +218,7 @@ final class CasesListTable extends \WP_List_Table {
 			// początkowy, a nie awaria — gdy świecił na czerwono w każdym
 			// wierszu, oko przestawało go zauważać i realna pilność (termin
 			// po czasie) nie miała się czym wyróżnić (krytyk-recenzent 27.07).
-			return '<span style="color:#787c82">' . esc_html__( 'nieprzydzielona', 'mp-service-intake' ) . '</span>';
+			return '<span style="color:#646970">' . esc_html__( 'nieprzydzielona', 'mp-service-intake' ) . '</span>';
 		}
 
 		$user = get_userdata( $uid );
@@ -299,7 +299,7 @@ final class CasesListTable extends \WP_List_Table {
 			return esc_html( mb_strlen( $tekst ) > 70 ? $skrot . '…' : $skrot );
 		}
 
-		return '<span style="color:#787c82">' . esc_html__( '— bez opisu', 'mp-service-intake' ) . '</span>';
+		return '<span style="color:#646970">' . esc_html__( '— bez opisu', 'mp-service-intake' ) . '</span>';
 	}
 
 	/**
