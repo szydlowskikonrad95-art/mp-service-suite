@@ -1,0 +1,100 @@
+# MP Service Suite
+
+System obsługi zgłoszeń serwisowych i reklamacyjnych dla firmy MP — **trzy współpracujące,
+ale niezależne wtyczki WordPress**:
+
+| Wtyczka | Rola | Najkrócej |
+|---|---|---|
+| **MP Service Intake** | recepcja | formularz zgłoszeń (4 rodzaje, pola wg kategorii), numery spraw `SRV/RRRR/NNNNN`, weryfikacja mailowa, konto klienta bez hasła (magic-link), wiadomości klient↔serwis, RODO |
+| **MP Warranty & Serial Registry** | magazyn wiedzy | rejestr produktów/numerów seryjnych/partii, import CSV porcjami z raportem błędów, automatyczny status gwarancji, wyjątki gwarancyjne za zgodą admina, wyszukiwarka |
+| **MP Workflow Automator** | kierownik | reguły przydziału (kategoria/kraj/język/priorytet), 7 konfigurowalnych statusów, maile po ważnych zmianach, SLA z przypomnieniem i eskalacją, checklisty, raporty CSV |
+
+Dane żyją w **16 dedykowanych tabelach** (nie we wpisach WP) z twardymi zasadami integralności:
+unikalny numer sprawy nadawany przez bazę, nieusuwalna oś zdarzeń każdej sprawy, blokada usunięcia
+produktu z aktywną sprawą, migracje wersjonowane z możliwością odtworzenia. Szczegóły i uzasadnienie
+każdej tabeli: [`dokumentacja-techniczna/DATABASE.md`](dokumentacja-techniczna/DATABASE.md).
+
+## Wymagania
+
+WordPress 6.x · PHP 8.1–8.5 (CI testuje każdą wersję) · MySQL 8 / MariaDB 10.6+.
+
+## Szybki start
+
+1. Zainstaluj i aktywuj trzy ZIP-y z [Releases](../../releases) — **kolejność dowolna**: każda
+   wtyczka działa też sama i grzecznie ogranicza funkcje, gdy braci nie ma (nigdy biały ekran).
+2. Aktywacja Intake sama tworzy strony **formularza zgłoszenia** i **panelu klienta** oraz role:
+   *administrator systemu MP*, *koordynator serwisu*, *pracownik serwisu*, *klient*.
+3. Zajrzyj do **Narzędzia → Stan witryny** — dziesięć testów diagnostycznych mówi, czego
+   brakuje na hostingu (fileinfo, biblioteka obrazów, HTTPS, nadawca poczty, cron…) i **jak to
+   naprawić** — łącznie z tym, czy automatyzacja realnie się wykonuje, a nie tylko jest zaplanowana.
+4. W Rejestrze zaimportuj produkty z CSV (na ekranie importu jest przykładowy plik do pobrania).
+5. W Automatorze uzupełnij **pulę pracowników** reguły przydziału i progi SLA.
+
+Pełna instrukcja krok po kroku ze zrzutami: pakiet instrukcji w katalogu wydania.
+
+## Jak biegnie zgłoszenie
+
+Klient wypełnia formularz (pola zależne od rodzaju i kategorii) → system waliduje dane, załączniki
+i duplikaty → rejestr sprawdza gwarancję po numerze seryjnym → powstaje sprawa `SRV/…` → klient
+potwierdza zgłoszenie linkiem z e-maila (ochrona przed spamem; dopiero wtedy sprawa wchodzi do
+obiegu) → silnik reguł nadaje priorytet i przydziela pracownika → klient śledzi status i pisze
+wiadomości w panelu (logowanie linkiem, bez hasła) → pracownik prowadzi checklistę, każda decyzja
+zostaje na nieusuwalnej osi zdarzeń → SLA pilnuje terminów (przypomnienie przed, eskalacja po) →
+raporty i eksport CSV.
+
+## Czego ten system NIE robi (świadome granice)
+
+- **Nie wysyła SMS-ów ani powiadomień push** — cała komunikacja to e-mail przez `wp_mail`.
+  Dostarczalność zależy od poczty Twojego hostingu (zalecany SMTP + SPF/DKIM — patrz nota
+  wdrożeniowa). Na lokalnym komputerze bez serwera poczty maile nie wyjdą — Stan witryny
+  to wykrywa i podaje obejście (`wp mp login-link`).
+- **Nie wystawia publicznego REST API.** Jedyne wejścia do systemu: formularz zgłoszenia,
+  panel klienta i wp-admin dla personelu. Integracje między wtyczkami idą przez udokumentowane
+  hooki ([`API-KONTRAKT.md`](dokumentacja-techniczna/API-KONTRAKT.md)) — to API wewnętrzne.
+- **Nie kasuje danych „na twardo".** Prawo do usunięcia (RODO) realizuje **anonimizacja**:
+  dane osobowe znikają, oś zdarzeń i statystyki zostają. Historia zdarzeń sprawy jest z
+  konstrukcji nieusuwalna (wymóg specyfikacji). Przy adresie e-mail współdzielonym przez
+  wiele osób samoobsługowe usunięcie jest wyłączone — wniosek rozpatruje personel (żeby jedna
+  osoba nie skasowała danych drugiej).
+- **Nie liczy płatności, faktur ani magazynu** — rejestr produktów służy gwarancjom, nie sprzedaży.
+- **Nie działa bez WP-Crona.** Terminy SLA i sprzątanie chodzą na zadaniach cyklicznych;
+  WP-Cron odpala się z ruchu na stronie, więc **na produkcji ustaw systemowy cron co 5 minut**
+  (instrukcja w nocie wdrożeniowej). Diagnostyka w Stanie witryny pokazuje, gdy zadania stoją.
+- **Nie tłumaczy się sama** — interfejs jest po polsku; szablony `.pot` w `languages/` każdej
+  wtyczki są gotowe do tłumaczeń.
+
+## Struktura repo
+
+```
+mp-service-intake/        wtyczka C — recepcja (formularz, konto, RODO)
+mp-warranty-registry/     wtyczka B — rejestr produktów i gwarancji
+mp-workflow-automator/    wtyczka D — reguły, SLA, checklisty, raporty
+lib/mp-common/            wspólne klasy; przy budowie KOPIOWANE do każdej wtyczki
+                          (u klienta są równo 3 paczki; CI pilnuje identyczności kopii)
+dokumentacja-techniczna/  kontrakt hooków, baza, bezpieczeństwo, maszyna stanów, migracje
+testy/                    phpunit (czysta logika) + ~70 skryptów e2e na ŻYWYM WordPressie
+build/                    budowa ZIP-ów + linter zakazu dotykania cudzych tabel
+PONAD-KARTKE.md           co wykracza ponad specyfikację i którą jej literę realizuje
+```
+
+## Jakość — maszyny, nie obietnice
+
+Każda zmiana przechodzi w CI: składnia i testy na **PHP 8.1–8.5** · PHPCS (WordPress Coding
+Standards) · PHPStan · oficjalny **Plugin Check** na zbudowanym ZIP-ie · skan sekretów ·
+**pełne E2E na żywym WordPressie** (przebieg zgłoszenia od formularza po eskalację SLA, macierz
+uprawnień 403, RODO z wyścigami włącznie, migracje wersja→wersja z danymi, instalacja „brudnego"
+środowiska z object-cache) · smoke-test artefaktu wydania. Zero zmian bez zielonego kompletu.
+
+## Dokumentacja techniczna
+
+[`API-KONTRAKT.md`](dokumentacja-techniczna/API-KONTRAKT.md) — hooki między wtyczkami (jedyny
+kanał komunikacji) · [`DATABASE.md`](dokumentacja-techniczna/DATABASE.md) — 16 tabel z mapą PII ·
+[`SECURITY.md`](dokumentacja-techniczna/SECURITY.md) — role, rate-limity, magic-linki, model
+tożsamości przy wspólnej skrzynce · [`STATE_MACHINE.md`](dokumentacja-techniczna/STATE_MACHINE.md)
+— statusy i przejścia · [`EVENT_MODEL.md`](dokumentacja-techniczna/EVENT_MODEL.md) — zdarzenia osi ·
+[`MIGRATION_POLICY.md`](dokumentacja-techniczna/MIGRATION_POLICY.md) — backup i odtwarzanie ·
+[`OWNERSHIP.md`](dokumentacja-techniczna/OWNERSHIP.md) — kto jest właścicielem których danych.
+
+## Licencja
+
+GPLv2 or later — patrz [LICENSE](LICENSE).
