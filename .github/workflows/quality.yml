@@ -227,6 +227,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-kategoria.sh
       - name: Testy B5 (kartka l.50 — brak usuniecia produktu z aktywna sprawa; Archive + listener mp_product_active_cases_count)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b5-usuwanie-produktu.sh
+      - name: Testy edycji produktu (kartka — „historia zmian danych produktu"; diff w historii, PII poza logiem, serial nietykalny, status gwarancji reaguje)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-edycja-produktu.sh
       - name: Testy mp_product_details (kontrakt B->C sekcja Produkt+Gwarancja na karcie — pola, status gwarancji z daty, archived, id=0/nieistniejacy=null)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-product-details.sh
       - name: Testy Registry maybe_upgrade (kartka T2 — auto-migracja przy update BEZ reaktywacji; regresja bug 24.07)

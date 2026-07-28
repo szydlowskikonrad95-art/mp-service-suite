@@ -52,7 +52,7 @@ Zapis eventu i mutacja stanu = JEDNA transakcja (status bez eventu NIGDY); akcje
 
 | Typ | Payload |
 |---|---|
-| zmiany danych produktu | diff before/after; pii_sensitive → {field, changed:true} |
+| PRODUCT_UPDATED | diff `{pole: {before, after}}`; pola z `ProductEvents::PII_FIELDS` (dokument zakupu) → sam fakt zmiany, bez wartości. Emitowane przez `Repo::update()` (ekran „popraw dane") oraz przez `Archive` przy zmianie flagi `archived`. Brak realnej zmiany = brak wpisu |
 | EXCEPTION_CREATED / EXCEPTION_REVOKED | {exception_id, typ, actor_id} — NIGDY kopia tekstu `reason` |
 | PRODUCT_RESTORED | {actor} (przywrócenie z archiwum — jawne, nigdy ciche w imporcie) |
 | PRODUCT_FORCE_DELETED | {actor, reason?} (notatka techniczna, NO‑PII) |

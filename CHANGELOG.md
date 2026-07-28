@@ -4,6 +4,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-28
+
+Domknięcie wymogu z kartki: **„historia zmian danych produktu i decyzji gwarancyjnych"**.
+Decyzje gwarancyjne były zapisywane od początku, ale danych produktu **nie dało się zmienić** —
+wchodziły wyłącznie importem, a ponowny import odrzucał ten sam numer seryjny jako duplikat.
+Historia zmian danych nie miała więc czego zapisywać, a błąd w pliku (np. zła data gwarancji)
+był nie do poprawienia bez ręcznej ingerencji w bazę.
+
+### Added
+- **Ekran „popraw dane" w rejestrze produktów** (`?page=mp-registry&edit=ID`, wymaga
+  `mp_system_admin`): model, partia, kategoria, dokument zakupu, data zakupu, data końca gwarancji.
+  Daty przyjmowane w obu formatach obsługiwanych przez import (`RRRR-MM-DD` i `DD.MM.RRRR`).
+- **Zapis każdej poprawki do historii produktu** jako `PRODUCT_UPDATED` z różnicą przed/po —
+  ten sam typ zdarzenia i kształt danych, którego używa archiwizacja, więc historia czyta się
+  jednym wzorcem.
+
+### Security
+- Numer seryjny **wyłączony z edycji** (`Repo::EDITABLE_FIELDS`). Jest kluczem relacji
+  sprawa → produkt z kartki; podmiana przepisałaby cudzą historię serwisową na inny egzemplarz.
+- Dokument zakupu trafia do historii **bez wartości** (lista PII w `ProductEvents::PII_FIELDS`) —
+  zapisujemy sam fakt zmiany.
+- Zapis chroniony tokenem `nonce` per produkt i sprawdzeniem uprawnień; produkt archiwalny
+  odrzucany; gwarancja kończąca się przed datą zakupu odrzucana z czytelnym komunikatem.
+
+### Tests
+- `testy/e2e/b-edycja-produktu.sh` wpięty w CI: zapis i wpis w historii, brak PII w historii,
+  nietykalność numeru seryjnego, odrzucenie błędnej daty i odwróconych dat, brak wpisu przy
+  braku realnej zmiany, blokada archiwalnego oraz **realna zmiana statusu gwarancji po poprawce
+  daty** (bez tego edycja byłaby ozdobna).
+
 ## [1.0.3] - 2026-07-28
 
 Wydanie uzupełniające paczkę — **bez zmian w kodzie wtyczek**. Domyka to, czego brakowało
