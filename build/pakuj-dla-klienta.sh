@@ -26,6 +26,17 @@ for p in "${PLUGINS[@]}"; do
 done
 echo "WERSJA: $WERSJA (zgodna w 3 wtyczkach + readme.txt)"
 
+# --- wersja W TRESCI dokumentow (nie tylko w naglowkach) -------------------------
+# Lekcja 1.0.2: dwa dokumenty deklarowaly stara wersje, a kontrola patrzyla tylko
+# na naglowki wtyczek. Kazda linia dokumentu, ktora deklaruje wersje pakietu
+# ("Wersja:" albo "w wersji **X**"), MUSI podawac WERSJA — inaczej stop.
+for dok in "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md"; do
+  ZLE="$(grep -nE '(\*\*Wersja:\*\*|wszystkie w wersji \*\*)[^*]*[0-9]+\.[0-9]+\.[0-9]+' "$dok" \
+         | grep -vF "$WERSJA" || true)"
+  [ -z "$ZLE" ] || { echo "BLAD: $dok deklaruje inna wersje niz $WERSJA:"; echo "$ZLE"; exit 1; }
+done
+echo "WERSJA w dokumentach: zgodna z $WERSJA"
+
 # --- 1) ZIP-y wtyczek ------------------------------------------------------------
 bash build/build.sh
 
@@ -86,7 +97,7 @@ done < <(grep -ho 'src="zdjecia/[^"]*"\|(zdjecia/[^)]*)' "$PACZKA"/instrukcje/*.
          sed -e 's|.*zdjecia/||' -e 's|[")].*||' | sort -u)
 
 # 5c. slady wewnetrzne — paczka idzie do OBCEJ firmy
-SLADY='localhost|127\.0\.0\.1|:809[0-9]|poligon|Dzidek|dzidek|kolegi|mp-service-suite-repo|/tmp/'
+SLADY='localhost|127\.0\.0\.1|:809[0-9]|poligon|Dzidek|dzidek|kolegi|mp-service-suite-repo|/tmp/|trycloudflare|mailpit|Mailpit'
 if grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' > /dev/null 2>&1; then
   zglos "slad wewnetrzny w dokumentach:"
   grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' | head -10 | sed 's/^/      /'
