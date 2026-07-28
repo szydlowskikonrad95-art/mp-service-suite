@@ -4,6 +4,55 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-28
+
+Wydanie po przeglądzie na **żywym systemie** — każda pozycja niżej została złapana przez przejście
+ścieżki klienta i pracownika w przeglądarce, nie przez czytanie kodu.
+
+### Fixed (gwarancja — czwarty status naprawdę działa)
+- **Dokument zakupu i data zakupu są wreszcie porównywane z rejestrem.** Zgłoszenie z cudzym
+  numerem seryjnym i zmyśloną fakturą dostawało status **„gwarancja aktywna"**, bo moduł zgłoszeń
+  pytał rejestr o gwarancję, ale nie przekazywał mu tego, co wpisał klient. Czwarty status
+  z zamówienia („wymagana weryfikacja") był przez to **nieosiągalny**. Teraz niezgodność dokumentu
+  albo daty oznacza sprawę do ręcznego sprawdzenia.
+- **Karta sprawy pokazywała inny status, niż sprawa ma zapisany.** Sprawa z niezgodną fakturą
+  miała w bazie „wymagana weryfikacja", a pracownik widział zielone „aktywna" — karta czytała
+  bieżący stan produktu w rejestrze zamiast decyzji z chwili zgłoszenia. Pod plakietką jest teraz
+  **powód**: „Niezgodne z rejestrem: dokument zakupu. Sprawdź dokument u klienta przed decyzją."
+- **Ten sam status nazywał się różnie na dwóch ekranach** („do weryfikacji" na karcie sprawy,
+  „wymagana weryfikacja" w rejestrze) — czytało się to jak dwa różne stany.
+
+### Added (formularz zgłoszenia)
+- **Załącznik zależny od kategorii produktu** (wymóg z zamówienia, wcześniej niedomknięty): dla
+  **AGD drobnego** i **elektronarzędzi** trzeba dołączyć zdjęcie tabliczki znamionowej — bez niego
+  serwis nie ustali modelu ani mocy. Audio i „inne" bez zmian. Wymóg spełnia wyłącznie plik, który
+  **przejdzie kontrolę** — zdjęcie za duże albo w złym formacie nie „zalicza" go po cichu. Regułę
+  można zmienić bez ruszania kodu (filtr `mp_intake_category_attachments`).
+
+### Fixed (praca z systemem)
+- **Kategoria wracała pusta po każdym błędzie formularza** — klient poprawiał jedno pole
+  i dostawał formularz o innym kształcie niż wysłał (znikały pola kategorii).
+- **Lista „Przydziel do" pokazywała osoby, których nie da się wybrać.** Wybranie koordynatora
+  kończyło się zawsze komunikatem „Nie udało się przydzielić sprawy." bez wyjaśnienia. Teraz lista
+  zawiera wyłącznie pracowników serwisu, a komunikat mówi powód.
+- **Komunikat o zbyt dużym pliku radził „spróbuj ponownie"**, choć druga próba też się nie udawała.
+  Teraz podaje limit **obowiązujący na tym serwerze** (mniejszy z: limit wtyczki i limit hostingu).
+
+### Changed (dokumentacja dla klienta)
+- **Polityka kopii i cofania zmian w bazie trafia do paczki** (`MIGRATION_POLICY.md`), a kopia bazy
+  przed instalacją jest **krokiem pierwszym** w `PRZECZYTAJ-MNIE` i w instrukcji wdrożenia.
+- **Ryzyko za pośrednikiem (Cloudflare/nginx) opisane po polsku** w instrukcji — wcześniej wisiało
+  tylko po angielsku w pliku technicznym wewnątrz wtyczki. Wszystkie zgłoszenia wyglądają wtedy jak
+  z jednego adresu IP, więc ochrona przed spamem potrafi zablokować prawdziwych klientów.
+- **Instrukcja administratora mówi prawdę o odinstalowaniu.** Obiecywała skasowanie tabel i kont
+  klientów; kod świadomie ich **nie kasuje** (żeby przypadkowe kliknięcie nie skasowało firmie
+  danych). Doszło ostrzeżenie: narzędzie RODO znika razem z wtyczką, więc dane trzeba usunąć PRZED.
+- **Czwarty status gwarancji opisany** w instrukcji wdrożenia oraz w instrukcjach pracownika
+  i koordynatora — co znaczy i co z taką sprawą zrobić. Wyjątek gwarancyjny przypisany właściwej
+  roli: zatwierdza go **administrator systemu**, nie koordynator.
+- **Wszystkie 21 zrzutów ekranu odświeżone.** Dwa różne podpisy pokazywały wcześniej ten sam
+  obrazek, a zdjęcie „skrzynki mailowej" przedstawiało narzędzie testowe zamiast wiadomości.
+
 ## [1.0.0] - 2026-07-27
 
 ### Security (panel klienta — nieodwracalna akcja z potwierdzeniem)

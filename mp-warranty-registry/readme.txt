@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,10 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.0.1 =
+* Nazwa czwartego statusu gwarancji ujednolicona z modułem zgłoszeń („wymagana weryfikacja") — ten sam stan nie nazywa się już różnie na dwóch ekranach.
+* Wydanie zbiorcze pakietu: numer wersji podniesiony razem z pozostałymi modułami.
 
 = 1.0.0 =
 * Pierwsze wydanie dla klienta.
