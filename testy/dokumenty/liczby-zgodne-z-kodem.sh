@@ -51,6 +51,21 @@ sprawdz() { # $1=opis  $2=wzorzec-ktory-MUSI-byc  $3..=pliki
 	fi
 }
 
+# Fraza w markdownie bywa przelamana na dwie linie i pogrubiona gwiazdkami —
+# `grep` czyta liniami, wiec szukalby czegos, czego nie ma, choc tekst JEST.
+# Tu porownujemy tekst ZLEPIONY: bez lamania linii i bez znacznikow pogrubienia.
+# ⚠️ Definicja MUSI stac przed pierwszym uzyciem: funkcja zdefiniowana nizej to
+# w bashu „command not found" na stderr — kontrola cicho NIE wykonuje sie,
+# a bramka dalej swieci na zielono (zlapane 28.07, dwie kontrole przepadly).
+sprawdz_tekst() { # $1=opis  $2=wzorzec  $3..=pliki
+	local opis="$1" wzor="$2"; shift 2
+	if cat "$@" 2>/dev/null | tr '\n' ' ' | sed 's/\*\*//g; s/  */ /g' | grep -qiE "$wzor"; then
+		ok "$opis"
+	else
+		bad "$opis — nie znalazlem [$wzor] w: $*"
+	fi
+}
+
 # liczby slownie ORAZ cyfra — dokumenty klienta pisza slownie
 sprawdz "README: liczba tabel = $TABEL" "$TABEL tabel" README.md dokumentacja-techniczna/DATABASE.md
 sprawdz "README: liczba statusow = $STATUSOW" "$STATUSOW (konfigurowalnych )?status" README.md
@@ -66,6 +81,44 @@ sprawdz "INSTRUKCJA: okno potwierdzenia = $OKNO h" "$OKNO godzin" dla-klienta/IN
 sprawdz "KOORDYNATOR: retencja = $RETENCJA dni" "$RETENCJA dni" dla-klienta/instrukcje/KOORDYNATOR.md
 sprawdz "STATE_MACHINE: retencja = $RETENCJA dni" "$RETENCJA dniach|$RETENCJA dni" dokumentacja-techniczna/STATE_MACHINE.md
 sprawdz "PRZECZYTAJ-MNIE: minimum PHP = $PHP_MIN" "PHP $PHP_MIN" dla-klienta/PRZECZYTAJ-MNIE.txt
+
+# ── P1.2: wymog zalacznika wg kategorii MUSI byc opisany dla klienta ────────
+# Regula zyje w kodzie (konfigurowalna filtrem) — dokument ma za nia nadazac.
+# Straznik na wzorzec: brak samej funkcji = zepsuty wzorzec, nie „zero wymogow".
+grep -q "category_attachments_defaults" mp-service-intake/includes/FormConfig.php \
+	|| { echo "  BLAD BRAMKI: nie znalazlem category_attachments_defaults — wzorzec przestal pasowac do kodu."; exit 2; }
+KAT_WYMAG=$(sed -n "/function category_attachments_defaults/,/^	}/p" mp-service-intake/includes/FormConfig.php | grep -c "'required' => true")
+
+if [ "$KAT_WYMAG" -gt 0 ]; then
+	sprawdz_tekst "INSTRUKCJA: opisany wymog zalacznika wg kategorii" "tabliczk" dla-klienta/INSTRUKCJA-KLIENTA.md
+	sprawdz_tekst "KLIENT.md: opisany wymog zalacznika wg kategorii" "tabliczk" dla-klienta/instrukcje/KLIENT.md
+else
+	ok "brak kategorii z wymaganym zalacznikiem — dokumenty nie musza o tym pisac"
+fi
+
+# ── czwarty status gwarancji (P2.2) opisany tam, gdzie ludzie go zobacza ────
+sprawdz_tekst "INSTRUKCJA: czwarty status gwarancji" "wymagana weryfikacja" dla-klienta/INSTRUKCJA-KLIENTA.md
+sprawdz_tekst "PRACOWNIK: czwarty status gwarancji" "wymagana weryfikacja" dla-klienta/instrukcje/PRACOWNIK.md
+sprawdz_tekst "KOORDYNATOR: czwarty status gwarancji" "wymagana weryfikacja" dla-klienta/instrukcje/KOORDYNATOR.md
+
+# Ten sam stan nie moze miec dwoch nazw na dwoch ekranach — klient czyta to
+# jak dwa rozne statusy (karta sprawy mowila „do weryfikacji", rejestr
+# „wymagana weryfikacja"; instrukcje opisuja jedna nazwe).
+for plik in mp-service-intake/includes/Admin/CaseCard.php mp-warranty-registry/includes/Admin/ProductsTable.php; do
+	grep -q "wymagana weryfikacja" "$plik" \
+		&& ok "etykieta czwartego statusu spojna w: $(basename "$plik")" \
+		|| bad "inna nazwa czwartego statusu w: $plik (ma byc: wymagana weryfikacja)"
+done
+
+# ── kopia przed wdrozeniem (kartka: „Kopie i odtworzenie") ──────────────────
+sprawdz_tekst "INSTRUKCJA: kopia bazy PRZED instalacja" "kopi[^ ]* bazy" dla-klienta/INSTRUKCJA-KLIENTA.md
+sprawdz "PRZECZYTAJ-MNIE wskazuje polityke kopii" "MIGRATION_POLICY" dla-klienta/PRZECZYTAJ-MNIE.txt
+grep -q "MIGRATION_POLICY.md" build/pakuj-dla-klienta.sh \
+	&& ok "skrypt pakujacy kopiuje MIGRATION_POLICY.md do paczki" \
+	|| bad "dokumenty odsylaja do MIGRATION_POLICY.md, a skrypt pakujacy go nie kopiuje"
+
+# ── ryzyko wdrozeniowe za proxy opisane PO POLSKU, nie tylko w readme.txt ───
+sprawdz "INSTRUKCJA: nota o proxy/Cloudflare (filtr IP klienta)" "mp_intake_client_ip" dla-klienta/INSTRUKCJA-KLIENTA.md
 
 # ── dokumenty NIE MOGA obiecywac tego, czego w kodzie nie ma ────────────────
 brak_obietnicy() { # $1=opis  $2=wzorzec-ktorego-NIE MOZE byc  $3..=pliki
@@ -89,4 +142,15 @@ brak_obietnicy "materialy klienta bez naszych nazw roboczych" \
 
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
+
+# Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
+# w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
+# prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
+MIN_KONTROLI=24
+if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
+	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
+	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
+	exit 2
+fi
+
 [ "$FAIL" -eq 0 ]

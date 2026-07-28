@@ -15,6 +15,16 @@ której automat nie umiał przydzielić (najczęściej pusta pula — patrz §3)
 Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status i priorytet,
 pisać do klienta. Ponowne przydzielenie tej samej osobie nic nie wysyła (bez spamu).
 
+Wynik sprawdzenia gwarancji ma cztery statusy: aktywna / wygasła / brak danych / **wymagana
+weryfikacja**. Ten ostatni znaczy, że numer dokumentu zakupu albo data zakupu od klienta nie
+zgadzają się z rejestrem — sprawa NIE jest automatycznie odrzucana. Poproś pracownika o
+sprawdzenie dokumentu zakupu z klientem; jeśli sprawa jest zasadna mimo niezgodności w
+rejestrze, poproś **administratora systemu** o nadanie wyjątku gwarancyjnego. Wyjątki zatwierdza
+wyłącznie administrator — koordynator ich nie nadaje.
+
+Uwaga przy przydzielaniu: na liście „Przydziel do" są **tylko pracownicy serwisu**. Koordynatorzy
+i administratorzy nie prowadzą spraw, więc nie da się na nich przydzielić sprawy.
+
 ## 2. Zgłoszenia niepotwierdzone
 
 **MP: Niepotwierdzone** — zgłoszenia, których klient jeszcze nie potwierdził mailem. Nie obsługuje

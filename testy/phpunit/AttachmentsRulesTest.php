@@ -76,4 +76,42 @@ final class AttachmentsRulesTest extends TestCase {
 	public function test_upload_error_reported(): void {
 		self::assertNotNull( Attachments::validate_upload( array( 'error' => UPLOAD_ERR_INI_SIZE ) ) );
 	}
+
+	/**
+	 * Obowiazujacy limit = MNIEJSZA z dwoch wartosci: nasze 8 MB i limit serwera.
+	 * Stub `wp_max_upload_size` udaje ciasny hosting (2 MB) — komunikat ma podawac
+	 * liczbe SERWERA, bo to ona odrzuca plik.
+	 */
+	public function test_limit_bierze_ciasniejsza_wartosc(): void {
+		self::assertSame( 2097152, Attachments::effective_max_bytes() );
+		self::assertLessThan( Attachments::MAX_BYTES, Attachments::effective_max_bytes() );
+	}
+
+	/**
+	 * Za duzy plik: komunikat podaje LIMIT, a nie rade „sprobuj ponownie"
+	 * (druga proba tez by sie nie udala).
+	 */
+	public function test_za_duzy_plik_podaje_limit(): void {
+		$msg = Attachments::validate_upload( array( 'error' => UPLOAD_ERR_INI_SIZE ) );
+
+		self::assertNotNull( $msg );
+		self::assertStringContainsString( '2 MB', $msg );
+		self::assertStringNotContainsString( 'spróbuj ponownie', $msg );
+	}
+
+	/**
+	 * Plik mieszczacy sie w naszej stalej, ale przekraczajacy limit serwera,
+	 * dostaje komunikat o limicie — nie przechodzi po cichu.
+	 */
+	public function test_plik_ponad_limit_serwera_odrzucony(): void {
+		$msg = Attachments::validate_upload(
+			array(
+				'error'    => UPLOAD_ERR_OK,
+				'tmp_name' => '/etc/hostname',
+				'size'     => 5242880,
+			)
+		);
+
+		self::assertNotNull( $msg );
+	}
 }

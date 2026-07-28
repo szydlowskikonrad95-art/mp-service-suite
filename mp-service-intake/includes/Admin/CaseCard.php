@@ -212,15 +212,38 @@ final class CaseCard {
 				)
 			);
 
+			// Lista ma pokazywac TYLKO tych, ktorym przydzial faktycznie przejdzie.
+			// `CaseRepo::assign` wymaga uprawnienia `mp_agent` (sprawy prowadza
+			// pracownicy serwisu), a koordynator i administrator go nie maja —
+			// ich wybor konczyl sie zawsze komunikatem „Nie udalo sie przydzielic
+			// sprawy." bez podania powodu. Filtrujemy TYM SAMYM warunkiem co regula,
+			// nie skrocona lista rol: wlasna rola z tym uprawnieniem tez sie zalapie.
+			$staff = array_values(
+				array_filter(
+					$staff,
+					static function ( $user ): bool {
+						return user_can( (int) $user->ID, 'mp_agent' );
+					}
+				)
+			);
+
 			echo '<form method="post" action="' . esc_url( $action ) . '" style="margin:0;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">';
 			echo '<input type="hidden" name="action" value="mp_intake_case_assign" />';
 			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
 			wp_nonce_field( 'mp_intake_case_assign' );
-			echo '<label>' . esc_html__( 'Przydziel do:', 'mp-service-intake' ) . ' <select name="assignee"><option value="">—</option>';
+			echo '<label>' . esc_html__( 'Przydziel do (pracownicy serwisu):', 'mp-service-intake' ) . ' <select name="assignee"><option value="">—</option>';
 			foreach ( $staff as $u ) {
 				printf( '<option value="%d"%s>%s</option>', (int) $u->ID, selected( $assigned, (int) $u->ID, false ), esc_html( (string) $u->display_name ) );
 			}
 			echo '</select></label>';
+
+			// Pusta pula = pusta lista. Bez tego zdania koordynator widzi sam
+			// myslnik i nie wie, czy to awaria, czy brak pracownikow.
+			if ( array() === $staff ) {
+				echo '<span class="description">'
+					. esc_html__( 'Brak pracowników serwisu — załóż konto z rolą „Pracownik serwisu", żeby móc przydzielać sprawy.', 'mp-service-intake' )
+					. '</span>';
+			}
 			submit_button( __( 'Przydziel', 'mp-service-intake' ), 'secondary', 'mp_assign_submit', false );
 			echo '</form>';
 		}
@@ -273,10 +296,13 @@ final class CaseCard {
 			'aktywna'     => array( __( 'aktywna', 'mp-service-intake' ), '#1a7f37' ),
 			'wygasla'     => array( __( 'wygasła', 'mp-service-intake' ), '#b32d2e' ),
 			'brak_danych' => array( __( 'brak danych', 'mp-service-intake' ), '#646970' ),
-			'weryfikacja' => array( __( 'do weryfikacji', 'mp-service-intake' ), '#996800' ),
+			// Nazwa MUSI byc ta sama, co w rejestrze produktow (ProductsTable) i w
+			// kartce: ten sam stan pod dwiema nazwami („do weryfikacji" tutaj,
+			// „wymagana weryfikacja" tam) czytalo sie jak dwa rozne statusy.
+			'weryfikacja' => array( __( 'wymagana weryfikacja', 'mp-service-intake' ), '#996800' ),
 		);
-		$st         = (string) ( $p['warranty_status'] ?? 'brak_danych' );
-		$sm         = $status_map[ $st ] ?? $status_map['brak_danych'];
+		$st = (string) ( $p['warranty_status'] ?? 'brak_danych' );
+		$sm = $status_map[ $st ] ?? $status_map['brak_danych'];
 
 		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze __() z multibyte; wyrownanie zalezne od wersji WPCS -> stale spacje.
 		$rows = array(

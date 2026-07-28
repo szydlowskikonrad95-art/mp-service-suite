@@ -14,6 +14,14 @@ tylko o opis).
 Wypełnij pola, w razie potrzeby **dodaj zdjęcie lub PDF** (np. dowód zakupu, zdjęcie usterki)
 i zaznacz zgodę na przetwarzanie danych. Kliknij **Wyślij**.
 
+Dla kategorii **AGD drobne** i **Elektronarzędzia** załącznik jest **wymagany** — dodaj zdjęcie
+tabliczki znamionowej (albo numeru partii), inaczej serwis nie ustali modelu ani mocy urządzenia.
+Dla **Elektroniki audio** i **Inne** załącznik jest opcjonalny. Dozwolone formaty: JPG, PNG,
+WebP, PDF, maksymalnie 5 plików. Jeśli zdjęcie jest za duże, system napisze wprost, **do ilu
+megabajtów** ten serwer przyjmuje pliki — wyślij mniejsze (np. pomniejsz zdjęcie w telefonie).
+Przy kategorii z wymaganym załącznikiem zgłoszenie poczeka na poprawny plik; przy pozostałych
+przejdzie, a Ty zobaczysz informację, że plik nie został dołączony.
+
 ![Wypełniony formularz z załącznikiem](zdjecia/03-formularz-wypelniony-zalacznik.jpg)
 
 Przy innym rodzaju sprawy formularz wygląda inaczej — to celowe:

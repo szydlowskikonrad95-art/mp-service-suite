@@ -172,9 +172,17 @@ final class CaseActions {
 
 		$result = CaseRepo::assign( $case_id, $assignee, get_current_user_id() );
 
-		$notice = ! empty( $result['success'] )
-			? __( 'Sprawa przydzielona (pracownik powiadomiony).', 'mp-service-intake' )
-			: __( 'Nie udało się przydzielić sprawy.', 'mp-service-intake' );
+		// Komunikat podaje POWOD, gdy go znamy. Samo „Nie udalo sie przydzielic
+		// sprawy." zostawialo koordynatora z pytaniem, czy to awaria, czy jego blad.
+		if ( ! empty( $result['success'] ) ) {
+			$notice = __( 'Sprawa przydzielona (pracownik powiadomiony).', 'mp-service-intake' );
+		} elseif ( 'INVALID_ASSIGNEE' === ( $result['error_code'] ?? '' ) ) {
+			$notice = __( 'Sprawy prowadzą pracownicy serwisu — koordynatora ani administratora nie da się na nią przydzielić.', 'mp-service-intake' );
+		} elseif ( 'CASE_NOT_FOUND' === ( $result['error_code'] ?? '' ) ) {
+			$notice = __( 'Nie znaleziono sprawy albo klient nie potwierdził jeszcze zgłoszenia.', 'mp-service-intake' );
+		} else {
+			$notice = __( 'Nie udało się przydzielić sprawy.', 'mp-service-intake' );
+		}
 
 		self::back( $case_id, $notice );
 	}
