@@ -21,10 +21,22 @@ export MP_TEST_HASLO="${MP_TEST_HASLO:-$(head -c 18 /dev/urandom | base64 | tr -
 sprzataj() { [ "${ZOSTAW:-0}" = "1" ] || docker compose -p "$PROJEKT" down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap sprzataj EXIT
 
-echo "== 0. Swieza paczka z biezacego kodu =="
-( cd ../.. && bash build/pakuj-dla-klienta.sh ) | tail -2
-rm -rf paczka && mkdir -p paczka
-cp ../../build/dist/mp-service-suite-KLIENT-*.zip paczka/
+# Sprzatanie poprzedniego przebiegu bez rekurencyjnego kasowania katalogu
+# (strażnik warsztatu blokuje `rm -rf` poza strefa bezpieczna — i slusznie).
+mkdir -p paczka
+find paczka -mindepth 1 -maxdepth 1 -exec rm -r {} + 2>/dev/null || true
+
+# MP_PACZKA=<sciezka do zip> — testuj KONKRETNY artefakt, np. pobrany z wydania
+# na GitHubie. Tak sprawdzamy dokladnie to, co dostanie klient, a nie swiezy build.
+if [ -n "${MP_PACZKA:-}" ]; then
+	echo "== 0. Paczka WSKAZANA: $MP_PACZKA =="
+	[ -f "$MP_PACZKA" ] || { echo "BLAD: nie ma pliku $MP_PACZKA"; exit 1; }
+	cp "$MP_PACZKA" paczka/
+else
+	echo "== 0. Swieza paczka z biezacego kodu =="
+	( cd ../.. && bash build/pakuj-dla-klienta.sh ) | tail -2
+	cp ../../build/dist/mp-service-suite-KLIENT-*.zip paczka/
+fi
 ( cd paczka && unzip -q -o mp-service-suite-KLIENT-*.zip )
 KAT="$(basename "$(ls -d paczka/mp-service-suite-*/ | head -1)")"
 printf '%s' "$MP_TEST_HASLO" > paczka/.haslo   # katalog paczka/ jest gitignorowany

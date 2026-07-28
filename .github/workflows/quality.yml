@@ -3,6 +3,10 @@ name: quality
 on:
   push:
     branches: [main]
+    # Tagi wydan MUSZA miec wlasny zielony przebieg — checklista wydania tego wymaga,
+    # a workflow dotad startowal tylko na main, wiec punkt "CI zielone NA TAGU" byl
+    # niesprawdzalny (v1.0.0: tag wskazuje commit zwalidowany na main, ale bez wlasnego biegu).
+    tags: ['v*']
   pull_request:
     branches: [main]
 
