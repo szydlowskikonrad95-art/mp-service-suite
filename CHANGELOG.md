@@ -37,6 +37,10 @@ Wydanie po przeglądzie na **żywym systemie** — każda pozycja niżej został
   zawiera wyłącznie pracowników serwisu, a komunikat mówi powód.
 - **Komunikat o zbyt dużym pliku radził „spróbuj ponownie"**, choć druga próba też się nie udawała.
   Teraz podaje limit **obowiązujący na tym serwerze** (mniejszy z: limit wtyczki i limit hostingu).
+- **Uszkodzone zdjęcie zostawiało ostrzeżenia PHP w dzienniku strony.** Plik ucięty przy wysyłce
+  przechodził kontrolę typu, ale nie dawał się odczytać przy usuwaniu danych EXIF — wtyczka radziła
+  sobie z tym poprawnie, tylko po drodze wpisywała do `debug.log` trzy ostrzeżenia ze swoją nazwą.
+  Teraz dziennik zostaje czysty, zgodnie z obietnicą z `PRZECZYTAJ-MNIE`.
 
 ### Changed (dokumentacja dla klienta)
 - **Polityka kopii i cofania zmian w bazie trafia do paczki** (`MIGRATION_POLICY.md`), a kopia bazy

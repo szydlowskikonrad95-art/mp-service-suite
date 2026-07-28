@@ -46,12 +46,10 @@ const SZEROKOSC = 1440;
  */
 function plikPrzykladowy() {
   const cel = path.join(require('os').tmpdir(), 'tabliczka-znamionowa.jpg');
-  const jpeg = Buffer.concat([
-    Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00]),
-    Buffer.alloc(2048, 0x20),
-    Buffer.from([0xff, 0xd9]),
-  ]);
-  fs.writeFileSync(cel, jpeg);
+  // PRAWDZIWY (choć malutki) JPEG. Atrapa z samym nagłówkiem przechodziła
+  // kontrolę typu, ale GD nie potrafił jej odczytać przy usuwaniu danych EXIF —
+  // w logu zostawały ostrzeżenia, a w sprawie załącznik, którego nie da się otworzyć.
+  fs.writeFileSync(cel, Buffer.from('/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgYGBwYHCEhISEhISckJygoKCcnJycoKCgrKyszMzMrKysoKCsrMDAzMzc5NzQ0MzQ5OTw8PEhIRUVUVFdnZ3z/xABLAAEBAAAAAAAAAAAAAAAAAAAABAEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIADAAMAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AKwAAAAAAAAAAAAAAAAAf//Z', 'base64'));
   return cel;
 }
 

@@ -70,6 +70,7 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Wybrana kategoria wraca do formularza po błędzie — wcześniej znikała razem z polami kategorii.
 * Lista „Przydziel do" zawiera wyłącznie pracowników serwisu; nieudany przydział podaje powód.
 * Komunikat o zbyt dużym pliku podaje limit obowiązujący na tym serwerze zamiast rady „spróbuj ponownie".
+* Uszkodzone zdjęcie nie zostawia już ostrzeżeń PHP w dzienniku strony (plik ucięty przy wysyłce przechodził kontrolę typu, ale nie dawał się odczytać przy usuwaniu danych EXIF).
 
 = 1.0.0 =
 * Pierwsze wydanie dla klienta.

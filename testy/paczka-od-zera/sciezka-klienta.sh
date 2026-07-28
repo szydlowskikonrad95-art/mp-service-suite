@@ -30,9 +30,10 @@ echo "== 2. Klient wysyla reklamacje =="
 # zalezne od wybranej kategorii produktu"), wiec zgloszenie idzie jak
 # z przegladarki: multipart ze zdjeciem tabliczki znamionowej.
 ZDJECIE="$(mktemp /tmp/tabliczka-XXXXXX.jpg)"
-printf '\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00' > "$ZDJECIE"
-head -c 3000 /dev/zero | tr '\0' 'x' >> "$ZDJECIE"
-printf '\xff\xd9' >> "$ZDJECIE"
+# PRAWDZIWY (choc maly) JPEG, nie atrapa z samym naglowkiem: wtyczka usuwa
+# z wgranych zdjec dane EXIF, wiec plik musi dac sie odczytac. Atrapa przechodzila
+# kontrole typu, ale GD jej nie otwieral i test konczyl sie ostrzezeniami w logu.
+printf '%s' '/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgYGBwYHCEhISEhISckJygoKCcnJycoKCgrKyszMzMrKysoKCsrMDAzMzc5NzQ0MzQ5OTw8PEhIRUVUVFdnZ3z/xABLAAEBAAAAAAAAAAAAAAAAAAAABAEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIADAAMAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AKwAAAAAAAAAAAAAAAAAf//Z' | base64 -d > "$ZDJECIE"
 
 wyslij_zgloszenie() { # $1=plik zalacznika (pusty = bez zalacznika)
   local plik="${1:-}" args
