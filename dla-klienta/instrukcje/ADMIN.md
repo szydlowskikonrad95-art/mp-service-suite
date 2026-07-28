@@ -26,6 +26,8 @@ albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
 
 ### Poprawianie danych produktu
 
+![Poprawianie danych produktu](zdjecia/admin-04b-popraw-produkt.png)
+
 Jeśli w pliku importu była pomyłka (najczęściej data gwarancji), kliknij przy produkcie
 **„popraw dane"**. Możesz zmienić model, partię, kategorię, dokument zakupu, datę zakupu
 i datę końca gwarancji. Daty przyjmujemy w formacie `RRRR-MM-DD` albo `DD.MM.RRRR`.

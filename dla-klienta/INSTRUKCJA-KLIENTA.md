@@ -66,6 +66,14 @@ Dla **każdego** z 3 plików ZIP:
 - **Import produktów z CSV**: Rejestr MP → Import. Obsługiwane duże pliki (dziesiątki tysięcy wierszy), wznawianie po przerwaniu.
 - 📎 **Gotowy przykład jest w paczce** — plik `przyklady/przyklad-import-produktow.csv` w folderze wtyczki, a na ekranie importu jest
   link **„Pobierz przykładowy plik CSV"**. Otwórz go w Excelu, podmień dane na swoje i wgraj.
+- **Poprawianie danych produktu**: przy produkcie w rejestrze jest odnośnik **„popraw dane"** (tylko
+  administrator systemu). Służy do naprawiania pomyłek z importu — najczęściej błędnej daty gwarancji.
+  Każda poprawka zapisuje się w historii produktu: kto, kiedy, wartość przed i po.
+  ⚠️ **Numeru seryjnego nie da się zmienić** — wiążą się z nim sprawy klientów. Zły numer = zarchiwizuj
+  wpis i zaimportuj poprawny.
+  ⚠️ **Sprawy przyjęte wcześniej zachowują status gwarancji z chwili zgłoszenia.** Poprawka działa na
+  nowe zgłoszenia; na karcie starszej sprawy pojawi się informacja, że dane poprawiono po zgłoszeniu —
+  jeśli poprawka ma objąć także tę sprawę, zmień jej status ręcznie.
 - **Wyjątki gwarancyjne**: ręczne przyznanie/cofnięcie gwarancji dla konkretnego produktu lub sprawy (tylko administrator systemu).
 - **Status gwarancji ma cztery możliwe wartości:**
   - **gwarancja aktywna** — data końca gwarancji jeszcze nie minęła,

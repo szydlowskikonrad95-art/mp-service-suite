@@ -102,6 +102,20 @@ wp eval "MP\Registry\Repo::update( $PID, array('warranty_until'=>'2030-06-01'), 
 ST2=$(wp eval "\$d = apply_filters('mp_product_details', null, $PID); echo \$d['warranty_status'];" 2>/dev/null | tr -d '[:space:]')
 [ "$ST1" != "$ST2" ] && ok "status gwarancji zmienil sie po poprawce daty ($ST1 -> $ST2)" || bad "status nie zareagowal na poprawke ($ST1 -> $ST2)"
 
+echo "== 8. Karta sprawy ostrzega, gdy dane poprawiono PO zgloszeniu =="
+# Plakietka na karcie trzyma decyzje z chwili zgloszenia (swiadomie, naprawa 1.0.1),
+# ale wiersz „Gwarancja do" pokazuje wartosc BIEZACA. Bez ostrzezenia pracownik widzi
+# date 2030 obok czerwonego „wygasla" i nie wie, czemu wierzyc.
+SNAP='{"status":"wygasla","warranty_until":"2020-06-01","schema_version":1}'
+POWOD=$(wp eval "\$w = MP\Intake\Admin\CaseCard::warranty_view( json_decode('$SNAP', true), array('warranty_until'=>'2030-06-01') ); echo \$w['powod'];" 2>/dev/null)
+echo "$POWOD" | grep -qi "poprawiono w rejestrze" && ok "rozjazd snapshot vs rejestr => ostrzezenie na karcie" || bad "brak ostrzezenia o poprawce (powod: $POWOD)"
+
+STATUS_SNAP=$(wp eval "\$w = MP\Intake\Admin\CaseCard::warranty_view( json_decode('$SNAP', true), array('warranty_until'=>'2030-06-01') ); echo \$w['status'];" 2>/dev/null | tr -d '[:space:]')
+[ "$STATUS_SNAP" = "wygasla" ] && ok "plakietka nadal pokazuje decyzje z chwili zgloszenia" || bad "plakietka zmieniona na: $STATUS_SNAP"
+
+POWOD2=$(wp eval "\$w = MP\Intake\Admin\CaseCard::warranty_view( json_decode('{\"status\":\"aktywna\",\"warranty_until\":\"2030-06-01\",\"schema_version\":1}', true), array('warranty_until'=>'2030-06-01') ); echo \$w['powod'];" 2>/dev/null)
+echo "$POWOD2" | grep -qi "poprawiono w rejestrze" && bad "ostrzezenie pokazuje sie BEZ zmiany danych" || ok "brak zmiany = brak ostrzezenia (bez falszywych alarmow)"
+
 # Sprzatanie po sobie.
 wp db query "DELETE FROM wp_mp_product_events WHERE product_registry_id=$PID;" >/dev/null 2>&1
 wp db query "DELETE FROM wp_mp_product_registry WHERE id=$PID;" >/dev/null 2>&1
