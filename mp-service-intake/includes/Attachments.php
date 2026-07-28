@@ -324,7 +324,14 @@ final class Attachments {
 			return;
 		}
 
-		$img = imagecreatefromstring( $data );
+		// Uszkodzone albo uciete zdjecie (przerwany transfer, dziwny aparat)
+		// przechodzi kontrole typu po naglowku, ale GD go nie odczyta — i zanim
+		// zwroci false, wypisuje wlasne ostrzezenia do logu. Blad obslugujemy
+		// linijke nizej, wiec sam diagnostyk jest zbedny: bez wyciszenia klient
+		// dostaje w debug.log trzy PHP Warning z nazwa naszego pliku, a paczka
+		// obiecuje „zero PHP notice z naszego kodu".
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- wynik sprawdzany jawnie ponizej; wyciszamy tylko halas GD.
+		$img = @imagecreatefromstring( $data );
 
 		if ( false === $img ) {
 			return;

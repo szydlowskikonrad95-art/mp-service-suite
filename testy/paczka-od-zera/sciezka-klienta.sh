@@ -26,18 +26,39 @@ NONCE=$(echo "$HTML" | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 
 [ -n "$NONCE" ] && ok "nonce formularza obecny" || bad "brak nonce"
 
 echo "== 2. Klient wysyla reklamacje =="
-curl -s -b "$JAR" -c "$JAR" -o /dev/null -w "" \
-  --data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
-  --data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" --data-urlencode "mp_hp=" \
-  --data-urlencode "kind=reklamacja" --data-urlencode "email=$EMAIL" \
-  --data-urlencode "category=agd" --data-urlencode "cat_agd_model=Robot MX-200" \
-  --data-urlencode "serial=SN-TEST-0001" --data-urlencode "purchase_document=FV/2026/07/11" \
-  --data-urlencode "purchase_date=2026-03-15" \
-  --data-urlencode "issue_description=Urzadzenie nie wlacza sie po tygodniu uzytkowania." \
-  --data-urlencode "mp_consent=1" \
-  "$BASE/wp-admin/admin-post.php"
+# Kategoria AGD wymaga zalacznika (kartka P1.2: „wymagane pola i zalaczniki
+# zalezne od wybranej kategorii produktu"), wiec zgloszenie idzie jak
+# z przegladarki: multipart ze zdjeciem tabliczki znamionowej.
+ZDJECIE="$(mktemp /tmp/tabliczka-XXXXXX.jpg)"
+# PRAWDZIWY (choc maly) JPEG, nie atrapa z samym naglowkiem: wtyczka usuwa
+# z wgranych zdjec dane EXIF, wiec plik musi dac sie odczytac. Atrapa przechodzila
+# kontrole typu, ale GD jej nie otwieral i test konczyl sie ostrzezeniami w logu.
+printf '%s' '/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgYGBwYHCEhISEhISckJygoKCcnJycoKCgrKyszMzMrKysoKCsrMDAzMzc5NzQ0MzQ5OTw8PEhIRUVUVFdnZ3z/xABLAAEBAAAAAAAAAAAAAAAAAAAABAEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIADAAMAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AKwAAAAAAAAAAAAAAAAAf//Z' | base64 -d > "$ZDJECIE"
+
+wyslij_zgloszenie() { # $1=plik zalacznika (pusty = bez zalacznika)
+  local plik="${1:-}" args
+  args=(-F "action=mp_intake_submit" -F "_mp_nonce=$NONCE"
+        -F "mp_ts=$(( $(date +%s) - 60 ))" -F "mp_hp="
+        -F "kind=reklamacja" -F "email=$EMAIL"
+        -F "category=agd" -F "cat_agd_model=Robot MX-200"
+        -F "serial=SN-TEST-0001" -F "purchase_document=FV/2026/07/11"
+        -F "purchase_date=2026-03-15"
+        -F "issue_description=Urzadzenie nie wlacza sie po tygodniu uzytkowania."
+        -F "mp_consent=1")
+  [ -n "$plik" ] && args+=(-F "mp_files[]=@$plik")
+  curl -s -b "$JAR" -c "$JAR" -e "$PAGE_URL" -o /dev/null "${args[@]}" "$BASE/wp-admin/admin-post.php"
+}
+
+# Kontrola reguly: TA SAMA tresc bez zalacznika NIE moze zalozyc sprawy.
+wyslij_zgloszenie ""
+CNT0=$(ev 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_service_cases");')
+[ "${CNT0:-0}" -eq 0 ] && ok "AGD bez zalacznika odrzucone (wymog z kartki dziala)" \
+  || bad "AGD bez zalacznika zalozylo sprawe — wymog zalacznika NIE dziala"
+
+wyslij_zgloszenie "$ZDJECIE"
+rm -f "$ZDJECIE"
 CNT=$(ev 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_service_cases");')
-[ "${CNT:-0}" -ge 1 ] && ok "zgloszenie zapisane w bazie (spraw: $CNT)" || bad "zgloszenie NIE zapisane"
+[ "${CNT:-0}" -ge 1 ] && ok "zgloszenie z zalacznikiem zapisane w bazie (spraw: $CNT)" || bad "zgloszenie NIE zapisane"
 
 echo "== 3. Mail z linkiem potwierdzajacym (skrzynka klienta) =="
 sleep 2

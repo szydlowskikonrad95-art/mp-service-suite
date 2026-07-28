@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,15 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.0.1 =
+* Dokument zakupu i data zakupu są porównywane z rejestrem — zgłoszenie z cudzym numerem seryjnym i zmyśloną fakturą nie dostaje już statusu „gwarancja aktywna".
+* Karta sprawy pokazuje status TEJ sprawy (decyzję z chwili zgłoszenia) wraz z powodem niezgodności, a nie bieżący stan produktu w rejestrze.
+* Załącznik zależny od kategorii: AGD drobne i elektronarzędzia wymagają zdjęcia tabliczki znamionowej. Wymóg spełnia tylko plik, który przejdzie kontrolę.
+* Wybrana kategoria wraca do formularza po błędzie — wcześniej znikała razem z polami kategorii.
+* Lista „Przydziel do" zawiera wyłącznie pracowników serwisu; nieudany przydział podaje powód.
+* Komunikat o zbyt dużym pliku podaje limit obowiązujący na tym serwerze zamiast rady „spróbuj ponownie".
+* Uszkodzone zdjęcie nie zostawia już ostrzeżeń PHP w dzienniku strony (plik ucięty przy wysyłce przechodził kontrolę typu, ale nie dawał się odczytać przy usuwaniu danych EXIF).
 
 = 1.0.0 =
 * Pierwsze wydanie dla klienta.
