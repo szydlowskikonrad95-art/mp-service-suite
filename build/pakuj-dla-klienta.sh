@@ -42,7 +42,7 @@ bash build/build.sh
 
 PACZKA="$DIST/paczka/mp-service-suite-$WERSJA"
 rm -rf "$DIST/paczka"
-mkdir -p "$PACZKA/instrukcje" "$PACZKA/diagramy"
+mkdir -p "$PACZKA/instrukcje" "$PACZKA/diagramy" "$PACZKA/dla-informatyka" "$PACZKA/diagramy/zrodla"
 
 # --- 2) wtyczki + dokumenty zrodlowe --------------------------------------------
 for p in "${PLUGINS[@]}"; do cp "$DIST/$p.zip" "$PACZKA/"; done
@@ -52,7 +52,13 @@ cp "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md" "$PACZK
 # powstal, ale do paczki nie trafial: klient mial obowiazek zrobic kopie i nie
 # mial gdzie przeczytac jak.
 cp dokumentacja-techniczna/MIGRATION_POLICY.md "$PACZKA/"
+# Czesc DLA PROGRAMISTY klienta — architektura, kontrakt miedzy wtyczkami, model
+# zdarzen, maszyna statusow, wlasnosc danych, bezpieczenstwo. Wczesniej te dokumenty
+# zylly TYLKO w repozytorium: kto dostal sam ZIP, nie dostawal nic technicznego.
+cp dokumentacja-techniczna/*.md "$PACZKA/dla-informatyka/"
 cp "$ZRODLO_DOK"/diagramy/*.png "$PACZKA/diagramy/"
+# Zrodla diagramow (HTML+CSS) — zeby dalo sie je poprawic, a nie tylko ogladac obrazek.
+cp "$ZRODLO_DOK"/diagramy-zrodla/* "$PACZKA/diagramy/zrodla/"
 cp "$ZRODLO_DOK"/instrukcje/*.md "$PACZKA/instrukcje/"
 cp -r "$ZRODLO_DOK/instrukcje/zdjecia" "$PACZKA/instrukcje/"
 sed "s/{{WERSJA}}/$WERSJA/g" "$ZRODLO_DOK/PRZECZYTAJ-MNIE.txt" > "$PACZKA/PRZECZYTAJ-MNIE.txt"
@@ -89,6 +95,24 @@ for r in "${ROLE[@]}"; do
   [ -s "$PACZKA/instrukcje/$r.pdf" ] || zglos "brak: instrukcje/$r.pdf"
 done
 [ "$(ls -1 "$PACZKA"/diagramy/*.png 2>/dev/null | wc -l)" -ge 4 ] || zglos "mniej niz 4 diagramy"
+
+# 5a-bis. Czesc dla programisty klienta — musi byc KOMPLETNA w paczce.
+# ⚠️ Lista wymaganych nazw jest WPISANA TUTAJ, a nie czytana z katalogu zrodlowego.
+# Petla po `dokumentacja-techniczna/*.md` sprawdzalaby tylko to, co akurat istnieje:
+# skasowanie dokumentu w repo przechodziloby na zielono (zlapane kalibracja 28.07).
+DOK_TECH=(API-KONTRAKT.md DATABASE.md EVENT_MODEL.md MIGRATION_POLICY.md OWNERSHIP.md SECURITY.md STATE_MACHINE.md)
+for d in "${DOK_TECH[@]}"; do
+  [ -s "$PACZKA/dla-informatyka/$d" ] || zglos "brak w paczce: dla-informatyka/$d"
+done
+# Dokument DOLOZONY do repo, a nieujety na liscie wyzej, tez ma zapalic lampke —
+# inaczej nowa dokumentacja po cichu nie trafialaby do klienta.
+LICZBA_REPO="$(ls -1 dokumentacja-techniczna/*.md 2>/dev/null | wc -l)"
+[ "$LICZBA_REPO" -eq "${#DOK_TECH[@]}" ] || zglos "w repo jest $LICZBA_REPO dokumentow technicznych, a lista w skrypcie ma ${#DOK_TECH[@]} — zaktualizuj DOK_TECH"
+# Zrodla diagramow — tyle zrodel HTML, ile obrazkow PNG (inaczej ktoregos nie da sie poprawic).
+ZR="$(ls -1 "$PACZKA"/diagramy/zrodla/*.html 2>/dev/null | wc -l)"
+PN="$(ls -1 "$PACZKA"/diagramy/*.png 2>/dev/null | wc -l)"
+[ "$ZR" -eq "$PN" ] || zglos "zrodel diagramow ($ZR) nie tyle co obrazkow ($PN)"
+[ -s "$PACZKA/diagramy/zrodla/style.css" ] || zglos "brak stylu zrodel diagramow (style.css)"
 
 # 5b. kazde zdjecie z instrukcji faktycznie jest w paczce (martwy obrazek = wstyd u klienta)
 while read -r img; do

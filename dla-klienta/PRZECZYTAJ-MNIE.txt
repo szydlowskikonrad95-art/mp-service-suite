@@ -27,6 +27,12 @@ CO JEST W PACZCE
                                (każda w wersji .md i .pdf)
   diagramy/                    z czego składa się system, droga zgłoszenia,
                                statusy sprawy, gdzie mieszkają Twoje dane
+                               (diagramy/zrodla/ — pliki źródłowe, jeśli chcesz
+                               poprawić diagram: otwórz .html w przeglądarce)
+  dla-informatyka/             część techniczna — dla programisty, nie dla
+                               użytkownika: układ bazy, kontrakt między modułami,
+                               model zdarzeń, maszyna statusów, własność danych,
+                               zasady bezpieczeństwa, polityka migracji
   RAPORT-A11Y-WCAG.md          wynik badania dostępności (WCAG 2.1 AA)
   MIGRATION_POLICY.md          kopia przed wdrożeniem i wycofanie zmian w bazie
 

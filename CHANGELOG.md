@@ -4,6 +4,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-28
+
+Wydanie uzupełniające paczkę — **bez zmian w kodzie wtyczek**. Domyka to, czego brakowało
+osobie technicznej po stronie klienta, i zamyka ostatnią uwagę recenzenta dotyczącą CI.
+
+### Added (paczka dla klienta)
+- `dla-informatyka/` — komplet dokumentacji technicznej w paczce: układ bazy, kontrakt
+  między wtyczkami, model zdarzeń, maszyna statusów, własność danych, zasady bezpieczeństwa,
+  polityka migracji. Wcześniej te dokumenty istniały wyłącznie w repozytorium, więc kto
+  dostawał samą paczkę, nie dostawał nic dla programisty.
+- `diagramy/zrodla/` — źródła diagramów (HTML + CSS), żeby dało się je poprawić, a nie
+  tylko obejrzeć gotowy obrazek.
+
+### Security (łańcuch dostaw CI)
+- Wszystkie akcje w `quality.yml` przypięte do **skrótu commita (SHA)** zamiast ruchomych
+  tagów `@v1`/`@v2`/`@v4`/`@v7`. Przejęcie repozytorium akcji nie podmieni nam już tego,
+  co uruchamia się z dostępem do sekretów. Wersja pozostaje w komentarzu przy każdym wpisie.
+
+### Changed (skrypt pakujący — bramka, nie komentarz)
+- Samokontrola paczki sprawdza teraz, czy **każdy** dokument techniczny z repozytorium
+  faktycznie znalazł się w paczce i czy liczba źródeł diagramów zgadza się z liczbą obrazków.
+
 ## [1.0.2] - 2026-07-28
 
 Wydanie porządkujące paczkę — **bez zmian w kodzie wtyczek**. Powstało po pełnym sprawdzeniu

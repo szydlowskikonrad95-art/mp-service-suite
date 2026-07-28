@@ -1,6 +1,6 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-07-28 · **Wersja:** 1.0.2
+**Data badania:** 2026-07-28 · **Wersja:** 1.0.3
 
 Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
 z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
