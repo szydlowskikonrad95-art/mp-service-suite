@@ -1,0 +1,32 @@
+# Automatyczne pilnowanie zaleznosci.
+#
+# Po co, skoro wtyczki klienta nie maja ZADNYCH zaleznosci produkcyjnych
+# (`require: []`, katalog `vendor/` nie wchodzi do paczki)?
+# Bo narzedzia deweloperskie chodza w CI z dostepem do repozytorium — a wiec sa
+# celem ataku na lancuch dostaw. Dokladnie tak wyszlo 28.07: WordPressCS 3.4.0
+# mial CVE-2026-45293 (wykonanie dowolnego kodu), a my dowiedzielismy sie o tym
+# recznym `composer audit`, nie automatem. Teraz automat pilnuje tego za nas.
+#
+# Akcje GitHuba trzymamy PRZYPIETE DO SHA (nie do ruchomych tagow), wiec bez tego
+# wpisu nikt by ich nigdy nie odswiezal — przypiecie chroni przed przejeciem repo
+# akcji, ale zamraza tez poprawki bledow. Dependabot podnosi SHA w PR-ze,
+# a CI sprawdza, czy nic sie nie wysypalo.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore
+      include: scope

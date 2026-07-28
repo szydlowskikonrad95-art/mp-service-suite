@@ -49,6 +49,13 @@ jobs:
       - run: composer install --prefer-dist --no-progress
       - name: Build kopii Common (PHPStan discovery symboli)
         run: bash build/build.sh
+      # Podatnosci w zaleznosciach. Narzedzia deweloperskie tez sa celem ataku na
+      # lancuch dostaw — chodza w CI z dostepem do repozytorium. Wtyczki klienta nie
+      # maja zaleznosci produkcyjnych, a `vendor/` NIE wchodzi do paczki, wiec to
+      # bramka dla NAS, nie dla klienta. Dolozone po wykryciu CVE-2026-45293
+      # w WordPressCS 3.4.0 — recznie 28.07, bo CI tego wtedy nie sprawdzalo.
+      - name: Podatnosci zaleznosci (composer audit)
+        run: composer audit --no-interaction
       - name: PHPCS (czysty WPCS + PHPCompatibilityWP)
         run: vendor/bin/phpcs
       - name: PHPStan (lvl 6 + wordpress-stubs)
