@@ -36,6 +36,11 @@ mkdir -p "$PACZKA/instrukcje" "$PACZKA/diagramy"
 # --- 2) wtyczki + dokumenty zrodlowe --------------------------------------------
 for p in "${PLUGINS[@]}"; do cp "$DIST/$p.zip" "$PACZKA/"; done
 cp "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md" "$PACZKA/"
+# Polityka kopii i cofania migracji — kartka, sekcja 4 („Backup przed wdrozeniem
+# oraz mozliwosc cofniecia migracji bazy na srodowisku testowym"). Dokument
+# powstal, ale do paczki nie trafial: klient mial obowiazek zrobic kopie i nie
+# mial gdzie przeczytac jak.
+cp dokumentacja-techniczna/MIGRATION_POLICY.md "$PACZKA/"
 cp "$ZRODLO_DOK"/diagramy/*.png "$PACZKA/diagramy/"
 cp "$ZRODLO_DOK"/instrukcje/*.md "$PACZKA/instrukcje/"
 cp -r "$ZRODLO_DOK/instrukcje/zdjecia" "$PACZKA/instrukcje/"
@@ -65,7 +70,7 @@ zglos() { echo "  ✗ $1"; bledy=$((bledy + 1)); }
 
 # 5a. komplet plikow
 for f in "${PLUGINS[@]/%/.zip}" PRZECZYTAJ-MNIE.txt INSTRUKCJA-KLIENTA.md INSTRUKCJA-KLIENTA.pdf \
-         RAPORT-A11Y-WCAG.md; do
+         RAPORT-A11Y-WCAG.md MIGRATION_POLICY.md; do
   [ -s "$PACZKA/$f" ] || zglos "brak/pusty: $f"
 done
 for r in "${ROLE[@]}"; do

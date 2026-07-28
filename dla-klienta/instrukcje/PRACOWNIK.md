@@ -19,7 +19,12 @@ Kliknij numer sprawy. Na karcie masz wszystko:
 
 ![Karta sprawy](zdjecia/admin-02-karta-sprawy.png)
 
-- **Dane zgłoszenia** i wynik sprawdzenia gwarancji (z rejestru, z chwili zgłoszenia),
+- **Dane zgłoszenia** i wynik sprawdzenia gwarancji (z rejestru, z chwili zgłoszenia) — status:
+  aktywna / wygasła / brak danych / **wymagana weryfikacja**. Ten ostatni pojawia się, gdy numer
+  dokumentu zakupu albo data zakupu podane przez klienta nie zgadzają się z rejestrem. To NIE
+  jest automatyczne odrzucenie — sprawdź dokument zakupu bezpośrednio z klientem; jeśli
+  potwierdzi się, że towar jest na gwarancji, poproś administratora systemu o nadanie wyjątku
+  gwarancyjnego (tylko administrator ma do tego uprawnienie),
 - **Oś zdarzeń** — pełna, nieusuwalna historia (kto, co, kiedy),
 - **Checklista** dla rodzaju sprawy — odhaczaj kroki w miarę pracy; każde odhaczenie zapisuje się
   w historii,

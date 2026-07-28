@@ -69,6 +69,31 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+if ( ! function_exists( 'size_format' ) ) {
+	/**
+	 * Stub formatowania rozmiaru (uproszczony — testy sprawdzaja OBECNOSC liczby
+	 * w komunikacie, nie sposob jej zapisu).
+	 *
+	 * @param int|float $bytes Rozmiar w bajtach.
+	 * @return string
+	 */
+	function size_format( $bytes ) { // phpcs:ignore
+		return round( ( (float) $bytes ) / 1048576, 1 ) . ' MB';
+	}
+}
+
+if ( ! function_exists( 'wp_max_upload_size' ) ) {
+	/**
+	 * Stub limitu uploadu serwera: 2 MB — celowo CIASNIEJSZY niz nasze 8 MB,
+	 * zeby testy pilnowaly, ze komunikat podaje limit SERWERA, nie nasza stala.
+	 *
+	 * @return int
+	 */
+	function wp_max_upload_size(): int { // phpcs:ignore
+		return 2097152;
+	}
+}
+
 if ( ! function_exists( 'sanitize_key' ) ) {
 	/**
 	 * Stub sanitize_key wg zachowania rdzenia WP: male litery i tylko

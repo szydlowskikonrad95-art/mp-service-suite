@@ -118,6 +118,17 @@ final class Attachments {
 			return null; // Puste pole pliku = brak zalacznika, nie blad.
 		}
 
+		// Za duzy plik wg limitu PHP/formularza: rada „sprobuj ponownie" byla mylaca
+		// (druga proba tez sie nie uda). Klient dostaje LICZBE, ktora obowiazuje na
+		// TYM serwerze — nie nasza stala, bo hosting bywa ciasniejszy.
+		if ( UPLOAD_ERR_INI_SIZE === $error || UPLOAD_ERR_FORM_SIZE === $error ) {
+			return sprintf(
+				/* translators: %s: obowiazujacy limit rozmiaru pliku. */
+				__( 'Plik jest za duży — ten serwer przyjmuje pliki do %s. Wyślij mniejszy (np. pomniejsz zdjęcie).', 'mp-service-intake' ),
+				size_format( self::effective_max_bytes() )
+			);
+		}
+
 		if ( UPLOAD_ERR_OK !== $error ) {
 			return __( 'Plik nie wgrał się poprawnie — spróbuj ponownie.', 'mp-service-intake' );
 		}
@@ -128,11 +139,11 @@ final class Attachments {
 			return __( 'Plik nie dotarł na serwer.', 'mp-service-intake' );
 		}
 
-		if ( (int) ( $file['size'] ?? 0 ) > self::MAX_BYTES ) {
+		if ( (int) ( $file['size'] ?? 0 ) > self::effective_max_bytes() ) {
 			return sprintf(
-				/* translators: %s: limit rozmiaru. */
-				__( 'Plik przekracza limit %s.', 'mp-service-intake' ),
-				size_format( self::MAX_BYTES )
+				/* translators: %s: obowiazujacy limit rozmiaru pliku. */
+				__( 'Plik przekracza limit %s — wyślij mniejszy.', 'mp-service-intake' ),
+				size_format( self::effective_max_bytes() )
 			);
 		}
 
@@ -143,6 +154,23 @@ final class Attachments {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Limit rozmiaru pliku OBOWIAZUJACY NA TYM SERWERZE.
+	 *
+	 * Nasza stala `MAX_BYTES` (8 MB) to gora; hosting bywa ciasniejszy
+	 * (`upload_max_filesize` / `post_max_size` — `wp_max_upload_size()` bierze
+	 * mniejsza z nich). Klientowi podajemy liczbe, ktora naprawde obowiazuje,
+	 * inaczej komunikat obiecuje wiecej, niz serwer przyjmie. Diagnostyka
+	 * w „Stanie witryny" osobno alarmuje admina o tym rozjezdzie.
+	 *
+	 * @return int Limit w bajtach.
+	 */
+	public static function effective_max_bytes(): int {
+		$serwer = function_exists( 'wp_max_upload_size' ) ? (int) wp_max_upload_size() : 0;
+
+		return ( $serwer > 0 && $serwer < self::MAX_BYTES ) ? $serwer : self::MAX_BYTES;
 	}
 
 	/**

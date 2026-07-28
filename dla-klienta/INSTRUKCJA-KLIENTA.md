@@ -25,6 +25,10 @@ pozostałe przechodzą w tryb ograniczony (nigdy nie wywalają strony).
 
 ## 3. Instalacja (3 × ten sam krok)
 
+⚠️ **Przed wgraniem wtyczek zrób kopię bazy danych i plików strony.** To standardowa ostrożność przy instalacji
+nowego oprogramowania — gdyby coś poszło nie tak, wracasz do stanu sprzed instalacji jednym ruchem. Szczegółową
+politykę kopii zapasowych i cofania zmian w bazie znajdziesz w pliku `MIGRATION_POLICY.md`, dołączonym do paczki.
+
 Dla **każdego** z 3 plików ZIP:
 1. Panel WordPress → **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
 2. Wybierz plik ZIP → **Zainstaluj teraz**.
@@ -51,6 +55,9 @@ Dla **każdego** z 3 plików ZIP:
 - Ekran ustawień pozwala zdefiniować **kategorie zgłoszeń** i pola dla każdej (np. reklamacja wymaga numeru seryjnego,
   dokumentu zakupu i daty; zapytanie — tylko opisu).
 - Formularz ma wbudowaną ochronę: potwierdzenie e-mail (magic-link), pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
+- **Załącznik zależy od kategorii.** Dla kategorii **„AGD drobne"** i **„Elektronarzędzia"** zdjęcie tabliczki
+  znamionowej jest **wymagane** — bez niego serwis nie ustali modelu ani mocy urządzenia. Dla **„Elektronika audio"**
+  i **„Inne"** załącznik pozostaje **opcjonalny**. Przyjmowane formaty: **JPG, PNG, WebP, PDF**, do **5 plików**.
 
 ### 5.2 Rejestr gwarancji (produkty)
 - ⚠️ **Bazę produktów wgraj ZANIM udostępnisz formularz klientom.** Zgłoszenie łączy się z produktem
@@ -60,6 +67,14 @@ Dla **każdego** z 3 plików ZIP:
 - 📎 **Gotowy przykład jest w paczce** — plik `przyklady/przyklad-import-produktow.csv` w folderze wtyczki, a na ekranie importu jest
   link **„Pobierz przykładowy plik CSV"**. Otwórz go w Excelu, podmień dane na swoje i wgraj.
 - **Wyjątki gwarancyjne**: ręczne przyznanie/cofnięcie gwarancji dla konkretnego produktu lub sprawy (tylko administrator systemu).
+- **Status gwarancji ma cztery możliwe wartości:**
+  - **gwarancja aktywna** — data końca gwarancji jeszcze nie minęła,
+  - **gwarancja wygasła** — data końca gwarancji już minęła,
+  - **brak danych** — produkt nie jest w rejestrze albo nie ma wpisanej daty końca gwarancji,
+  - **wymagana weryfikacja** — podany przez klienta numer dokumentu zakupu albo data zakupu **nie zgadzają
+    się** z tym, co jest w rejestrze. System **nie rozstrzyga tego sam** — tylko oznacza sprawę do
+    ręcznego sprawdzenia. Taką sprawę powinien obejrzeć pracownik: sprawdzić dokument zakupu klienta
+    i ręcznie potwierdzić lub odrzucić gwarancję (np. przez wyjątek gwarancyjny opisany wyżej).
 
 #### 5.2.1 Jak ma wyglądać plik CSV
 
@@ -160,6 +175,14 @@ przy odwiedzinach strony. **Bez ruchu (np. nocą) terminy stoją**, choć wszyst
 ```
 Diagnostyka w **Narzędzia → Stan witryny** pokazuje, kiedy sprawdzanie terminów **naprawdę**
 ostatnio się wykonało — jeśli stoi ponad 10 minut, zaświeci na czerwono z tą instrukcją.
+
+### 7.4 Strona za pośrednikiem (Cloudflare / nginx jako proxy)
+Jeśli strona stoi za pośrednikiem — np. Cloudflare albo nginx pracujący jako proxy — wszystkie zgłoszenia
+mogą wyglądać dla systemu tak, jakby przychodziły z **jednego, tego samego adresu IP**. Ochrona formularza
+przed spamem (limity zgłoszeń, patrz §5.1) liczy właśnie po adresie IP, więc w takiej sytuacji może
+**zablokować zwykłych, prawdziwych klientów**, biorąc ich za jedno źródło. **Rozwiązanie:** osoba wdrażająca
+system podpina filtr `mp_intake_client_ip`, żeby system czytał **prawdziwy adres klienta**, a nie adres
+pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 
 ## 8. RODO (dane osobowe)
 

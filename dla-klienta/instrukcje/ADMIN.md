@@ -50,5 +50,10 @@ jej nie widzi) i zostaje w historii produktu:
 - **Aktualizacje wtyczek**: standardowo przez ZIP; migracje bazy wykonują się same przy wejściu
   do panelu, crony odtwarzają się same. Przed aktualizacją na produkcji zrób kopię bazy
   (polityka: `dokumentacja-techniczna/MIGRATION_POLICY.md`).
-- **Odinstalowanie** sprząta wszystko swoje (tabele, opcje, role, crony, konta klientów założone
-  przez system) i nie rusza niczego cudzego.
+- **Odinstalowanie** sprząta role systemowe (4 role), automatycznie założone strony (2), pliki
+  załączników i zadania cykliczne. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
+  oraz wpisy niepotwierdzonych zgłoszeń **zostają w bazie** — to świadoma decyzja, żeby
+  przypadkowe odinstalowanie wtyczki nie skasowało danych biznesowych. Zostają też konta
+  klientów założone przez system (bez roli). Uwaga: narzędzie do kasowania tych danych
+  (obsługa wniosków RODO) znika razem z wtyczką — jeśli firma chce dane klientów usunąć,
+  trzeba to zrobić **przed** odinstalowaniem, nie po.
