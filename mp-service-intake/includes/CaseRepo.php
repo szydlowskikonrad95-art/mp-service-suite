@@ -59,7 +59,7 @@ final class CaseRepo {
 		}
 
 		$serial   = trim( (string) ( $values['serial'] ?? '' ) );
-		$snapshot = self::build_snapshot( $serial );
+		$snapshot = self::build_snapshot( $serial, self::verify_payload( $values ) );
 
 		$token = wp_generate_password( 48, false, false );
 		$now   = gmdate( 'Y-m-d H:i:s' );
@@ -1494,10 +1494,11 @@ final class CaseRepo {
 	/**
 	 * Buduje snapshot gwarancji z serialu (pelna zwrotka mp_warranty_check).
 	 *
-	 * @param string $serial Surowy numer seryjny (moze byc pusty).
+	 * @param string                    $serial Surowy numer seryjny (moze byc pusty).
+	 * @param array<string,string>|null $verify Dane zakupu do porownania z rejestrem.
 	 * @return array<string, mixed>|null Null = brak serialu / brak modulu B.
 	 */
-	private static function build_snapshot( string $serial ): ?array {
+	private static function build_snapshot( string $serial, ?array $verify = null ): ?array {
 		if ( '' === $serial ) {
 			return null;
 		}
@@ -1506,9 +1507,41 @@ final class CaseRepo {
 			return null;
 		}
 
-		$snapshot = apply_filters( 'mp_warranty_check', null, $serial, null, null );
+		$snapshot = apply_filters( 'mp_warranty_check', null, $serial, null, $verify );
 
 		return is_array( $snapshot ) ? $snapshot : null;
+	}
+
+	/**
+	 * Dane zakupu do POROWNANIA z rejestrem (ladunek `$verify` filtra `mp_warranty_check`).
+	 *
+	 * Czysta funkcja (testowana jednostkowo — `VerifyPayloadTest`).
+	 *
+	 * Po co: kartka P1.4 zada „walidacji numeru dokumentu zakupu (...) i daty zakupu",
+	 * a kartka P2.2 wymienia CZTERY statusy gwarancji. Czwarty („wymagana weryfikacja")
+	 * `WarrantyStatus::compute` zwraca WYLACZNIE gdy `purchase_doc_match` albo
+	 * `purchase_date_match` jest `false`, a `WarrantyCheck::assemble` liczy te flagi tylko
+	 * wtedy, gdy dostanie dane do porownania. Bez tego ladunku czwarty status byl
+	 * nieosiagalny: zgloszenie z cudzym serialem i zmyslona faktura dostawalo „aktywna".
+	 *
+	 * NULL gdy nie ma czego porownywac (rodzaj „naprawa" ma oba pola wylaczone) — inaczej
+	 * kazda naprawa dostawalaby status „wymagana weryfikacja".
+	 *
+	 * @param array<string, mixed> $values Wartosci pol formularza.
+	 * @return array{purchase_doc: string, purchase_date: string}|null
+	 */
+	public static function verify_payload( array $values ): ?array {
+		$dokument = trim( (string) ( $values['purchase_document'] ?? '' ) );
+		$data     = trim( (string) ( $values['purchase_date'] ?? '' ) );
+
+		if ( '' === $dokument && '' === $data ) {
+			return null;
+		}
+
+		return array(
+			'purchase_doc'  => $dokument,
+			'purchase_date' => $data,
+		);
 	}
 
 	/**
