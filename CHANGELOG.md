@@ -4,6 +4,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-07-28
+
+Wydanie porządkujące paczkę — **bez zmian w kodzie wtyczek**. Powstało po pełnym sprawdzeniu
+1.0.1 przed przekazaniem (kalibracja audytu + testy na żywym systemie); żadnej wady działania
+nie znaleziono, poprawki dotyczą wyłącznie spójności materiałów dla klienta.
+
+### Fixed (spójność paczki)
+- Dwa dokumenty (`INSTRUKCJA-KLIENTA.md`, `RAPORT-A11Y-WCAG.md`) deklarowały wersję 1.0.0 mimo
+  wydania 1.0.1 — ujednolicone do wersji wydania.
+- Zrzut ekranu potwierdzenia e-mail pokazywał tymczasowy adres środowiska demonstracyjnego —
+  przegenerowany na neutralny.
+
+### Changed (skrypt pakujący — naprawa wzorca, nie objawu)
+- `build/pakuj-dla-klienta.sh` kontroluje teraz zgodność wersji także w TREŚCI dokumentów
+  (wcześniej tylko w nagłówkach wtyczek i `readme.txt` — stąd rozjazd wersji przeszedł niezauważony).
+- Wykrywanie śladów wewnętrznych rozszerzone o adresy tuneli demonstracyjnych.
+
 ## [1.0.1] - 2026-07-28
 
 Wydanie po przeglądzie na **żywym systemie** — każda pozycja niżej została złapana przez przejście
