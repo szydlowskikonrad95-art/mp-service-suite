@@ -270,8 +270,71 @@ final class CaseCard {
 	}
 
 	/**
+	 * Status gwarancji DLA TEJ SPRAWY + powod, gdy wymaga weryfikacji.
+	 *
+	 * Czysta funkcja (testowana jednostkowo — `WarrantyViewTest`).
+	 *
+	 * Zrodlem prawdy jest SNAPSHOT sprawy, czyli decyzja z chwili zgloszenia.
+	 * Biezacy odczyt z rejestru (`mp_product_details`) liczy status z samej daty
+	 * gwarancji i NIE porownuje dokumentu ani daty zakupu — na karcie dawal
+	 * „aktywna" nawet wtedy, gdy sprawa miala zapisane „weryfikacja". Pracownik
+	 * nie mial jak zobaczyc czwartego statusu, choc instrukcja kaze mu na niego
+	 * reagowac. Rejestr zostaje fallbackiem dla spraw bez snapshotu.
+	 *
+	 * @param array<string, mixed>|null $snapshot Snapshot gwarancji sprawy.
+	 * @param array<string, mixed>|null $produkt  Biezace detale z rejestru.
+	 * @return array{status: string, powod: string}
+	 */
+	public static function warranty_view( ?array $snapshot, ?array $produkt ): array {
+		$status = '';
+
+		if ( is_array( $snapshot ) && ! empty( $snapshot['status'] ) ) {
+			$status = (string) $snapshot['status'];
+		} elseif ( is_array( $produkt ) && ! empty( $produkt['warranty_status'] ) ) {
+			$status = (string) $produkt['warranty_status'];
+		}
+
+		if ( '' === $status ) {
+			$status = 'brak_danych';
+		}
+
+		$powod = '';
+
+		if ( 'weryfikacja' === $status && is_array( $snapshot ) ) {
+			$rozne = array();
+
+			if ( array_key_exists( 'purchase_doc_match', $snapshot ) && false === $snapshot['purchase_doc_match'] ) {
+				$rozne[] = __( 'dokument zakupu', 'mp-service-intake' );
+			}
+
+			if ( array_key_exists( 'purchase_date_match', $snapshot ) && false === $snapshot['purchase_date_match'] ) {
+				$rozne[] = __( 'data zakupu', 'mp-service-intake' );
+			}
+
+			if ( array() !== $rozne ) {
+				$powod = sprintf(
+					/* translators: %s: lista pol niezgodnych z rejestrem. */
+					__( 'Niezgodne z rejestrem: %s. Sprawdź dokument u klienta przed decyzją.', 'mp-service-intake' ),
+					implode( __( ' i ', 'mp-service-intake' ), $rozne )
+				);
+			}
+		}
+
+		if ( is_array( $snapshot ) && ! empty( $snapshot['is_overridden'] ) ) {
+			$powod = trim( $powod . ' ' . __( 'Obowiązuje wyjątek gwarancyjny nadany przez administratora.', 'mp-service-intake' ) );
+		}
+
+		return array(
+			'status' => $status,
+			'powod'  => $powod,
+		);
+	}
+
+	/**
 	 * Produkt + gwarancja z Rejestru (B) — kontrakt `mp_product_details` (B->C).
-	 * Degraduje: modul B nieaktywny (brak filtra) albo sprawa bez powiazanego produktu.
+	 * Dane produktu z rejestru, ale STATUS z decyzji zapisanej na sprawie
+	 * (`warranty_view`). Degraduje: modul B nieaktywny (brak filtra) albo sprawa
+	 * bez powiazanego produktu.
 	 *
 	 * @param array<string, mixed> $ctx Kontekst sprawy.
 	 * @return void
@@ -301,8 +364,13 @@ final class CaseCard {
 			// „wymagana weryfikacja" tam) czytalo sie jak dwa rozne statusy.
 			'weryfikacja' => array( __( 'wymagana weryfikacja', 'mp-service-intake' ), '#996800' ),
 		);
-		$st = (string) ( $p['warranty_status'] ?? 'brak_danych' );
-		$sm = $status_map[ $st ] ?? $status_map['brak_danych'];
+		// Status TEJ SPRAWY, nie biezacy stan produktu w rejestrze.
+		$widok = self::warranty_view(
+			isset( $ctx['warranty_snapshot'] ) && is_array( $ctx['warranty_snapshot'] ) ? $ctx['warranty_snapshot'] : null,
+			$p
+		);
+		$st    = $widok['status'];
+		$sm    = $status_map[ $st ] ?? $status_map['brak_danych'];
 
 		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze __() z multibyte; wyrownanie zalezne od wersji WPCS -> stale spacje.
 		$rows = array(
@@ -320,6 +388,12 @@ final class CaseCard {
 		}
 		echo '<tr><th style="width:45%">' . esc_html__( 'Status gwarancji', 'mp-service-intake' ) . '</th><td><strong style="color:' . esc_attr( (string) $sm[1] ) . '">' . esc_html( (string) $sm[0] ) . '</strong></td></tr>';
 		echo '</tbody></table>';
+
+		// Powod niezgodnosci wprost pod plakietka: pracownik ma od razu wiedziec,
+		// CZEGO szukac u klienta, zamiast porownywac dwie tabele na oko.
+		if ( '' !== $widok['powod'] ) {
+			echo '<p style="margin:.5rem 0 0;color:#996800">' . esc_html( $widok['powod'] ) . '</p>';
+		}
 		if ( ! empty( $p['archived'] ) ) {
 			echo '<p style="margin:.5rem 0 0;color:#b32d2e">' . esc_html__( '⚠ Produkt zarchiwizowany w rejestrze.', 'mp-service-intake' ) . '</p>';
 		}

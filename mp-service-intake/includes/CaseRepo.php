@@ -350,7 +350,7 @@ final class CaseRepo {
 			$wpdb->prepare(
 				"SELECT c.status, c.kind, c.priority, c.assigned_to, c.product_registry_id,
 					c.country, c.lang, c.verified_at, c.status_changed_at, c.case_number,
-					c.rejection_reason_code,
+					c.rejection_reason_code, c.warranty_snapshot,
 					cu.email AS contact_email, cu.name AS contact_name,
 					cu.phone AS contact_phone, cu.anonymized_at AS contact_anonymized_at
 				FROM {$cases} c
@@ -379,8 +379,23 @@ final class CaseRepo {
 
 		$anonymized = ! empty( $row['contact_anonymized_at'] );
 
+		// Snapshot gwarancji = DECYZJA z chwili zgloszenia (porownanie dokumentu
+		// i daty zakupu z rejestrem). Karta sprawy musi pokazywac wlasnie ja —
+		// biezacy odczyt z rejestru nie zna danych podanych przez klienta i dawal
+		// „aktywna" tam, gdzie sprawa ma „wymagana weryfikacja".
+		$snapshot = null;
+
+		if ( ! empty( $row['warranty_snapshot'] ) ) {
+			$decoded = json_decode( (string) $row['warranty_snapshot'], true );
+
+			if ( is_array( $decoded ) ) {
+				$snapshot = $decoded;
+			}
+		}
+
 		return array(
 			'status'                => (string) $row['status'],
+			'warranty_snapshot'     => $snapshot,
 			'rodzaj'                => (string) $row['kind'],
 			'priority'              => (string) $row['priority'],
 			'assigned_to'           => null !== $row['assigned_to'] ? (int) $row['assigned_to'] : null,
