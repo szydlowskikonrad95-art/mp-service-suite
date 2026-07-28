@@ -122,13 +122,23 @@ final class SubmissionHandler {
 			self::redirect_back(
 				array(
 					'errors' => array( 'mp_consent' => 'REQUIRED' ),
-					'values' => array_merge(
-						$values,
-						array(
-							'kind'  => $kind,
-							'email' => $email,
-						)
-					),
+					'values' => self::echo_values( $values, $kind, $category, $email ),
+				)
+			);
+		}
+
+		// P1.2 (kartka: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
+		// produktu"). Bramka PRZED utworzeniem sprawy i PRZED rezerwacja dedup:
+		// sprawa nie moze powstac bez obowiazkowego zdjecia, bo klient dostalby
+		// wtedy tylko notke „czesc zalacznikow nie zostala dolaczona", a serwis
+		// sprawe bez tabliczki znamionowej.
+		$files = self::collect_files();
+
+		if ( FormConfig::attachments_for( $category )['required'] && ! self::has_usable_attachment( $files ) ) {
+			self::redirect_back(
+				array(
+					'errors' => array( 'mp_files' => 'ATTACHMENT_REQUIRED' ),
+					'values' => self::echo_values( $values, $kind, $category, $email ),
 				)
 			);
 		}
@@ -159,13 +169,7 @@ final class SubmissionHandler {
 			self::redirect_back(
 				array(
 					'errors' => self::flatten_errors( $result['validation'] ?? array() ),
-					'values' => array_merge(
-						$values,
-						array(
-							'kind'  => $kind,
-							'email' => $email,
-						)
-					),
+					'values' => self::echo_values( $values, $kind, $category, $email ),
 				)
 			);
 		}
@@ -184,9 +188,9 @@ final class SubmissionHandler {
 		);
 
 		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
-		// sprzatane cronem sierot razem ze sprawa).
+		// sprzatane cronem sierot razem ze sprawa). `$files` zebrane wyzej przy
+		// bramce P1.2 — jedno czytanie $_FILES na zgloszenie.
 		$att_errors = array();
-		$files      = self::collect_files();
 
 		if ( array() !== $files ) {
 			// D4: wynik NIE jest ignorowany — pominiete pliki musza trafic do klienta
@@ -330,6 +334,65 @@ final class SubmissionHandler {
 		}
 
 		return $values;
+	}
+
+	/**
+	 * Wartosci do PRZEPISANIA w formularzu po odbiciu z bledem.
+	 *
+	 * Czysta funkcja (testowana jednostkowo — `SubmissionGateTest`).
+	 *
+	 * Po co osobno: `collect_values()` zwraca tylko pola z `fields_for()`,
+	 * a rodzaj, kategoria i e-mail polami nie sa. Kategoria wypadala z odbicia
+	 * — po bledzie walidacji lista wracala do „— wybierz —", razem z nia znikaly
+	 * pola kategorii (P1.2) i oznaczenie wymaganego zalacznika. Klient poprawial
+	 * jedno pole i dostawal formularz o innym ksztalcie niz wyslal.
+	 *
+	 * @param array<string, mixed> $values   Wartosci pol z formularza.
+	 * @param string               $kind     Rodzaj sprawy.
+	 * @param string               $category Slug kategorii (moze byc pusty).
+	 * @param string               $email    E-mail kontaktowy.
+	 * @return array<string, mixed>
+	 */
+	public static function echo_values( array $values, string $kind, string $category, string $email ): array {
+		return array_merge(
+			$values,
+			array(
+				'kind'     => $kind,
+				'category' => $category,
+				'email'    => $email,
+			)
+		);
+	}
+
+	/**
+	 * Czy wsrod przeslanych plikow jest CHOC JEDEN nadajacy sie do przyjecia.
+	 *
+	 * Czysta funkcja (testowana jednostkowo — `SubmissionGateTest`).
+	 *
+	 * Liczy sie plik, ktory PRZEJDZIE walidacje (`Attachments::validate_upload`),
+	 * a nie sam fakt wyboru pliku w przegladarce. Inaczej zdjecie 12 MB albo
+	 * plik .exe „spelnialoby" wymog kategorii, sprawa powstawalaby bez tabliczki
+	 * znamionowej, a klient dowiadywalby sie o tym z notki po fakcie.
+	 *
+	 * @param array<int, array<string, mixed>> $files Znormalizowane pliki.
+	 * @return bool
+	 */
+	public static function has_usable_attachment( array $files ): bool {
+		foreach ( $files as $file ) {
+			// Puste pole pliku: `validate_upload` zwraca dla niego null („brak
+			// zalacznika, nie blad") — bez tego warunku pusty wpis liczylby sie
+			// jako spelniony wymog. `collect_files()` takich nie przepuszcza,
+			// ale metoda jest publiczna i musi bronic sie sama.
+			if ( UPLOAD_ERR_NO_FILE === (int) ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) ) {
+				continue;
+			}
+
+			if ( null === Attachments::validate_upload( $file ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

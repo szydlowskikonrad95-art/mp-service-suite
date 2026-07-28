@@ -200,6 +200,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-form-dynamic.sh
       - name: Testy C-kategoria-formularz (P1.2 — pola formularza wg kategorii + zero regresji rodzaju)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-kategoria-formularz.sh
+      - name: Testy C-zalaczniki-kategoria (P1.2 — wymog zalacznika wg kategorii + zero regresji audio i bez kategorii)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-zalaczniki-kategoria.sh
       - name: Testy szlif Intake (#16 — pasek admina wg roli + CSS frontu + CTA do panelu)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c16-szlif.sh
       - name: Testy C17 rate-limit magic-link (5 przechodzi/6 blok, gate IP+email, konfigurowalne filtrem, anti-automation)
