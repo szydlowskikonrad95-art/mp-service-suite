@@ -105,11 +105,18 @@ final class FormRenderer {
 			$out .= self::render_field( $field, $values, $errors, $required_keys );
 		}
 
-		// Zalaczniki (opcjonalne): JPG/PNG/WebP/PDF, do 5 plikow.
+		// Zalaczniki (JPG/PNG/WebP/PDF, do 5 plikow) — etykieta I wymagalnosc
+		// zaleza od KATEGORII produktu (P1.2 z kartki). JS przelacza jedno
+		// i drugie przy zmianie kategorii; serwer waliduje niezaleznie
+		// (SubmissionHandler: bramka przed utworzeniem sprawy).
+		$attachments = FormConfig::attachments_for( $category );
+
 		$out .= self::field_wrap(
 			'mp_files',
-			esc_html__( 'Załączniki (opcjonalnie: zdjęcia, PDF — do 5 plików)', 'mp-service-intake' ),
-			'<input type="file" id="mp-f-mp_files" name="mp_files[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" />',
+			esc_html( $attachments['label'] ),
+			'<input type="file" id="mp-f-mp_files" name="mp_files[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf"'
+				. ( $attachments['required'] ? ' required' : '' )
+				. ' aria-describedby="' . self::err_id( 'mp_files' ) . '" />',
 			$errors,
 			'mp-f-mp_files'
 		);
@@ -164,9 +171,14 @@ final class FormRenderer {
 			'mp-intake-form',
 			'mpIntakeForm',
 			array(
-				'kinds'      => FormConfig::kind_field_map(),
-				'categories' => FormConfig::category_field_map(),
-				'allFields'  => array_map(
+				'kinds'              => FormConfig::kind_field_map(),
+				'categories'         => FormConfig::category_field_map(),
+				// P1.2: reguly zalacznika per kategoria + wariant „bez kategorii"
+				// (JS musi umiec wrocic do stanu opcjonalnego, gdy klient cofnie
+				// wybor na „— wybierz —").
+				'attachments'        => FormConfig::category_attachment_map(),
+				'attachmentsDefault' => FormConfig::attachments_for( '' ),
+				'allFields'          => array_map(
 					static function ( array $field ): string {
 						return $field['key'];
 					},
@@ -331,16 +343,19 @@ final class FormRenderer {
 	 */
 	public static function error_text( string $code ): string {
 		$map = array(
-			'REQUIRED'         => __( 'To pole jest wymagane.', 'mp-service-intake' ),
-			'INVALID_EMAIL'    => __( 'Podaj poprawny adres e-mail.', 'mp-service-intake' ),
-			'DATE_INVALID'     => __( 'Podaj datę w formacie RRRR-MM-DD.', 'mp-service-intake' ),
-			'DATE_FUTURE'      => __( 'Data zakupu nie może być z przyszłości.', 'mp-service-intake' ),
-			'DATE_TOO_OLD'     => __( 'Data zakupu jest zbyt odległa — sprawdź ją.', 'mp-service-intake' ),
-			'SERIAL_INVALID'   => __( 'Numer seryjny wygląda nieprawidłowo.', 'mp-service-intake' ),
-			'DOCUMENT_INVALID' => __( 'Numer dokumentu wygląda nieprawidłowo.', 'mp-service-intake' ),
-			'INVALID_TEL'      => __( 'Podaj poprawny numer telefonu.', 'mp-service-intake' ),
-			'KIND_INVALID'     => __( 'Wybierz poprawny rodzaj zgłoszenia.', 'mp-service-intake' ),
-			'TOO_LONG'         => __( 'Ten tekst jest za długi — skróć go i wyślij ponownie.', 'mp-service-intake' ),
+			'REQUIRED'            => __( 'To pole jest wymagane.', 'mp-service-intake' ),
+			'INVALID_EMAIL'       => __( 'Podaj poprawny adres e-mail.', 'mp-service-intake' ),
+			'DATE_INVALID'        => __( 'Podaj datę w formacie RRRR-MM-DD.', 'mp-service-intake' ),
+			'DATE_FUTURE'         => __( 'Data zakupu nie może być z przyszłości.', 'mp-service-intake' ),
+			'DATE_TOO_OLD'        => __( 'Data zakupu jest zbyt odległa — sprawdź ją.', 'mp-service-intake' ),
+			'SERIAL_INVALID'      => __( 'Numer seryjny wygląda nieprawidłowo.', 'mp-service-intake' ),
+			'DOCUMENT_INVALID'    => __( 'Numer dokumentu wygląda nieprawidłowo.', 'mp-service-intake' ),
+			'INVALID_TEL'         => __( 'Podaj poprawny numer telefonu.', 'mp-service-intake' ),
+			'KIND_INVALID'        => __( 'Wybierz poprawny rodzaj zgłoszenia.', 'mp-service-intake' ),
+			'TOO_LONG'            => __( 'Ten tekst jest za długi — skróć go i wyślij ponownie.', 'mp-service-intake' ),
+			// P1.2: obejmuje OBA przypadki — brak pliku i plik odrzucony (za duży
+			// albo w innym formacie). Klient nie zgaduje, dlaczego nie przeszło.
+			'ATTACHMENT_REQUIRED' => __( 'Do wybranej kategorii trzeba dołączyć załącznik: JPG, PNG, WebP lub PDF. Plik w innym formacie albo za duży nie został przyjęty.', 'mp-service-intake' ),
 		);
 
 		return $map[ $code ] ?? __( 'Popraw to pole.', 'mp-service-intake' );

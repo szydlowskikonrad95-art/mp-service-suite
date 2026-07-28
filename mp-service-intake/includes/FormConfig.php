@@ -294,6 +294,126 @@ final class FormConfig {
 	}
 
 	/**
+	 * Domyslne reguly ZALACZNIKOW per kategoria (druga polowa P1.2).
+	 *
+	 * Kartka, Plugin 1: „wymagane pola I ZALACZNIKI zalezne od wybranej
+	 * kategorii produktu". Pola robil `category_fields()` od poczatku,
+	 * zalaczniki NIE — we wszystkich kategoriach byly identyczne i zawsze
+	 * opcjonalne (wlasny GAP-TRACKER trzymal P1.2 na 🔨, nie ✅).
+	 *
+	 * Regula klepnieta 28.07: sprzet z tabliczka znamionowa (AGD,
+	 * elektronarzedzia) wymaga zdjecia — bez niego serwis nie ustali modelu
+	 * ani mocy. Audio i „inne" zostaja opcjonalne (zero regresji).
+	 *
+	 * PLASKI schemat jak pola: kategoria => {required, label}. Zero logiki
+	 * warunkowej, konfigurowalne filtrem bez zmiany kodu.
+	 *
+	 * @return array<string, array{required: bool, label: string}>
+	 */
+	private static function category_attachments_defaults(): array {
+		return array(
+			'audio'            => array(
+				'required' => false,
+				'label'    => self::attachment_label_optional(),
+			),
+			'agd'              => array(
+				'required' => true,
+				'label'    => __( 'Zdjęcie tabliczki znamionowej — wymagane (zdjęcie lub PDF, do 5 plików)', 'mp-service-intake' ),
+			),
+			'elektronarzedzia' => array(
+				'required' => true,
+				'label'    => __( 'Zdjęcie tabliczki znamionowej lub numeru partii — wymagane (zdjęcie lub PDF, do 5 plików)', 'mp-service-intake' ),
+			),
+			'inne'             => array(
+				'required' => false,
+				'label'    => self::attachment_label_optional(),
+			),
+		);
+	}
+
+	/**
+	 * Reguly zalacznika dla kategorii (z filtra konfiguracyjnego + sanityzacja).
+	 *
+	 * ⚠️ Fallback MIEKKI z rozmyslem: pusta kategoria (klient jej nie wybral —
+	 * pole jest opcjonalne) i kategoria spoza slownika NIE wymagaja zalacznika.
+	 * Twardy fallback zablokowalby kazde zgloszenie bez wyboru kategorii.
+	 *
+	 * @param string $category Slug kategorii (pusty = brak wyboru).
+	 * @return array{required: bool, label: string}
+	 */
+	public static function attachments_for( string $category ): array {
+		$defaults = self::category_attachments_defaults();
+		$map      = apply_filters( 'mp_intake_category_attachments', $defaults );
+
+		if ( ! is_array( $map ) ) {
+			$map = $defaults;
+		}
+
+		$rules = ( '' !== $category && isset( $map[ $category ] ) && is_array( $map[ $category ] ) )
+			? $map[ $category ]
+			: array();
+
+		return self::sanitize_attachment_rules( $rules );
+	}
+
+	/**
+	 * Sanityzacja regul zalacznika (wartosci moga przyjsc z filtra).
+	 *
+	 * @param array<string, mixed> $rules Surowe reguly.
+	 * @return array{required: bool, label: string}
+	 */
+	private static function sanitize_attachment_rules( array $rules ): array {
+		$required = ! empty( $rules['required'] );
+		$label    = isset( $rules['label'] ) ? trim( (string) $rules['label'] ) : '';
+
+		if ( '' === $label ) {
+			$label = $required ? self::attachment_label_required() : self::attachment_label_optional();
+		}
+
+		return array(
+			'required' => $required,
+			'label'    => $label,
+		);
+	}
+
+	/**
+	 * Etykieta pola zalacznikow gdy nic nie jest wymagane (tresc sprzed P1.2 —
+	 * kategorie bez wymogu wygladaja dokladnie jak przed zmiana).
+	 *
+	 * @return string
+	 */
+	private static function attachment_label_optional(): string {
+		return __( 'Załączniki (opcjonalnie: zdjęcia, PDF — do 5 plików)', 'mp-service-intake' );
+	}
+
+	/**
+	 * Etykieta zapasowa gdy filtr wymusil `required` bez podania etykiety —
+	 * klient i tak musi zobaczyc, ze zalacznik jest obowiazkowy.
+	 *
+	 * @return string
+	 */
+	private static function attachment_label_required(): string {
+		return __( 'Załącznik wymagany dla tej kategorii (zdjęcie lub PDF, do 5 plików)', 'mp-service-intake' );
+	}
+
+	/**
+	 * Mapa kategoria => {required, label} dla warstwy klienckiej (JS).
+	 * JS przelacza etykiete i gwiazdke przy zmianie kategorii; serwer waliduje
+	 * NIEZALEZNIE w SubmissionHandler (JS = tylko UX).
+	 *
+	 * @return array<string, array{required: bool, label: string}>
+	 */
+	public static function category_attachment_map(): array {
+		$map = array();
+
+		foreach ( self::CATEGORY_SLUGS as $category ) {
+			$map[ $category ] = self::attachments_for( $category );
+		}
+
+		return $map;
+	}
+
+	/**
 	 * Mapa kategoria => lista {key, required} dla warstwy klienckiej (JS).
 	 *
 	 * @return array<string, array<int, array{key: string, required: bool}>>

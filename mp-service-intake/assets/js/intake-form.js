@@ -113,6 +113,55 @@
 	}
 
 	/**
+	 * Reguły załączników dla kategorii (P1.2 — kartka: „wymagane pola
+	 * i załączniki zależne od wybranej kategorii produktu").
+	 *
+	 * @param {string} category Wybrana kategoria (może być pusta).
+	 * @return {{required: boolean, label: string}|null}
+	 */
+	function attachmentRules( category ) {
+		if ( cfg.attachments && Object.prototype.hasOwnProperty.call( cfg.attachments, category ) ) {
+			return cfg.attachments[ category ];
+		}
+
+		return cfg.attachmentsDefault || null;
+	}
+
+	/**
+	 * Przełącza etykietę i `required` pola załączników wg kategorii.
+	 * Serwer waliduje to niezależnie — tu chodzi o to, żeby klient zobaczył
+	 * wymóg PRZED wysyłką, a nie po odbiciu formularza.
+	 *
+	 * @param {string} category Wybrana kategoria.
+	 * @return {void}
+	 */
+	function applyAttachments( category ) {
+		var rules = attachmentRules( category );
+		var wrap = wrapFor( 'mp_files' );
+		var label;
+		var control;
+
+		if ( ! rules || ! wrap ) {
+			return;
+		}
+
+		label = wrap.querySelector( 'label' );
+		control = controlIn( wrap );
+
+		if ( label && rules.label ) {
+			label.textContent = rules.label;
+		}
+
+		if ( control ) {
+			if ( rules.required ) {
+				control.setAttribute( 'required', 'required' );
+			} else {
+				control.removeAttribute( 'required' );
+			}
+		}
+	}
+
+	/**
 	 * Obszar, ktorym mowimy czytnikowi ekranu, ze formularz sie zmienil.
 	 *
 	 * Bez tego pola dochodza i znikaja BEZ SLOWA: osoba niewidoma wybiera rodzaj
@@ -190,10 +239,24 @@
 	 * @return {void}
 	 */
 	function refresh( oglaszaj ) {
-		apply( select.value, catSelect ? catSelect.value : '' );
+		var category = catSelect ? catSelect.value : '';
+		var etykiety;
+		var zalaczniki;
+
+		apply( select.value, category );
+		applyAttachments( category );
 
 		if ( oglaszaj ) {
-			ogloszenie( widoczneEtykiety() );
+			etykiety = widoczneEtykiety();
+			zalaczniki = attachmentRules( category );
+
+			// Wymagany załącznik to też zmiana, o której osoba niewidoma musi
+			// usłyszeć — inaczej dowie się o nim dopiero z odbitego formularza.
+			if ( zalaczniki && zalaczniki.required && zalaczniki.label ) {
+				etykiety.push( zalaczniki.label );
+			}
+
+			ogloszenie( etykiety );
 		}
 	}
 
