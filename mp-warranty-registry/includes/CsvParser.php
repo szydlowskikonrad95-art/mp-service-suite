@@ -151,6 +151,23 @@ final class CsvParser {
 			);
 		}
 
+		// Gwarancja konczaca sie przed zakupem to najczestsza literowka (rok z palca).
+		//
+		// Audyt 29.07: ta sama regula byla egzekwowana TYLKO przy recznej poprawce danych
+		// produktu (`Repo::update`, od 1.1.0), a NIE przy imporcie — czyli przy glownej
+		// drodze wejscia danych. Wiersz z zakupem 2026-08-01 i gwarancja do 2026-01-01
+		// wjezdzal bez slowa i dostawal normalny status, bo `WarrantyStatus::compute()`
+		// patrzy tylko na date konca. Pilnowalismy reguly tam, gdzie prawie nikt nie wchodzi.
+		//
+		// Kazda data z osobna jest juz sprawdzona wyzej; tu porownujemy je ZE SOBA.
+		// Puste daty sa dozwolone (kolumny opcjonalne), wiec warunek tylko dla obu wypelnionych.
+		if ( null !== $purchase_date && null !== $warranty_until && $warranty_until < $purchase_date ) {
+			return array(
+				'ok'    => false,
+				'error' => 'gwarancja konczy sie przed data zakupu',
+			);
+		}
+
 		return array(
 			'ok'  => true,
 			'row' => array(

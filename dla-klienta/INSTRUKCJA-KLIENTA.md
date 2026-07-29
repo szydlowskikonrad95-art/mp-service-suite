@@ -105,6 +105,10 @@ Dla **każdego** z 3 plików ZIP:
 - ⚠️ **Bez `gwarancja_do` system nie policzy statusu gwarancji** dla tego produktu (pokaże „brak danych"). To najważniejsza
   kolumna po serialu.
 - **Daty:** `2026-04-12` albo `12.04.2026` (format polskiego Excela). Inny zapis = wiersz trafia do raportu błędów.
+- ⚠️ **Gwarancja nie może kończyć się przed datą zakupu.** Taki wiersz trafia do raportu błędów
+  z powodem „gwarancja kończy się przed datą zakupu", a reszta pliku importuje się normalnie.
+  To najczęstsza literówka przy ręcznym uzupełnianiu (rok wpisany z pamięci). Ta sama reguła
+  obowiązuje przy poprawianiu danych produktu w panelu — po obu stronach tak samo.
 - **Kategoria:** można podać slug (`agd`) albo etykietę (`AGD drobne`). Wartość spoza listy nie jest błędem — wpada do `inne`.
 - **Separator:** `;` albo `,` — rozpoznawany automatycznie z nagłówka.
 - **Kodowanie:** UTF-8 albo Windows-1250 (domyślne z polskiego Excela). Jeśli serwer nie ma rozszerzenia `iconv` ani `intl`,
@@ -231,4 +235,4 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 | Formularz nie wyświetla się na stronie | Upewnij się, że wtyczka Zgłoszenia jest **włączona** i strona „Zgłoszenie serwisowe" istnieje. |
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.2.3**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.2.4**.*
