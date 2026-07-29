@@ -271,6 +271,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-mail-awaria-widoczna.sh
       - name: Testy P3.4 SLA-2/SLA-3 sweep (cron 5-min + GET_LOCK + flaga #8 retroaktywna=1 powiadomienie + normalna ścieżka reminder→eskalacja + idempotencja markerów)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-p34b-sla-sweep.sh
+      - name: Testy eksportu strumieniowego (pamięć nie rośnie z liczbą spraw, zestawienie liczone w locie)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-eksport-strumieniowy.sh
       - name: Testy jednego digestu na przebieg (zaległe eskalacje w JEDNEJ paczce, licznik nie zawyża, brak dubli)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-jeden-digest-na-przebieg.sh
       - name: Testy P3.4 SLA-3 (resync po reaktywacji + digest bez lawiny >progu=1 mail + tryb zaległości idempotentny + poniżej progu per-sprawa)
