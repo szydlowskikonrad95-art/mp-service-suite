@@ -10,7 +10,6 @@ sprawy lub kliencie. Czerwony termin SLA = wymaga uwagi. „Nieprzydzielona" na 
 której automat nie umiał przydzielić (najczęściej pusta pula — patrz §3).
 
 ![Lista spraw](zdjecia/admin-01-sprawy.png)
-> *Zrzut poglądowy — aktualna wersja ma kolorowe plakietki statusów i kolumnę pilności.*
 
 Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status i priorytet,
 pisać do klienta. Ponowne przydzielenie tej samej osobie nic nie wysyła (bez spamu).
@@ -38,8 +37,6 @@ czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika ra
 **Automatyzacje MP** (menu boczne):
 
 ![Panel Automatyzacje MP](zdjecia/admin-07-automatyzacje.png)
-> *Zrzut poglądowy — w aktualnej wersji tabela reguł opisana jest po polsku
-> (KIEDY / JEŚLI / ZRÓB) i ostrzega, gdy pula pracowników jest pusta.*
 
 - **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). Pod nią
   jest sekcja **„Kto dostaje zgłoszenia"** z listą pracowników do zaznaczenia — **ustawia ją
