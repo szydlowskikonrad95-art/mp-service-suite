@@ -17,9 +17,11 @@ Wymaga: playwright + zainstalowane silniki (playwright install chromium firefox)
 Brakujacy silnik = jasny komunikat, nie cichy pass.
 """
 
+import json
 import os
 import sys
 import time
+import urllib.request
 
 from playwright.sync_api import sync_playwright
 
@@ -27,6 +29,34 @@ BAZA = os.environ.get("MP_BASE", "http://localhost:8092")
 SILNIKI = ("chromium", "firefox")
 
 wynik_ogolny = 0
+
+
+def adres_strony(slug, zmienna, opis):
+    """Adres strony zalozonej przez wtyczke — pytamy o niego witryne, nie zgadujemy.
+
+    Zaszyte `/zgloszenie/` i `/moje-sprawy/` istnialy tylko na recznie ustawionym
+    srodowisku deweloperskim; instalacja z paczki zaklada `zgloszenie-serwisowe`
+    i `panel-zgloszen`. REST oddaje gotowy `link`, wiec dziala takze przy
+    „prostych" odnosnikach (?page_id=N). Nadpisanie: MP_URL_FORMULARZ / MP_URL_PANEL.
+    """
+    z_env = os.environ.get(zmienna)
+    if z_env:
+        return z_env
+    url = f"{BAZA}/?rest_route=/wp/v2/pages&slug={slug}"
+    try:
+        strony = json.load(urllib.request.urlopen(url))
+    except Exception as e:  # noqa: BLE001 — jasny komunikat zamiast stosu wyjatkow
+        sys.exit(f"Nie da sie zapytac witryny o adres strony '{opis}' ({url}): {e}")
+    if not strony:
+        sys.exit(
+            f"Witryna nie ma strony '{opis}' (slug: {slug}). Wtyczka zaklada ja przy "
+            f"aktywacji — sprawdz, czy jest aktywna. Adres mozna wskazac recznie: {zmienna}=..."
+        )
+    return strony[0]["link"]
+
+
+URL_FORMULARZ = adres_strony("zgloszenie-serwisowe", "MP_URL_FORMULARZ", "formularz zgloszenia")
+URL_PANEL = adres_strony("panel-zgloszen", "MP_URL_PANEL", "panel klienta")
 
 
 def sciezka(nazwa, przegladarka):
@@ -44,7 +74,7 @@ def sciezka(nazwa, przegladarka):
 
     k = przegladarka.new_context(viewport={"width": 1280, "height": 900}, locale="pl-PL")
     s = k.new_page()
-    s.goto(f"{BAZA}/zgloszenie/", wait_until="networkidle")
+    s.goto(URL_FORMULARZ, wait_until="networkidle")
     s.wait_for_timeout(900)
 
     sprawdz(s.locator('form select[name="kind"]').count() == 1, "formularz zgloszenia renderuje sie")
@@ -73,7 +103,7 @@ def sciezka(nazwa, przegladarka):
     sprawdz(any(x in tresc for x in ("sprawd", "potwierd", "dziękujemy", "wysłal")),
             "wyslanie konczy sie komunikatem dla klienta")
 
-    s.goto(f"{BAZA}/moje-sprawy/", wait_until="networkidle")
+    s.goto(URL_PANEL, wait_until="networkidle")
     s.wait_for_timeout(700)
     sprawdz(s.locator('input[type="email"]').count() >= 1, "panel klienta: logowanie mailem")
 

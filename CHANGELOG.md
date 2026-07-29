@@ -4,6 +4,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Poprawione
+- **Audyt dostępności badał stronę główną zamiast naszych ekranów.** `testy/a11y/audyt-axe.py`
+  miał zaszyte adresy `/zgloszenie/` i `/moje-sprawy/` — takie strony istniały tylko na ręcznie
+  ustawionym środowisku deweloperskim. Na instalacji **z paczki** wtyczka zakłada
+  `zgloszenie-serwisowe` i `panel-zgloszen`, a oba stare adresy oddają **stronę główną z kodem
+  200**. Skrypt nie sprawdzał, czy widzi to, co ma badać, więc axe badał nagłówek motywu
+  i meldował zero naruszeń — bramka świeciła na zielono, nie startując.
+  Teraz adresy **pobieramy z samej witryny** (REST `?rest_route=`, po slugu — działa też przy
+  „prostych" odnośnikach `?page_id=N`), a przed badaniem sprawdzamy obecność formularza i pola
+  logowania: brak = błąd, nie cichy sukces. Ręczne wskazanie: `MP_URL_FORMULARZ` / `MP_URL_PANEL`.
+- Ten sam zaszyty adres siedział w teście zgodności przeglądarek
+  (`testy/przegladarki/sciezka-klienta-w-przegladarkach.py`) — poprawiony tak samo. Tam skutek był
+  łagodniejszy: test ma twarde asercje, więc na stronie głównej po prostu nie przechodził.
+
+### Zmienione
+- Audyt dostępności liczy teraz **osobno naszą część strony i całą stronę z motywem**. O kodzie
+  wyjścia decyduje tylko nasza część — za motyw, którego nie dostarczamy, nie odpowiadamy —
+  ale naruszenia motywu są wypisywane z dopiskiem `[motyw]`, bo klient i tak je u siebie zobaczy.
+- `dla-klienta/RAPORT-A11Y-WCAG.md` przebadany na nowo **na wersji 1.3.0**, na instalacji
+  postawionej z paczki na czystym WP 6.9 / PHP 8.1 / MySQL 8. Nasze ekrany: **0 naruszeń**
+  (12 / 7 / 7 reguł zdanych). Cała strona z domyślnym motywem Twenty Twenty-Five 1.4:
+  **1 naruszenie** reguły `list` w bloku nawigacji WordPressa (nagłówek motywu, nie nasz kod —
+  wtyczki nie tworzą na stronie żadnej nawigacji). Poprzednie liczby (20/15/16 reguł, 0 naruszeń)
+  pochodziły z pomiaru na nieistniejącym już środowisku i nie dało się ich odtworzyć.
+
 ## [1.3.0] - 2026-07-29
 
 ### Zmienione
