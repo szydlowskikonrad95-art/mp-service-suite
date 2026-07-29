@@ -60,15 +60,28 @@ formularza. Chętnie wskażemy, co poprawić, ale nie zmieniamy cudzego motywu b
 
 ## Jak powtórzyć to badanie u siebie
 
+Narzędzie, którym badaliśmy, **jest w tej paczce**:
+`dla-informatyka/audyt-dostepnosci/audyt-axe.py`. Potrzebuje Pythona 3 i dwóch
+darmowych bibliotek:
+
 ```bash
 npm i axe-core
+pip install playwright
+playwright install chromium
+
 MP_BASE=https://twoja-strona.pl \
 AXE=./node_modules/axe-core/axe.min.js \
-python3 testy/a11y/audyt-axe.py
+python3 dla-informatyka/audyt-dostepnosci/audyt-axe.py
 ```
 
-Skrypt sam pyta Twoją witrynę o adresy obu stron (zakłada je wtyczka przy aktywacji),
-sprawdza te same trzy ekrany i **kończy się błędem, jeśli znajdzie choć jedno naruszenie
-w naszej części**. Naruszenia motywu wypisuje osobno, z dopiskiem `[motyw]`, i nie
-przerywa przez nie badania. Jeśli strony zostały u Ciebie przeniesione pod inne adresy,
-wskaż je wprost: `MP_URL_FORMULARZ=... MP_URL_PANEL=...`.
+Skrypt sam pyta Twoją witrynę o adresy obu stron (zakłada je wtyczka przy aktywacji)
+i **kończy się błędem, jeśli znajdzie choć jedno naruszenie w naszej części**.
+Naruszenia motywu wypisuje osobno, z dopiskiem `[motyw]`, i nie przerywa przez nie
+badania. Jeśli strony zostały u Ciebie przeniesione pod inne adresy, wskaż je wprost:
+`MP_URL_FORMULARZ=... MP_URL_PANEL=...`.
+
+**Ile ekranów zbadasz u siebie.** Dwa publiczne — formularz i panel przed zalogowaniem —
+od ręki. Trzeci, panel **po zalogowaniu**, wymaga wejścia na konto linkiem wysłanym
+mailem, więc skrypt musi mieć dostęp do skrzynki. Bez tego dostępu po prostu go pomija
+i mówi o tym wprost — **to nie jest błąd**. My zbadaliśmy go na instalacji testowej,
+gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
