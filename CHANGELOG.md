@@ -4,6 +4,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-07-29
+
+### Poprawione
+- **Po dłuższym przestoju koordynator dostawał lawinę „zbiorczych" maili.** Sprawdzanie terminów
+  brało eskalacje tą samą paczką co przypomnienia (50 spraw), a próg zbiorczego powiadomienia
+  liczy się **na przekazanej liście** — więc 500 zaległych eskalacji dawało 10 rund po 50, czyli
+  **dziesięć osobnych „zbiorczych" maili w ciągu jednego przebiegu**. Dokładnie ta lawina, przed
+  którą zbiorcze powiadomienie miało chronić. Eskalacje mają teraz własny, większy limit paczki;
+  przypomnienia zostały przy swoim, bo to jeden mail **na sprawę**, a eskalacja powyżej progu —
+  jeden mail **na całą listę**, więc większy limit zmniejsza liczbę wiadomości, a nie zwiększa.
+- **Przy okazji: jałowe kręcenie się w kółko.** Gdy eskalacja nie mogła zostać wysłana, przebieg
+  powtarzał dziesięć rund po tych samych sprawach i liczył je wielokrotnie — licznik w rejestrze
+  pokazywał 500 przy realnych 120. Dowód wykonaniem na tej samej instalacji: stary kod
+  `rounds: 10, escalations: 500`, poprawiony `rounds: 1, escalations: 120`.
+- Nowy żywy test `testy/e2e/d-jeden-digest-na-przebieg.sh` (5 kontroli) wpięty w CI. Kalibracja
+  wykryła **dziurę w samym teście**: wzorzec `"rounds":1` pasował także do `"rounds":10`, więc
+  kluczowa kontrola przechodziła na wadliwym kodzie — poprawione na dopasowanie z granicą pola.
+
 ## [1.2.4] - 2026-07-29
 
 ### Poprawione
