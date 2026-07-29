@@ -27,6 +27,31 @@ for hak in $HAKI; do
 		|| bad "stan wyjsciowy: BRAK $hak (aktywacja go nie zaplanowala?)"
 done
 
+# ── 0b. Stan wyjsciowy: katalogi robocze ISTNIEJA i maja pliki ──────────────
+# Bez tego kontrola nizej nic nie dowodzi — pusty katalog "znika" tez wtedy, gdy
+# uninstall go nie rusza. Zakladamy pliki TA SAMA droga co produkt (Importer/Attachments
+# tworza katalog z guardami .htaccess + index.php).
+# Audyt 29.07: Registry NIE kasowal `mp-imports` przy odinstalowaniu, choc OWNERSHIP.md
+# obiecuje "warstwa (i) ZAWSZE: ... pliki techniczne". Intake swoj katalog kasowal.
+KATALOGI="mp-attachments mp-imports"
+
+wp eval '
+$base = wp_upload_dir()["basedir"];
+foreach (array("mp-attachments","mp-imports") as $k) {
+	$d = rtrim($base,"/")."/".$k;
+	wp_mkdir_p($d);
+	file_put_contents($d."/probka-testowa.dat", "x");
+	file_put_contents($d."/index.php", "<?php\n// Silence is golden.\n");
+	file_put_contents($d."/.htaccess", "Require all denied\n");
+}' >/dev/null 2>&1
+
+for kat in $KATALOGI; do
+	IST=$(wp eval "echo is_dir(rtrim(wp_upload_dir()['basedir'],'/').'/$kat') ? 1 : 0;" 2>/dev/null)
+	[ "${IST:-0}" = "1" ] \
+		&& ok "stan wyjsciowy: katalog $kat istnieje i ma pliki" \
+		|| bad "stan wyjsciowy: nie udalo sie zalozyc $kat (test nic nie dowiedzie)"
+done
+
 # ── 1. Odinstalowanie WSZYSTKICH trzech wtyczek ─────────────────────────────
 wp plugin deactivate mp-service-intake mp-warranty-registry mp-workflow-automator >/dev/null 2>&1
 wp plugin uninstall mp-service-intake mp-warranty-registry mp-workflow-automator >/dev/null 2>&1
@@ -44,6 +69,20 @@ SLAD=$(wp db query "SELECT COUNT(*) FROM wp_options WHERE option_name='cron' AND
 [ "${SLAD:-0}" = "0" ] \
 	&& ok "wpis 'cron' w opcjach nie zawiera juz naszych hakow" \
 	|| bad "haki MP dalej siedza w opcji 'cron' ($SLAD)"
+
+# ── 4. SEDNO 2: zero katalogow roboczych z plikami po odinstalowaniu ────────
+# Pliki wsadowe importu zawieraja numery seryjne, faktury i daty zakupu; zalaczniki
+# to dane klientow. Zostawienie ich na dysku po odinstalowaniu lamie warstwe (i).
+for kat in $KATALOGI; do
+	ZOSTAL=$(wp eval "
+		\$d = rtrim(wp_upload_dir()['basedir'],'/').'/$kat';
+		if ( ! is_dir(\$d) ) { echo '0'; }
+		else { \$f = glob(\$d.'/*'); echo count(false === \$f ? array() : \$f) + (is_file(\$d.'/.htaccess') ? 1 : 0); }
+	" 2>/dev/null)
+	[ "${ZOSTAL:-1}" = "0" ] \
+		&& ok "katalog $kat sprzatniety przy odinstalowaniu (zero plikow na dysku)" \
+		|| bad "katalog $kat ZOSTAL po odinstalowaniu ($ZOSTAL plikow) — dane klienta na serwerze"
+done
 
 echo ""
 echo "WYNIK UNINSTALL-CRONY: PASS=$PASS FAIL=$FAIL"

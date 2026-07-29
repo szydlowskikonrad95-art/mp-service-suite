@@ -4,6 +4,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-07-29
+
+### Poprawione
+- **Odinstalowanie rejestru zostawiało pliki na serwerze.** Katalog `uploads/mp-imports/` — pliki
+  wsadowe importu i raporty odrzuconych wierszy (numery seryjne, faktury, daty zakupu) — nie był
+  kasowany przy odinstalowaniu wtyczki, a cron retencji, który sprzątał je po dobie, znikał razem
+  z nią. Katalog zostawał więc na dysku na zawsze. Wtyczka zgłoszeń robiła to poprawnie od początku;
+  poprawka kopiuje jej układ 1:1. `OWNERSHIP.md` obiecywał takie zachowanie („warstwa (i) ZAWSZE:
+  … pliki techniczne") — kod łamał regułę własnego projektu.
+  Dowód wykonaniem: na tej samej instalacji stara wersja zostawiała katalog z plikami, poprawiona
+  go usuwa razem z guardami.
+- `testy/e2e/uninstall-crony.sh` pilnuje teraz obu katalogów roboczych. Test **najpierw zakłada
+  w nich próbki**, żeby pusty katalog nie udawał posprzątanego; skalibrowany podłożonym błędem
+  (stara wersja pliku odinstalowującego) — złapał.
+- `OWNERSHIP.md` wymienia oba katalogi z nazwy, zamiast ogólnego „pliki techniczne".
+
 ## [1.2.0] - 2026-07-29
 
 Domknięcie kroku 5 przebiegu z kartki: **„silnik reguł nadaje priorytet i przydziela sprawę

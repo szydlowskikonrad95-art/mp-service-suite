@@ -53,7 +53,10 @@
 ## 4. Sprzątanie i cykl życia danych
 
 - **Uninstall dwuwarstwowy**: warstwa (i) ZAWSZE — opcje techniczne, transienty, crony, pliki
-  techniczne, auto‑strona formularza (tylko nieedytowana, po zapisanym ID); warstwa (ii) default
+  techniczne **z katalogów roboczych OBU wtyczek plikowych** (`uploads/mp-attachments/` w C,
+  `uploads/mp-imports/` w B — pliki, guardy `.htaccess`/`index.php` i sam katalog; pilnuje tego
+  `testy/e2e/uninstall-crony.sh`, który najpierw zakłada w nich próbki, żeby pusty katalog nie
+  udawał posprzątanego), auto‑strona formularza (tylko nieedytowana, po zapisanym ID); warstwa (ii) default
   OFF — dane biznesowe wg JAWNEJ listy per plugin (w tym opcje‑TREŚCI D: szablony, definicje
   checklist, statusy własne — przeżywają RAZEM z regułami; `srv_counters` = warstwa ii RAZEM ze
   sprawami). uninstall.php IDEMPOTENTNY (przerwany → dokańcza).
