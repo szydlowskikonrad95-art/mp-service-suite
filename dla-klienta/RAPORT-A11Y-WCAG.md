@@ -1,6 +1,6 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-07-29 · **Wersja:** 1.3.0
+**Data badania:** 2026-07-29 · **Wersja badana:** 1.3.0 (wynik obowiazuje dla 1.3.1 — patrz nota nizej)
 
 Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
 z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
@@ -85,3 +85,10 @@ od ręki. Trzeci, panel **po zalogowaniu**, wymaga wejścia na konto linkiem wys
 mailem, więc skrypt musi mieć dostęp do skrzynki. Bez tego dostępu po prostu go pomija
 i mówi o tym wprost — **to nie jest błąd**. My zbadaliśmy go na instalacji testowej,
 gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
+
+---
+
+**Nota o wersji 1.3.1.** Badanie wykonano na paczce **1.3.0**. Wersja **1.3.1** zmienia
+wyłącznie dwie rzeczy niewidoczne w interfejsie: sprzątanie jednej opcji technicznej przy
+odinstalowaniu wtyczki oraz opis w kodzie źródłowym. **Żaden ekran, formularz ani element
+sterujący nie został zmieniony**, dlatego wynik badania obowiązuje bez zmian dla 1.3.1.
