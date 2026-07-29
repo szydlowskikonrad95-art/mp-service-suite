@@ -17,7 +17,7 @@
 | Wyjątki gwarancyjne | warranty_exceptions | **B** | — (zatwierdza WYŁĄCZNIE `mp_system_admin` w UI B) | pola exception_* w zwrotce `mp_warranty_check` |
 | Przebiegi importu | import_jobs | **B** | — | ekran importu B |
 | Reguły automatora | workflow_rules | **D** | — | — |
-| Księgowość SLA, checklisty (stan) | case_sla, case_checklists | **D** | — (stan checklisty: NAJPIERW `mp_case_checklist_authorize` w C, po OK zapis w D) | sekcje karty sprawy (filter `mp_case_card_sections`) |
+| Księgowość SLA, checklisty (stan) | case_sla, case_checklists | **D** | — (stan checklisty: NAJPIERW `mp_case_checklist_authorize` w C, po OK zapis w D) | sekcje karty sprawy przez DEDYKOWANE filtry: `mp_case_deadline` (terminy) i `mp_case_checklist_state` (kroki) |
 | Rejestr operacji D | workflow_events (append‑only) | **D** | — | podgląd w adminie D |
 
 ## 2. Wspólne zasoby (nie mają jednego właściciela‑pluginu)
