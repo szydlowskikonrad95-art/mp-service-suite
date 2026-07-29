@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.4
+Stable tag: 1.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,9 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.2.5 =
+* Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
 
 = 1.2.4 =
 * Import CSV odrzuca teraz wiersz, w którym gwarancja kończy się przed datą zakupu (najczęstsza literówka przy ręcznym uzupełnianiu). Wiersz trafia do raportu błędów z powodem, reszta pliku importuje się normalnie. Ta sama reguła obowiązywała już przy poprawianiu danych w panelu.

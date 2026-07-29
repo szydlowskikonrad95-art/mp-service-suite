@@ -46,6 +46,26 @@ final class Sweep {
 	private const MAX_ROUNDS = 10;
 
 	/**
+	 * Limit ESKALACJI na runde — WIEKSZY niz BATCH, i to jest cala poprawka.
+	 *
+	 * Audyt 29.07: eskalacje szly ta sama paczka co przypomnienia (50), a prog
+	 * „zbiorczego maila" (`Sla::DIGEST_THRESHOLD`) liczy sie na PRZEKAZANEJ LISCIE.
+	 * Efekt: 500 zaleglych eskalacji = 10 rund x 50 = DZIESIEC osobnych „zbiorczych"
+	 * maili do koordynatora w ciagu jednego przebiegu — dokladnie ta lawina, przed
+	 * ktora digest mial chronic.
+	 *
+	 * Dlaczego wolno tu wiecej niz przy przypomnieniach: przypomnienie to JEDEN MAIL
+	 * NA SPRAWE (dlatego pilnuje ich budzet MAIL_BUDGET), a eskalacja powyzej progu
+	 * to JEDEN mail na cala liste. Wiekszy limit nie zwieksza wiec liczby wiadomosci —
+	 * ZMNIEJSZA ja, scalajac wiecej spraw w jeden digest.
+	 *
+	 * BATCH * MAX_ROUNDS = tyle, ile przebieg i tak przerabial w 10 rundach, tylko teraz
+	 * miesci sie w jednej. Powyzej tej liczby digestow bedzie wiecej niz jeden — to
+	 * swiadomy sufit, nie przeoczenie (chroni pojedyncze zapytanie i dlugosc maila).
+	 */
+	private const ESCALATION_BATCH = self::BATCH * self::MAX_ROUNDS;
+
+	/**
 	 * Budzet MAILI na jeden przebieg (audyt kosztu 27.07).
 	 *
 	 * Same paczki tego nie ograniczaly: BATCH 50 x MAX_ROUNDS 10 to do 500
@@ -219,13 +239,18 @@ final class Sweep {
 
 				// ESKALACJE: termin minal, nieeskalowane. Masa (>DIGEST_THRESHOLD) => JEDEN
 				// digest zamiast lawiny osobnych maili (SLA-3). Idempotencja przez escalated_at.
+				//
+				// Limit WLASNY (ESCALATION_BATCH), nie wspolny z przypomnieniami: prog digestu
+				// liczy sie na przekazanej liscie, wiec ciecie po 50 dawalo 10 „zbiorczych"
+				// maili zamiast jednego (audyt 29.07). Eskalacja powyzej progu to jeden mail
+				// na cala liste, wiec wiekszy limit NIE zwieksza liczby wiadomosci.
 				$escalations = $wpdb->get_col(
 					$wpdb->prepare(
 						"SELECT case_id FROM {$table}
 						WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
 						ORDER BY deadline_at ASC LIMIT %d",
 						$now,
-						self::BATCH
+						self::ESCALATION_BATCH
 					)
 				);
 
@@ -240,9 +265,12 @@ final class Sweep {
 				$sum_rem += $wyslane;
 				$sum_sup += (int) $suppressed;
 				$sum_esc += $last_esc;
+				// Warunek kontynuacji per RODZAJ paczki — kazdy ma teraz swoj limit.
+				// Porownanie eskalacji z BATCH byloby po zmianie limitu zwykla pomylka:
+				// pelna paczka eskalacji to ESCALATION_BATCH, nie 50.
 			} while ( ! $przerwane
 				&& $rounds < self::MAX_ROUNDS
-				&& ( self::BATCH === $last_rem || self::BATCH === $last_esc ) );
+				&& ( self::BATCH === $last_rem || self::ESCALATION_BATCH === $last_esc ) );
 
 			WorkflowEvents::log(
 				WorkflowEvents::SWEEP_RUN,

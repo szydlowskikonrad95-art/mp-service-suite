@@ -235,4 +235,4 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 | Formularz nie wyświetla się na stronie | Upewnij się, że wtyczka Zgłoszenia jest **włączona** i strona „Zgłoszenie serwisowe" istnieje. |
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.2.4**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.2.5**.*
