@@ -85,10 +85,12 @@ jej nie widzi) i zostaje w historii produktu:
   wykonywanie się crona, sprawy poza automatyzacją…). Zielono = zdrowo; czerwono = instrukcja
   naprawy w treści testu.
 - **Aktualizacje wtyczek**: standardowo przez ZIP; migracje bazy wykonują się same przy wejściu
-  do panelu, crony odtwarzają się same. Przed aktualizacją na produkcji zrób kopię bazy
-  (polityka: `dokumentacja-techniczna/MIGRATION_POLICY.md`).
-- **Odinstalowanie** sprząta role systemowe (4 role), automatycznie założone strony (2), pliki
-  załączników i zadania cykliczne. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
+  do panelu, crony odtwarzają się same, a **terminy spraw już otwartych przeliczają się
+  automatycznie** — nie musisz po aktualizacji klikać „Przelicz SLA". Przed aktualizacją
+  na produkcji zrób kopię bazy (polityka: `dokumentacja-techniczna/MIGRATION_POLICY.md`).
+- **Odinstalowanie** sprząta role systemowe (4 role), automatycznie założone strony (2), zadania
+  cykliczne oraz **wszystkie pliki robocze**: załączniki ze zgłoszeń, a także pliki wsadowe
+  i raporty błędów z importu produktów — nic z tego nie zostaje na dysku serwera. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
   oraz wpisy niepotwierdzonych zgłoszeń **zostają w bazie** — to świadoma decyzja, żeby
   przypadkowe odinstalowanie wtyczki nie skasowało danych biznesowych. Zostają też konta
   klientów założone przez system (bez roli). Uwaga: narzędzie do kasowania tych danych
