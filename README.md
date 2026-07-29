@@ -125,6 +125,11 @@ Standards) · PHPStan · oficjalny **Plugin Check** na zbudowanym ZIP-ie · skan
 uprawnień 403, RODO z wyścigami włącznie, migracje wersja→wersja z danymi, instalacja „brudnego"
 środowiska z object-cache) · smoke-test artefaktu wydania. Zero zmian bez zielonego kompletu.
 
+**Pełny opis systemu kontroli jakości — trzy poziomy (bramki automatyczne · audyty przed
+wydaniem z kalibracją podłożonym błędem · diagnostyka na żywej witrynie), a także uczciwa lista
+tego, czego te kontrole NIE robią:**
+[`JAKOSC-I-AUDYTY.md`](dokumentacja-techniczna/JAKOSC-I-AUDYTY.md).
+
 ## Dokumentacja techniczna
 
 [`API-KONTRAKT.md`](dokumentacja-techniczna/API-KONTRAKT.md) — hooki między wtyczkami (jedyny
@@ -133,7 +138,9 @@ kanał komunikacji) · [`DATABASE.md`](dokumentacja-techniczna/DATABASE.md) — 
 tożsamości przy wspólnej skrzynce · [`STATE_MACHINE.md`](dokumentacja-techniczna/STATE_MACHINE.md)
 — statusy i przejścia · [`EVENT_MODEL.md`](dokumentacja-techniczna/EVENT_MODEL.md) — zdarzenia osi ·
 [`MIGRATION_POLICY.md`](dokumentacja-techniczna/MIGRATION_POLICY.md) — backup i odtwarzanie ·
-[`OWNERSHIP.md`](dokumentacja-techniczna/OWNERSHIP.md) — kto jest właścicielem których danych.
+[`OWNERSHIP.md`](dokumentacja-techniczna/OWNERSHIP.md) — kto jest właścicielem których danych ·
+[`JAKOSC-I-AUDYTY.md`](dokumentacja-techniczna/JAKOSC-I-AUDYTY.md) — czym i jak sprawdzana jest
+jakość (16 kontroli w CI, audyty przed wydaniem, 42 testy w Stanie witryny) oraz granice tych kontroli.
 
 ## Licencja
 
