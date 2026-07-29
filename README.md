@@ -24,7 +24,7 @@ WordPress 6.x · PHP 8.1–8.5 (CI testuje każdą wersję) · MySQL 8 / MariaDB
    wtyczka działa też sama i ogranicza funkcje, gdy braci nie ma — zamiast błędu pokazuje komunikat.
 2. Aktywacja Intake sama tworzy strony **formularza zgłoszenia** i **panelu klienta** oraz role:
    *administrator systemu MP*, *koordynator serwisu*, *pracownik serwisu*, *klient*.
-3. Zajrzyj do **Narzędzia → Stan witryny** — trzynaście testów diagnostycznych mówi, czego
+3. Zajrzyj do **Narzędzia → Stan witryny** — czternaście testów diagnostycznych mówi, czego
    brakuje na hostingu (fileinfo, biblioteka obrazów, HTTPS, nadawca poczty, cron…) i **jak to
    naprawić** — łącznie z tym, czy automatyzacja realnie się wykonuje, a nie tylko jest zaplanowana.
 4. W Rejestrze zaimportuj produkty z CSV (na ekranie importu jest przykładowy plik do pobrania).

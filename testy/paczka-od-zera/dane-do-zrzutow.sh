@@ -31,11 +31,11 @@ W mp import-resume "$JOB" >/dev/null
 echo "   produktow w rejestrze: $(ev 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_product_registry");')"
 
 echo "== 2. personel =="
-W user create a.wisniewska a.wisniewska@serwis-mp.pl --role=mp_coordinator \
+W user create a.wisniewska a.wisniewska@serwis.example --role=mp_coordinator \
    --display_name="Anna Wiśniewska" --user_pass="$(head -c 12 /dev/urandom | base64)" >/dev/null
-W user create p.zielinski p.zielinski@serwis-mp.pl --role=mp_agent \
+W user create p.zielinski p.zielinski@serwis.example --role=mp_agent \
    --display_name="Piotr Zieliński" --user_pass="$(head -c 12 /dev/urandom | base64)" >/dev/null
-W user create m.dabrowska m.dabrowska@serwis-mp.pl --role=mp_agent \
+W user create m.dabrowska m.dabrowska@serwis.example --role=mp_agent \
    --display_name="Marta Dąbrowska" --user_pass="$(head -c 12 /dev/urandom | base64)" >/dev/null
 W user update szef --display_name="Administrator" >/dev/null
 KOORD=$(W user get a.wisniewska --field=ID); PIOTR=$(W user get p.zielinski --field=ID); MARTA=$(W user get m.dabrowska --field=ID)
@@ -58,12 +58,12 @@ przydziel() { ev "wp_set_current_user($1); \$n=wp_create_nonce('mp_intake_case_a
       \$_POST['assignee']='$3'; MP\\Intake\\Admin\\CaseActions::handle_assign();" >/dev/null; }
 
 echo "== 3. sprawy (seriale Z REJESTRU — zeby gwarancja i licznik spraw mialy sens) =="
-A=$(sprawa reklamacja jan.kowalski@poczta.pl "Jan Kowalski" SN-AUD-1001 "FV/2026/0410" 2026-04-12 "Głośnik nie łączy się przez Bluetooth, dioda miga na czerwono.")
-B=$(sprawa naprawa katarzyna.nowak@poczta.pl "Katarzyna Nowak" SN-AGD-2002 "FV/2026/0155" 2026-02-15 "Blender bardzo głośno pracuje na wysokich obrotach.")
-D=$(sprawa zapytanie tomasz.wojcik@poczta.pl "Tomasz Wójcik" "" "" "" "Czy gwarancja obejmuje wymianę baterii po dwóch latach?")
-E=$(sprawa reklamacja agnieszka.mazur@poczta.pl "Agnieszka Mazur" SN-ELN-3002 "FV/2025/1188" 2025-11-20 "Szlifierka iskrzy przy starcie, wyczuwalny zapach spalenizny.")
-F=$(sprawa zwrot michal.lewandowski@poczta.pl "Michał Lewandowski" SN-AUD-1002 "FV/2026/0410" 2026-04-12 "" "Produkt niezgodny z opisem w sklepie, nieużywany.")
-G=$(sprawa reklamacja ewa.kaczmarek@poczta.pl "Ewa Kaczmarek" SN-AGD-2001 "FV/2026/0155" 2026-02-15 "Czajnik nie grzeje wody, podświetlenie działa.")
+A=$(sprawa reklamacja jan.kowalski@example.com "Jan Kowalski" SN-AUD-1001 "FV/2026/0410" 2026-04-12 "Głośnik nie łączy się przez Bluetooth, dioda miga na czerwono.")
+B=$(sprawa naprawa katarzyna.nowak@example.com "Katarzyna Nowak" SN-AGD-2002 "FV/2026/0155" 2026-02-15 "Blender bardzo głośno pracuje na wysokich obrotach.")
+D=$(sprawa zapytanie tomasz.wojcik@example.com "Tomasz Wójcik" "" "" "" "Czy gwarancja obejmuje wymianę baterii po dwóch latach?")
+E=$(sprawa reklamacja agnieszka.mazur@example.com "Agnieszka Mazur" SN-ELN-3002 "FV/2025/1188" 2025-11-20 "Szlifierka iskrzy przy starcie, wyczuwalny zapach spalenizny.")
+F=$(sprawa zwrot michal.lewandowski@example.com "Michał Lewandowski" SN-AUD-1002 "FV/2026/0410" 2026-04-12 "" "Produkt niezgodny z opisem w sklepie, nieużywany.")
+G=$(sprawa reklamacja ewa.kaczmarek@example.com "Ewa Kaczmarek" SN-AGD-2001 "FV/2026/0155" 2026-02-15 "Czajnik nie grzeje wody, podświetlenie działa.")
 
 przydziel "$KOORD" "$A" "$PIOTR"; status "$PIOTR" "$A" "w analizie" "nowe"
 przydziel "$KOORD" "$B" "$MARTA"; status "$MARTA" "$B" "w analizie" "nowe"; status "$MARTA" "$B" "w naprawie" "w analizie"
@@ -71,7 +71,7 @@ przydziel "$KOORD" "$E" "$PIOTR"; status "$PIOTR" "$E" "w analizie" "nowe"; stat
 przydziel "$KOORD" "$F" "$MARTA"; status "$MARTA" "$F" "w analizie" "nowe"; status "$MARTA" "$F" "zamknięte" "w analizie"
 
 # jedna sprawa CELOWO niepotwierdzona — ekran "MP: Niepotwierdzone" ma co pokazac
-W mp case-create --kind=reklamacja --email=robert.sikora@poczta.pl --name="Robert Sikora" \
+W mp case-create --kind=reklamacja --email=robert.sikora@example.com --name="Robert Sikora" \
    --serial=SN-AUD-1003 --document="FV/2024/0612" --date=2024-06-30 \
    --desc="Radio wyłącza się po kilku minutach pracy." >/dev/null
 

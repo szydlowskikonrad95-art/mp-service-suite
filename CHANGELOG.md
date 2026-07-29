@@ -4,6 +4,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-07-29
+
+### Poprawione
+- **Awaria wysyłki przypomnień i eskalacji była niewidoczna.** Automator zapisywał flagę alarmu
+  i **nikt jej nigdy nie odczytywał** — komentarz w kodzie obiecywał „panel pokaże notice",
+  a panel nie pokazywał nic. Po trzech nieudanych próbach sprawa dostaje trwały znacznik
+  „wysłano" i nie dostanie już przypomnienia ani eskalacji tego rodzaju, a system wygląda zdrowo.
+  Typowy scenariusz: hosting przycina wysyłkę na godzinę, sweep trafia w to okno trzy razy pod
+  rząd i cichnie na stałe. Moduł zgłoszeń miał ten sam wzorzec zrobiony w komplecie — poprawka
+  przenosi go 1:1: kształt flagi `{rodzaj, czas}`, gaszenie po udanej wysyłce i **czternasty test
+  w Narzędzia → Stan witryny**, który mówi, KTÓRE powiadomienie nie wyszło i KIEDY.
+- Nowy żywy test `testy/e2e/d-mail-awaria-widoczna.sh` (8 kontroli) wpięty w CI, skalibrowany
+  kodem sprzed poprawki — złapał. Liczba testów diagnostycznych w `README.md` i `ADMIN.md`
+  podniesiona z 13 na 14 (pilnuje tego bramka `liczby-zgodne-z-kodem.sh`).
+
+## [1.2.2] - 2026-07-29
+
+### Poprawione
+- **Aktualizacja wtyczki gubiła przypomnienia dla spraw już otwartych.** Kolumna z terminem
+  ostrzeżenia została kiedyś dodana migracją jako pusta, bez przeliczenia istniejących wierszy,
+  a zapytanie wysyłające przypomnienia pomija wiersze puste. Skutek: sprawa otwarta w chwili
+  podniesienia wersji **nigdy nie dostawała przypomnienia PRZED terminem** — tylko eskalację po
+  nim. Dotyczyło to dokładnie spraw stojących w miejscu, czyli tych, dla których ten mechanizm
+  powstał; naprawiało się samo dopiero przy zmianie statusu albo po ręcznym „Przelicz SLA".
+  Ścieżka aktualizacji woła teraz **istniejący** mechanizm przeliczania (paczki po 200
+  z dokańczaniem w tle), za bramką wersji — czyli raz na aktualizację, nie przy każdym wejściu
+  do panelu. Markery wysyłki zostają nietknięte, więc stare powiadomienia nie wychodzą drugi raz.
+  Dowód wykonaniem: na tej samej instalacji stary kod zostawiał termin pusty, nowy go przelicza.
+- Nowy żywy test `testy/e2e/d-upgrade-przelicza-terminy.sh` (6 kontroli) wpięty w CI: odtwarza
+  stan tuż po podmianie plików i sprawdza przeliczenie, nietykalność markerów wysyłki oraz to,
+  że bramka wersji zamyka temat po jednym przebiegu. Skalibrowany kodem sprzed poprawki — złapał.
+
 ## [1.2.1] - 2026-07-29
 
 ### Poprawione

@@ -35,7 +35,7 @@ const SZEROKOSC = 1440;
 // Dane demo: człowiek, nie „test1@example.com". Numer seryjny musi istnieć
 // w rejestrze, inaczej ekrany pokażą „brak danych" zamiast gwarancji.
 const KLIENT = {
-  email: process.env.MP_KLIENT_EMAIL || 'anna.nowak@poczta.pl',
+  email: process.env.MP_KLIENT_EMAIL || 'anna.nowak@example.com',
   serial: process.env.MP_SERIAL || 'SN-AGD-2001',
   dokument: process.env.MP_DOKUMENT || 'FV/2026/0155',
   data: process.env.MP_DATA_ZAKUPU || '2026-02-15',

@@ -13,6 +13,7 @@
 namespace MP\Automator\Admin;
 
 use MP\Automator\Rules;
+use MP\Automator\Sla;
 use MP\Automator\Sweep;
 use MP\Automator\Common\SiteHealth;
 
@@ -30,8 +31,55 @@ final class SiteHealthTests {
 		SiteHealth::register(
 			'mp_automator',
 			array(
-				'cron' => array( self::class, 'test_cron' ),
-				'pula' => array( self::class, 'test_pula_przydzialu' ),
+				'cron'   => array( self::class, 'test_cron' ),
+				'pula'   => array( self::class, 'test_pula_przydzialu' ),
+				'poczta' => array( self::class, 'test_poczta_wysylka' ),
+			)
+		);
+	}
+
+	/**
+	 * Poczta automatu: czy przypomnienia i eskalacje faktycznie wychodza.
+	 *
+	 * Audyt 29.07: `Sla` zapisywala flage awarii i NIKT jej nie czytal. Po trzech
+	 * nieudanych probach sprawa dostaje trwaly marker „wyslano" i nie dostanie juz
+	 * przypomnienia ani eskalacji tego rodzaju — a z zewnatrz system wyglada zdrowo.
+	 * Typowy scenariusz: hosting przycina wysylke na godzine (limit maili), sweep
+	 * trafia w to okno trzy razy pod rzad i cichnie NA STALE.
+	 * Odpowiednik `test_poczta_wysylka` z Intake — ten sam ksztalt flagi, ten sam wynik.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_poczta_wysylka(): array {
+		$alert = get_option( Sla::ALERT_OPTION, array() );
+
+		if ( ! is_array( $alert ) || array() === $alert ) {
+			return SiteHealth::wynik(
+				'mp_automator_poczta_awaria',
+				'good',
+				__( 'Poczta automatu: przypomnienia i eskalacje wychodzą bez błędu', 'mp-workflow-automator' ),
+				__( 'Serwer poczty nie odrzucił żadnego powiadomienia od ostatniego sprawdzenia.', 'mp-workflow-automator' )
+			);
+		}
+
+		$rodzaje = array(
+			'reminder'   => __( 'przypomnienie przed terminem', 'mp-workflow-automator' ),
+			'escalation' => __( 'eskalacja po przekroczeniu terminu', 'mp-workflow-automator' ),
+		);
+
+		$kind  = isset( $alert['kind'] ) ? (string) $alert['kind'] : '';
+		$nazwa = $rodzaje[ $kind ] ?? __( 'powiadomienie o terminie', 'mp-workflow-automator' );
+		$kiedy = isset( $alert['time'] ) ? (string) $alert['time'] : '';
+
+		return SiteHealth::wynik(
+			'mp_automator_poczta_awaria',
+			'critical',
+			__( 'Poczta automatu: powiadomienie o terminie NIE zostało wysłane', 'mp-workflow-automator' ),
+			sprintf(
+				/* translators: 1: rodzaj powiadomienia, 2: data i godzina ostatniej nieudanej proby (UTC). */
+				__( 'Serwer poczty odrzucił: %1$s (ostatnia nieudana próba: %2$s UTC). Sprawy, których to dotyczyło, NIE dostaną już tego powiadomienia ponownie — sprawdź je ręcznie na liście spraw. Skonfiguruj wysyłkę (SMTP) i sprawdź limity hostingu; komunikat zgaśnie sam po pierwszej udanej wysyłce.', 'mp-workflow-automator' ),
+				$nazwa,
+				'' === $kiedy ? __( 'brak daty', 'mp-workflow-automator' ) : $kiedy
 			)
 		);
 	}

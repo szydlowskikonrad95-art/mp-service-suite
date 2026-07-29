@@ -121,7 +121,22 @@ done < <(grep -ho 'src="zdjecia/[^"]*"\|(zdjecia/[^)]*)' "$PACZKA"/instrukcje/*.
          sed -e 's|.*zdjecia/||' -e 's|[")].*||' | sort -u)
 
 # 5c. slady wewnetrzne — paczka idzie do OBCEJ firmy
-SLADY='localhost|127\.0\.0\.1|:809[0-9]|poligon|Dzidek|dzidek|kolegi|mp-service-suite-repo|/tmp/|trycloudflare|mailpit|Mailpit'
+#
+# Wzorce OGOLNE (srodowiskowe) sa tutaj — neutralne, maja byc widoczne w repozytorium,
+# zeby kontrola dzialala u kazdego, kto sklada paczke.
+#
+# Wzorce PRYWATNE (imiona, nazwy robocze zespolu) czytamy z pliku obok, ktorego
+# w repozytorium NIE MA (`build/.slady-prywatne`, wpisany do .gitignore). Powod:
+# lista slow „ktorych nie chcemy w paczce" sama w sobie ujawnia to, co ma chronic —
+# imie wypisane wprost w kodzie kontrolnym to ten sam wyciek, tylko innymi drzwiami.
+# Brak pliku = kontrola leci na samych wzorcach ogolnych (nie przestaje dzialac).
+SLADY='localhost|127\.0\.0\.1|:809[0-9]|poligon|mp-service-suite-repo|/tmp/|trycloudflare|mailpit|Mailpit'
+
+MP_SLADY_PRYWATNE="$(dirname "$0")/.slady-prywatne"
+if [ -s "$MP_SLADY_PRYWATNE" ]; then
+  MP_DODATKOWE="$(grep -vE '^[[:space:]]*(#|$)' "$MP_SLADY_PRYWATNE" | paste -sd'|' -)"
+  [ -n "$MP_DODATKOWE" ] && SLADY="$SLADY|$MP_DODATKOWE"
+fi
 if grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' > /dev/null 2>&1; then
   zglos "slad wewnetrzny w dokumentach:"
   grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' | head -10 | sed 's/^/      /'

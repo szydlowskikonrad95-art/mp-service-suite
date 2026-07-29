@@ -27,7 +27,7 @@ from playwright.sync_api import sync_playwright
 
 BAZA = os.environ.get("MP_BASE", "http://localhost:8092")
 MAILPIT = os.environ.get("MP_MAILPIT", "http://localhost:8093")
-EMAIL = os.environ.get("MP_EMAIL", "anna.nowak@poczta.pl")
+EMAIL = os.environ.get("MP_EMAIL", "anna.nowak@example.com")
 AXE_PLIK = pathlib.Path(os.environ.get("AXE", "./node_modules/axe-core/axe.min.js"))
 TAGI = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
 

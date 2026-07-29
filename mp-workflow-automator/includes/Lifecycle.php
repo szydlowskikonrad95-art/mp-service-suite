@@ -50,6 +50,7 @@ final class Lifecycle {
 		Schema::migrate();
 		Rules::maybe_seed_defaults();
 		Sweep::schedule();
+		Sla::recompute_open();
 	}
 
 	/**
@@ -79,6 +80,26 @@ final class Lifecycle {
 		Roles::ensure();
 		Schema::migrate();
 		Rules::maybe_seed_defaults();
+
+		// Przeliczenie terminow PO migracji — ZA bramka wersji, wiec raz na aktualizacje.
+		//
+		// Audyt 29.07: `migration_2_warning_at()` dokladalo kolumne `warning_at` golym
+		// dbDelta, bez przeliczenia istniejacych wierszy. Sweep przypomnien wymaga
+		// `warning_at IS NOT NULL` (Sweep.php), wiec KAZDA sprawa otwarta w chwili
+		// aktualizacji nie dostawala juz przypomnienia PRZED terminem — tylko eskalacje
+		// PO. Dotyczylo to dokladnie spraw stojacych w miejscu, czyli tych, dla ktorych
+		// ten mechanizm powstal. Samo sie naprawialo dopiero przy zmianie statusu
+		// (on_status_changed re-provisionuje) albo po recznym „Przelicz SLA".
+		//
+		// Wolamy ISTNIEJACY mechanizm, nie wlasna petle: `recompute_open()` bierze paczke
+		// 200 spraw, sam planuje dokonczenie w tle (RECALC_CONTINUE_HOOK jest w CRON_HOOKS,
+		// wiec sprzata sie przy odinstalowaniu) i jest idempotentny — markery wysylki sa
+		// poza setem UPDATE, wiec NIE wyjda ponownie stare powiadomienia.
+		//
+		// ⚠️ To wywolanie MUSI zostac ZA bramka wersji. Przed nia stoi tylko
+		// `Sweep::schedule()` i to celowo (blad #103) — przeliczanie 200 spraw przy
+		// KAZDYM wejsciu do panelu byloby zupelnie czym innym niz idempotentny schedule().
+		Sla::recompute_open();
 	}
 
 	/**
