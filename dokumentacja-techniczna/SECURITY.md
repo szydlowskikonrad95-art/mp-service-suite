@@ -2,6 +2,11 @@
 
 > Kontrakt D2 (macierz ról/capabilities) + wynik security-sweepu (DoD C §3).
 > Zasada: **nonce = CSRF · capability = autoryzacja · ownership = IDOR**. Trzy warstwy, rozdzielone.
+>
+> ℹ️ **O ścieżkach typu `testy/e2e/…`, `build/…`, `lib/mp-common/…` w tym i sąsiednich dokumentach:**
+> to pliki z **repozytorium dostawcy**, a nie z paczki, którą dostajesz. Podajemy je, żeby było
+> wiadomo, czym konkretnie dana gwarancja jest sprawdzana przy każdej zmianie. Jeśli chcesz je
+> obejrzeć albo uruchomić u siebie — poproś o dostęp do repozytorium.
 
 ## 1. Role i capabilities
 

@@ -128,6 +128,40 @@ if grep -rInE '^[[:space:]]*(python3|bash|sh)[[:space:]]+testy/' "$PACZKA" --inc
   grep -rInE '^[[:space:]]*(python3|bash|sh)[[:space:]]+testy/' "$PACZKA" --include='*.md' --include='*.txt' | head -5 | sed 's/^/      /'
 fi
 
+# 5a-quater. Odnosnik do PLIKU W PACZCE musi prowadzic do czegos, co w paczce JEST.
+# Zlapane audytem 4c (29.07): ADMIN.md odsylal do `dokumentacja-techniczna/MIGRATION_POLICY.md`
+# przy poleceniu „zrob kopie bazy przed aktualizacja" — a takiego katalogu paczka nie ma wcale
+# (plik lezy w korzeniu i w dla-informatyka/). Poprzednia kontrola pilnowala tylko `testy/`,
+# wiec ten sam blad w innym katalogu przeszedl. Teraz sprawdzamy KAZDA sciezke .md/.txt/.py
+# wygladajaca na odnosnik do pliku w paczce.
+while read -r SC; do
+	[ -n "$SC" ] || continue
+	# Pomijamy odnosniki do repozytorium dostawcy — sa opisane jako takie w SECURITY.md.
+	case "$SC" in testy/*|build/*|lib/*) continue ;; esac
+	# Plik moze lezec LUZEM w paczce albo WEWNATRZ ZIP-a wtyczki (np. przykladowy CSV
+	# w `mp-warranty-registry/przyklady/`) — instrukcja mowi wtedy „w folderze wtyczki".
+	# Bez zagladania do ZIP-ow ta kontrola dawalaby falszywy alarm, a bramka, ktora
+	# krzyczy bez powodu, konczy wylaczona.
+	# ⛔ Sprawdzamy DOKLADNIE te sciezke, ktora podaje dokument. Wczesniejsza wersja
+	# przepuszczala plik o tej samej NAZWIE lezacy gdzie indziej — a wlasnie o to chodzi:
+	# ADMIN.md odsylal do `dokumentacja-techniczna/MIGRATION_POLICY.md`, plik lezal
+	# w korzeniu, i klient szukalby katalogu, ktorego w paczce nie ma.
+	if [ -e "$PACZKA/$SC" ]; then
+		continue
+	fi
+	# ⚠️ BEZ potoku do `grep -q`: grep konczy po pierwszym trafieniu, `unzip` dostaje
+	# SIGPIPE, a `set -o pipefail` uznaje CALY potok za porazke — kontrola zglaszalaby
+	# brak pliku, ktory w zipie JEST (zlapane przy pierwszym uruchomieniu tej bramki).
+	W_ZIPIE=0
+	for Z in "$PACZKA"/*.zip; do
+		[ -f "$Z" ] || continue
+		LISTA_ZIP="$(unzip -l "$Z" 2>/dev/null || true)"
+		case "$LISTA_ZIP" in *"$SC"*) W_ZIPIE=1; break ;; esac
+	done
+	[ "$W_ZIPIE" = "1" ] || zglos "dokument odsyla do pliku, ktorego w paczce nie ma: $SC"
+done < <(grep -rhoE '`[A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+\.(md|txt|py|csv)`' "$PACZKA" \
+         --include='*.md' --include='*.txt' | tr -d '`' | sort -u)
+
 # 5b. kazde zdjecie z instrukcji faktycznie jest w paczce (martwy obrazek = wstyd u klienta)
 while read -r img; do
   [ -f "$PACZKA/instrukcje/zdjecia/$img" ] || zglos "instrukcje odwoluja sie do brakujacego zdjecia: $img"
@@ -144,7 +178,10 @@ done < <(grep -ho 'src="zdjecia/[^"]*"\|(zdjecia/[^)]*)' "$PACZKA"/instrukcje/*.
 # lista slow „ktorych nie chcemy w paczce" sama w sobie ujawnia to, co ma chronic —
 # imie wypisane wprost w kodzie kontrolnym to ten sam wyciek, tylko innymi drzwiami.
 # Brak pliku = kontrola leci na samych wzorcach ogolnych (nie przestaje dzialac).
-SLADY='localhost|127\.0\.0\.1|:809[0-9]|poligon|mp-service-suite-repo|/tmp/|trycloudflare|mailpit|Mailpit'
+# `/root/` i `:8088` dolozone 29.07 (audyt 4c): wzorzec deklarowal, ze pilnuje sladow maszyny
+# roboczej, a NAJBARDZIEJ oczywistego — sciezki katalogu domowego serwera — nie lapal wcale.
+# Port 8088 to lokalny WordPress warsztatu; stary zakres :809[0-9] go mijal.
+SLADY='localhost|127\.0\.0\.1|:809[0-9]|:8088|/root/|poligon|mp-service-suite-repo|/tmp/|trycloudflare|mailpit|Mailpit'
 
 MP_SLADY_PRYWATNE="$(dirname "$0")/.slady-prywatne"
 if [ -s "$MP_SLADY_PRYWATNE" ]; then
