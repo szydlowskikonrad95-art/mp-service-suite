@@ -15,7 +15,9 @@ bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
 W()   { docker compose -p mpzero -f "$COMPOSE" exec -T cli wp --path=/var/www/html "$@" 2>/dev/null; }
 ev()  { W eval "$1" | tr -d '\r'; }
 
-EMAIL="jan.kowalski+$(date +%s)@przyklad.pl"
+# Domena z RFC 2606 (example.com) — zarezerwowana, nigdy nie bedzie niczyja.
+# `przyklad.pl` wygladalo na przykladowe, a jest PRAWDZIWA domena (bez MX, ale cudza).
+EMAIL="jan.kowalski+$(date +%s)@example.com"
 
 echo "== 1. Formularz na stronie utworzonej przy aktywacji =="
 PAGE_ID="$(W option get mp_intake_form_page_id | tr -d '\r')"

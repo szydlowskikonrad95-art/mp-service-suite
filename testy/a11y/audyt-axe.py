@@ -4,14 +4,20 @@ Raport dla klienta ma byc odtwarzalny, a nie deklaracja — to jest narzedzie, k
 kazdy (takze klient) sprawdzi wynik u siebie:
 
     npm i axe-core                       # raz, gdziekolwiek
-    MP_BASE=http://localhost:8092 \\
+    pip install playwright && playwright install chromium
+    MP_BASE=https://twoja-strona.pl \\
     AXE=./node_modules/axe-core/axe.min.js \\
-    python3 testy/a11y/audyt-axe.py
+    python3 audyt-axe.py
 
 Sprawdza trzy powierzchnie, ktore widzi KLIENT: formularz zgloszenia, panel przed
-zalogowaniem i panel po zalogowaniu (logowanie linkiem z maila czytanym z Mailpita).
-Panel zalogowany jest najwazniejszy — tam sa dane osobowe i tam CI bez przegladarki
-nie dosiegnie kontrastu kolorow.
+zalogowaniem i panel po zalogowaniu. Panel zalogowany jest najwazniejszy — tam sa dane
+osobowe i tam CI bez przegladarki nie dosiegnie kontrastu kolorow.
+
+⚠️ TRZECI EKRAN wymaga wejscia na konto z linku wyslanego mailem, wiec potrzebny jest
+DOSTEP DO SKRZYNKI przez jej API (`MP_MAILPIT` — adres serwera poczty testowej).
+Mamy go na instalacji testowej; u siebie klient najczesciej go NIE MA — wtedy skrypt
+zbada dwa ekrany publiczne i zamelduje, ze trzeci pominal. To pominiecie NIE jest
+bledem i nie zmienia kodu wyjscia.
 
 ADRESY STRON: pytamy o nie sama witryne (REST `?rest_route=`), po slugach, ktore
 wtyczka zaklada przy aktywacji. Wczesniej byly tu zaszyte `/zgloszenie/` i
@@ -36,8 +42,14 @@ import urllib.request
 
 from playwright.sync_api import sync_playwright
 
-BAZA = os.environ.get("MP_BASE", "http://localhost:8092")
-MAILPIT = os.environ.get("MP_MAILPIT", "http://localhost:8093")
+# Adres badanej witryny podaje uruchamiajacy. Bez wartosci domyslnej z premedytacja:
+# poprzednia wskazywala na srodowisko deweloperskie, ktore juz nie istnieje, a skrypt
+# idzie teraz takze do klienta — domyslny adres z naszej maszyny bylby tam falszem.
+BAZA = (os.environ.get("MP_BASE") or "").rstrip("/")
+if not BAZA:
+    sys.exit("Podaj adres badanej witryny: MP_BASE=https://twoja-strona.pl")
+# Skrzynka (API serwera poczty) — TYLKO do trzeciego ekranu. Brak = pomijamy go, bez bledu.
+MAILPIT = (os.environ.get("MP_MAILPIT") or "").rstrip("/")
 EMAIL = os.environ.get("MP_EMAIL", "anna.nowak@example.com")
 AXE_PLIK = pathlib.Path(os.environ.get("AXE", "./node_modules/axe-core/axe.min.js"))
 TAGI = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
@@ -147,20 +159,28 @@ with sync_playwright() as pw:
     upewnij_sie(s, 'input[type="email"]', "panel klienta — logowanie mailem")
     audytuj(s, "Panel klienta — przed zalogowaniem", ".mp-account")
 
-    s.fill('input[type="email"]', EMAIL)
-    s.click('button[type="submit"]')
-    s.wait_for_load_state("networkidle")
-    s.wait_for_timeout(2500)
-    link = link_logowania()
-    if link:
-        s.goto(link, wait_until="networkidle")
+    if not MAILPIT:
+        # U klienta to normalny przypadek, nie awaria: wejscie na konto idzie linkiem
+        # z maila, a my nie mamy dostepu do jego skrzynki. Dwa ekrany publiczne zbadane.
+        print("\n--- Panel klienta — po zalogowaniu: POMINIETY")
+        print("     Ten ekran wymaga linku z maila. Podaj adres API skrzynki, zeby go zbadac:")
+        print("     MP_MAILPIT=<adres API skrzynki> MP_EMAIL=<adres klienta>")
+    else:
+        s.fill('input[type="email"]', EMAIL)
         s.click('button[type="submit"]')
         s.wait_for_load_state("networkidle")
-        s.wait_for_timeout(1500)
-        audytuj(s, "Panel klienta — po zalogowaniu", ".mp-account")
-    else:
-        print("\n--- Panel zalogowany: POMINIETY (brak linku logowania w skrzynce)")
-        bledy += 1
+        s.wait_for_timeout(2500)
+        link = link_logowania()
+        if link:
+            s.goto(link, wait_until="networkidle")
+            s.click('button[type="submit"]')
+            s.wait_for_load_state("networkidle")
+            s.wait_for_timeout(1500)
+            audytuj(s, "Panel klienta — po zalogowaniu", ".mp-account")
+        else:
+            # Skrzynke wskazano, wiec link MIAL byc — brak = realna awaria, nie pominiecie.
+            print("\n--- Panel zalogowany: BLAD (wskazano skrzynke, a nie ma w niej linku logowania)")
+            bledy += 1
 
     b.close()
 

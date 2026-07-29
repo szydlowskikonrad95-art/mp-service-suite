@@ -56,6 +56,11 @@ cp dokumentacja-techniczna/MIGRATION_POLICY.md "$PACZKA/"
 # zdarzen, maszyna statusow, wlasnosc danych, bezpieczenstwo. Wczesniej te dokumenty
 # zylly TYLKO w repozytorium: kto dostal sam ZIP, nie dostawal nic technicznego.
 cp dokumentacja-techniczna/*.md "$PACZKA/dla-informatyka/"
+# Narzedzie audytu dostepnosci — RAPORT-A11Y-WCAG.md kaze klientowi je URUCHOMIC,
+# wiec musi byc w paczce. Wczesniej dokument odsylal do `testy/a11y/audyt-axe.py`,
+# a katalogu `testy/` paczka nie zawiera wcale: obietnica bez pokrycia (29.07).
+mkdir -p "$PACZKA/dla-informatyka/audyt-dostepnosci"
+cp testy/a11y/audyt-axe.py "$PACZKA/dla-informatyka/audyt-dostepnosci/"
 cp "$ZRODLO_DOK"/diagramy/*.png "$PACZKA/diagramy/"
 # Zrodla diagramow (HTML+CSS) — zeby dalo sie je poprawic, a nie tylko ogladac obrazek.
 cp "$ZRODLO_DOK"/diagramy-zrodla/* "$PACZKA/diagramy/zrodla/"
@@ -114,6 +119,15 @@ PN="$(ls -1 "$PACZKA"/diagramy/*.png 2>/dev/null | wc -l)"
 [ "$ZR" -eq "$PN" ] || zglos "zrodel diagramow ($ZR) nie tyle co obrazkow ($PN)"
 [ -s "$PACZKA/diagramy/zrodla/style.css" ] || zglos "brak stylu zrodel diagramow (style.css)"
 
+# 5a-ter. Narzedzie, ktore dokument kaze uruchomic, MUSI byc w paczce.
+[ -s "$PACZKA/dla-informatyka/audyt-dostepnosci/audyt-axe.py" ] || zglos "brak w paczce: dla-informatyka/audyt-dostepnosci/audyt-axe.py"
+# ...i zaden dokument nie moze odsylac do katalogu `testy/`, ktorego w paczce NIE MA.
+# Tak wlasnie powstala poprzednia dziura: raport a11y kazal uruchomic `testy/a11y/audyt-axe.py`.
+if grep -rInE '^[[:space:]]*(python3|bash|sh)[[:space:]]+testy/' "$PACZKA" --include='*.md' --include='*.txt' > /dev/null 2>&1; then
+  zglos "dokument kaze uruchomic cos z katalogu testy/, ktorego paczka nie zawiera:"
+  grep -rInE '^[[:space:]]*(python3|bash|sh)[[:space:]]+testy/' "$PACZKA" --include='*.md' --include='*.txt' | head -5 | sed 's/^/      /'
+fi
+
 # 5b. kazde zdjecie z instrukcji faktycznie jest w paczce (martwy obrazek = wstyd u klienta)
 while read -r img; do
   [ -f "$PACZKA/instrukcje/zdjecia/$img" ] || zglos "instrukcje odwoluja sie do brakujacego zdjecia: $img"
@@ -137,9 +151,9 @@ if [ -s "$MP_SLADY_PRYWATNE" ]; then
   MP_DODATKOWE="$(grep -vE '^[[:space:]]*(#|$)' "$MP_SLADY_PRYWATNE" | paste -sd'|' -)"
   [ -n "$MP_DODATKOWE" ] && SLADY="$SLADY|$MP_DODATKOWE"
 fi
-if grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' > /dev/null 2>&1; then
+if grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' --include='*.py' > /dev/null 2>&1; then
   zglos "slad wewnetrzny w dokumentach:"
-  grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' | head -10 | sed 's/^/      /'
+  grep -rInE "$SLADY" "$PACZKA" --include='*.md' --include='*.txt' --include='*.py' | head -10 | sed 's/^/      /'
 fi
 
 echo

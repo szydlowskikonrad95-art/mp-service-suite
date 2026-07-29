@@ -11,7 +11,7 @@ Sprawdzamy to, co u klienta zalezy od przegladarki:
   - panel klienta pokazuje logowanie mailem.
 
 Uruchomienie (demo albo dowolna instancja):
-    MP_BASE=http://localhost:8092 python3 testy/przegladarki/sciezka-klienta-w-przegladarkach.py
+    MP_BASE=http://localhost:8097 python3 testy/przegladarki/sciezka-klienta-w-przegladarkach.py
 
 Wymaga: playwright + zainstalowane silniki (playwright install chromium firefox).
 Brakujacy silnik = jasny komunikat, nie cichy pass.
@@ -25,7 +25,10 @@ import urllib.request
 
 from playwright.sync_api import sync_playwright
 
-BAZA = os.environ.get("MP_BASE", "http://localhost:8092")
+# Domyslnie witryna, ktora repo stawia samo (`testy/paczka-od-zera/uruchom.sh`).
+# Poprzednia wartosc (8092) wskazywala na srodowisko, ktorego juz nie ma — domyslna
+# wartosc prowadzaca donikad to zaproszenie do badania nie tego, co trzeba.
+BAZA = os.environ.get("MP_BASE", "http://localhost:8097")
 SILNIKI = ("chromium", "firefox")
 
 wynik_ogolny = 0
@@ -89,7 +92,8 @@ def sciezka(nazwa, przegladarka):
 
     s.select_option('select[name="kind"]', "reklamacja")
     s.wait_for_timeout(400)
-    s.fill('input[name="email"]', f"przegladarki-{nazwa}-{int(time.time())}@przyklad.pl")
+    # example.com — domena zarezerwowana (RFC 2606). `przyklad.pl` jest prawdziwa i cudza.
+    s.fill('input[name="email"]', f"przegladarki-{nazwa}-{int(time.time())}@example.com")
     s.fill('input[name="serial"]', "SN-AUD-1001")
     s.fill('input[name="purchase_document"]', "FV/2026/0410")
     s.fill('input[name="purchase_date"]', "2026-04-12")
