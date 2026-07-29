@@ -4,6 +4,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-07-29
+
+### Poprawione
+- **Aktualizacja wtyczki gubiła przypomnienia dla spraw już otwartych.** Kolumna z terminem
+  ostrzeżenia została kiedyś dodana migracją jako pusta, bez przeliczenia istniejących wierszy,
+  a zapytanie wysyłające przypomnienia pomija wiersze puste. Skutek: sprawa otwarta w chwili
+  podniesienia wersji **nigdy nie dostawała przypomnienia PRZED terminem** — tylko eskalację po
+  nim. Dotyczyło to dokładnie spraw stojących w miejscu, czyli tych, dla których ten mechanizm
+  powstał; naprawiało się samo dopiero przy zmianie statusu albo po ręcznym „Przelicz SLA".
+  Ścieżka aktualizacji woła teraz **istniejący** mechanizm przeliczania (paczki po 200
+  z dokańczaniem w tle), za bramką wersji — czyli raz na aktualizację, nie przy każdym wejściu
+  do panelu. Markery wysyłki zostają nietknięte, więc stare powiadomienia nie wychodzą drugi raz.
+  Dowód wykonaniem: na tej samej instalacji stary kod zostawiał termin pusty, nowy go przelicza.
+- Nowy żywy test `testy/e2e/d-upgrade-przelicza-terminy.sh` (6 kontroli) wpięty w CI: odtwarza
+  stan tuż po podmianie plików i sprawdza przeliczenie, nietykalność markerów wysyłki oraz to,
+  że bramka wersji zamyka temat po jednym przebiegu. Skalibrowany kodem sprzed poprawki — złapał.
+
 ## [1.2.1] - 2026-07-29
 
 ### Poprawione
