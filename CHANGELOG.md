@@ -4,6 +4,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-07-29
+
+### Poprawione
+- **Opcja alarmu poczty zostawała w bazie po odinstalowaniu wtyczki.** `mp-service-intake`
+  zapisywał `mp_intake_mail_alert` (flaga awarii wysyłki, czytana przez Stan witryny), ale
+  `uninstall.php` jej nie kasował — po pełnym odinstalowaniu opcja zostawała osierocona
+  w `wp_options`. Bliźniacza opcja w `mp-workflow-automator` była kasowana poprawnie, czyli
+  ten sam wzorzec naprawiono wcześniej tylko w jednym egzemplarzu. `OWNERSHIP.md` obiecuje
+  „warstwa (i) ZAWSZE — opcje techniczne" i teraz kod tę obietnicę spełnia.
+- **Komentarz w `SlaConfig` obiecywał funkcję, której nie ma.** Twierdził, że godziny SLA
+  siedmiu statusów rdzenia są „admin-edytowalne w panelu" — takiego ekranu nie ma. Opis
+  poprawiony na stan faktyczny: rdzeń zmienia się kodem/WP-CLI, a godziny statusów **własnych**
+  są edytowalne w panelu (i to właśnie wymaga zamówienie: „konfigurowalne statusy").
+
+Znalezione audytem kompletności (soczewka „czy coś czegoś nie robi"). Zero zmian w logice
+biznesowej i w interfejsie — raport dostępności z 1.3.0 obowiązuje bez zmian.
+
 ## [1.3.0] - 2026-07-29
 
 ### Narzędzia kontrolne i dokumenty (bez zmian w kodzie wtyczek)
