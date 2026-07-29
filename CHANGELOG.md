@@ -4,6 +4,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-29
+
+### Narzędzia kontrolne i dokumenty (bez zmian w kodzie wtyczek)
+
 ### Poprawione
 - **Audyt dostępności badał stronę główną zamiast naszych ekranów.** `testy/a11y/audyt-axe.py`
   miał zaszyte adresy `/zgloszenie/` i `/moje-sprawy/` — takie strony istniały tylko na ręcznie
@@ -28,8 +32,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   **1 naruszenie** reguły `list` w bloku nawigacji WordPressa (nagłówek motywu, nie nasz kod —
   wtyczki nie tworzą na stronie żadnej nawigacji). Poprzednie liczby (20/15/16 reguł, 0 naruszeń)
   pochodziły z pomiaru na nieistniejącym już środowisku i nie dało się ich odtworzyć.
+- **Raport kazał uruchomić narzędzie, którego paczka nie zawierała.** Odsyłał do
+  `testy/a11y/audyt-axe.py`, a katalogu `testy/` w paczce nie ma wcale — to było jedyne
+  polecenie w całej paczce wskazujące poza nią. Skrypt trafia teraz do
+  `dla-informatyka/audyt-dostepnosci/`, a bramka pakowania pilnuje dwóch rzeczy: że plik
+  w paczce **jest** i że **żaden dokument** nie każe uruchamiać niczego ze ścieżki `testy/`.
+  Obie kontrole skalibrowane podłożonym błędem. Kontrola śladów wewnętrznych objęła też
+  pliki `*.py` (skoro `.py` idzie do klienta) — i od razu złapała nazwę serwera poczty
+  w komentarzach.
+- Trzeci badany ekran (panel po zalogowaniu) wymaga linku z maila, czyli dostępu do skrzynki,
+  którego klient u siebie nie ma. Brak `MP_MAILPIT` = ekran **pominięty z komunikatem**,
+  nie błąd. `MP_BASE` straciło wartość domyślną — wskazywała nieistniejące środowisko,
+  a w paczce u klienta byłaby po prostu fałszem.
+- `MP_PACZKA` ze ścieżką **względną** (tak brzmią nasze notatki) kończyło się `BLAD: nie ma
+  pliku` — skrypt robi `cd` do własnego katalogu. Ścieżkę rozwijamy teraz przed zmianą katalogu.
+- Dane testowe: `przyklad.pl` → `example.com` (RFC 2606). `przyklad.pl` wygląda na przykładową,
+  a jest prawdziwą, cudzą domeną.
 
-## [1.3.0] - 2026-07-29
+### Kod wtyczek
 
 ### Zmienione
 - **Eksport CSV nie trzyma już wszystkich spraw w pamięci.** Dotąd zbierał całość do jednej
