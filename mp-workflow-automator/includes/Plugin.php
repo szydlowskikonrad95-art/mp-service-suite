@@ -77,6 +77,11 @@ final class Plugin {
 		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
 		Admin\SlaRecalcAction::register();
 
+		// Pula pracownikow reguly przydzialu (audyt 29.07): bez tego handlera pula
+		// jechala z instalacji PUSTA i nie bylo jej jak wypelnic — zgloszenia nie
+		// trafialy do nikogo, a instrukcja kazala to ustawic w panelu jako krok 1.
+		AssignmentPool::register();
+
 		// Checklisty per typ + szablony odpowiedzi (P3.5): handlery admin-post
 		// (bez menu — przycisk podepnie panel admina D). Toggle idzie przez hook C.
 		ChecklistTemplates::register();

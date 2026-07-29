@@ -4,6 +4,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-29
+
+Domknięcie kroku 5 przebiegu z kartki: **„silnik reguł nadaje priorytet i przydziela sprawę
+do właściwego pracownika"**. Silnik działał od początku, ale **pula pracowników wychodziła
+z instalacji pusta i nie było jej jak wypełnić** — ani ekranem, ani komendą wiersza poleceń.
+Świeżo wdrożony system przyjmował zgłoszenia i zostawiał je nieprzydzielone, a instrukcja
+kazała „wskazać pracowników w regule" jako pierwszy krok wdrożenia.
+
+### Dodane
+- **Sekcja „Kto dostaje zgłoszenia"** w panelu Automatyzacje MP (pod tabelą reguł): lista
+  pracowników serwisu do zaznaczenia + zapis. Wymaga uprawnienia administratora systemu —
+  tak samo jak pozostałe konfiguracje. Zapis jest chroniony tokenem, sprawdzeniem uprawnień
+  i blokadą przed nadpisaniem cudzej zmiany; zostawia wpis w rejestrze zdarzeń.
+- Nowy żywy test `testy/e2e/d-pula-pracownikow.sh` (14 kontroli) wpięty w CI: pilnuje całej
+  drogi — pusta pula = brak przydziału, zapis z panelu = sprawa trafia do człowieka.
+  Endpoint dopisany także do testu macierzy bezpieczeństwa (403 dla nieuprawnionych).
+
+### Poprawione
+- **Instrukcje mówiły o ekranach ustawień, których nie ma.** Sprawdzone w kodzie i poprawione
+  w czterech miejscach: kategorie zgłoszeń, terminy SLA, dodawanie własnych statusów oraz
+  ustawianie puli (to ostatnie stało się prawdą wraz z tym wydaniem). Dokumenty podają teraz
+  wartości wbudowane i wprost mówią, co wymaga programisty.
+- Instrukcja koordynatora kazała mu ustawić pulę, do czego nie ma uprawnień — wskazuje teraz
+  administratora systemu.
+
 ## [1.1.0] - 2026-07-28
 
 Domknięcie wymogu z kartki: **„historia zmian danych produktu i decyzji gwarancyjnych"**.

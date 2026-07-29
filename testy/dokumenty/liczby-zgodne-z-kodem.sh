@@ -140,13 +140,47 @@ grep -rq "PRODUCT_FORCE_DELETED\|force-delete" mp-warranty-registry/includes/ 2>
 brak_obietnicy "materialy klienta bez naszych nazw roboczych" \
 	"czat B[0-9]|C-patch|C-hooki|BRAMKA-ODDANIA|flaga #[0-9]" dla-klienta/*.md dla-klienta/instrukcje/*.md dla-klienta/PRZECZYTAJ-MNIE.txt
 
+# ── EKRANY, KTORYCH NIE MA (audyt 29.07) ────────────────────────────────────
+# Instrukcja opisywala „ekran ustawien" w czterech miejscach, a istnial zero razy.
+# Klient szedl wg dokumentu, nie znajdowal pola i tracil zaufanie do calej reszty.
+# Kontrole ponizej sa WARUNKOWE: gdy ktos dorobi brakujacy ekran, warunek przestaje
+# byc spelniony i kontrola sama znika — bez grzebania w tej bramce.
+
+# Pula pracownikow ekran MA (1.2.0) => dokumenty MUSZA go opisywac ta sama nazwa co kod.
+if grep -q "Kto dostaje zgłoszenia" mp-workflow-automator/includes/Admin/PanelScreen.php 2>/dev/null; then
+	sprawdz "INSTRUKCJA: sekcja ustawiania puli nazwana tak samo jak w panelu" \
+		"Kto dostaje zgłoszenia" dla-klienta/INSTRUKCJA-KLIENTA.md
+	sprawdz "ADMIN: opisany pierwszy krok — wskazanie pracownikow" \
+		"Kto dostaje zgłoszenia" dla-klienta/instrukcje/ADMIN.md
+else
+	echo "  BLAD BRAMKI: nie znalazlem sekcji puli w PanelScreen.php — wzorzec przestal pasowac do kodu."
+	exit 2
+fi
+
+# Terminy SLA: brak ZAPISU konfiguracji => dokument nie moze kazac ich „ustawic w panelu".
+grep -q "update_option( *self::CORE_OPTION\|update_option( *self::POLICY_OPTION" mp-workflow-automator/includes/SlaConfig.php 2>/dev/null \
+	|| brak_obietnicy "zadna dokumentacja nie kaze ustawiac terminow SLA w panelu (nie ma na to ekranu)" \
+		"W ustawieniach Automatora ustaw" dla-klienta/*.md dla-klienta/instrukcje/*.md
+
+# Eksport CSV: jesli pracownik (mp_agent) NIE ma prawa eksportu, dokument nie moze
+# obiecywac, ze „pracownik eksportuje tylko swoje" (zlapane 29.07 — INSTRUKCJA obiecywala,
+# PRACOWNIK.md pisal prawde, kod byl po stronie PRACOWNIK.md).
+grep -q "mp_agent" mp-workflow-automator/includes/CsvExport.php 2>/dev/null \
+	|| brak_obietnicy "zadna dokumentacja nie obiecuje eksportu CSV pracownikowi serwisu" \
+		"pracownik eksportuje" dla-klienta/*.md dla-klienta/instrukcje/*.md
+
+# Wlasne statusy: metoda zapisu istnieje, ale nikt jej nie wola z UI => brak ekranu.
+grep -rq "StatusDefs::upsert\|StatusDefs::remove" mp-workflow-automator/includes/Admin/ 2>/dev/null \
+	|| brak_obietnicy "zadna dokumentacja nie obiecuje dodawania wlasnych statusow z panelu" \
+		"dodać własne w ustawieniach|możliwość dodania własnych" dla-klienta/*.md dla-klienta/instrukcje/*.md
+
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=24
+MIN_KONTROLI=29
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."

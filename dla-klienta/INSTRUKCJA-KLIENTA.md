@@ -52,8 +52,9 @@ Dla **każdego** z 3 plików ZIP:
 ## 5. Konfiguracja
 
 ### 5.1 Formularz zgłoszenia (Zgłoszenia serwisowe)
-- Ekran ustawień pozwala zdefiniować **kategorie zgłoszeń** i pola dla każdej (np. reklamacja wymaga numeru seryjnego,
-  dokumentu zakupu i daty; zapytanie — tylko opisu).
+- **Rodzaje zgłoszeń i pola są wbudowane** — reklamacja wymaga numeru seryjnego, dokumentu zakupu i daty;
+  zapytanie techniczne tylko opisu. Nie ma na to ekranu ustawień: zmiana zestawu pól albo kategorii
+  to kilka linijek dla programisty (system udostępnia do tego gotowe punkty zaczepienia).
 - Formularz ma wbudowaną ochronę: potwierdzenie e-mail (magic-link), pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
 - **Załącznik zależy od kategorii.** Dla kategorii **„AGD drobne"** i **„Elektronarzędzia"** zdjęcie tabliczki
   znamionowej jest **wymagane** — bez niego serwis nie ustali modelu ani mocy urządzenia. Dla **„Elektronika audio"**
@@ -118,22 +119,29 @@ Dla **każdego** z 3 plików ZIP:
 ### 5.3 Automator (przydział, terminy, szablony, raporty)
 
 **Najważniejszy pierwszy krok: uzupełnij pulę pracowników.**
-- Wejdź w **Automatyzacje MP** (menu boczne) — sekcja **Reguły przydziału** — i w regule „automatyczny przydział" wskaż pracowników serwisu,
-  między których system ma rozdzielać sprawy (po kolei, sprawiedliwie — round-robin).
-- **Pusta pula = przydział nie działa** (sprawy zostają „nieprzydzielone"). Panel reguł ostrzega
-  o pustej puli, a **Narzędzia → Stan witryny** pokazuje to jako problem do naprawienia.
+- Najpierw dodaj pracowników jako użytkowników WordPressa z rolą **„Pracownik serwisu"**
+  (Użytkownicy → Dodaj nowego). Bez tego nie będzie kogo wskazać.
+- Wejdź w **Automatyzacje MP** (menu boczne) → sekcja **„Kto dostaje zgłoszenia"** (pod tabelą reguł)
+  → zaznacz pracowników, między których system ma rozdzielać sprawy (po kolei, sprawiedliwie —
+  round-robin) → **Zapisz listę pracowników**.
+- **Pusta lista = przydział nie działa** (sprawy zostają „nieprzydzielone"). Tabela reguł pisze o tym
+  wprost przy regule przydziału, a **Narzędzia → Stan witryny** pokazuje to jako problem do naprawienia.
 - Reguły opisane są po polsku: KIEDY (np. nowa sprawa) → JEŚLI (kategoria/kraj/język/priorytet)
-  → ZRÓB (przydziel / zmień status / ustaw priorytet / powiadom). Dodanie reguły nie wymaga
-  ruszania kodu.
+  → ZRÓB (przydziel / zmień status / ustaw priorytet / powiadom). ⚠️ Sama **treść reguł jest wbudowana
+  i pokazywana tylko do odczytu** — z panelu ustawia się listę pracowników; dołożenie nowej reguły
+  to zadanie dla programisty.
 
 **Terminy SLA:**
-- W ustawieniach Automatora ustaw **termin pierwszej reakcji** (godziny) i **próg przypomnienia**.
+- Terminy są **wbudowane i działają od razu**: nowe zgłoszenie — 24 h na pierwszą reakcję,
+  „w analizie" — 48 h, „zaakceptowane" — 24 h. Przypomnienie wychodzi po upływie 75 % czasu.
+  ⚠️ Nie ma ekranu do zmiany tych godzin — inne wartości ustawia programista.
 - System sam wysyła pracownikowi **przypomnienie przed terminem** i **eskalację do koordynatora
   po terminie**. Sprawdzanie chodzi co 5 minut (patrz nota §7.3 — na produkcji ustaw systemowy cron).
 
 **Statusy spraw:**
 - 7 statusów podstawowych (nowe / do uzupełnienia / w analizie / zaakceptowane / odrzucone /
-  w naprawie / zamknięte) jest wbudowanych i nieusuwalnych; możesz **dodać własne** w ustawieniach.
+  w naprawie / zamknięte) jest wbudowanych i nieusuwalnych. ⚠️ System przewiduje dokładanie własnych
+  statusów, ale **nie ma na to ekranu** — dołożenie statusu to zadanie dla programisty.
 - Odrzucenie sprawy zawsze wymaga podania powodu. **Wznowić zamkniętą sprawę może tylko
   koordynator** (i tylko do statusu „w analizie").
 
@@ -145,7 +153,9 @@ Dla **każdego** z 3 plików ZIP:
 
 **Raporty:**
 - **Automatyzacje MP → Eksport CSV** — zestawienie: ile spraw, jak długo trwała obsługa, powody odrzuceń;
-  eksport listy spraw do CSV (pracownik eksportuje tylko swoje, koordynator — wszystkie).
+  eksport listy spraw do CSV. ⚠️ Eksport robi **koordynator albo administrator systemu** — pracownik
+  serwisu go nie ma. To celowe: plik zawiera dane osobowe klientów, więc wychodzi z systemu wyłącznie
+  przez osobę, która za to odpowiada.
 
 ## 6. Role i użytkownicy
 
@@ -221,4 +231,4 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 | Formularz nie wyświetla się na stronie | Upewnij się, że wtyczka Zgłoszenia jest **włączona** i strona „Zgłoszenie serwisowe" istnieje. |
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.1.0**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.2.0**.*
