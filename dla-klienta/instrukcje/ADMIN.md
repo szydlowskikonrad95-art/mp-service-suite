@@ -9,6 +9,20 @@
 Krok po kroku w **`INSTRUKCJA-KLIENTA.md`** (instalacja 3 ZIP-ów, co powstaje automatycznie,
 konfiguracja formularza, rejestru i Automatora, noty serwerowe: SMTP, nginx, systemowy cron).
 
+### ⚠️ Zrób to zaraz po instalacji: wskaż, kto dostaje zgłoszenia
+
+Świeżo zainstalowany system **nie przydziela spraw nikomu**, dopóki nie wskażesz pracowników.
+Sprawy będą się poprawnie przyjmować, ale zostaną „nieprzydzielone".
+
+1. **Użytkownicy → Dodaj nowego** — załóż konta pracownikom serwisu z rolą **„Pracownik serwisu"**.
+2. **Automatyzacje MP** → przewiń pod tabelę reguł do sekcji **„Kto dostaje zgłoszenia"**.
+3. Zaznacz osoby, między które system ma rozdzielać sprawy (po kolei, sprawiedliwie), i kliknij
+   **Zapisz listę pracowników**.
+
+Tę listę ustawia **wyłącznie administrator systemu** — koordynator widzi ostrzeżenie o pustej liście,
+ale nie może jej zmienić. Kontrolnie: **Narzędzia → Stan witryny** przestanie zgłaszać pustą pulę,
+a w tabeli reguł zamiast ostrzeżenia pojawią się imiona pracowników.
+
 ## 2. Rejestr produktów i gwarancji
 
 **Rejestr MP** — baza produktów, numerów seryjnych, partii i okresów gwarancyjnych; wyszukiwarka

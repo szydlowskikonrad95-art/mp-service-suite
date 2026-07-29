@@ -16,6 +16,7 @@
 
 namespace MP\Automator\Admin;
 
+use MP\Automator\AssignmentPool;
 use MP\Automator\ChecklistTemplates;
 use MP\Automator\ResponseTemplates;
 use MP\Automator\Rules;
@@ -189,9 +190,11 @@ final class PanelScreen {
 			// Audyt #9: konflikt rownoczesnej edycji ma WLASNY komunikat (to nie
 			// blad skladni, tylko drugi admin zapisal pierwszy).
 			if ( str_starts_with( $config_error, 'konflikt' ) ) {
-				$what_k = 'konflikt-response' === $config_error
-					? __( 'szablonów odpowiedzi', 'mp-workflow-automator' )
-					: __( 'checklist', 'mp-workflow-automator' );
+				$nazwy_konfliktu = array(
+					'konflikt-response' => __( 'szablonów odpowiedzi', 'mp-workflow-automator' ),
+					'konflikt-pula'     => __( 'puli pracowników', 'mp-workflow-automator' ),
+				);
+				$what_k          = $nazwy_konfliktu[ $config_error ] ?? __( 'checklist', 'mp-workflow-automator' );
 				?>
 				<div class="notice notice-error is-dismissible">
 					<p>
@@ -204,6 +207,19 @@ final class PanelScreen {
 							)
 						);
 						?>
+					</p>
+				</div>
+				<?php
+				return;
+			}
+
+			// Pula NIE jest konfiguracja JSON-owa (checkboxy), wiec komunikat o „nieprawidlowym
+			// JSON" bylby dla admina zwyczajnie nieprawdziwy — ma wlasny tekst.
+			if ( 'pula' === $config_error ) {
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p>
+						<?php esc_html_e( 'Nie udało się zapisać puli pracowników — poprzednie ustawienie zostało zachowane. Odśwież stronę i spróbuj ponownie.', 'mp-workflow-automator' ); ?>
 					</p>
 				</div>
 				<?php
@@ -226,6 +242,17 @@ final class PanelScreen {
 					);
 					?>
 				</p>
+			</div>
+			<?php
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z redirectu (bez zmiany stanu); handler zapisu mial nonce.
+		$config_saved = isset( $_GET['mp_config_saved'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_config_saved'] ) ) : '';
+
+		if ( 'pula' === $config_saved ) {
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php esc_html_e( 'Zapisano listę pracowników do przydziału. Nowe zgłoszenia będą rozdzielane po kolei między wskazane osoby.', 'mp-workflow-automator' ); ?></p>
 			</div>
 			<?php
 		}
@@ -331,6 +358,99 @@ final class PanelScreen {
 				<?php endif; ?>
 			</tbody>
 		</table>
+		<?php
+		self::render_pool_form();
+	}
+
+	/**
+	 * Formularz wyboru pracownikow do puli przydzialu.
+	 *
+	 * DLACZEGO (audyt 29.07): bez tego ekranu pula jechala z instalacji pusta i NIE BYLO
+	 * jej jak wypelnic — ani z panelu, ani przez WP-CLI. Tabela wyzej uczciwie pisala
+	 * „lista pracownikow jest pusta", tylko czlowiek nie mial czym tego naprawic, a
+	 * instrukcja wdrozeniowa kazala mu to zrobic jako PIERWSZY krok.
+	 *
+	 * Checkboxy, nie JSON: ten ekran obsluguje wdrazajacy, nie programista.
+	 * Widoczny tylko dla `mp_system_admin` — tego samego uprawnienia pilnuje handler,
+	 * wiec koordynator nie oglada formularza, ktory i tak odbilby go 403.
+	 *
+	 * @return void
+	 */
+	private static function render_pool_form(): void {
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			return;
+		}
+
+		$rules = AssignmentPool::assign_rules();
+
+		if ( array() === $rules ) {
+			return;
+		}
+
+		$agents = AssignmentPool::agents();
+		$rev    = AssignmentPool::config_rev();
+		?>
+		<h3 class="mp-automator-h3"><?php esc_html_e( 'Kto dostaje zgłoszenia', 'mp-workflow-automator' ); ?></h3>
+		<p class="description">
+			<?php esc_html_e( 'Zaznacz pracowników serwisu, między których system ma rozdzielać nowe zgłoszenia (po kolei, sprawiedliwie). Bez zaznaczenia choć jednej osoby przydział nie działa i sprawy zostają nieprzydzielone.', 'mp-workflow-automator' ); ?>
+		</p>
+
+		<?php if ( array() === $agents ) : ?>
+			<div class="notice notice-warning inline">
+				<p>
+					<?php esc_html_e( 'Nie ma jeszcze żadnego pracownika serwisu. Najpierw dodaj użytkowników z rolą „Pracownik serwisu” (Użytkownicy → Dodaj nowego), potem wróć na ten ekran.', 'mp-workflow-automator' ); ?>
+				</p>
+			</div>
+			<?php
+			return;
+		endif;
+		?>
+
+		<?php foreach ( $rules as $rule ) : ?>
+			<?php
+			$rule_id  = (int) $rule['id'];
+			$wybrani  = AssignmentPool::pool_from_config( (string) $rule['action_config_json'] );
+			$field_id = 'mp-pula-' . $rule_id;
+			?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-pool-form">
+				<?php wp_nonce_field( AssignmentPool::ACTION_CONFIG ); ?>
+				<input type="hidden" name="action" value="<?php echo esc_attr( AssignmentPool::ACTION_CONFIG ); ?>" />
+				<input type="hidden" name="mp_config_rev" value="<?php echo esc_attr( $rev ); ?>" />
+				<input type="hidden" name="mp_rule_id" value="<?php echo esc_attr( (string) $rule_id ); ?>" />
+
+				<fieldset>
+					<legend class="mp-automator-legend">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %d: numer reguly przydzialu. */
+								__( 'Pracownicy w regule przydziału nr %d', 'mp-workflow-automator' ),
+								$rule_id
+							)
+						);
+						?>
+					</legend>
+
+					<?php foreach ( $agents as $agent ) : ?>
+						<p>
+							<label for="<?php echo esc_attr( $field_id . '-' . $agent->ID ); ?>">
+								<input
+									type="checkbox"
+									id="<?php echo esc_attr( $field_id . '-' . $agent->ID ); ?>"
+									name="mp_pool[]"
+									value="<?php echo esc_attr( (string) $agent->ID ); ?>"
+									<?php checked( in_array( $agent->ID, $wybrani, true ) ); ?>
+								/>
+								<?php echo esc_html( $agent->display_name ); ?>
+								<span class="description">(<?php echo esc_html( $agent->user_email ); ?>)</span>
+							</label>
+						</p>
+					<?php endforeach; ?>
+				</fieldset>
+
+				<?php submit_button( __( 'Zapisz listę pracowników', 'mp-workflow-automator' ), 'primary', 'mp_pool_submit', false ); ?>
+			</form>
+		<?php endforeach; ?>
 		<?php
 	}
 

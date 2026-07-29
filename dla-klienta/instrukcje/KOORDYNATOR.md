@@ -41,12 +41,14 @@ czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika ra
 > *Zrzut poglądowy — w aktualnej wersji tabela reguł opisana jest po polsku
 > (KIEDY / JEŚLI / ZRÓB) i ostrzega, gdy pula pracowników jest pusta.*
 
-- **Reguły przydziału** — najważniejsze: w regule automatycznego przydziału ustaw **pulę
-  pracowników** (round-robin). **Pusta pula = sprawy zostają nieprzydzielone.**
+- **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). Pod nią
+  jest sekcja **„Kto dostaje zgłoszenia"** z listą pracowników do zaznaczenia — **ustawia ją
+  administrator systemu** (tak samo jak pozostałe konfiguracje). **Pusta lista = sprawy zostają
+  nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
 - **Akcje**: „Przelicz SLA" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
   powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
-- **Statusy spraw** — 7 wbudowanych + możliwość dodania własnych (własne można też wycofać
-  z użycia; wbudowane są nieusuwalne).
+- **Statusy spraw** — 7 wbudowanych, nieusuwalnych, pokazanych do odczytu. ⚠️ System przewiduje
+  dokładanie własnych statusów, ale nie ma na to ekranu — zrobi to programista.
 - **Rejestr zdarzeń** — co automat zrobił i dlaczego (np. `ASSIGNMENT_UNMATCHED` = nie umiał
   przydzielić). Przycisk „Pokaż techniczne" odsłania też wpisy cyklicznego sprawdzania.
 - **Checklisty i szablony odpowiedzi** — kroki obsługi per rodzaj sprawy i gotowe treści maili;

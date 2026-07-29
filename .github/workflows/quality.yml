@@ -321,6 +321,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-retencja-porzuconych.sh
       - name: Testy odtwarzania cronów (zadanie skasowane z zewnątrz wraca bez reaktywacji)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/cron-odtwarza-sie.sh
+      - name: Testy puli pracowników (pusta pula = brak przydziału; zapis z panelu = sprawa trafia do człowieka)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-pula-pracownikow.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
       - name: Testy uninstall-crony (zero zadań-widm — NA SAMYM KOŃCU, odinstalowuje wtyczki)

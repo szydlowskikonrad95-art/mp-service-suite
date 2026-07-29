@@ -42,6 +42,7 @@
 | `mp_import_upload` · `mp_import_report` · `mp_import_batch` (ajax) · `mp_import_reclaim` (ajax) | `mp_system_admin` |
 | `mp_exception_add` · `mp_exception_revoke` | `mp_system_admin` |
 | `mp_product_archive` · `mp_product_restore` | `mp_system_admin` |
+| `mp_automator_pool_config` (pula pracowników reguły przydziału) | `mp_system_admin` |
 | Ekran „Rejestr MP" (lista produktów) | `mp_agent` lub `mp_system_admin` |
 
 ## 3. Macierz NEGATYWNA (kto NIE może → 403)
