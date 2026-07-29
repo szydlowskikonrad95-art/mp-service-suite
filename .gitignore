@@ -36,5 +36,10 @@ mp-service-intake/includes/Common/
 mp-warranty-registry/includes/Common/
 mp-workflow-automator/includes/Common/
 
-# plik warsztatowy — nie trafia do repo klienta
-CLAUDE.md
+# Prywatne wzorce kontroli paczki — patrz build/pakuj-dla-klienta.sh, sekcja 5c.
+# Lista slow, ktorych nie chcemy w paczce, sama by je ujawniala, wiec zostaje lokalnie.
+build/.slady-prywatne
+
+# smieci Pythona z lokalnego sprawdzania skladni
+__pycache__/
+*.pyc
