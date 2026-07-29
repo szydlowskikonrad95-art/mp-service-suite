@@ -21,6 +21,16 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    # PHPUnit 13 wymaga PHP >= 8.4, a kartka klienta deklaruje „PHP 8.1 lub nowszy"
+    # i matryca CI testuje 8.1-8.5. Przyjecie takiego skoku oznaczaloby utrate testow
+    # na trzech wersjach PHP, ktore klient ma prawo miec na serwerze (PR #152, zamkniety).
+    # Blokujemy WYLACZNIE skoki glownej wersji — poprawki bezpieczenstwa i drobne
+    # aktualizacje (10.5.64 -> 10.5.65) maja przychodzic dalej, bo po to tu Dependabot jest.
+    # Zdjac, gdy podloga wymagan projektu podniesie sie do PHP 8.4.
+    ignore:
+      - dependency-name: phpunit/phpunit
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
