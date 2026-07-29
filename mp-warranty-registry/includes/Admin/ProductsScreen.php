@@ -41,6 +41,11 @@ final class ProductsScreen {
 		add_action( 'admin_post_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_mp_product_restore', array( self::class, 'handle_restore' ) );
 		add_action( 'admin_post_mp_product_edit', array( self::class, 'handle_edit' ) );
+		// Wersja `nopriv` NIE otwiera akcji dla niezalogowanych — handler i tak zaczyna od
+		// check_admin_referer(), ktory ich odbija. Chodzi o KOD ODPOWIEDZI: bez tej rejestracji
+		// WordPress konczy wlasnym 400 („nieprawidlowe zadanie"), a reszta naszych endpointow
+		// oddaje 403. Macierz bezpieczenstwa wymaga 403 wszedzie — zlapane przez CI.
+		add_action( 'admin_post_nopriv_mp_product_edit', array( self::class, 'handle_edit' ) );
 		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep DoD sekcja 3).
 		add_action( 'admin_post_nopriv_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_nopriv_mp_product_restore', array( self::class, 'handle_restore' ) );
