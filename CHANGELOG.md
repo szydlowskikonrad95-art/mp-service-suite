@@ -4,6 +4,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-29
+
+### Zmienione
+- **Eksport CSV nie trzyma już wszystkich spraw w pamięci.** Dotąd zbierał całość do jednej
+  tablicy PHP, zanim cokolwiek poszło do przeglądarki — przy kilkudziesięciu tysiącach spraw
+  koordynator klikał „Eksport" i dostawał białą stronę albo błąd limitu czasu, bez podpowiedzi,
+  że chodzi o rozmiar. Teraz wiersze lecą **strona po stronie**, a zestawienie na końcu pliku
+  liczy się **w trakcie wysyłki** (liczniki są sumowalne, więc nie trzeba drugiego przebiegu).
+  Pomiar na 20 000 spraw: **15,8 MB → 1,9 kB** zużytej pamięci, i nie rośnie dalej z liczbą spraw.
+- Ślad w rejestrze o wyniesieniu danych powstaje nadal **przed** wysyłką (liczbę spraw bierzemy
+  z kontraktu, nie z policzenia zebranej tablicy) — dzięki temu wpis istnieje także wtedy, gdy
+  pobieranie urwie się w połowie.
+- Nowy żywy test `testy/e2e/d-eksport-strumieniowy.sh` (10 kontroli) wpięty w CI: mierzy pamięć
+  obiema drogami, sprawdza zgodność wszystkich pozycji zestawienia i to, że pamięciożerna metoda
+  została usunięta. Skalibrowany kodem sprzed przebudowy — złapał.
+
 ## [1.2.5] - 2026-07-29
 
 ### Poprawione

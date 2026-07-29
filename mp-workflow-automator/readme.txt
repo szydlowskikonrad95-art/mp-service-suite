@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.5
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.3.0 =
+* Eksport CSV wysyła dane strumieniowo, zamiast najpierw zbierać wszystkie sprawy do pamięci. Przy dużej bazie eksport nie przerywa się już limitem czasu, a plik zaczyna pobierać się od razu. Zestawienie na końcu pliku liczy się w trakcie wysyłki.
 
 = 1.2.5 =
 * Po dłuższym przestoju zaległe eskalacje idą teraz w JEDNYM zbiorczym mailu zamiast w kilku. Wcześniej sprawdzanie terminów dzieliło je na paczki po 50, a próg „zbiorczego maila" liczył się osobno dla każdej paczki — koordynator dostawał do dziesięciu wiadomości w ciągu pięciu minut.

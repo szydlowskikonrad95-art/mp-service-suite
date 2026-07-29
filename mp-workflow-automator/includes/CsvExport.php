@@ -76,21 +76,27 @@ final class CsvExport {
 		check_admin_referer( self::ACTION );
 
 		$filters = self::read_filters();
-		$cases   = self::collect( $filters );
+
+		// Liczba wierszy BEZ sciagania ich do pamieci: kontrakt `mp_cases_query` zwraca
+		// `total` obok `rows`, wiec jedna strona o rozmiarze 1 wystarczy do audytu.
+		// Audyt zostaje PRZED wysylka — slad wyniesienia danych ma powstac takze wtedy,
+		// gdy pobieranie urwie sie w polowie.
+		$sonda = apply_filters( 'mp_cases_query', null, $filters, 1, 1 );
+		$total = is_array( $sonda ) && isset( $sonda['total'] ) ? (int) $sonda['total'] : 0;
 
 		// Audyt bulk-egress (append-only, NO-PII: tylko referencje/liczby/hash filtra).
 		WorkflowEvents::log(
 			WorkflowEvents::EXPORT_GENERATED,
 			array(
 				'user_id'      => get_current_user_id(),
-				'rows'         => count( $cases ),
+				'rows'         => $total,
 				'filters_hash' => md5( (string) wp_json_encode( $filters ) ),
 			),
 			null,
 			get_current_user_id()
 		);
 
-		self::stream( $cases );
+		self::stream( $filters );
 	}
 
 	/**
@@ -114,38 +120,22 @@ final class CsvExport {
 	}
 
 	/**
-	 * Zbiera WSZYSTKIE pasujace sprawy przez hook kontraktowy `mp_cases_query`
-	 * (stronami po CHUNK; NIGDY nie dotyka tabeli C wprost — OWNERSHIP/linter).
-	 *
-	 * @param array<string, string> $filters Filtry.
-	 * @return array<int, array<string, mixed>>
-	 */
-	private static function collect( array $filters ): array {
-		$all  = array();
-		$page = 1;
-
-		do {
-			$res  = apply_filters( 'mp_cases_query', null, $filters, $page, self::CHUNK );
-			$rows = is_array( $res ) && isset( $res['rows'] ) && is_array( $res['rows'] ) ? $res['rows'] : array();
-
-			foreach ( $rows as $row ) {
-				$all[] = $row;
-			}
-
-			$got = count( $rows );
-			++$page;
-		} while ( self::CHUNK === $got && $page <= self::MAX_PAGES );
-
-		return $all;
-	}
-
-	/**
 	 * Wysyla CSV (naglowki + BOM + sekcja danych + sekcja zestawienia) i konczy.
 	 *
-	 * @param array<int, array<string, mixed>> $cases Sprawy z mp_cases_query.
+	 * STRUMIENIOWO — wiersze leca do przegladarki strona po stronie, a nie po zebraniu
+	 * calosci do pamieci PHP (audyt 29.07). Dotad `collect()` sciagalo WSZYSTKIE sprawy
+	 * do jednej tablicy przed wyslaniem czegokolwiek: przy kilkudziesieciu tysiacach
+	 * spraw koordynator klikal „Eksport" i dostawal biala strone albo blad limitu czasu,
+	 * bez zadnej podpowiedzi, ze chodzi o rozmiar. Teraz pamiec nie rosnie z liczba spraw
+	 * (jedna strona naraz), a przegladarka dostaje pierwsze bajty od razu.
+	 *
+	 * Zestawienie na koncu pliku liczymy AKUMULACYJNIE (liczniki sa sumowalne), wiec
+	 * nie wymaga drugiego przebiegu ani trzymania danych.
+	 *
+	 * @param array<string, string> $filters Filtry z requestu (jak w mp_cases_query).
 	 * @return never
 	 */
-	private static function stream( array $cases ): void {
+	private static function stream( array $filters ): void {
 		$reasons = apply_filters( 'mp_rejection_reasons', array() );
 		$reasons = is_array( $reasons ) ? $reasons : array();
 
@@ -183,31 +173,58 @@ final class CsvExport {
 			)
 		);
 
-		foreach ( $cases as $c ) {
-			$code  = isset( $c['rejection_reason_code'] ) && null !== $c['rejection_reason_code']
-				? (string) $c['rejection_reason_code']
-				: '';
-			$label = '' !== $code && isset( $reasons[ $code ] ) ? (string) $reasons[ $code ] : $code;
+		// Akumulator zestawienia — rosnie o STALA wielkosc, nie o liczbe spraw.
+		$acc  = array(
+			'total'     => 0,
+			'by_status' => array(),
+			'by_reason' => array(),
+			'closed'    => 0,
+			'sum_sec'   => 0,
+		);
+		$page = 1;
 
-			self::put_row(
-				$out,
-				array(
-					(string) ( $c['case_number'] ?? '' ),
-					(string) ( $c['status'] ?? '' ),
-					(string) ( $c['kind'] ?? '' ),
-					(string) ( $c['country'] ?? '' ),
-					(string) ( $c['lang'] ?? '' ),
-					(string) ( $c['created_at'] ?? '' ),
-					(string) ( $c['closed_at'] ?? '' ),
-					self::hours( $c['handling_seconds'] ?? null ),
-					$code,
-					$label,
-				)
-			);
-		}
+		do {
+			$res  = apply_filters( 'mp_cases_query', null, $filters, $page, self::CHUNK );
+			$rows = is_array( $res ) && isset( $res['rows'] ) && is_array( $res['rows'] ) ? $res['rows'] : array();
+
+			foreach ( $rows as $c ) {
+				$code  = isset( $c['rejection_reason_code'] ) && null !== $c['rejection_reason_code']
+					? (string) $c['rejection_reason_code']
+					: '';
+				$label = '' !== $code && isset( $reasons[ $code ] ) ? (string) $reasons[ $code ] : $code;
+
+				self::put_row(
+					$out,
+					array(
+						(string) ( $c['case_number'] ?? '' ),
+						(string) ( $c['status'] ?? '' ),
+						(string) ( $c['kind'] ?? '' ),
+						(string) ( $c['country'] ?? '' ),
+						(string) ( $c['lang'] ?? '' ),
+						(string) ( $c['created_at'] ?? '' ),
+						(string) ( $c['closed_at'] ?? '' ),
+						self::hours( $c['handling_seconds'] ?? null ),
+						$code,
+						$label,
+					)
+				);
+
+				self::accumulate( $acc, $c, $code );
+			}
+
+			// Wypychamy to, co juz powstalo — inaczej bufor PHP i tak trzymalby caly
+			// plik w pamieci i cala ta zmiana nic by nie dala.
+			if ( 0 !== ob_get_level() ) {
+				ob_flush();
+			}
+			flush();
+
+			$got = count( $rows );
+			++$page;
+		} while ( self::CHUNK === $got && $page <= self::MAX_PAGES );
 
 		// ── Sekcja zestawienia ─────────────────────────────────────────────
-		$summary = self::summarize( $cases );
+		$summary = self::summary_finish( $acc );
 
 		self::put_row( $out, array( '' ) );
 		self::put_row( $out, array( __( 'ZESTAWIENIE', 'mp-workflow-automator' ) ) );
@@ -241,50 +258,58 @@ final class CsvExport {
 	}
 
 	/**
-	 * Liczy zestawienie: liczba per status, czas obslugi spraw zamknietych,
-	 * rozklad powodow odrzucen.
+	 * Dokłada JEDNĄ sprawe do zestawienia (liczniki per status, czas obslugi,
+	 * rozklad powodow odrzucen).
 	 *
-	 * @param array<int, array<string, mixed>> $cases Sprawy.
-	 * @return array{total:int, by_status:array<string,int>, closed_count:int, avg_hours:string, total_hours:string, by_reason:array<string,int>}
+	 * Liczby sa sumowalne, wiec zestawienie powstaje w trakcie wysylki — bez
+	 * trzymania spraw w pamieci i bez drugiego przebiegu po danych.
+	 *
+	 * @param array<string, mixed> $acc    Akumulator (modyfikowany przez referencje).
+	 * @param array<string, mixed> $sprawa Jedna sprawa z mp_cases_query.
+	 * @param string               $code   Kod powodu odrzucenia ('' gdy brak).
+	 * @return void
 	 */
-	private static function summarize( array $cases ): array {
-		$by_status = array();
-		$by_reason = array();
-		$sum_sec   = 0;
-		$closed    = 0;
+	private static function accumulate( array &$acc, array $sprawa, string $code ): void {
+		++$acc['total'];
 
-		foreach ( $cases as $c ) {
-			$status = (string) ( $c['status'] ?? '' );
+		$status = (string) ( $sprawa['status'] ?? '' );
 
-			if ( ! isset( $by_status[ $status ] ) ) {
-				$by_status[ $status ] = 0;
-			}
-			++$by_status[ $status ];
+		if ( ! isset( $acc['by_status'][ $status ] ) ) {
+			$acc['by_status'][ $status ] = 0;
+		}
+		++$acc['by_status'][ $status ];
 
-			$handling = $c['handling_seconds'] ?? null;
-			if ( null !== $handling ) {
-				++$closed;
-				$sum_sec += (int) $handling;
-			}
-
-			$code = isset( $c['rejection_reason_code'] ) && null !== $c['rejection_reason_code']
-				? (string) $c['rejection_reason_code']
-				: '';
-			if ( '' !== $code ) {
-				if ( ! isset( $by_reason[ $code ] ) ) {
-					$by_reason[ $code ] = 0;
-				}
-				++$by_reason[ $code ];
-			}
+		$handling = $sprawa['handling_seconds'] ?? null;
+		if ( null !== $handling ) {
+			++$acc['closed'];
+			$acc['sum_sec'] += (int) $handling;
 		}
 
+		if ( '' !== $code ) {
+			if ( ! isset( $acc['by_reason'][ $code ] ) ) {
+				$acc['by_reason'][ $code ] = 0;
+			}
+			++$acc['by_reason'][ $code ];
+		}
+	}
+
+	/**
+	 * Domyka zestawienie z akumulatora (te same pola co dawne `summarize`).
+	 *
+	 * @param array<string, mixed> $acc Akumulator z `accumulate()`.
+	 * @return array<string, mixed>
+	 */
+	private static function summary_finish( array $acc ): array {
+		$closed  = (int) $acc['closed'];
+		$sum_sec = (int) $acc['sum_sec'];
+
 		return array(
-			'total'        => count( $cases ),
-			'by_status'    => $by_status,
+			'total'        => (int) $acc['total'],
+			'by_status'    => (array) $acc['by_status'],
 			'closed_count' => $closed,
 			'avg_hours'    => $closed > 0 ? self::hours( (int) round( $sum_sec / $closed ) ) : '',
 			'total_hours'  => self::hours( $sum_sec ),
-			'by_reason'    => $by_reason,
+			'by_reason'    => (array) $acc['by_reason'],
 		);
 	}
 
