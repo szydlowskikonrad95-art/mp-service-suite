@@ -105,7 +105,7 @@ done
 # ⚠️ Lista wymaganych nazw jest WPISANA TUTAJ, a nie czytana z katalogu zrodlowego.
 # Petla po `dokumentacja-techniczna/*.md` sprawdzalaby tylko to, co akurat istnieje:
 # skasowanie dokumentu w repo przechodziloby na zielono (zlapane kalibracja 28.07).
-DOK_TECH=(API-KONTRAKT.md DATABASE.md EVENT_MODEL.md MIGRATION_POLICY.md OWNERSHIP.md SECURITY.md STATE_MACHINE.md)
+DOK_TECH=(API-KONTRAKT.md DATABASE.md EVENT_MODEL.md JAKOSC-I-AUDYTY.md MIGRATION_POLICY.md OWNERSHIP.md SECURITY.md STATE_MACHINE.md)
 for d in "${DOK_TECH[@]}"; do
   [ -s "$PACZKA/dla-informatyka/$d" ] || zglos "brak w paczce: dla-informatyka/$d"
 done
