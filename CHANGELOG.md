@@ -4,6 +4,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-07-29
+
+### Poprawione
+- **Import CSV omijał regułę, której pilnowała ręczna edycja.** „Gwarancja nie może kończyć się
+  przed datą zakupu" było egzekwowane tylko przy poprawianiu danych produktu w panelu (od 1.1.0),
+  a **nie przy imporcie — czyli przy głównej drodze wejścia danych**. Parser sprawdzał każdą datę
+  z osobna (czy jest poprawna kalendarzowo), ale nie porównywał ich ze sobą: wiersz z zakupem
+  2026-08-01 i gwarancją do 2026-01-01 wjeżdżał bez słowa i dostawał normalny status, bo status
+  liczy się wyłącznie z daty końca. Pilnowaliśmy reguły tam, gdzie prawie nikt nie wchodzi.
+  Teraz taki wiersz trafia do raportu błędów z powodem, a reszta pliku importuje się normalnie.
+  Puste daty pozostają legalne — kolumny są opcjonalne.
+- Nowy żywy test `testy/e2e/b-import-waliduje-daty.sh` (7 kontroli) wpięty w CI: sprawdza nie tylko
+  odrzucenie złego wiersza, ale też że dobry wchodzi, puste daty dalej działają i że raport podaje
+  powód. Skalibrowany kodem sprzed poprawki — złapał.
+- `INSTRUKCJA-KLIENTA.md`: reguła dopisana do zasad pliku CSV.
+
 ## [1.2.3] - 2026-07-29
 
 ### Poprawione
