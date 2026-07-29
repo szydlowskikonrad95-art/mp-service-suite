@@ -5,7 +5,9 @@
  *
  * Zrodla godzin:
  *  - rdzen 7: defaulty ze STATE_MACHINE (opcja `mp_automator_sla_core` nadpisuje;
- *    warstwa ii, admin-edytowalne w panelu),
+ *    warstwa ii — punkt rozszerzenia dla wdrozeniowca, BEZ ekranu w panelu:
+ *    godziny 7 statusow rdzenia zmienia sie kodem/WP-CLI, nie z panelu.
+ *    Godziny statusow WLASNYCH sa edytowalne w panelu przez `StatusDefs`),
  *  - statusy wlasne: `StatusDefs` (ma sla_hours + warning_hours).
  * warning_hours: gdy nie ustawione => round(sla_hours × 0.25) (ostrzegaj przy 25%
  * pozostalego okna — NIE stale 24h, bo dla 24h-statusu warning odpalalby w t=0 = spam).
