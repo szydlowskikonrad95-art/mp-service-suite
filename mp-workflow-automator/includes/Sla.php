@@ -45,7 +45,14 @@ final class Sla {
 	public const DIGEST_THRESHOLD = 5;
 
 	/**
-	 * Flaga alarmu dla admina (mail nie doszedl po MAX_ATTEMPTS) — panel pokaze notice.
+	 * Flaga alarmu dla admina: mail nie doszedl po MAX_ATTEMPTS.
+	 *
+	 * Audyt 29.07: ta opcja byla ZAPISYWANA i nigdy nieodczytywana — komentarz obiecywal
+	 * „panel pokaze notice", a nie pokazywal nic. Sprawa dostawala trwaly marker „wyslano"
+	 * i NIGDY wiecej przypomnienia ani eskalacji, a admin nie mial o tym zadnego sygnalu.
+	 * Bliźniacza wtyczka (Intake) miala ten sam wzorzec w komplecie: zapis, gaszenie po
+	 * udanej wysylce i odczyt w Narzedzia -> Stan witryny. Ksztalt wartosci jest teraz
+	 * TAKI SAM jak tam ({kind, time}), zeby diagnostyka mogla powiedziec CO i KIEDY padlo.
 	 */
 	public const ALERT_OPTION = 'mp_automator_mail_alert';
 
@@ -425,6 +432,12 @@ final class Sla {
 			// CLAIM po sukcesie (send-then-claim): marker + wpis na osi C + log D.
 			self::announce_sent( $case_id, $kind, $ref, $template );
 
+			// Udana wysylka gasi alarm — inaczej komunikat w Stanie witryny wisialby
+			// wiecznie po jednej chwilowej odmowie serwera (parytet z Intake::Mailer).
+			if ( array() !== (array) get_option( self::ALERT_OPTION, array() ) ) {
+				delete_option( self::ALERT_OPTION );
+			}
+
 			return;
 		}
 
@@ -433,7 +446,14 @@ final class Sla {
 
 		if ( $attempts >= self::MAX_ATTEMPTS ) {
 			self::set_marker( $case_id, $kind );
-			update_option( self::ALERT_OPTION, 1, false );
+			update_option(
+				self::ALERT_OPTION,
+				array(
+					'kind' => $kind,
+					'time' => gmdate( 'Y-m-d H:i:s' ),
+				),
+				false
+			);
 			WorkflowEvents::log(
 				WorkflowEvents::MAIL_FAILED_FINAL,
 				array(
@@ -607,6 +627,11 @@ final class Sla {
 				self::announce_sent( $cid, self::KIND_ESCALATION, $ref, 'sla_escalation_digest' );
 			}
 
+			// Udana wysylka gasi alarm (parytet z notify() i z Intake::Mailer).
+			if ( array() !== (array) get_option( self::ALERT_OPTION, array() ) ) {
+				delete_option( self::ALERT_OPTION );
+			}
+
 			return;
 		}
 
@@ -616,7 +641,14 @@ final class Sla {
 
 			if ( $attempts >= self::MAX_ATTEMPTS ) {
 				self::set_marker( $cid, self::KIND_ESCALATION );
-				update_option( self::ALERT_OPTION, 1, false );
+				update_option(
+					self::ALERT_OPTION,
+					array(
+						'kind' => self::KIND_ESCALATION,
+						'time' => gmdate( 'Y-m-d H:i:s' ),
+					),
+					false
+				);
 				WorkflowEvents::log(
 					WorkflowEvents::MAIL_FAILED_FINAL,
 					array(
