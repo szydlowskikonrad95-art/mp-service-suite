@@ -105,8 +105,14 @@ MF=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE case_id=$CID4 AND event
 [ "$MF" = "2" ] && ok "2x MAIL_FAILED (proba 1-2, retry, marker NULL)" || bad "MAIL_FAILED=$MF (oczek 2)"
 FIN=$(q "SELECT COUNT(*) FROM wp_mp_workflow_events WHERE case_id=$CID4 AND event_type='MAIL_FAILED_FINAL'")
 [ "$FIN" = "1" ] && ok "3. proba => MAIL_FAILED_FINAL (marker na sile, koniec retry)" || bad "brak MAIL_FAILED_FINAL ($FIN)"
-AL=$(q "SELECT option_value FROM wp_options WHERE option_name='mp_automator_mail_alert'")
-[ "$AL" = "1" ] && ok "alarm admina ustawiony (panel pokaze notice)" || bad "brak alarmu admina ($AL)"
+# Alarm nie jest juz gola „1" — od 29.07 trzyma {kind, time}, zeby diagnostyka w Stanie
+# witryny mogla powiedziec, KTORE powiadomienie nie wyszlo i KIEDY (parytet z Intake).
+# Ten test sprawdzal `= "1"` i wywalil sie zaraz po zmianie ksztaltu — slusznie:
+# zmiana reguly uniewaznia testy, ktore sie na starej regule opieraly.
+AL=$(wp eval 'echo wp_json_encode( get_option( "mp_automator_mail_alert", array() ) );' 2>/dev/null)
+{ echo "$AL" | grep -q '"kind"' && echo "$AL" | grep -q '"time"'; } \
+	&& ok "alarm admina ustawiony ({kind, time} — widoczny w Stanie witryny)" \
+	|| bad "brak alarmu admina albo zly ksztalt ($AL)"
 
 # ── Sprzatanie ────────────────────────────────────────────────────────────────
 capclear; wp user delete "$COORD2" --yes >/dev/null 2>&1
