@@ -24,6 +24,29 @@ na ekranie jest przykładowy plik do pobrania i lista kolumn:
 Produktu z **aktywną sprawą nie da się usunąć** (blokada integralności) — najpierw zamknij sprawę
 albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
 
+### Poprawianie danych produktu
+
+![Poprawianie danych produktu](zdjecia/admin-04b-popraw-produkt.png)
+
+Jeśli w pliku importu była pomyłka (najczęściej data gwarancji), kliknij przy produkcie
+**„popraw dane"**. Możesz zmienić model, partię, kategorię, dokument zakupu, datę zakupu
+i datę końca gwarancji. Daty przyjmujemy w formacie `RRRR-MM-DD` albo `DD.MM.RRRR`.
+
+Co się dzieje po zapisaniu:
+
+- **zmiana od razu wpływa na zgłoszenia** — jeśli poprawisz datę gwarancji, produkt przestaje
+  być „po gwarancji" i kolejne zgłoszenia dostają właściwy status;
+- **zmiana zapisuje się w historii produktu**: kto, kiedy i co poprawił (wartość przed i po).
+  Wyjątek: przy dokumencie zakupu zapisujemy sam fakt zmiany bez treści — to dana osobowa;
+- **numeru seryjnego nie da się zmienić.** To po nim sprawy klientów trzymają się produktu —
+  podmiana przepisałaby cudzą historię serwisową na inny egzemplarz. Jeśli numer jest błędny,
+  zarchiwizuj wpis i zaimportuj poprawny.
+
+Odrzucimy zapis, gdy data jest niepoprawna albo gwarancja kończy się **przed** datą zakupu —
+zobaczysz wtedy komunikat i wrócisz do formularza z wpisanymi danymi.
+
+Produkt w archiwum jest zablokowany do edycji — najpierw go przywróć.
+
 ## 3. Wyjątki gwarancyjne (tylko Ty)
 
 **Rejestr MP → Wyjątki** — ręczne przyznanie/cofnięcie gwarancji dla produktu lub konkretnej

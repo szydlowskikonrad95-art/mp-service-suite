@@ -12,6 +12,8 @@
 namespace MP\Registry\Admin;
 
 use MP\Registry\Archive;
+use MP\Registry\Categories;
+use MP\Registry\Repo;
 
 /**
  * Rejestracja menu, render listy, akcje archiwum.
@@ -38,6 +40,12 @@ final class ProductsScreen {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 		add_action( 'admin_post_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_mp_product_restore', array( self::class, 'handle_restore' ) );
+		add_action( 'admin_post_mp_product_edit', array( self::class, 'handle_edit' ) );
+		// Wersja `nopriv` NIE otwiera akcji dla niezalogowanych — handler i tak zaczyna od
+		// check_admin_referer(), ktory ich odbija. Chodzi o KOD ODPOWIEDZI: bez tej rejestracji
+		// WordPress konczy wlasnym 400 („nieprawidlowe zadanie"), a reszta naszych endpointow
+		// oddaje 403. Macierz bezpieczenstwa wymaga 403 wszedzie — zlapane przez CI.
+		add_action( 'admin_post_nopriv_mp_product_edit', array( self::class, 'handle_edit' ) );
 		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep DoD sekcja 3).
 		add_action( 'admin_post_nopriv_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_nopriv_mp_product_restore', array( self::class, 'handle_restore' ) );
@@ -97,6 +105,17 @@ final class ProductsScreen {
 	public static function render(): void {
 		if ( ! current_user_can( 'mp_agent' ) && ! current_user_can( 'mp_system_admin' ) ) {
 			wp_die( esc_html__( 'Brak uprawnień do rejestru produktów.', 'mp-warranty-registry' ) );
+		}
+
+		// Ekran poprawiania danych produktu — osobny widok pod tym samym adresem menu
+		// (`?page=mp-registry&edit=ID`), zeby nie mnozyc pozycji w menu dla czynnosci,
+		// ktora zdarza sie rzadko: poprawka literowki po imporcie z systemu firmy.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- wybor widoku z GET; nic nie mutuje, zapis idzie POST-em z tokenem.
+		$edit_id = isset( $_GET['edit'] ) ? absint( $_GET['edit'] ) : 0;
+
+		if ( $edit_id > 0 ) {
+			self::render_edit( $edit_id );
+			return;
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- filtry wyszukiwarki: odczyt bez zmiany stanu (GET).
@@ -212,6 +231,173 @@ final class ProductsScreen {
 
 		set_transient( self::NOTICE_TRANSIENT . get_current_user_id(), $notice, 5 * MINUTE_IN_SECONDS );
 		wp_safe_redirect( add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Widok poprawiania danych produktu (kartka: „historia zmian danych produktu").
+	 *
+	 * Numer seryjny pokazujemy, ale tylko do odczytu — jest kluczem, po ktorym sprawy
+	 * trzymaja sie produktu (patrz `Repo::EDITABLE_FIELDS`).
+	 *
+	 * @param int $product_id ID produktu.
+	 * @return void
+	 */
+	private static function render_edit( int $product_id ): void {
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			wp_die( esc_html__( 'Brak uprawnień do poprawiania danych produktu.', 'mp-warranty-registry' ), '', 403 );
+		}
+
+		$produkt = Repo::find_by_id( $product_id );
+
+		if ( null === $produkt ) {
+			wp_die( esc_html__( 'Produkt nie istnieje w rejestrze.', 'mp-warranty-registry' ), '', 404 );
+		}
+
+		$notice = get_transient( self::NOTICE_TRANSIENT . get_current_user_id() );
+
+		if ( false !== $notice ) {
+			delete_transient( self::NOTICE_TRANSIENT . get_current_user_id() );
+		}
+
+		$powrot = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+		?>
+		<div class="wrap mp-registry">
+			<h1><?php esc_html_e( 'Popraw dane produktu', 'mp-warranty-registry' ); ?></h1>
+
+			<?php if ( is_array( $notice ) ) : ?>
+				<div class="notice notice-<?php echo esc_attr( (string) $notice['type'] ); ?>"><p><?php echo esc_html( (string) $notice['text'] ); ?></p></div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $produkt['archived'] ) ) : ?>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'Produkt jest w archiwum — przywróć go, żeby móc poprawić dane.', 'mp-warranty-registry' ); ?></p></div>
+			<?php endif; ?>
+
+			<p class="description">
+				<?php esc_html_e( 'Zmiana zapisuje się w historii produktu: kto, kiedy i co poprawił. Numeru seryjnego nie da się zmienić — sprawy klientów są z nim powiązane. Jeśli numer jest błędny, zarchiwizuj wpis i zaimportuj poprawny.', 'mp-warranty-registry' ); ?>
+			</p>
+
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="mp_product_edit" />
+				<input type="hidden" name="product" value="<?php echo esc_attr( (string) $product_id ); ?>" />
+				<?php wp_nonce_field( 'mp_product_edit_' . $product_id ); ?>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Numer seryjny', 'mp-warranty-registry' ); ?></th>
+						<td>
+							<code><?php echo esc_html( (string) $produkt['serial_display'] ); ?></code>
+							<p class="description"><?php esc_html_e( 'Tylko do odczytu.', 'mp-warranty-registry' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-model"><?php esc_html_e( 'Model', 'mp-warranty-registry' ); ?></label></th>
+						<td><input type="text" class="regular-text" id="mp-f-model" name="model" value="<?php echo esc_attr( (string) $produkt['model'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-batch"><?php esc_html_e( 'Partia produkcyjna', 'mp-warranty-registry' ); ?></label></th>
+						<td><input type="text" class="regular-text" id="mp-f-batch" name="batch" value="<?php echo esc_attr( (string) $produkt['batch'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-category"><?php esc_html_e( 'Kategoria', 'mp-warranty-registry' ); ?></label></th>
+						<td>
+							<select id="mp-f-category" name="category">
+								<?php foreach ( Categories::all() as $slug => $label ) : ?>
+									<option value="<?php echo esc_attr( (string) $slug ); ?>" <?php selected( (string) $produkt['category'], (string) $slug ); ?>>
+										<?php echo esc_html( (string) $label ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-document"><?php esc_html_e( 'Dokument zakupu', 'mp-warranty-registry' ); ?></label></th>
+						<td><input type="text" class="regular-text" id="mp-f-document" name="purchase_document" value="<?php echo esc_attr( (string) $produkt['purchase_document'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-purchase"><?php esc_html_e( 'Data zakupu', 'mp-warranty-registry' ); ?></label></th>
+						<td>
+							<input type="text" id="mp-f-purchase" name="purchase_date" value="<?php echo esc_attr( null === $produkt['purchase_date'] ? '' : (string) $produkt['purchase_date'] ); ?>" placeholder="RRRR-MM-DD" />
+							<p class="description"><?php esc_html_e( 'Format RRRR-MM-DD albo DD.MM.RRRR. Puste = brak daty.', 'mp-warranty-registry' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="mp-f-warranty"><?php esc_html_e( 'Gwarancja do', 'mp-warranty-registry' ); ?></label></th>
+						<td>
+							<input type="text" id="mp-f-warranty" name="warranty_until" value="<?php echo esc_attr( null === $produkt['warranty_until'] ? '' : (string) $produkt['warranty_until'] ); ?>" placeholder="RRRR-MM-DD" />
+							<p class="description"><?php esc_html_e( 'Ta data decyduje o statusie gwarancji w zgłoszeniach.', 'mp-warranty-registry' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<?php submit_button( __( 'Zapisz zmiany', 'mp-warranty-registry' ) ); ?>
+				<a href="<?php echo esc_url( $powrot ); ?>"><?php esc_html_e( 'Wróć do rejestru', 'mp-warranty-registry' ); ?></a>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Akcja: zapis poprawionych danych produktu (admin-post, nonce per produkt).
+	 *
+	 * @return void
+	 */
+	public static function handle_edit(): void {
+		$product_id = isset( $_POST['product'] ) ? absint( $_POST['product'] ) : 0;
+
+		check_admin_referer( 'mp_product_edit_' . $product_id );
+
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			wp_die( esc_html__( 'Brak uprawnień do poprawiania danych produktu.', 'mp-warranty-registry' ), '', 403 );
+		}
+
+		$pola = array();
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		foreach ( Repo::EDITABLE_FIELDS as $field ) {
+			if ( isset( $_POST[ $field ] ) ) {
+				$pola[ $field ] = sanitize_text_field( wp_unslash( (string) $_POST[ $field ] ) );
+			}
+		}
+		// phpcs:enable
+
+		$wynik = Repo::update( $product_id, $pola, get_current_user_id() );
+
+		if ( isset( $wynik['error'] ) ) {
+			$notice = array(
+				'type' => 'error',
+				'text' => (string) $wynik['error'],
+			);
+		} elseif ( 0 === (int) $wynik['changed'] ) {
+			$notice = array(
+				'type' => 'info',
+				'text' => __( 'Nic nie zmieniono — dane są takie same jak wcześniej.', 'mp-warranty-registry' ),
+			);
+		} else {
+			$notice = array(
+				'type' => 'success',
+				'text' => sprintf(
+					/* translators: %d: liczba poprawionych pol. */
+					_n( 'Zapisano zmianę w %d polu. Wpis trafił do historii produktu.', 'Zapisano zmiany w %d polach. Wpis trafił do historii produktu.', (int) $wynik['changed'], 'mp-warranty-registry' ),
+					(int) $wynik['changed']
+				),
+			);
+		}
+
+		set_transient( self::NOTICE_TRANSIENT . get_current_user_id(), $notice, 5 * MINUTE_IN_SECONDS );
+
+		// Przy bledzie wracamy na formularz (user poprawia), przy sukcesie na liste.
+		$cel = isset( $wynik['error'] )
+			? add_query_arg(
+				array(
+					'page' => self::PAGE_SLUG,
+					'edit' => $product_id,
+				),
+				admin_url( 'admin.php' )
+			)
+			: add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+
+		wp_safe_redirect( $cel );
 		exit;
 	}
 }

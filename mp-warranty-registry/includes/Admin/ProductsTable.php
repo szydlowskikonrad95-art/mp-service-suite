@@ -177,6 +177,20 @@ final class ProductsTable extends \WP_List_Table {
 				)
 			) . '">' . esc_html__( 'wyjątki', 'mp-warranty-registry' ) . '</a>';
 
+			// Poprawianie danych ma sens tylko dla wpisu czynnego — archiwalny najpierw
+			// sie przywraca (`Repo::update()` odbija archiwalne, wiec link tez nie kusi).
+			if ( '1' !== (string) $item['archived'] ) {
+				$out[] = '<a href="' . esc_url(
+					add_query_arg(
+						array(
+							'page' => ProductsScreen::PAGE_SLUG,
+							'edit' => $id,
+						),
+						admin_url( 'admin.php' )
+					)
+				) . '">' . esc_html__( 'popraw dane', 'mp-warranty-registry' ) . '</a>';
+			}
+
 			$archive_action = '1' === (string) $item['archived'] ? 'mp_product_restore' : 'mp_product_archive';
 			$archive_label  = '1' === (string) $item['archived']
 				? __( 'przywróć', 'mp-warranty-registry' )

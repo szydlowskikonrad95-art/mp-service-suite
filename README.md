@@ -6,7 +6,7 @@ ale niezależne wtyczki WordPress**:
 | Wtyczka | Rola | Najkrócej |
 |---|---|---|
 | **MP Service Intake** | recepcja | formularz zgłoszeń (4 rodzaje, pola wg kategorii), numery spraw `SRV/RRRR/NNNN`, weryfikacja mailowa, konto klienta bez hasła (magic-link), wiadomości klient↔serwis, RODO |
-| **MP Warranty & Serial Registry** | magazyn wiedzy | rejestr produktów/numerów seryjnych/partii, import CSV porcjami z raportem błędów, automatyczny status gwarancji, wyjątki gwarancyjne za zgodą admina, wyszukiwarka |
+| **MP Warranty & Serial Registry** | magazyn wiedzy | rejestr produktów/numerów seryjnych/partii, import CSV porcjami z raportem błędów, poprawianie danych produktu z historią zmian, automatyczny status gwarancji, wyjątki gwarancyjne za zgodą admina, wyszukiwarka |
 | **MP Workflow Automator** | kierownik | reguły przydziału (kategoria/kraj/język/priorytet), 7 konfigurowalnych statusów, maile po ważnych zmianach, SLA z przypomnieniem i eskalacją, checklisty, raporty CSV |
 
 Dane żyją w **16 dedykowanych tabelach** (nie we wpisach WP) z twardymi zasadami integralności:

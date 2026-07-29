@@ -324,6 +324,22 @@ final class CaseCard {
 			$powod = trim( $powod . ' ' . __( 'Obowiązuje wyjątek gwarancyjny nadany przez administratora.', 'mp-service-intake' ) );
 		}
 
+		// Dane produktu mozna poprawic w rejestrze PO utworzeniu sprawy (np. bledna data
+		// gwarancji z importu). Plakietka zostaje przy decyzji z chwili zgloszenia — tak ma
+		// byc — ale wiersz „Gwarancja do" pokazuje juz WARTOSC BIEZACA z rejestru. Bez tej
+		// informacji pracownik widzialby na jednym ekranie date 2027 obok czerwonego
+		// „wygasla" i nie wiedzialby, ktoremu wierzyc.
+		if ( is_array( $snapshot ) && array_key_exists( 'warranty_until', $snapshot ) && is_array( $produkt ) ) {
+			$wtedy = null === $snapshot['warranty_until'] ? '' : (string) $snapshot['warranty_until'];
+			$teraz = (string) ( $produkt['warranty_until'] ?? '' );
+
+			if ( $wtedy !== $teraz ) {
+				$powod = trim(
+					$powod . ' ' . __( 'Uwaga: dane gwarancji produktu poprawiono w rejestrze po zgłoszeniu tej sprawy. Plakietka pokazuje decyzję z chwili zgłoszenia — jeśli poprawka ma objąć tę sprawę, zmień status ręcznie.', 'mp-service-intake' )
+				);
+			}
+		}
+
 		return array(
 			'status' => $status,
 			'powod'  => $powod,

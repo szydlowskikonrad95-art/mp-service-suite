@@ -75,6 +75,16 @@ const ZRZUTY = [
   { nazwa: 'admin-03-niepotwierdzone', url: () => `${BASE}/wp-admin/admin.php?page=mp-intake-unverified` },
   { nazwa: 'admin-04-rejestr', url: () => `${BASE}/wp-admin/admin.php?page=mp-registry` },
   { nazwa: 'admin-05-import-csv', url: () => `${BASE}/wp-admin/admin.php?page=mp-registry-import` },
+  {
+    // Ekran poprawiania danych produktu. Bez wskazanego ID bierzemy pierwszy wpis
+    // z odnosnikiem „popraw dane" — zrzut ma powstac na kazdej instancji z danymi.
+    nazwa: 'admin-04b-popraw-produkt',
+    url: async (page) => {
+      await page.goto(`${BASE}/wp-admin/admin.php?page=mp-registry`, { waitUntil: 'networkidle' });
+      const href = await page.locator('a[href*="edit="]').first().getAttribute('href');
+      return new URL(href, BASE).toString();
+    },
+  },
   { nazwa: 'admin-06-wyjatki', url: () => `${BASE}/wp-admin/admin.php?page=mp-registry-exceptions` },
   { nazwa: 'admin-07-automatyzacje', url: () => `${BASE}/wp-admin/admin.php?page=mp-automator` },
   {
