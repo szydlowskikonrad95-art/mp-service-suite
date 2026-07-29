@@ -14,7 +14,8 @@ konfiguracja formularza, rejestru i Automatora, noty serwerowe: SMTP, nginx, sys
 Świeżo zainstalowany system **nie przydziela spraw nikomu**, dopóki nie wskażesz pracowników.
 Sprawy będą się poprawnie przyjmować, ale zostaną „nieprzydzielone".
 
-1. **Użytkownicy → Dodaj nowego** — załóż konta pracownikom serwisu z rolą **„Pracownik serwisu"**.
+1. **Użytkownicy → Dodaj nowego** — załóż konta pracownikom serwisu z rolą **„Pracownik serwisu MP"**
+   (dokładnie tak nazywa się na liście ról).
 2. **Automatyzacje MP** → przewiń pod tabelę reguł do sekcji **„Kto dostaje zgłoszenia"**.
 3. Zaznacz osoby, między które system ma rozdzielać sprawy (po kolei, sprawiedliwie), i kliknij
    **Zapisz listę pracowników**.

@@ -174,13 +174,33 @@ grep -rq "StatusDefs::upsert\|StatusDefs::remove" mp-workflow-automator/includes
 	|| brak_obietnicy "zadna dokumentacja nie obiecuje dodawania wlasnych statusow z panelu" \
 		"dodać własne w ustawieniach|możliwość dodania własnych" dla-klienta/*.md dla-klienta/instrukcje/*.md
 
+# ── Nazwy rol: dokumenty kaza klientowi wybrac role z listy w panelu ────────
+# Nazwy czytamy Z KODU (Roles.php), a nie wpisujemy tutaj — inaczej bramka
+# pilnowalaby wlasnej kopii prawdy. Zlapane 29.07 na zywym panelu: dwa dokumenty
+# kazaly nadac range „Pracownik serwisu", a na liscie rol jest „Pracownik serwisu MP".
+# INSTRUKCJA-KLIENTA przeczyla przy tym sama sobie: raz bez „MP", a kilkadziesiat
+# linii dalej z dopiskiem „dokladnie tak nazywaja sie na liscie rol".
+while IFS= read -r ROLA; do
+	[ -n "$ROLA" ] || continue
+	BAZA="${ROLA% MP}"
+	[ "$BAZA" != "$ROLA" ] || continue          # rola bez sufiksu MP — nie dotyczy
+	ZLE="$(grep -rn "$BAZA" dla-klienta/*.md dla-klienta/instrukcje/*.md 2>/dev/null \
+		| grep -v "$ROLA" || true)"
+	if [ -z "$ZLE" ]; then
+		ok "nazwa roli w dokumentach zgodna z panelem: $ROLA"
+	else
+		bad "dokument podaje nazwe roli inaczej niz panel ($ROLA):"
+		echo "$ZLE" | head -3 | sed 's/^/         /'
+	fi
+done < <(sed -n "s/^[[:space:]]*'mp_[a-z_]*'[[:space:]]*=>[[:space:]]*'\([^']*\)'.*/\1/p" lib/mp-common/src/Roles.php)
+
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=29
+MIN_KONTROLI=33
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."

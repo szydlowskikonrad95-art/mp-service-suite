@@ -123,7 +123,7 @@ Dla **każdego** z 3 plików ZIP:
 ### 5.3 Automator (przydział, terminy, szablony, raporty)
 
 **Najważniejszy pierwszy krok: uzupełnij pulę pracowników.**
-- Najpierw dodaj pracowników jako użytkowników WordPressa z rolą **„Pracownik serwisu"**
+- Najpierw dodaj pracowników jako użytkowników WordPressa z rolą **„Pracownik serwisu MP"**
   (Użytkownicy → Dodaj nowego). Bez tego nie będzie kogo wskazać.
 - Wejdź w **Automatyzacje MP** (menu boczne) → sekcja **„Kto dostaje zgłoszenia"** (pod tabelą reguł)
   → zaznacz pracowników, między których system ma rozdzielać sprawy (po kolei, sprawiedliwie —
