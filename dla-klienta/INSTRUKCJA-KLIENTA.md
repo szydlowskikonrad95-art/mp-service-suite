@@ -153,7 +153,9 @@ Dla **każdego** z 3 plików ZIP:
 
 **Raporty:**
 - **Automatyzacje MP → Eksport CSV** — zestawienie: ile spraw, jak długo trwała obsługa, powody odrzuceń;
-  eksport listy spraw do CSV (pracownik eksportuje tylko swoje, koordynator — wszystkie).
+  eksport listy spraw do CSV. ⚠️ Eksport robi **koordynator albo administrator systemu** — pracownik
+  serwisu go nie ma. To celowe: plik zawiera dane osobowe klientów, więc wychodzi z systemu wyłącznie
+  przez osobę, która za to odpowiada.
 
 ## 6. Role i użytkownicy
 

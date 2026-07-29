@@ -162,6 +162,13 @@ grep -q "update_option( *self::CORE_OPTION\|update_option( *self::POLICY_OPTION"
 	|| brak_obietnicy "zadna dokumentacja nie kaze ustawiac terminow SLA w panelu (nie ma na to ekranu)" \
 		"W ustawieniach Automatora ustaw" dla-klienta/*.md dla-klienta/instrukcje/*.md
 
+# Eksport CSV: jesli pracownik (mp_agent) NIE ma prawa eksportu, dokument nie moze
+# obiecywac, ze „pracownik eksportuje tylko swoje" (zlapane 29.07 — INSTRUKCJA obiecywala,
+# PRACOWNIK.md pisal prawde, kod byl po stronie PRACOWNIK.md).
+grep -q "mp_agent" mp-workflow-automator/includes/CsvExport.php 2>/dev/null \
+	|| brak_obietnicy "zadna dokumentacja nie obiecuje eksportu CSV pracownikowi serwisu" \
+		"pracownik eksportuje" dla-klienta/*.md dla-klienta/instrukcje/*.md
+
 # Wlasne statusy: metoda zapisu istnieje, ale nikt jej nie wola z UI => brak ekranu.
 grep -rq "StatusDefs::upsert\|StatusDefs::remove" mp-workflow-automator/includes/Admin/ 2>/dev/null \
 	|| brak_obietnicy "zadna dokumentacja nie obiecuje dodawania wlasnych statusow z panelu" \
@@ -173,7 +180,7 @@ echo "WYNIK: $PASS ok, $FAIL fail"
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=28
+MIN_KONTROLI=29
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
