@@ -60,6 +60,8 @@ czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika ra
 - Przypomnienia przed terminem idą do przypisanego pracownika; **eskalacje po terminie — do
   Ciebie**.
 - Sprawy nieprzydzielone też eskalują do Ciebie (nic nie ginie w próżni).
+- **Przy większej liczbie zaległości dostajesz jedną zbiorczą wiadomość**, a nie osobny mail
+  od każdej sprawy — np. po dłuższej przerwie w pracy serwera. Lista spraw jest w treści.
 - Wznowienie **zamkniętej** sprawy to wyłącznie Twoja decyzja (Ty albo administrator; zawsze
   do statusu „w analizie", z czystym terminem).
 
