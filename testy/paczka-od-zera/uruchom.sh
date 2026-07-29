@@ -11,6 +11,10 @@
 #   - jedna wtyczka wgrywana przez PANEL (Wtyczki -> Dodaj nowa -> Wyslij na serwer),
 #   - cala sciezka zgloszenia idzie po HTTP, mail czytany ze skrzynki (Mailpit).
 set -euo pipefail
+# MP_PACZKA podaje sie zwykle wzglednie od KATALOGU REPO ("build/dist/...", tak brzmia
+# nasze notatki), a my zaraz robimy `cd` do wlasnego katalogu — wtedy plik „znika".
+# Zamieniamy na sciezke bezwzgledna, ZANIM zmienimy katalog.
+[ -n "${MP_PACZKA:-}" ] && MP_PACZKA="$(realpath -m "$MP_PACZKA")"
 cd "$(dirname "$0")"
 PROJEKT=mpzero
 BASE="http://localhost:8097"
