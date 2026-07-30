@@ -130,6 +130,24 @@ wydaniem z kalibracją podłożonym błędem · diagnostyka na żywej witrynie),
 tego, czego te kontrole NIE robią:**
 [`JAKOSC-I-AUDYTY.md`](dokumentacja-techniczna/JAKOSC-I-AUDYTY.md).
 
+## Dział audytu — dowody, nie deklaracje
+
+Opis metody to jedno, wyniki to drugie. Katalog [`audyt/`](audyt/) zawiera **rezultaty
+przeprowadzonych kontroli**: co sprawdzono, co znaleziono, co naprawiono, co świadomie zostało
+otwarte i **czego nie sprawdzono**.
+
+- [`audyt/RAPORT-AUDYTU.md`](audyt/RAPORT-AUDYTU.md) — kolejne rundy przeglądu, każda pod innym
+  kątem; znaleziska wraz z tymi, które obciążają wykonawcę
+- [`audyt/KONTROLE-AUTOMATYCZNE.md`](audyt/KONTROLE-AUTOMATYCZNE.md) — 16 kontroli uruchamianych
+  przy każdej zmianie, 87 kroków testowych na żywym WordPressie
+- [`audyt/RUBRYKA-GOTOWE.md`](audyt/RUBRYKA-GOTOWE.md) — binarna definicja „gotowe": każde
+  kryterium z dowodem wykonania
+- [`audyt/ZAKRES-SPRAWDZONY.md`](audyt/ZAKRES-SPRAWDZONY.md) — granica: co przetestowano
+  i gdzie kończy się nasza wiedza
+
+Audytorzy są **kalibrowani podłożonymi błędami** — kontrola, która nigdy niczego nie zatrzymała,
+jest nieodróżnialna od zepsutej.
+
 ## Dokumentacja techniczna
 
 [`API-KONTRAKT.md`](dokumentacja-techniczna/API-KONTRAKT.md) — hooki między wtyczkami (jedyny

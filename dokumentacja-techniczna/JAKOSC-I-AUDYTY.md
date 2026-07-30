@@ -8,6 +8,10 @@ sprawdza **sam u Ciebie na serwerze**, już po wdrożeniu. Powstał, żeby osoba
 musiała nam wierzyć na słowo — każdą z opisanych kontroli można obejrzeć w repozytorium
 i powtórzyć.
 
+> 📋 **To jest opis metody — wyniki są osobno.** Raporty z faktycznie przeprowadzonych audytów
+> (co znaleziono, co naprawiono, co zostało świadomie otwarte i czego nie sprawdzono) leżą
+> w katalogu **`audyt/`** w korzeniu repozytorium.
+
 Kontrola jakości ma tu **trzy poziomy** i każdy odpowiada na inne pytanie:
 
 | Poziom | Pytanie | Kiedy działa |
