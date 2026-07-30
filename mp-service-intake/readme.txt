@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,12 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.3.4 =
+* Wydanie porzadkowe dokumentacji: dwa zdania w dokumentacji technicznej opisywaly
+  zabezpieczenia szerzej, niz robi to kod (automatyczne generowanie testow z kontraktu
+  oraz test wspolbieznosci na 20 procesach). Zdania poprawiono tak, by opisywaly stan
+  faktyczny. **Zero zmian w kodzie wtyczek.**
 
 = 1.3.3 =
 * Wydanie porzadkowe: dokument opisujacy kontrole jakosci deklarowal numer poprzedniej wersji.

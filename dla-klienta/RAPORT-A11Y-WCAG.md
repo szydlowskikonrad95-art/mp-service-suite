@@ -1,6 +1,6 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-07-29 · **Wersja badana:** 1.3.0 (wynik obowiazuje dla 1.3.3 — patrz nota nizej)
+**Data badania:** 2026-07-29 · **Wersja badana:** 1.3.0 (wynik obowiazuje dla 1.3.4 — patrz nota nizej)
 
 Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
 z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
@@ -88,16 +88,17 @@ gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
 
 ---
 
-**Nota o wersjach 1.3.1, 1.3.2 i 1.3.3.** Badanie wykonano na paczce **1.3.0** i **nie było powtarzane** —
+**Nota o wersjach 1.3.1, 1.3.2, 1.3.3 i 1.3.4.** Badanie wykonano na paczce **1.3.0** i **nie było powtarzane** —
 piszemy to wprost, zamiast podmieniać numer wersji w nagłówku.
 
 Co zmieniło się od tamtej paczki: sprzątanie jednej opcji technicznej przy odinstalowaniu wtyczki,
 poprawki w przyjmowaniu plików CSV (kontrola liczby kolumn, rozpoznawanie polskich znaków, pola
 wieloliniowe), odświeżanie danych sprawy między regułami automatu, blokada przycisku „Wznów" na
-ekranie importu na czas trwania operacji oraz uzupełnienia w instrukcjach.
+ekranie importu na czas trwania operacji oraz uzupełnienia w instrukcjach. **W wersji 1.3.4 nie
+zmieniono ani jednej linii kodu** — poprawiono wyłącznie dwa zdania w dokumentacji technicznej.
 
 **Trzy ekrany, których dotyczyło badanie — publiczny formularz zgłoszenia oraz panel klienta przed
 i po zalogowaniu — nie zostały zmienione ani o jeden element**, dlatego wynik badania obowiązuje
-dla 1.3.3 bez zastrzeżeń. Jedyna zmiana widoczna w interfejsie dotyczy **ekranu importu w panelu
+dla 1.3.4 bez zastrzeżeń. Jedyna zmiana widoczna w interfejsie dotyczy **ekranu importu w panelu
 administratora** (przycisk staje się nieaktywny w trakcie wznawiania — zachowanie zgodne z
 wytycznymi, bo blokada jest komunikowana zmianą stanu przycisku, a nie samym kolorem).

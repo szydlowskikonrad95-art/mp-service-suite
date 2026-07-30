@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,12 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.3.4 =
+* Wydanie porzadkowe dokumentacji: dwa zdania w dokumentacji technicznej opisywaly
+  zabezpieczenia szerzej, niz robi to kod (automatyczne generowanie testow z kontraktu
+  oraz test wspolbieznosci na 20 procesach). Zdania poprawiono tak, by opisywaly stan
+  faktyczny. **Zero zmian w kodzie wtyczek.**
 
 = 1.3.3 =
 * Wydanie porzadkowe: dokument opisujacy kontrole jakosci deklarowal numer poprzedniej wersji.
