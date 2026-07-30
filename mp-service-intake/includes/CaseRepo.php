@@ -1039,7 +1039,8 @@ final class CaseRepo {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT c.id, c.case_number, c.kind, c.status, c.priority, c.assigned_to,
-					c.product_registry_id, c.created_at, cu.name AS customer_name, cu.email AS customer_email
+					c.product_registry_id, c.created_at, c.form_data,
+					cu.name AS customer_name, cu.email AS customer_email
 				FROM {$cases} c LEFT JOIN {$customers} cu ON cu.id = c.customer_id
 				WHERE {$where_sql} ORDER BY {$order_col} {$order_dir}, c.id DESC LIMIT %d OFFSET %d",
 				array_merge( $params, array( $per_page, $offset ) )
@@ -1614,6 +1615,20 @@ final class CaseRepo {
 		);
 		// phpcs:enable
 
+		return self::form_data_from_json( $json );
+	}
+
+	/**
+	 * To samo co form_data_for_case(), ale na JUZ POBRANYM JSON-ie — bez zapytania.
+	 *
+	 * Lista spraw pobiera `form_data` razem z wierszem (jeden SELECT dla calej strony),
+	 * wiec dowolywanie sie po `id` dla kazdego wiersza bylo N+1: 20 dodatkowych zapytan
+	 * do TEJ SAMEJ tabeli, po kluczu glownym, po rekord juz odczytany (audyt wydajnosci 30.07).
+	 *
+	 * @param string $json Surowa zawartosc kolumny form_data.
+	 * @return array<string, array{key: string, label: string, value: string, pii_sensitive: bool}>
+	 */
+	public static function form_data_from_json( string $json ): array {
 		$decoded = json_decode( $json, true );
 
 		return self::normalize_form_data( is_array( $decoded ) ? $decoded : array() );

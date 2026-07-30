@@ -7,11 +7,14 @@
 
 ## 1. Co dostajesz (3 wtyczki)
 
-| Wtyczka | Plik ZIP | Do czego |
-|---|---|---|
-| **Zgłoszenia serwisowe** | `mp-service-intake.zip` | formularz zgłoszenia, numer sprawy (SRV), panel klienta, RODO, historia sprawy |
-| **Rejestr gwarancji** | `mp-warranty-registry.zip` | baza produktów/seriali, import CSV, sprawdzanie gwarancji, wyjątki gwarancyjne |
-| **Automator** | `mp-workflow-automator.zip` | automatyczny przydział, terminy (SLA) + eskalacje, szablony maili, checklisty, eksport |
+| Wtyczka | Plik ZIP | Nazwa na liście wtyczek | Do czego |
+|---|---|---|---|
+| **Zgłoszenia serwisowe** | `mp-service-intake.zip` | MP Service Intake | formularz zgłoszenia, numer sprawy (SRV), panel klienta, RODO, historia sprawy |
+| **Rejestr gwarancji** | `mp-warranty-registry.zip` | MP Warranty & Serial Registry | baza produktów/seriali, import CSV, sprawdzanie gwarancji, wyjątki gwarancyjne |
+| **Automator** | `mp-workflow-automator.zip` | MP Workflow Automator | automatyczny przydział, terminy (SLA) + eskalacje, szablony maili, checklisty, eksport |
+
+ℹ️ Kolumna „Nazwa na liście wtyczek" pokazuje, jak wtyczka podpisuje się w panelu WordPressa
+(**Wtyczki → Zainstalowane**) — nazwy techniczne są po angielsku, w tej instrukcji używamy polskich.
 
 Wtyczki rozmawiają ze sobą **automatycznie** (przez wewnętrzne haki). Każda działa też **sama** — jeśli którejś brakuje,
 pozostałe przechodzą w tryb ograniczony (nigdy nie wywalają strony).
@@ -78,7 +81,9 @@ Dla **każdego** z 3 plików ZIP:
   - **„Zgłoszenie serwisowe"** — publiczny formularz dla klientów.
   - **„Panel zgłoszeń"** — logowanie klienta i podgląd jego spraw.
 - Powstają **4 role** użytkowników (patrz §6). Twoje konto administratora dostaje pełne uprawnienia do ekranów systemu.
-- W menu pojawiają się ekrany: **Zgłoszenia / sprawy**, **Rejestr MP** (produkty/gwarancje), **Automatyzacje MP**.
+- W menu bocznym pojawiają się ekrany: **MP: Sprawy** (lista zgłoszeń), **MP: Niepotwierdzone**
+  (zgłoszenia, których klient jeszcze nie potwierdził mailem), **Rejestr MP** (produkty i gwarancje)
+  oraz **Automatyzacje MP** (przydział, terminy, raporty).
 
 > Strony, role i uprawnienia zakładają się **same** przy włączeniu — system rusza od razu.
 > Żeby jednak zaczął pracować za Ciebie (przydzielać sprawy, liczyć terminy, sprawdzać gwarancje),
@@ -172,7 +177,7 @@ Dla **każdego** z 3 plików ZIP:
   to zadanie dla programisty.
 
 **Terminy SLA:**
-- Terminy są **wbudowane i działają od razu**: nowe zgłoszenie — 24 h na pierwszą reakcję,
+- Terminy są **wbudowane i liczą się same**: nowe zgłoszenie — 24 h na pierwszą reakcję,
   „w analizie" — 48 h, „zaakceptowane" — 24 h. Przypomnienie wychodzi po upływie 75 % czasu.
   ⚠️ Nie ma ekranu do zmiany tych godzin — inne wartości ustawia programista.
 - System sam wysyła pracownikowi **przypomnienie przed terminem** i **eskalację do koordynatora
@@ -194,7 +199,7 @@ Dla **każdego** z 3 plików ZIP:
 **Raporty:**
 - **Automatyzacje MP → Eksport CSV** — zestawienie: ile spraw, jak długo trwała obsługa, powody odrzuceń;
   eksport listy spraw do CSV. ⚠️ Eksport robi **koordynator albo administrator systemu** — pracownik
-  serwisu go nie ma. To celowe: plik zawiera dane osobowe klientów, więc wychodzi z systemu wyłącznie
+  serwisu go nie ma. To celowe: zestawienie opisuje pracę nad sprawami klientów, więc wychodzi z systemu wyłącznie
   przez osobę, która za to odpowiada.
 
 ## 6. Role i użytkownicy

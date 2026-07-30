@@ -24,6 +24,8 @@ Dane systemu to **tabele `wp_mp_*`** (klienci, sprawy, rejestr produktów, regu�
 wp db export backup-przed-wdrozeniem-$(date +%F).sql
 # lub tylko tabele MP (mniejszy plik):
 wp db export backup-mp-$(date +%F).sql --tables=$(wp db tables 'wp_mp_*' --format=csv)
+# ⚠️ Wariant dla AKTUALIZACJI. Przy PIERWSZEJ instalacji tabel wp_mp_* jeszcze nie ma
+#    i to polecenie zwroci "Error: Couldn't find any tables matching" — uzyj pelnego eksportu wyzej.
 ```
 **B. Baza (bez wp-cli):** panel hostingu / phpMyAdmin → eksport bazy do `.sql`.
 
