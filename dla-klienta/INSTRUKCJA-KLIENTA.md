@@ -100,6 +100,18 @@ Dla **każdego** z 3 plików ZIP:
   zapytanie techniczne tylko opisu. Nie ma na to ekranu ustawień: zmiana zestawu pól albo kategorii
   to kilka linijek dla programisty (system udostępnia do tego gotowe punkty zaczepienia).
 - Formularz ma wbudowaną ochronę: potwierdzenie e-mail jednorazowym linkiem do zalogowania, pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
+
+> **Ile zgłoszeń można wysłać — warto to wiedzieć, zanim klient zadzwoni.**
+> System przyjmuje z jednego adresu e-mail **3 zgłoszenia na dobę**, z jednego numeru seryjnego
+> **5 na dobę**, a z jednego łącza internetowego **10 w ciągu 10 minut**. Dodatkowo identyczne
+> zgłoszenie wysłane **dwa razy w ciągu 15 minut** nie zakłada drugiej sprawy — to ochrona przed
+> podwójnym kliknięciem, a nie błąd.
+>
+> Gdy klient mówi „nie mogę wysłać zgłoszenia", **najpierw sprawdź, czy nie wysyłał już dziś kilku** —
+> to najczęstsza przyczyna. Progi da się zmienić, ale wymaga to kilku linijek od programisty
+> (opis w `SECURITY.md`, w dokumentacji dla informatyka).
+> ⚠️ Jeśli Twoja strona stoi **za pośrednikiem** (np. Cloudflare), przeczytaj też §7.4 — wtedy
+> limit na łącze może objąć **wszystkich** klientów naraz.
 - **Załącznik zależy od kategorii.** Dla kategorii **„AGD drobne"** i **„Elektronarzędzia"** zdjęcie tabliczki
   znamionowej jest **wymagane** — bez niego serwis nie ustali modelu ani mocy urządzenia. Dla **„Elektronika audio"**
   i **„Inne"** załącznik pozostaje **opcjonalny**. Przyjmowane formaty: **JPG, PNG, WebP, PDF**, do **5 plików**.
