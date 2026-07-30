@@ -279,7 +279,12 @@ final class CasesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	public function column_temat( $item ): string {
-		$pola = CaseRepo::form_data_for_case( (int) ( $item['id'] ?? 0 ) );
+		// `form_data` przychodzi JUZ w wierszu z list_cases() — jeden SELECT na cala strone.
+		// Dowolywanie sie po `id` dla kazdego wiersza bylo N+1 (audyt wydajnosci 30.07).
+		// Zapas przez form_data_for_case() zostaje na wypadek wywolania z wierszem bez tego pola.
+		$pola = isset( $item['form_data'] )
+			? CaseRepo::form_data_from_json( (string) $item['form_data'] )
+			: CaseRepo::form_data_for_case( (int) ( $item['id'] ?? 0 ) );
 
 		// ZWROT nie ma opisu usterki — klient wpisuje POWOD ZWROTU. Czytajac samo
 		// issue_description lista pokazywala „— bez opisu" przy kazdym zwrocie,

@@ -4,6 +4,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Poprawione
+- **Lista spraw i lista produktow robily nadmiarowe zapytania do bazy (N+1).** Ekran „MP: Sprawy"
+  dowolywal sie opisu zgloszenia osobno dla kazdego wiersza (20 zapytan na strone), a „Rejestr MP"
+  tak samo sprawdzal wyjatki gwarancyjne. Teraz oba pobieraja te dane **jednym zapytaniem na cala
+  strone**: lista spraw **43 → 23 zapytania**, rejestr **64 → 45**. Zachowanie ekranow bez zmian —
+  opisy i plakietka „wyjatek" wyswietlaja sie jak dotad.
+
+### Zmienione (dokumentacja)
+- **Instrukcja podawala nazwe ekranu, ktorej nie ma w menu.** Bylo „Zgloszenia / sprawy", jest
+  **„MP: Sprawy"** — plus dopisany brakujacy ekran **„MP: Niepotwierdzone"**, ktory administrator
+  widzi w menu, a instrukcja go nie opisywala.
+- W tabeli wtyczek doszla kolumna **„Nazwa na liscie wtyczek"** (nazwy techniczne sa po angielsku,
+  instrukcja uzywa polskich — teraz widac, co czemu odpowiada).
+- `MIGRATION_POLICY.md`: przy poleceniu kopii **tylko tabel MP** dopisane ostrzezenie, ze przy
+  PIERWSZEJ instalacji tych tabel jeszcze nie ma i polecenie zwroci blad — wtedy uzywa sie
+  pelnego eksportu.
+- Doprecyzowane dwa zdania: terminy SLA „licza sie same" (zamiast „dzialaja od razu" — pierwszy
+  wpis powstaje przy najblizszym przebiegu zadania cyklicznego) oraz uzasadnienie ograniczenia
+  eksportu CSV (zestawienie opisuje prace nad sprawami; nie zawiera danych kontaktowych klientow).
+- `DATABASE.md`: test wspolbieznosci licznika numerow **zostal wykonany** (20 rownoleglych procesow,
+  20 unikalnych numerow, zero duplikatow) — wczesniejsze zdanie „testu NIE MA" bylo nieaktualne.
+
 ## [1.3.4] - 2026-07-30
 
 ### Poprawione

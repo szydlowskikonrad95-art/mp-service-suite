@@ -97,6 +97,60 @@ final class Repo {
 	}
 
 	/**
+	 * Aktywne wyjatki GLOBALNE (case_id IS NULL) dla WIELU produktow — jednym zapytaniem.
+	 *
+	 * Lista produktow wolala get_active_exception() osobno dla kazdego wiersza: 20 zapytan
+	 * na strone (audyt wydajnosci 30.07). Zwraca mape `id produktu => wiersz wyjatku`;
+	 * produkty bez wyjatku po prostu nie maja klucza.
+	 *
+	 * ⚠️ Warunki MUSZA byc identyczne z galezia `null === $case_id` w get_active_exception()
+	 * — inaczej lista pokazywalaby inny stan niz karta produktu.
+	 *
+	 * @param array<int, int> $product_ids ID produktow.
+	 * @return array<int, array<string, mixed>> Mapa product_registry_id => wiersz wyjatku.
+	 */
+	public static function get_active_exceptions_for_products( array $product_ids ): array {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $product_ids ) ) ) );
+
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$table        = Tables::full( Tables::EXCEPTIONS );
+		$now          = gmdate( 'Y-m-d H:i:s' );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, placeholdery budowane z liczby ID.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table}
+				WHERE product_registry_id IN ({$placeholders}) AND status = 'active' AND case_id IS NULL
+				AND ( valid_until IS NULL OR valid_until >= %s )
+				ORDER BY valid_until DESC, id DESC",
+				array_merge( $ids, array( $now ) )
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		$out = array();
+
+		foreach ( (array) $rows as $row ) {
+			$pid = (int) $row['product_registry_id'];
+
+			// ORDER BY jak wyzej => pierwszy wiersz dla danego produktu jest tym,
+			// ktory zwrocilby get_active_exception() z LIMIT 1.
+			if ( ! isset( $out[ $pid ] ) ) {
+				$out[ $pid ] = $row;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Kategoria produktu po ID — dla haka kontraktowego `mp_product_category`
 	 * (Intake `get_context.kategoria` => os przydzialu w Automatorze).
 	 *

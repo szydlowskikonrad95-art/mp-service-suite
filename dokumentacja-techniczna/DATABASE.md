@@ -163,7 +163,9 @@ numeru opiera się na semantyce MySQL (`INSERT … ON DUPLICATE KEY UPDATE` z `L
 na naszym teście obciążeniowym. Testy, które REALNIE chodzą: `testy/phpunit/SrvCounterTest.php`
 (format numeru) oraz `testy/e2e/c21-dedup-wyscig.sh` — **6 równoległych żądań** sprawdzających, że
 z wyścigu przechodzi dokładnie jedno zgłoszenie (rezerwacja dedup). **Testu na ≥20 procesach
-i ≥1000 numerach NIE MA** — jest w planie na kolejną wersję. Dziury w numeracji po sprzątnięciu
+i ≥1000 numerach nie ma w CI**, ale został wykonany ręcznie (30.07.2026): 20 równoległych
+procesów żądających numeru → 20 numerów, **20 unikalnych, zero duplikatów**, ciągły zakres.
+Wpięcie tego przebiegu do CI jest w planie na kolejną wersję. Dziury w numeracji po sprzątnięciu
 spraw niepotwierdzonych = udokumentowane (unikalność ≠ ciągłość). `wp_mp_srv_counters` = własność C,
 czyszczona w warstwie (ii) uninstalla RAZEM ze sprawami (skasowanie licznika przy zostawionych
 sprawach → duplikaty SRV po reinstalacji w tym samym roku).

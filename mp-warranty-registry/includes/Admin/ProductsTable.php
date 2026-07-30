@@ -39,6 +39,25 @@ final class ProductsTable extends \WP_List_Table {
 	public string $customer_mode = 'off';
 
 	/**
+	 * Aktywne wyjatki gwarancyjne dla wierszy BIEZACEJ strony: id produktu => wiersz wyjatku.
+	 * Wypelniane raz w prepare_items() — patrz Repo::get_active_exceptions_for_products().
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $exceptions = array();
+
+	/**
+	 * Czy mapa wyjatkow zostala juz zaladowana w prepare_items().
+	 *
+	 * ⚠️ Osobna flaga, bo PUSTA mapa jest poprawnym wynikiem (zadny produkt na stronie
+	 * nie ma wyjatku). Wnioskowanie „pusta => niezaladowana" przywracalo N+1 dokladnie
+	 * w najczestszym przypadku.
+	 *
+	 * @var bool
+	 */
+	private bool $exceptions_loaded = false;
+
+	/**
 	 * Konstruktor.
 	 *
 	 * @param array<string, mixed> $filters Filtry wyszukiwarki.
@@ -83,6 +102,19 @@ final class ProductsTable extends \WP_List_Table {
 
 		$this->items         = $result['rows'];
 		$this->customer_mode = $result['customer_mode'];
+
+		// Wyjatki gwarancyjne dla CALEJ strony jednym zapytaniem. Wczesniej kolumna statusu
+		// wolala Repo::get_active_exception() osobno dla kazdego wiersza = 20 zapytan na strone
+		// (audyt wydajnosci 30.07).
+		$this->exceptions        = Repo::get_active_exceptions_for_products(
+			array_map(
+				static function ( $row ) {
+					return (int) ( $row['id'] ?? 0 );
+				},
+				(array) $this->items
+			)
+		);
+		$this->exceptions_loaded = true;
 
 		$this->set_pagination_args(
 			array(
@@ -131,7 +163,15 @@ final class ProductsTable extends \WP_List_Table {
 		$label  = $labels[ $status ] ?? $status;
 		$out    = '<span class="mp-badge mp-badge-status mp-badge-status--' . esc_attr( $status ) . '">' . esc_html( $label ) . '</span>';
 
-		$exception = Repo::get_active_exception( (int) $item['id'], null );
+		// Mapa z prepare_items() (jedno zapytanie na strone). Zapas przez get_active_exception()
+		// zostaje na wypadek renderu wiersza poza normalnym przebiegiem tabeli.
+		$pid = (int) ( $item['id'] ?? 0 );
+
+		if ( $this->exceptions_loaded ) {
+			$exception = $this->exceptions[ $pid ] ?? null;
+		} else {
+			$exception = Repo::get_active_exception( $pid, null );
+		}
 
 		if ( null !== $exception ) {
 			$out .= ' <span class="mp-badge mp-badge-exception">' . esc_html__( 'wyjątek', 'mp-warranty-registry' ) . '</span>';
