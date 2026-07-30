@@ -35,6 +35,8 @@ final class CaseCardApi {
 		add_filter( 'mp_response_templates', array( self::class, 'response_templates' ), 10, 2 );
 		add_filter( 'mp_render_response_template', array( self::class, 'render_template' ), 10, 3 );
 		add_filter( 'mp_case_deadline', array( self::class, 'sla_deadline' ), 10, 2 );
+		// Wariant hurtowy dla LIST (jedno zapytanie na strone zamiast jednego na wiersz).
+		add_filter( 'mp_case_deadlines', array( self::class, 'sla_deadlines' ), 10, 2 );
 	}
 
 	/**
@@ -140,5 +142,53 @@ final class CaseCardApi {
 		// phpcs:enable
 
 		return is_array( $row ) ? $row : null;
+	}
+
+	/**
+	 * HURTOWY wariant `mp_case_deadline` — terminy dla WIELU spraw jednym zapytaniem.
+	 *
+	 * Lista spraw wolala `mp_case_deadline` osobno dla kazdego wiersza (20 zapytan na strone,
+	 * audyt wydajnosci 30.07). Ten filtr NIE zastepuje tamtego — karta pojedynczej sprawy
+	 * dalej uzywa `mp_case_deadline`, a kontrakt D pozostaje bez zmian.
+	 *
+	 * @param mixed           $result   Wynik poprzedniego filtra (ignorowany).
+	 * @param array<int, int> $case_ids ID spraw.
+	 * @return array<int, array{deadline_at: string|null, warning_at: string|null, status: string}>
+	 */
+	public static function sla_deadlines( $result, $case_ids ): array {
+		unset( $result );
+
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', (array) $case_ids ) ) ) );
+
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$table        = Tables::full( Tables::CASE_SLA );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela własna D, placeholdery z liczby ID.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT case_id, deadline_at, warning_at, status FROM {$table}
+				WHERE case_id IN ({$placeholders})",
+				$ids
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		$out = array();
+
+		foreach ( (array) $rows as $row ) {
+			$case_id = (int) $row['case_id'];
+			unset( $row['case_id'] );
+
+			$out[ $case_id ] = $row;
+		}
+
+		return $out;
 	}
 }

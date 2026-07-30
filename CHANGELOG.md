@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Poprawione
+- **Lista spraw pobiera terminy SLA jednym zapytaniem.** Kolumna terminu pytala o kazdy wiersz
+  osobno; razem z poprzednia poprawka ekran „MP: Sprawy" zszedl z **43 do 4 zapytan**.
+  Modul automatyzacji wystawia na to nowy, hurtowy punkt kontraktu — **stary zostaje nietkniety**,
+  wiec karta pojedynczej sprawy i starsze wersje modulu dzialaja bez zmian.
 - **Lista spraw i lista produktow robily nadmiarowe zapytania do bazy (N+1).** Ekran „MP: Sprawy"
   dowolywal sie opisu zgloszenia osobno dla kazdego wiersza (20 zapytan na strone), a „Rejestr MP"
   tak samo sprawdzal wyjatki gwarancyjne. Teraz oba pobieraja te dane **jednym zapytaniem na cala
