@@ -119,12 +119,48 @@
 		} )();
 	}
 
+	// ⚠️ STRAŻNIK WZNAWIANIA. Flaga `running` jest WSPÓLNA dla wszystkich zadań, więc przy
+	// dwóch zawieszonych importach i szybkim kliknięciu obu przycisków serwer rezerwował OBA,
+	// ale pętla ruszała tylko dla tego, którego odpowiedź wróciła pierwsza — drugi zostawał
+	// zarezerwowany i nieodpytywany (osierocony import). Znalezione czytaniem liniowym 30.07.
+	// Naprawa: jedno wznawianie na raz + blokada wszystkich przycisków na czas próby.
+	var reclaiming = false;
+
+	function przyciskiWznawiania() {
+		var lista = [];
+
+		if ( resumeBtn ) {
+			lista.push( resumeBtn );
+		}
+
+		Array.prototype.forEach.call( document.querySelectorAll( '.mp-import-resume-stale' ), function ( b ) {
+			lista.push( b );
+		} );
+
+		return lista;
+	}
+
+	function blokujPrzyciski( zablokowane ) {
+		przyciskiWznawiania().forEach( function ( b ) {
+			b.disabled = zablokowane;
+		} );
+	}
+
 	function reclaim( jobId ) {
+		if ( reclaiming || running ) {
+			return;
+		}
+
+		reclaiming = true;
+		blokujPrzyciski( true );
 		show( cfg.i18n.resuming );
 
 		post( 'mp_import_reclaim', { job_id: jobId } )
 			.then( function ( json ) {
+				reclaiming = false;
+
 				if ( ! json || ! json.success ) {
+					blokujPrzyciski( false );
 					fail( json && json.data && json.data.message ? json.data.message : cfg.i18n.netError );
 					return;
 				}
@@ -133,6 +169,8 @@
 				loop( jobId, json.data.token );
 			} )
 			.catch( function () {
+				reclaiming = false;
+				blokujPrzyciski( false );
 				fail( cfg.i18n.netError );
 			} );
 	}

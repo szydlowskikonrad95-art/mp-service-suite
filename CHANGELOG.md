@@ -4,6 +4,56 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-07-30
+
+Efekt dwóch soczewek kontroli użytych po raz pierwszy: **czytania kodu linia po linii** (parser
+i importer CSV, silnik reguł, cały JavaScript) oraz **oceny instrukcji przez czytelnika
+nietechnicznego**. Poprzednie audyty tych rzeczy nie widziały, bo szukały wzorcami zamiast czytać
+całość.
+
+### Poprawione — przyjmowanie plików CSV
+- **Wiersz z niepełną liczbą kolumn wchodził do bazy z uciętymi danymi.** Brakujące kolumny stawały
+  się cichymi pustymi wartościami, nieodróżnialnymi od pól celowo pustych — produkt trafiał do
+  rejestru **bez daty zakupu i gwarancji**, a system liczył potem klientowi status gwarancji
+  z niepełnych danych. Teraz taki wiersz idzie do raportu błędów z podaniem brakujących kolumn.
+- **Jeden nieprawidłowy bajt niszczył polskie znaki w całym pliku.** Sprawdzenie kodowania
+  obejmowało plik jako całość, więc pojedynczy znak wklejony np. z Worda kierował **cały** plik do
+  konwersji z Windows-1250 i zamieniał poprawne polskie znaki w krzaki, bez ostrzeżenia. Teraz
+  decyduje proporcja poprawnych sekwencji: plik uszkodzony jest czyszczony, a plik z polskiego
+  Excela nadal konwertowany jak dotąd.
+- **Komórka z Enterem w cudzysłowach rozjeżdżała wiersz.** Plik był dzielony na linie przed
+  parsowaniem, więc wieloliniowa wartość stawała się dwoma „wierszami": kolumny przesuwały się,
+  licznik postępu był zawyżony, a dane trafiały w złe pola bez żadnego błędu. Rekordy wydziela
+  teraz czytnik rozumiejący cudzysłowy.
+- **Raport błędów rozjeżdżał kolumny**, gdy numer seryjny zawierał średnik — wartości są cytowane
+  zgodnie z regułami CSV.
+- **Raport błędów mógł przepaść przy awarii** w wąskim okienku po zatwierdzeniu partii; zapis
+  raportu wykonuje się teraz przed zatwierdzeniem.
+
+### Poprawione — automat i panel
+- **Reguła wykonana po zmianie statusu widziała stary stan sprawy.** Dane sprawy pobierane były raz
+  przed przetwarzaniem reguł, więc kolejna reguła (np. powiadomienie mailowe) mogła wysłać do
+  klienta wiadomość o statusie, którego sprawa już nie miała. Dane są odświeżane po zmianie.
+- **Dwa szybkie kliknięcia „Wznów" osierocały jeden import.** Zadanie było rezerwowane na serwerze,
+  ale pętla ruszała tylko dla jednego. Przyciski są blokowane na czas operacji.
+
+### Instrukcje — po ocenie czytelnika nietechnicznego (62/100 przed poprawkami)
+- **Rozdział o konfiguracji serwera zaczyna się ostrzeżeniem, że nie jest do samodzielnego
+  wykonania**, z gotową treścią wiadomości do pomocy technicznej hostingu. Wcześniej instrukcja
+  podawała fragmenty kodu bez informacji, kto ma je wprowadzić — a pominięcie zadania cyklicznego
+  zatrzymuje pilnowanie terminów w nocy, choć system wygląda na sprawny.
+- **Nowy rozdział „Gdy coś nie działa — do kogo się zwrócić"** z podziałem na hosting, osobę
+  wdrażającą i utrzymanie systemu, oraz miejscem na wpisanie kontaktu.
+- **Słowniczek dziesięciu pojęć** używanych dalej w instrukcji.
+- **Powiedziane wprost, że trzeba mieć już działającą stronę na WordPressie**, jak sprawdzić
+  wymagania hostingu (z gotowym pytaniem) i co zrobić, gdy nie są spełnione.
+- Szacowany czas wdrożenia, informacja, że dokument polityki kopii jest dla osoby technicznej,
+  oraz dwa nowe wpisy w tabeli najczęstszych kłopotów.
+
+### Testy
+Trzy nowe testy jednostkowe pilnujące, żeby naprawione klasy błędów nie wróciły: wiersz urwany,
+plik UTF-8 z uszkodzonym bajtem, plik z polskiego Excela. Razem **155 testów, 456 sprawdzeń**.
+
 ## [1.3.1] - 2026-07-29
 
 ### Poprawione

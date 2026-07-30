@@ -195,4 +195,86 @@ final class CsvParserTest extends TestCase {
 		self::assertNull( $rows[7]['warranty_until'] );
 		self::assertSame( Categories::FALLBACK, $rows[7]['category'] );
 	}
+	/**
+	 * Wiersz URWANY (mniej komorek niz kolumn naglowka) idzie do raportu bledow,
+	 * a NIE do bazy z uciecymi danymi.
+	 *
+	 * Regresja z 30.07: brak kontroli liczby kolumn powodowal, ze brakujace kolumny
+	 * stawaly sie cichymi pustymi ciagami — produkt wchodzil do rejestru BEZ daty zakupu
+	 * i gwarancji, nieodroznialny od wiersza celowo niepelnego.
+	 */
+	public function test_wiersz_urwany_jest_odrzucany(): void {
+		$map = array(
+			'serial'         => 0,
+			'model'          => 1,
+			'purchase_date'  => 2,
+			'warranty_until' => 3,
+		);
+
+		// Kompletny — przechodzi.
+		$ok = CsvParser::parse_row( array( 'AB1', 'Model A', '2026-01-10', '2027-01-10' ), $map );
+		self::assertTrue( $ok['ok'] );
+
+		// Legalnie PUSTE daty (separatory obecne) — musi przejsc, inaczej falszywy alarm.
+		$puste = CsvParser::parse_row( array( 'AB2', 'Model B', '', '' ), $map );
+		self::assertTrue( $puste['ok'], 'Puste daty sa legalne — wiersz nie moze byc odrzucony.' );
+
+		// URWANY o dwie kolumny — odrzucony z czytelnym powodem.
+		$urwany = CsvParser::parse_row( array( 'AB3', 'Model C' ), $map );
+		self::assertFalse( $urwany['ok'] );
+		self::assertStringContainsString( 'zla liczba kolumn', (string) $urwany['error'] );
+		self::assertStringContainsString( 'purchase_date', (string) $urwany['error'] );
+
+		// URWANY o jedna kolumne — tez odrzucony.
+		$urwany1 = CsvParser::parse_row( array( 'AB4', 'Model D', '2026-01-10' ), $map );
+		self::assertFalse( $urwany1['ok'] );
+
+		// Kolumn WIECEJ niz w naglowku — nadmiar ignorujemy, wiersz jest poprawny.
+		$nadmiar = CsvParser::parse_row( array( 'AB5', 'Model E', '2026-01-10', '2027-01-10', 'extra' ), $map );
+		self::assertTrue( $nadmiar['ok'] );
+	}
+
+	/**
+	 * Plik w wiekszosci UTF-8 z JEDNYM zlym bajtem NIE moze byc konwertowany
+	 * jako CP1250 — to niszczylo polskie znaki w calym pliku.
+	 *
+	 * Regresja z 30.07: `preg_match('//u')` sprawdzal caly plik naraz, wiec jeden bajt
+	 * wklejony np. z Worda kierowal calosc do konwersji z CP1250 i zamienial poprawne
+	 * polskie znaki w krzaki, bez ostrzezenia.
+	 */
+	public function test_utf8_z_jednym_zlym_bajtem_zachowuje_polskie_znaki(): void {
+		$polski = "numer;model\nAB1;Zażółć gęślą jaźń ĄĆĘŁŃÓŚŹŻ\n";
+
+		// 1. Czysty UTF-8 zostaje nietkniety.
+		self::assertSame( $polski, CsvParser::to_utf8( $polski ) );
+
+		// 2. UTF-8 + zly bajt: polskie znaki MUSZA przezyc.
+		$uszkodzony = $polski . "AB2;cudzyslow \x93z Worda\x94\n";
+		$wynik      = CsvParser::to_utf8( $uszkodzony );
+
+		self::assertIsString( $wynik );
+		self::assertStringContainsString( 'Zażółć gęślą jaźń ĄĆĘŁŃÓŚŹŻ', $wynik );
+		self::assertSame( 1, preg_match( '//u', $wynik ), 'Wynik musi byc poprawnym UTF-8.' );
+	}
+
+	/**
+	 * Plik z polskiego Excela (Windows-1250) nadal konwertuje sie poprawnie —
+	 * kontrola, ze naprawa kodowania nie zepsula sciezki, ktora dzialala.
+	 */
+	public function test_cp1250_nadal_konwertuje_sie_poprawnie(): void {
+		if ( ! function_exists( 'iconv' ) ) {
+			self::markTestSkipped( 'Brak iconv na tym srodowisku.' );
+		}
+
+		$polski = "numer;model\nAB1;Zażółć gęślą jaźń\n";
+		$cp1250 = iconv( 'UTF-8', 'CP1250//TRANSLIT', $polski );
+
+		self::assertIsString( $cp1250 );
+
+		$wynik = CsvParser::to_utf8( $cp1250 );
+
+		self::assertIsString( $wynik );
+		self::assertSame( 1, preg_match( '//u', $wynik ), 'Wynik musi byc poprawnym UTF-8.' );
+		self::assertStringContainsString( 'Zażółć gęślą jaźń', $wynik );
+	}
 }

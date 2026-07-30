@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,10 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.3.2 =
+* Reguła wykonana po zmianie statusu widziała stary stan sprawy — mogło to wysłać klientowi
+  powiadomienie o statusie, którego sprawa już nie miała. Dane są odświeżane po zmianie.
 
 = 1.3.1 =
 * Poprawiony opis w kodzie przy konfiguracji terminów SLA: nadpisania godzin dla siedmiu statusów

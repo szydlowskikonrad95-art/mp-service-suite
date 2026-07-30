@@ -350,6 +350,18 @@ final class RuleEngine {
 				if ( Rules::ACTION_CHANGE_STATUS === $action ) {
 					if ( self::do_change_status( $case_id, $ctx, $rule, $depth, $trigger ) ) {
 						$mutated = true;
+
+						// ⚠️ ODSWIEZAMY KONTEKST PO MUTACJI.
+						// `$ctx` pobierany jest RAZ przed petla. Bez odswiezenia kolejne reguly
+						// tego samego przebiegu (np. powiadomienie mailowe) dopasowywalyby sie
+						// i renderowaly tresc ze STAREGO stanu sprawy — klient dostawal maila
+						// o statusie, ktorego sprawa juz nie ma. `MailDedup` tego nie lapal,
+						// bo tresc sie roznila. Znalezione czytaniem liniowym 30.07.
+						$swiezy = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+
+						if ( is_array( $swiezy ) ) {
+							$ctx = array() !== $extra_ctx ? array_merge( $swiezy, $extra_ctx ) : $swiezy;
+						}
 					}
 				} else {
 					self::do_notify( $case_id, $ctx, $rule, $depth, $trigger );
