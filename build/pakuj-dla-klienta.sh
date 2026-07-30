@@ -30,12 +30,27 @@ echo "WERSJA: $WERSJA (zgodna w 3 wtyczkach + readme.txt)"
 # Lekcja 1.0.2: dwa dokumenty deklarowaly stara wersje, a kontrola patrzyla tylko
 # na naglowki wtyczek. Kazda linia dokumentu, ktora deklaruje wersje pakietu
 # ("Wersja:" albo "w wersji **X**"), MUSI podawac WERSJA — inaczej stop.
-for dok in "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md"; do
+# ⚠️ Lista NIE moze byc wpisana na sztywno. 30.07: nowy dokument
+# `dokumentacja-techniczna/JAKOSC-I-AUDYTY.md` deklarowal wersje 1.3.1 przy paczce 1.3.2,
+# a bramka go nie sprawdzila, bo petla znala tylko DWA pliki z nazwy — dokladnie ta sama
+# klasa bledu, ktorej ta kontrola miala pilnowac (patrz lekcja 1.0.2 wyzej).
+# Teraz przechodzimy WSZYSTKIE dokumenty idace do klienta: `dla-klienta/*.md`
+# oraz `dokumentacja-techniczna/*.md` (te trafiaja do paczki jako `dla-informatyka/`).
+MP_DOKUMENTY=()
+while IFS= read -r d; do MP_DOKUMENTY+=( "$d" ); done < <(ls -1 "$ZRODLO_DOK"/*.md dokumentacja-techniczna/*.md 2>/dev/null)
+
+# Licznik objetych plikow: kontrola, ktora cicho nie objela niczego, swieci zielono.
+[ "${#MP_DOKUMENTY[@]}" -ge 9 ] || {
+  echo "BLAD: kontrola wersji objela tylko ${#MP_DOKUMENTY[@]} dokumentow — spodziewane min. 9."
+  exit 1
+}
+
+for dok in "${MP_DOKUMENTY[@]}"; do
   ZLE="$(grep -nE '(\*\*Wersja:\*\*|wszystkie w wersji \*\*)[^*]*[0-9]+\.[0-9]+\.[0-9]+' "$dok" \
          | grep -vF "$WERSJA" || true)"
   [ -z "$ZLE" ] || { echo "BLAD: $dok deklaruje inna wersje niz $WERSJA:"; echo "$ZLE"; exit 1; }
 done
-echo "WERSJA w dokumentach: zgodna z $WERSJA"
+echo "WERSJA w dokumentach: zgodna z $WERSJA (sprawdzone pliki: ${#MP_DOKUMENTY[@]})"
 
 # --- 1) ZIP-y wtyczek ------------------------------------------------------------
 bash build/build.sh

@@ -4,6 +4,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-07-30
+
+### Poprawione
+- **Dokument `JAKOSC-I-AUDYTY.md` deklarowal wersje 1.3.1, gdy paczka miala 1.3.2.** Blad w jednej
+  linii, ale w dokumencie, ktory opisuje wlasnie kontrole jakosci.
+- **Wazniejsze: bramka kontrolujaca wersje w dokumentach miala dziure.** Lista sprawdzanych plikow
+  byla wpisana na sztywno (dwa dokumenty z nazwy), wiec nowy dokument dolozony do paczki nie byl
+  kontrolowany wcale. **To dokladnie ta klasa bledu, ktorej ta bramka miala pilnowac.**
+  Teraz kontrola przechodzi WSZYSTKIE dokumenty dla klienta (`dla-klienta/*.md` oraz
+  `dokumentacja-techniczna/*.md`) i **liczy, ile plikow objela** — kontrola, ktora cicho nie
+  objelaby niczego, wywala budowanie paczki.
+  Skalibrowana podlozonym bledem: dokument z wersja 1.2.9 przy paczce 1.3.2 zostal zatrzymany.
+
+Zero zmian w kodzie wtyczek.
+
 ## [1.3.2] - 2026-07-30
 
 Efekt dwóch soczewek kontroli użytych po raz pierwszy: **czytania kodu linia po linii** (parser
