@@ -1,6 +1,9 @@
 # Co dodaliśmy ponad kartkę — i dlaczego
 
-> **DRAFT do przeglądu.** Ten dokument spisuje rzeczy, które w kodzie **wyglądają jak „więcej niż w specyfikacji"**, i dla każdej pokazuje, **którą literę specyfikacji realizują**. Cel: żeby recenzent nie musiał się domyślać — każda „nadwyżka" ma kotwicę w wymaganiach klienta, a nie jest samowolą programisty.
+> Ten dokument spisuje rzeczy, które w kodzie **wyglądają jak „więcej niż w specyfikacji"**, i dla
+> każdej pokazuje, **którą literę specyfikacji realizują**. Cel: żeby czytający nie musiał się
+> domyślać — każda „nadwyżka" ma kotwicę w wymaganiach zamawiającego, a nie jest samowolą
+> programisty. Jeśli po lekturze uznasz, że czegoś nie zamawiałeś — napisz, usuniemy albo wyłączymy.
 
 Format każdego punktu: **CO** (co widać w kodzie) · **KOTWICA W KARTCE** (który wymóg to uzasadnia) · **GDZIE** (plik/klasa).
 
