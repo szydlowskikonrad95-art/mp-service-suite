@@ -15,8 +15,12 @@
 4. **Detekcja braci przez `has_filter()`** — nie `is_plugin_active()`. Filter niepodpięty → wartość
    domyślna → degraded mode (nigdy fatal).
 5. **Akcje mutujące emitowane PO COMMIT transakcji.**
-6. Z przykładowych payloadów niżej **generowane są mocki i testy kontraktowe** (spec bez przykładu =
-   każdy plugin „zgodny" inaczej).
+6. Przykładowe payloady niżej są **wzorcem odniesienia dla testów kontraktowych** (spec bez
+   przykładu = każda wtyczka „zgodna" inaczej). ⚠️ Testy są **pisane ręcznie na podstawie tych
+   przykładów, nie generowane automatycznie** — nie ma generatora tworzącego je z tego dokumentu.
+   Żywe testy filtrów kontraktowych: `testy/e2e/d-hooki-c.sh`,
+   `testy/e2e/kontrakt-dane-skasowane.sh`, `testy/e2e/blok-s-tabletop.sh`.
+   **Zmieniasz przykład w tym dokumencie → popraw też test.**
 7. **Filtry kontraktowe NIE sprawdzają uprawnień użytkownika — i tak ma być.** Autoryzacja siedzi
    o warstwę wyżej, w miejscu wywołania (patrz niżej).
 
