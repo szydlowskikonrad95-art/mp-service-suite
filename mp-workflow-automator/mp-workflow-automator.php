@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MP Workflow Automator
  * Description: Silnik regul serwisu: automatyczny przydzial spraw, statusy, powiadomienia e-mail, terminy SLA z eskalacja, checklisty i eksport raportow.
- * Version: 1.3.2
+ * Version: 1.3.3
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * Author: MP Service Suite
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'MP_AUTOMATOR_FILE', __FILE__ );
-define( 'MP_AUTOMATOR_VERSION', '1.3.2' );
+define( 'MP_AUTOMATOR_VERSION', '1.3.3' );
 
 if ( ! defined( 'MP_CONTRACT_VERSION' ) ) {
 	define( 'MP_CONTRACT_VERSION', 1 );
