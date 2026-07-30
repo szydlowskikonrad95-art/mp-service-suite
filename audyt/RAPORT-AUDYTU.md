@@ -1,0 +1,176 @@
+# Raport z audytów — MP Service Suite
+
+**Stan na wydanie 1.3.6:** znalezisk krytycznych **0**, dużych **0**.
+
+Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
+każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
+wypadły źle — bo raport pokazujący wyłącznie sukcesy nie jest raportem.
+
+## Jak prowadzimy audyt — trzy zasady
+
+**1. Osobne kąty patrzenia, nie jeden „przegląd".** Każda runda dokłada kąt, którego wcześniej
+nie było: zgodność z zamówieniem · bezpieczeństwo · kompletność („czy coś czegoś **nie robi**,
+choć wygląda na sprawne") · spójność paczki · wydajność · zrozumiałość dla nietechnicznego
+czytelnika. Nowe błędy znajduje nowy kąt, nie powtórzenie tego samego przeglądu.
+
+**2. Audytor nie czyta naszej dokumentacji, tylko zamówienie.** Przegląd oparty na naszych
+dokumentach potwierdzi, że są zgodne **ze sobą**, i przepuści rozbieżność z tym, co faktycznie
+zamówiono. Ta różnica nie jest teoretyczna — patrz runda „numer sprawy" niżej.
+
+**3. Audytora się kalibruje.** Opisane w [`README.md`](README.md): do kodu wstrzykiwane są celowe
+błędy, a audytor nie wie, że trwa kalibracja. Kto ich nie znajdzie, tego „czysto" nie liczy się
+jako wynik.
+
+---
+
+## Runda przy 1.3.6 — dlaczego nie powtarzaliśmy audytu
+
+W tym wydaniu **nie zmieniono ani jednej linii logiki**. Cała różnica w kodzie PHP względem
+poprzedniego wydania to **6 linii i wszystkie są numerem wersji**. Reszta zmian to instrukcje
+dla klienta.
+
+Dlatego audytu bezpieczeństwa i wydajności **nie powtarzano** — piszemy to wprost, zamiast
+podmieniać numer wersji w nagłówku i udawać nową rundę. Sprawdzono natomiast to, co faktycznie
+mogło się zmienić: komplet kontroli automatycznych (**16/16 zielonych** — na gałęzi, na gałęzi
+głównej i na znaczniku wydania), zgodność numeru wersji w 3 wtyczkach i 10 dokumentach oraz
+**wszystkie ekrany panelu obejrzane na żywo** w prawdziwej przeglądarce: zero błędów konsoli,
+zero nieudanych żądań.
+
+## Runda przy 1.3.5 — wydajność
+
+**Znalezione: trzy miejsca, w których lista pytała bazę o każdy wiersz osobno. Dwa naprawione.**
+
+| Ekran | Zapytań przed | Zapytań po |
+|---|---|---|
+| Lista spraw | 43 | **4** |
+| Rejestr produktów | 64 | **45** |
+
+Zachowanie ekranów bez zmian — sprawdzone renderem, nie założeniem.
+
+⚠️ **Pierwsza wersja poprawki przywróciła problem, który miała usunąć.** Wyszło to dopiero
+**pomiarem po naprawie** — gdyby poprzestać na przeczytaniu kodu, poprawka weszłaby jako
+„zrobiona". Stąd zasada: naprawę wydajności potwierdza pomiar po, nie przed.
+
+**Trzecie znalezisko zostaje świadomie**, bo jego usunięcie wymaga zmiany kontraktu między dwiema
+wtyczkami naraz, a ekran renderuje się w ~26 ms przy 50 tysiącach rekordów. Decyzja odłożona —
+nie przemilczana.
+
+**Pomiary skali:**
+- import **50 000 wierszy**: wszystkie przyjęte, 51,6 s, szczyt pamięci **59 MB** (plik czytany
+  strumieniowo, nie ładowany w całości)
+- **50 000 produktów** w rejestrze: ekran listy **41 ms** (przy 1 000 rekordów — 44 ms),
+  wyszukanie po numerze seryjnym **0,2 ms**
+- narzut na każde żądanie strony: **0,0 KB z 29,1 KB** wszystkich automatycznie ładowanych opcji
+- analiza statyczna poziom 6: **0 błędów, bez pliku wyjątków**
+
+## Runda przy 1.3.4 — kontrola od strony odbiorcy
+
+Paczka **pobrana z opublikowanego wydania** (nie zbudowana lokalnie) przepuszczona przez pełny
+test instalacji od zera. Przeszła.
+
+**Znalezisko: paczka wydania obiecywała więcej niż kod.** Poprawka dokumentacji weszła
+**po** zbudowaniu paczki — repozytorium mówiło prawdę, paczka nie. Stąd twarda kolejność przy
+wydaniu: zmiany → gałąź główna → dopiero potem znacznik i paczka.
+
+**Przegląd repozytorium pod kątem śladów środowiska pracy: 2 trafienia, oba usunięte.**
+
+## Runda przy 1.3.3 — spójność po wydaniu
+
+Przegląd nastawiony na jedno pytanie: co **przestało być prawdą** po ostatnich naprawach.
+Własna poprawka potrafi unieważnić dokumentację i testy, które wcześniej były zgodne.
+
+## Runda przy 1.3.2 — czytanie kodu linia po linii
+
+**1 621 linii przeczytanych w całości → 7 napraw**, m.in.: kontrola liczby kolumn w pliku CSV ·
+rozpoznawanie kodowania na proporcji znaków zamiast pojedynczego bajtu · obsługa pól
+wieloliniowych · odświeżanie danych sprawy między regułami automatu · blokada przycisku na czas
+trwania operacji.
+
+**Ocena instrukcji przez czytelnika nietechnicznego: 62/100.** Dołożono ostrzeżenie, że rozdział
+o serwerze nie jest do samodzielnego wykonania, gotowe treści wiadomości do hostingu, rozdział
+„do kogo się zwrócić" i słowniczek. **Po poprawkach: 79/100.**
+
+## Runda przy 1.3.1 — trzy nowe kąty
+
+### Bezpieczeństwo — brak znalezisk, kalibracja zdana
+Dwóch niezależnych audytorów (formularz publiczny, załączniki i logowanie · panel, import
+i eksport, zadania cykliczne). Kryterium: tylko realnie wykorzystywalne, pewność powyżej 80%.
+
+**Kalibracja:** do kopii w piaskownicy wszczepiono 3 luki w miejscach, które audytorzy ogłosili
+poprawnymi. Dwie — **znalezione**. Trzecia **słusznie pominięta**: dostęp pozostawał zablokowany,
+nie było ścieżki ataku. Wniosek: audytorzy widzą, więc ich „brak znalezisk" ma wartość dowodową.
+
+**Kontrola maszynowa całości:** **38 zarejestrowanych punktów wejścia HTTP**, **13 operacji
+uprzywilejowanych** — wszystkie z kontrolą uprawnień **i** zabezpieczeniem przed przesłaniem
+żądania z obcej strony. Panel klienta: kontrola własności zamiast uprawnień, poprawna z założenia.
+
+### Kompletność — 3 znaleziska, 2 naprawione
+Kąt „czy coś czegoś nie robi, choć wygląda na sprawne". Znaleziono ustawienie techniczne
+niekasowane przy odinstalowaniu (bliźniacza opcja w drugiej wtyczce była kasowana poprawnie —
+czyli wzorzec naprawiono wcześniej tylko w jednym egzemplarzu), komentarz obiecujący ekran,
+którego nie ma, oraz kolumnę zapisywaną, a nigdy nieczytaną (odłożona, bo usunięcie wymaga
+migracji danych).
+
+### Ponowna weryfikacja 13 uwag recenzenta na aktualnym kodzie
+Poprzednia była sprzed kilku wydań. Wynik czysty, jedno trafienie trafiło na listę wyżej.
+
+### Bramki, które zadziałały przeciwko nam — dowód, że nie są ozdobą
+- **Bramka pakująca odrzuciła paczkę**: w repozytorium było 8 dokumentów technicznych,
+  a lista w skrypcie miała 7. Lista jest jawna celowo — pętla po katalogu przepuściłaby
+  **skasowanie** dokumentu.
+- **Zabezpieczenie przed rekurencyjnym kasowaniem zablokowało nasze własne polecenie.**
+  Nie obchodziliśmy go — zrobiliśmy inaczej.
+- **Walidator formularza odrzucił nasze celowo paskudne dane.**
+- Nasz własny szybki skrypt kontrolny dał **2 fałszywe trafienia**, a pierwszy pomiar kodowania
+  był **błędny** — oba zweryfikowane do końca, zanim cokolwiek zgłosiliśmy jako wadę.
+
+### Dowody wykonania
+- **Instalacja od zera z paczki** na deklarowanym minimum (WordPress 6.9 / PHP 8.1 / MySQL 8):
+  ścieżka klienta **20/0**, wgranie przez panel **6/0**, zero błędów PHP z naszego kodu
+- **Współistnienie z obcymi wtyczkami**: edytor klasyczny + wtyczka poczty + wtyczka pamięci
+  podręcznej włączone obok naszych → zadania cykliczne i testy diagnostyczne nadal działają
+- **Paskudne dane**: polskie znaki, emoji, znacznik skryptu, apostrof, cudzysłów, znaki nowej
+  linii → zapisane i odczytane bez uszkodzenia; za długi tekst odrzucony
+- **Formuły w eksporcie**: `=`, `+`, `-`, `@` unieszkodliwione, polskie znaki przepuszczone bez
+  fałszywych trafień
+- **Współbieżność numeracji**: 20 równoległych procesów → 20 unikalnych numerów, **zero duplikatów**
+- **Dostępność (WCAG 2.1 AA)**, pomiar narzędziem axe-core: **0 naruszeń** na naszych ekranach
+
+---
+
+## Znalezisko, które przeżyło wszystkie wcześniejsze audyty
+
+**Numer sprawy miał inny format niż w zamówieniu** (pięć cyfr zamiast czterech).
+
+Przeszło przez kilka rund, bo każda z nich czytała **naszą** dokumentację — a ta była zgodna
+sama ze sobą i **niezgodna z zamówieniem**. Ktoś na wcześniejszym etapie „poprawił literówkę"
+w dokumencie, dopasowując go do kodu.
+
+Złapał to dopiero audytor, któremu dano **surowy dokument zamówienia** zamiast naszego
+opracowania. Stąd zasada nr 2 na górze tego dokumentu.
+
+## Czego te audyty NIE obejmują
+
+Uczciwa lista, nie zamiatanie. Żaden audyt nie dowodzi braku wszystkich błędów — poniżej to,
+czego świadomie nie sprawdzono albo sprawdzono tylko częściowo:
+
+- **Wygląd ekranów oceniony przez projektanta.** Ekrany obejrzano na żywo pod kątem błędów
+  i poprawności, nie pod kątem estetyki.
+- **Pełny audyt dostępności na żywej stronie u klienta** — pomiar wykonano na naszym środowisku.
+- **Zrozumiałość instrukcji po ostatnich poprawkach**, zbadana na kolejnej żywej osobie.
+  Ostatnia ocena (79/100) pochodzi od czytelnika wcielonego w rolę, nie od klienta.
+- **Zachowanie przy bardzo długiej pracy bez przerwy** (miesiące działania bez restartu).
+- Trzy znane, świadomie odłożone drobiazgi: jedno miejsce nadmiarowych zapytań, jedna martwa
+  kolumna w bazie i jedno uproszczenie wymagające nowszej wersji WordPressa niż nasze minimum.
+  Wszystkie opisane w [`ZAKRES-SPRAWDZONY.md`](ZAKRES-SPRAWDZONY.md).
+
+## Lekcje procesowe — co ten projekt nas nauczył
+
+1. **Naprawa wzorca, nie egzemplarza.** Ten sam błąd siedział w dwóch wtyczkach; naprawiony
+   w jednej wracał jako nowe znalezisko w drugiej.
+2. **Audyt czytający własną dokumentację potwierdza jej spójność, nie zgodność z zamówieniem.**
+3. **Pomiar po naprawie, nie przed.** Poprawka wydajności potrafi cicho przywrócić to, co usuwała.
+4. **Bramka jest warta tyle, ile jej czułość.** Kontrola, która nigdy niczego nie zatrzymała,
+   jest nieodróżnialna od kontroli zepsutej — dlatego kalibrujemy podłożonymi błędami.
+5. **Zmiana unieważnia dokumentację i testy.** Po każdej naprawie osobne pytanie: co **przestało
+   być prawdą**.
