@@ -169,7 +169,7 @@ final class CaseCardApi {
 		$table        = Tables::full( Tables::CASE_SLA );
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela własna D, placeholdery z liczby ID.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela własna D; lista %d budowana z LICZBY ID (sniffer nie widzi placeholderow w interpolowanym ciagu).
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT case_id, deadline_at, warning_at, status FROM {$table}
