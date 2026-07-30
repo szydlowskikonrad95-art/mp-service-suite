@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,11 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.6 =
+* Zmiany wylacznie w instrukcjach dla klienta: wyjasnione SLA, anonimizacja, blokada
+  integralnosci i link do zalogowania; §7.1 (SMTP) dostal gotowa tresc wiadomosci do dostawcy
+  poczty. Poprawiony jeden zrzut ekranu (data po polsku). W kodzie wtyczki bez zmian.
 
 = 1.3.5 =
 * Listy w panelu (sprawy, produkty) pobieraja dane jednym zapytaniem na strone zamiast

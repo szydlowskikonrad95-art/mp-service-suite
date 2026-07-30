@@ -10,6 +10,9 @@ Kolumny: numer sprawy, czego dotyczy, klient, rodzaj, status (kolorowa plakietka
 termin SLA (czerwony = po terminie lub blisko), utworzono. **Priorytet sprawy widzisz po jej
 otwarciu** — na karcie, nie na liście.
 
+> **SLA** to umówiony czas na zajęcie się sprawą (np. 24 godziny na pierwszą reakcję). System
+> pilnuje go sam — szczegóły w punkcie 3.
+
 ![Lista spraw serwisowych](zdjecia/admin-01-sprawy.png)
 
 ## 2. Karta sprawy — tu się pracuje

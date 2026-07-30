@@ -28,6 +28,9 @@ i w komunikatach WordPressa.
 |---|---|
 | **wtyczka** | dodatek do WordPressa; wgrywa się plikiem ZIP i włącza jednym kliknięciem |
 | **panel** | to, co widzisz po zalogowaniu na stronę jako administrator (`/wp-admin`) |
+| **SLA (termin SLA)** | umówiony czas na zajęcie się sprawą, np. 24 godziny na pierwszą reakcję. System pilnuje go sam: przypomina pracownikowi przed upływem, a po terminie powiadamia koordynatora (§5.3) |
+| **link do zalogowania (magic-link)** | jednorazowy link, który klient dostaje mailem. Klika go i wchodzi do swoich spraw — bez zakładania konta i wymyślania hasła |
+| **anonimizacja** | usunięcie danych, po których dałoby się rozpoznać osobę (imię, nazwisko, e-mail, telefon, treść zgłoszenia). Sama sprawa i jej historia zostają, żeby statystyki się zgadzały — ale nie da się już powiedzieć, czyja była (§8) |
 | **zadanie cykliczne (cron)** | czynność, którą serwer wykonuje sam co jakiś czas, np. co 5 minut sprawdza terminy |
 | **WP-Cron** | wbudowany zegar WordPressa; ⚠️ rusza **tylko wtedy, gdy ktoś wejdzie na stronę** — dlatego w nocy „stoi" |
 | **systemowe zadanie cykliczne** | prawdziwy zegar na serwerze; działa **niezależnie od odwiedzin**, dlatego zalecamy go na produkcji (§7.3) |
@@ -96,7 +99,7 @@ Dla **każdego** z 3 plików ZIP:
 - **Rodzaje zgłoszeń i pola są wbudowane** — reklamacja wymaga numeru seryjnego, dokumentu zakupu i daty;
   zapytanie techniczne tylko opisu. Nie ma na to ekranu ustawień: zmiana zestawu pól albo kategorii
   to kilka linijek dla programisty (system udostępnia do tego gotowe punkty zaczepienia).
-- Formularz ma wbudowaną ochronę: potwierdzenie e-mail (magic-link), pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
+- Formularz ma wbudowaną ochronę: potwierdzenie e-mail jednorazowym linkiem do zalogowania, pułapki na boty, limity zgłoszeń, wymagana zgoda RODO.
 - **Załącznik zależy od kategorii.** Dla kategorii **„AGD drobne"** i **„Elektronarzędzia"** zdjęcie tabliczki
   znamionowej jest **wymagane** — bez niego serwis nie ustali modelu ani mocy urządzenia. Dla **„Elektronika audio"**
   i **„Inne"** załącznik pozostaje **opcjonalny**. Przyjmowane formaty: **JPG, PNG, WebP, PDF**, do **5 plików**.
@@ -242,9 +245,27 @@ Dla **każdego** z 3 plików ZIP:
 > Rozdział 7 to zwykle jedna wiadomość do hostingu i czekanie na odpowiedź.
 
 ### 7.1 Dostarczanie maili (SMTP)
-System wysyła maile (potwierdzenia, magic-link, powiadomienia) standardową funkcją WordPressa. Na wielu hostingach
-maile z `wp_mail()` **lądują w spamie lub nie dochodzą**. **Zalecane:** zainstaluj wtyczkę SMTP (np. darmowe *WP Mail SMTP*)
-i podłącz skrzynkę nadawczą Twojej firmy. To sprawa hostingu/skrzynki — nie kodu systemu.
+
+> ✅ **Ten jeden podpunkt możesz zrobić sam** — w odróżnieniu od reszty rozdziału 7 nie wymaga
+> dotykania serwera. Robi się go w panelu WordPressa, tak samo jak instalację naszych wtyczek
+> (rozdział 3). Potrzebujesz tylko danych do swojej skrzynki — jak je zdobyć, piszemy niżej.
+
+System wysyła maile (potwierdzenia, linki do zalogowania, powiadomienia) standardową funkcją
+WordPressa. Na wielu hostingach maile z `wp_mail()` **lądują w spamie lub nie dochodzą** — a wtedy
+klient nie dostanie potwierdzenia zgłoszenia i uzna, że formularz nie działa.
+
+**Co zrobić:** zainstaluj wtyczkę SMTP (np. darmowe *WP Mail SMTP*) i podłącz skrzynkę nadawczą
+swojej firmy. Kreator wtyczki poprowadzi Cię krok po kroku, ale poprosi o dane, których zwykle
+nie ma się pod ręką. **Poproś o nie dostawcę poczty** (to ta firma, u której masz firmowego maila
+— często ten sam hosting). Możesz napisać dosłownie tak:
+
+> *Dzień dobry, chcę skonfigurować wysyłkę maili z mojej strony internetowej przez skrzynkę
+> [tu wpisz swój adres, np. serwis@twojafirma.pl]. Proszę o dane do połączenia SMTP: adres serwera
+> (host), port, rodzaj szyfrowania (SSL/TLS), nazwę użytkownika oraz informację, czy potrzebne jest
+> osobne hasło do aplikacji. Dziękuję.*
+
+Gdy dostaniesz odpowiedź, przepisz te dane do kreatora wtyczki SMTP i wyślij wiadomość testową.
+To sprawa Twojej skrzynki i hostingu — nie kodu systemu, więc my nie możemy ustawić tego za Ciebie.
 
 ### 7.2 Ochrona załączników na nginx
 Załączniki są chronione **na dwa sposoby**: bramką PHP (działa zawsze) oraz plikiem `.htaccess` (działa tylko na Apache/LiteSpeed).
@@ -328,4 +349,4 @@ Godziny:      ......................................
 ```
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.5**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.6**.*

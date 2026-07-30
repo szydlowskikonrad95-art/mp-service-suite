@@ -88,7 +88,7 @@ gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
 
 ---
 
-**Nota o wersjach 1.3.1, 1.3.2, 1.3.3, 1.3.4 i 1.3.5.** Badanie wykonano na paczce **1.3.0** i **nie było powtarzane** —
+**Nota o wersjach 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5 i 1.3.6.** Badanie wykonano na paczce **1.3.0** i **nie było powtarzane** —
 piszemy to wprost, zamiast podmieniać numer wersji w nagłówku.
 
 Co zmieniło się od tamtej paczki: sprzątanie jednej opcji technicznej przy odinstalowaniu wtyczki,
@@ -100,8 +100,11 @@ zmieniono ani jednej linii kodu** — poprawiono wyłącznie dwa zdania w dokume
 w panelu administratora** (mniej zapytań); żaden element wyświetlany na badanych ekranach nie został
 dodany, usunięty ani przebudowany.
 
+**W wersji 1.3.6 nie zmieniono ani jednej linii kodu** — poprawiono wyłącznie instrukcje dla
+klienta (wyjaśnienia pojęć, RODO, konfiguracja poczty) oraz jeden zrzut ekranu.
+
 **Trzy ekrany, których dotyczyło badanie — publiczny formularz zgłoszenia oraz panel klienta przed
 i po zalogowaniu — nie zostały zmienione ani o jeden element**, dlatego wynik badania obowiązuje
-dla 1.3.5 bez zastrzeżeń. Jedyna zmiana widoczna w interfejsie dotyczy **ekranu importu w panelu
+dla 1.3.6 bez zastrzeżeń. Jedyna zmiana widoczna w interfejsie dotyczy **ekranu importu w panelu
 administratora** (przycisk staje się nieaktywny w trakcie wznawiania — zachowanie zgodne z
 wytycznymi, bo blokada jest komunikowana zmianą stanu przycisku, a nie samym kolorem).
