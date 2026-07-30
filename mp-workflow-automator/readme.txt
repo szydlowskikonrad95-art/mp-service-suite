@@ -26,6 +26,11 @@ Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
 
+= 1.3.1 =
+* Poprawiony opis w kodzie przy konfiguracji terminów SLA: nadpisania godzin dla siedmiu statusów
+  rdzenia to punkt rozszerzenia dla wdrożeniowca, a nie ekran w panelu. Godziny statusów WŁASNYCH
+  pozostają edytowalne w panelu.
+
 = 1.3.0 =
 * Eksport CSV wysyła dane strumieniowo, zamiast najpierw zbierać wszystkie sprawy do pamięci. Przy dużej bazie eksport nie przerywa się już limitem czasu, a plik zaczyna pobierać się od razu. Zestawienie na końcu pliku liczy się w trakcie wysyłki.
 
