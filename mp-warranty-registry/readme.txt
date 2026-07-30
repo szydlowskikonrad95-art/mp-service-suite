@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,13 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.5 =
+* Listy w panelu (sprawy, produkty) pobieraja dane jednym zapytaniem na strone zamiast
+  jednego na kazdy wiersz. Ekran spraw zszedl z 43 do 4 zapytan do bazy. Wyglad i dzialanie
+  ekranow bez zmian.
+* Poprawki w instrukcji: nazwa ekranu w menu (MP: Sprawy), opis ekranu MP: Niepotwierdzone,
+  ostrzezenie przy poleceniu kopii bazy dla PIERWSZEJ instalacji.
 
 = 1.3.4 =
 * Wydanie porzadkowe dokumentacji: dwa zdania w dokumentacji technicznej opisywaly
