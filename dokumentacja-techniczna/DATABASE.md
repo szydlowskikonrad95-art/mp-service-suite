@@ -157,8 +157,13 @@ INSERT INTO wp_mp_srv_counters (year, value) VALUES (%d, 1)
 ON DUPLICATE KEY UPDATE value = LAST_INSERT_ID(value + 1)
 ```
 
-+ `case_number` UNIQUE jako pas bezpieczeństwa (INSERT pod UNIQUE + retry). Test kontraktowy:
-**≥20 równoległych procesów / ≥1000 numerów = zero duplikatów.** Dziury w numeracji po sprzątnięciu
++ `case_number` UNIQUE jako pas bezpieczeństwa (INSERT pod UNIQUE + retry).
+⚠️ **Co jest faktycznie przetestowane, a co wynika z gwarancji bazy:** atomowość samego przydziału
+numeru opiera się na semantyce MySQL (`INSERT … ON DUPLICATE KEY UPDATE` z `LAST_INSERT_ID`), a nie
+na naszym teście obciążeniowym. Testy, które REALNIE chodzą: `testy/phpunit/SrvCounterTest.php`
+(format numeru) oraz `testy/e2e/c21-dedup-wyscig.sh` — **6 równoległych żądań** sprawdzających, że
+z wyścigu przechodzi dokładnie jedno zgłoszenie (rezerwacja dedup). **Testu na ≥20 procesach
+i ≥1000 numerach NIE MA** — jest w planie na kolejną wersję. Dziury w numeracji po sprzątnięciu
 spraw niepotwierdzonych = udokumentowane (unikalność ≠ ciągłość). `wp_mp_srv_counters` = własność C,
 czyszczona w warstwie (ii) uninstalla RAZEM ze sprawami (skasowanie licznika przy zostawionych
 sprawach → duplikaty SRV po reinstalacji w tym samym roku).
