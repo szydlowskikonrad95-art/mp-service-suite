@@ -9,6 +9,10 @@
 sprawy lub kliencie. Czerwony termin SLA = wymaga uwagi. „Nieprzydzielona" na czerwono = sprawa,
 której automat nie umiał przydzielić (najczęściej pusta pula — patrz §3).
 
+> **SLA** to umówiony czas na zajęcie się sprawą (np. 24 godziny na pierwszą reakcję). System
+> pilnuje go sam: przypomina pracownikowi przed upływem, a po terminie eskaluje do Ciebie —
+> szczegóły w §4.
+
 ![Lista spraw](zdjecia/admin-01-sprawy.png)
 
 Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status i priorytet,

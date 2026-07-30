@@ -36,8 +36,9 @@ na ekranie jest przykładowy plik do pobrania i lista kolumn:
 
 ![Import CSV](zdjecia/admin-05-import-csv.png)
 
-Produktu z **aktywną sprawą nie da się usunąć** (blokada integralności) — najpierw zamknij sprawę
-albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
+Produktu z **aktywną sprawą nie da się usunąć** — system celowo na to nie pozwala, żeby otwarta
+sprawa nie została bez produktu, którego dotyczy (nazywamy to blokadą integralności). Najpierw
+zamknij sprawę albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
 
 ### Poprawianie danych produktu
 
@@ -74,8 +75,12 @@ jej nie widzi) i zostaje w historii produktu:
 
 - Wnioski o **eksport/usunięcie danych**: wbudowane narzędzia WordPressa
   (**Narzędzia → Eksport / Usuwanie danych osobowych**) obejmują dane systemu serwisowego.
-- Usuwanie = **anonimizacja**: dane osobowe znikają (także konto klienta i e-mail w zgodach),
-  oś zdarzeń i statystyki zostają. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
+- Usuwanie = **anonimizacja**, czyli dane osobowe znikają, ale sprawa zostaje. Konkretnie
+  **znika**: imię i nazwa klienta, telefon, adres e-mail (zastąpiony technicznym `anon-…@removed.invalid`),
+  powiązanie z kontem na stronie, treść wiadomości oraz pola zgłoszenia zawierające dane osobowe
+  (w ich miejscu widać `[ZREDAGOWANO-RODO]`). **Zostaje**: sama sprawa, jej numer, statusy, daty
+  i oś zdarzeń — dzięki temu statystyki i historia serwisu dalej się zgadzają, ale nie da się już
+  ustalić, czyja to była sprawa. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
 - **Wspólny adres wielu osób** (sekretariat): narzędzie WordPressa „Usuń dane osobowe" działa po adresie e-mail i obejmie wszystkie kartoteki
   z tego adresu — przed uruchomieniem potwierdź tożsamość i zakres wniosku.
 - Retencja załączników i sprzątanie danych tymczasowych chodzą automatycznie (cron).

@@ -4,6 +4,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-07-30
+
+### Zmienione (dokumentacja)
+- **Slowa, ktorych czytelnik nie musi znac, sa teraz wyjasnione.** Do slowniczka doszly **SLA**,
+  **link do zalogowania (magic-link)** i **anonimizacja**; skrot SLA jest tez rozwiniety przy
+  pierwszym uzyciu w instrukcjach **pracownika** i **koordynatora** (te dokumenty czyta sie
+  osobno, bez slowniczka z instrukcji glownej).
+- **RODO: instrukcja mowi wprost, co znika przy anonimizacji, a co zostaje** — zamiast ogolnego
+  „dane osobowe znikaja". Wymienione pola zgodne z tym, co robi kod.
+- **„Blokada integralnosci" wyjasniona po ludzku** — dlaczego produktu z aktywna sprawa nie da
+  sie usunac.
+- **§7.1 (SMTP) przestal byc sprzeczny z naglowkiem rozdzialu 7.** Rozdzial jest oznaczony jako
+  „nie do samodzielnego wykonania", a ten podpunkt kazal dzialac samemu. Teraz jest zaznaczone,
+  ze akurat ten krok robi sie w panelu, i doszla **gotowa tresc wiadomosci do dostawcy poczty**
+  (trzecia taka, obok dwoch do hostingu).
+
+### Poprawione
+- **Zdjecie pustego formularza pokazywalo date po amerykansku** (`mm/dd/yyyy`), podczas gdy
+  sasiednie zdjecie tego samego formularza pokazywalo `14.03.2026`. Zrzut powstal bez wymuszonego
+  jezyka przegladarki. Klient w polskiej przegladarce widzi format polski — zdjecie zostalo
+  zrobione ponownie.
+- **Brakowalo wpisu dla wydania 1.3.5** — jego tresc lezala w „Unreleased", wiec CHANGELOG
+  sugerowal, ze ostatnim wydaniem jest 1.3.4.
+
+## [1.3.5] - 2026-07-30
+
 ### Poprawione
 - **Lista spraw pobiera terminy SLA jednym zapytaniem.** Kolumna terminu pytala o kazdy wiersz
   osobno; razem z poprzednia poprawka ekran „MP: Sprawy" zszedl z **43 do 4 zapytan**.
