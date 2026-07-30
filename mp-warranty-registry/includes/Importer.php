@@ -79,16 +79,24 @@ final class Importer {
 			return array( 'error' => 'Plik nie jest w UTF-8, a serwer nie ma iconv ani intl — zapisz CSV jako UTF-8 i sprobuj ponownie.' );
 		}
 
-		$lines = preg_split( '/\r\n|\r|\n/', $utf8 );
-		$lines = array_values( array_filter( (array) $lines, static fn( $l ) => '' !== trim( (string) $l ) ) );
+		// ⚠️ NIE dzielimy pliku na linie i NIE filtrujemy pustych.
+		// Wczesniej `preg_split` po znakach nowej linii szedl PRZED parsowaniem CSV, wiec
+		// komorka z Enterem w cudzyslowach (norma RFC 4180 — np. opis wklejony z Excela
+		// z zawinietym tekstem) byla rozcinana na dwa „wiersze": kolumny sie przesuwaly,
+		// licznik postepu byl zawyzony, a dane trafialy w zle pola BEZ zadnego bledu.
+		// Znalezione czytaniem liniowym 30.07. Teraz normalizujemy TYLKO konce linii,
+		// a rekordy wydziela czytnik CSV, ktory rozumie cudzyslowy.
+		$utf8 = str_replace( array( "\r\n", "\r" ), "\n", $utf8 );
 
-		if ( count( $lines ) < 2 ) {
+		$pierwsza_linia = strtok( $utf8, "\n" );
+
+		if ( false === $pierwsza_linia || '' === trim( (string) $pierwsza_linia ) ) {
 			return array( 'error' => 'Plik nie zawiera danych (sam naglowek lub pusty).' );
 		}
 
-		$separator = CsvParser::detect_separator( (string) $lines[0] );
+		$separator = CsvParser::detect_separator( (string) $pierwsza_linia );
 
-		if ( null === CsvParser::map_header( str_getcsv( (string) $lines[0], $separator, '"', self::CSV_ESCAPE ) ) ) {
+		if ( null === CsvParser::map_header( str_getcsv( (string) $pierwsza_linia, $separator, '"', self::CSV_ESCAPE ) ) ) {
 			return array( 'error' => 'Naglowek nie zawiera kolumny serial (albo aliasu).' );
 		}
 
@@ -101,12 +109,18 @@ final class Importer {
 		$target = $dir . '/' . wp_generate_uuid4() . '.csv';
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- znormalizowany plik roboczy importu.
-		if ( false === file_put_contents( $target, implode( "\n", $lines ) . "\n" ) ) {
+		if ( false === file_put_contents( $target, rtrim( $utf8, "\n" ) . "\n" ) ) {
 			return array( 'error' => 'Nie mozna zapisac pliku roboczego.' );
 		}
 
-		$total = count( $lines ) - 1;
-		$job   = ImportJobs::create( $target, $total );
+		// Liczymy REKORDY CSV, nie linie pliku (patrz komentarz wyzej).
+		$total = self::policz_rekordy( $target, $separator );
+
+		if ( $total < 1 ) {
+			return array( 'error' => 'Plik nie zawiera danych (sam naglowek lub pusty).' );
+		}
+
+		$job = ImportJobs::create( $target, $total );
 
 		if ( null === $job ) {
 			return array( 'error' => 'Inny import jest w toku — dokoncz go albo poczekaj na stale-detekcje (15 min).' );
@@ -366,10 +380,17 @@ final class Importer {
 			)
 		);
 
+		// ⚠️ Raport bledow zapisujemy PRZED zatwierdzeniem transakcji.
+		// Wczesniej szedl PO `COMMIT`: awaria dokladnie w tym okienku (timeout, brak pamieci)
+		// zatwierdzala postep partii, ale wpisy bledow tej partii przepadaly na zawsze —
+		// offset byl juz przesuniety, wiec partia sie nie powtarzala, a paczka obiecuje,
+		// ze raport zawiera WSZYSTKIE odrzucone wiersze. Znalezione czytaniem liniowym 30.07.
+		// Odwrotna kolejnosc jest bezpieczna: gorszy przypadek to wpis w raporcie o wierszu
+		// z partii, ktora sie wycofala — czyli wiersz i tak zostanie przetworzony ponownie.
+		self::append_errors( (string) $job['file_path'], $errors );
+
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
-
-		self::append_errors( (string) $job['file_path'], $errors );
 
 		$processed_total = $offset + $processed_now;
 
@@ -428,9 +449,23 @@ final class Importer {
 			return null;
 		}
 
+		// REKORDY, nie linie: `fgetcsv` sam scala komorke z Enterem w cudzyslowach
+		// (patrz komentarz przy zapisie pliku roboczego). Wczesniej `fgets` rozcinal
+		// taki rekord na dwa i przesuwal kolumny bez zadnego bledu.
 		$skipped = 0;
 
-		while ( $skipped < $offset && false !== fgets( $handle ) ) {
+		while ( $skipped < $offset ) {
+			$pominiety = fgetcsv( $handle, 0, $separator, '"', self::CSV_ESCAPE );
+
+			if ( false === $pominiety ) {
+				break;
+			}
+
+			// Pusta linia miedzy rekordami: `fgetcsv` zwraca array(null) — nie liczymy jej.
+			if ( array( null ) === $pominiety ) {
+				continue;
+			}
+
 			++$skipped;
 		}
 
@@ -438,23 +473,62 @@ final class Importer {
 		$collected = 0;
 
 		while ( $collected < $limit ) {
-			$line = fgets( $handle );
+			$cells = fgetcsv( $handle, 0, $separator, '"', self::CSV_ESCAPE );
 
-			if ( false === $line ) {
+			if ( false === $cells ) {
 				break;
 			}
 
-			if ( '' === trim( $line ) ) {
+			if ( array( null ) === $cells ) {
 				continue;
 			}
 
-			$rows[] = CsvParser::parse_row( str_getcsv( trim( $line ), $separator, '"', self::CSV_ESCAPE ), $map );
+			$rows[] = CsvParser::parse_row( $cells, $map );
 			++$collected;
 		}
 
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- para do fopen.
 
 		return $rows;
+	}
+
+	/**
+	 * Liczy REKORDY danych w pliku CSV (bez naglowka), respektujac cudzyslowy.
+	 *
+	 * Liczenie linii bylo bledne dla komorek z Enterem w cudzyslowach — patrz komentarz
+	 * przy zapisie pliku roboczego w `upload()`.
+	 *
+	 * @param string $sciezka   Plik roboczy importu.
+	 * @param string $separator Separator kolumn.
+	 * @return int Liczba rekordow danych (0 przy bledzie odczytu).
+	 */
+	private static function policz_rekordy( string $sciezka, string $separator ): int {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- czytanie wlasnego pliku roboczego strumieniowo.
+		$handle = fopen( $sciezka, 'rb' );
+
+		if ( false === $handle ) {
+			return 0;
+		}
+
+		$rekordy = -1; // Naglowek nie liczy sie do danych.
+
+		while ( true ) {
+			$cells = fgetcsv( $handle, 0, $separator, '"', self::CSV_ESCAPE );
+
+			if ( false === $cells ) {
+				break;
+			}
+
+			if ( array( null ) === $cells ) {
+				continue;
+			}
+
+			++$rekordy;
+		}
+
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- para do fopen.
+
+		return max( 0, $rekordy );
 	}
 
 	/**
@@ -476,11 +550,46 @@ final class Importer {
 			$lines .= "wiersz;serial;blad\n";
 		}
 
+		// ⚠️ CYTUJEMY jak CSV, nie skladamy `implode`.
+		// Numer seryjny pochodzi z pliku klienta i moze legalnie zawierac srednik
+		// (w oryginale byl w cudzyslowach). Skladany `implode(';', ...)` rozbijal wtedy
+		// kolumny we WLASNYM raporcie bledow — admin widzial przesuniete kolumny w Excelu.
+		// Znalezione czytaniem liniowym 30.07.
 		foreach ( $errors as $error ) {
-			$lines .= implode( ';', array( $error[0], $error[1], $error[2] ) ) . "\n";
+			$lines .= self::wiersz_csv( array( (string) $error[0], (string) $error[1], (string) $error[2] ) );
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- raport techniczny w katalogu importow.
 		file_put_contents( $report, $lines, FILE_APPEND | LOCK_EX );
+	}
+
+	/**
+	 * Skleja jeden wiersz CSV z poprawnym cytowaniem (separator `;`, zakonczenie `\n`).
+	 *
+	 * Uzywane w raporcie bledow: wartosci pochodza z pliku klienta i moga zawierac
+	 * separator, cudzyslow albo znak nowej linii.
+	 *
+	 * @param string[] $pola Wartosci kolumn.
+	 * @return string Wiersz zakonczony znakiem nowej linii.
+	 */
+	private static function wiersz_csv( array $pola ): string {
+		$wyjscie = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- bufor w pamieci, nie plik.
+
+		if ( false === $wyjscie ) {
+			// Awaryjnie: cytujemy recznie, zeby raport nie rozjechal kolumn.
+			$bezpieczne = array_map(
+				static fn( string $p ): string => '"' . str_replace( '"', '""', $p ) . '"',
+				$pola
+			);
+
+			return implode( ';', $bezpieczne ) . "\n";
+		}
+
+		fputcsv( $wyjscie, $pola, ';', '"', '\\' );
+		rewind( $wyjscie );
+		$wiersz = (string) stream_get_contents( $wyjscie );
+		fclose( $wyjscie ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- para do fopen.
+
+		return $wiersz;
 	}
 }

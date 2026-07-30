@@ -16,18 +16,54 @@
 Wtyczki rozmawiają ze sobą **automatycznie** (przez wewnętrzne haki). Każda działa też **sama** — jeśli którejś brakuje,
 pozostałe przechodzą w tryb ograniczony (nigdy nie wywalają strony).
 
+## 1a. Słowniczek — co znaczą słowa, które zobaczysz niżej
+
+Nie musisz ich znać, żeby korzystać z systemu. Wyjaśniamy je, bo pojawiają się w tej instrukcji
+i w komunikatach WordPressa.
+
+| Słowo | Po ludzku |
+|---|---|
+| **wtyczka** | dodatek do WordPressa; wgrywa się plikiem ZIP i włącza jednym kliknięciem |
+| **panel** | to, co widzisz po zalogowaniu na stronę jako administrator (`/wp-admin`) |
+| **zadanie cykliczne (cron)** | czynność, którą serwer wykonuje sam co jakiś czas, np. co 5 minut sprawdza terminy |
+| **WP-Cron** | wbudowany zegar WordPressa; ⚠️ rusza **tylko wtedy, gdy ktoś wejdzie na stronę** — dlatego w nocy „stoi" |
+| **systemowe zadanie cykliczne** | prawdziwy zegar na serwerze; działa **niezależnie od odwiedzin**, dlatego zalecamy go na produkcji (§7.3) |
+| **fileinfo, iconv, intl** | dodatki do PHP na serwerze; pierwszy sprawdza, czy wgrany plik jest naprawdę zdjęciem, dwa pozostałe pomagają z polskimi znakami |
+| **hak / punkt zaczepienia / filtr** | miejsce w systemie, w którym programista może dołożyć własne zachowanie bez zmiany naszego kodu |
+| **endpoint** | adres, pod który system wysyła lub odbiera dane w tle (nie strona do oglądania) |
+| **snippet** | krótki fragment kodu do wklejenia w jednym konkretnym miejscu |
+| **proxy / Cloudflare** | pośrednik między odwiedzającym a Twoim serwerem; przyspiesza stronę, ale ukrywa adres odwiedzającego (§7.4) |
+
 ## 2. Wymagania
+
+**Musisz mieć już działającą stronę na WordPressie.** Ten system to trzy wtyczki, które się do niej
+dokłada — nie jest to gotowa strona i nie zawiera WordPressa.
 
 - WordPress **6.0** lub nowszy — cała paczka przechodzi testy instalacji od zera na **6.9** (PHP 8.1) i na najnowszym **7.0** (PHP 8.2)
 - PHP **8.1** lub nowszy (z rozszerzeniem `fileinfo` — potrzebne do bezpiecznego przyjmowania załączników)
 - Baza **MySQL 8 / MariaDB 10.6+**
 - Dostęp administratora do panelu WordPress
 
+### Jak sprawdzić, czy Twój hosting to spełnia (nie musisz się na tym znać)
+
+Najprościej **zapytaj pomoc techniczną swojego hostingu**. Możesz napisać dosłownie tak:
+
+> *Dzień dobry, chcę zainstalować wtyczki wymagające PHP w wersji 8.1 lub nowszej z włączonym
+> rozszerzeniem `fileinfo` oraz bazy MySQL 8 lub MariaDB 10.6 lub nowszej. Proszę o informację,
+> czy moje konto to spełnia, a jeśli nie — czy da się to włączyć.*
+
+Możesz też zajrzeć sam: panel WordPressa → **Narzędzia → Stan witryny → Informacje**, zakładki
+*Serwer* i *Baza danych*. Są tam wypisane wersje. **Jeśli hosting nie spełnia wymagań** — nie
+instaluj na siłę, tylko poproś hosting o podniesienie wersji PHP (u większości firm to jedno
+kliknięcie w panelu, robi się w minutę i jest bezpłatne).
+
 ## 3. Instalacja (3 × ten sam krok)
 
 ⚠️ **Przed wgraniem wtyczek zrób kopię bazy danych i plików strony.** To standardowa ostrożność przy instalacji
 nowego oprogramowania — gdyby coś poszło nie tak, wracasz do stanu sprzed instalacji jednym ruchem. Szczegółową
 politykę kopii zapasowych i cofania zmian w bazie znajdziesz w pliku `MIGRATION_POLICY.md`, dołączonym do paczki.
+ℹ️ **Ten plik jest napisany dla osoby technicznej** — nie musisz go czytać, żeby zainstalować system.
+Przekaż go informatykowi albo hostingowi, jeśli będziesz potrzebować przywrócenia danych.
 
 Dla **każdego** z 3 plików ZIP:
 1. Panel WordPress → **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
@@ -175,6 +211,31 @@ Dla **każdego** z 3 plików ZIP:
 
 ## 7. Noty dla serwera (ważne przy wdrożeniu)
 
+> ### ⛔ Zanim zaczniesz czytać ten rozdział — to NIE JEST rozdział dla Ciebie
+>
+> **Ta część nie jest do samodzielnego wykonania, jeśli nie zajmujesz się serwerami.** Są tu
+> fragmenty kodu i ustawienia, które wpisuje się w konfigurację serwera — nie w panel WordPressa.
+> Wpisane w złym miejscu nie zadziałają, a niektóre mogą wyłączyć stronę.
+>
+> **Co z tym zrobić — wybierz jedno:**
+> 1. **Przekaż ten rozdział osobie, która wdrażała Ci system** (albo firmie, która go dla Ciebie
+>    zrobiła) z prośbą: „proszę to skonfigurować przy wdrożeniu".
+> 2. **Albo wyślij go do pomocy technicznej swojego hostingu.** Możesz napisać dosłownie tak:
+>
+>    > *Dzień dobry, mam na stronie system obsługi zgłoszeń serwisowych. Proszę o pomoc
+>    > w trzech rzeczach: (1) ustawienie zadania cyklicznego co 5 minut wywołującego
+>    > `wp-cron.php`, (2) jeśli serwer to nginx — dodanie reguły blokującej bezpośredni dostęp do
+>    > katalogu z załącznikami, (3) jeśli strona stoi za Cloudflare — przekazywanie prawdziwego
+>    > adresu IP odwiedzających. Szczegóły techniczne przesyłam w załączniku.*
+>
+> **Najważniejsze, żebyś wiedział:** jeśli punkt **7.3 (zadanie cykliczne)** nie zostanie
+> wykonany, przypomnienia i terminy **stoją w nocy**, a system i tak wygląda na sprawny.
+> To jedyny krok z tego rozdziału, którego pominięcie da się zauważyć dopiero po czasie —
+> dlatego sprawdź w **Narzędzia → Stan witryny**, czy nie świeci na czerwono przy terminach.
+>
+> ⏱️ **Ile to zajmie:** samo wgranie i włączenie wtyczek (rozdziały 3-6) to około **30-45 minut**.
+> Rozdział 7 to zwykle jedna wiadomość do hostingu i czekanie na odpowiedź.
+
 ### 7.1 Dostarczanie maili (SMTP)
 System wysyła maile (potwierdzenia, magic-link, powiadomienia) standardową funkcją WordPressa. Na wielu hostingach
 maile z `wp_mail()` **lądują w spamie lub nie dochodzą**. **Zalecane:** zainstaluj wtyczkę SMTP (np. darmowe *WP Mail SMTP*)
@@ -233,6 +294,33 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 | Ktoś pobiera cudzy załącznik po linku (nginx) | Dodaj snippet nginx (§7.2). |
 | „Brak uprawnień" na ekranach systemu | Sprawdź, czy użytkownik ma rolę personelu (§6). |
 | Formularz nie wyświetla się na stronie | Upewnij się, że wtyczka Zgłoszenia jest **włączona** i strona „Zgłoszenie serwisowe" istnieje. |
+| Zgłoszenia nie są nikomu przydzielane | Wejdź w **Automatyzacje MP → Kto dostaje zgłoszenia** i zapisz listę pracowników — dopóki jest pusta, sprawy nie mają właściciela. |
+| „Stan witryny" świeci na czerwono | Otwórz **Narzędzia → Stan witryny** — każde nasze ostrzeżenie mówi wprost, co zrobić. Jeśli nie wiesz, jak to wykonać, patrz §10 niżej. |
+
+## 10. Gdy coś nie działa — do kogo się zwrócić
+
+Systemy dzielą się na trzy części i **każdą naprawia ktoś inny**. Zanim gdzieś zadzwonisz, ustal,
+z którą masz kłopot:
+
+| Objaw | Do kogo | Co powiedzieć |
+|---|---|---|
+| Cała strona nie działa · maile nie wychodzą · potrzebna kopia zapasowa · wersja PHP | **pomoc techniczna hostingu** | „Moja strona…" — hosting odpowiada za serwer, pocztę i kopie |
+| Terminy nie są pilnowane w nocy · trzeba wkleić coś w konfigurację serwera (§7) | **hosting albo osoba wdrażająca** | prześlij rozdział 7 tej instrukcji |
+| Ekran systemu pokazuje błąd · coś liczy się nie tak · brakuje funkcji | **twórca systemu (utrzymanie)** | podaj **numer sprawy** (np. `SRV/2026/0042`), co robiłeś i co się stało; jeśli możesz — zrzut ekranu |
+
+⚠️ **Przy zgłaszaniu problemu z systemem podaj zawsze:** co widzisz w **Narzędzia → Stan witryny**
+(zrzut ekranu wystarczy) oraz numer sprawy, przy której to wystąpiło. Bez tego naprawa zaczyna się
+od zgadywania.
+
+📌 **Kontakt do utrzymania systemu:** ustalany przy przekazaniu — wpisz go tutaj, żeby był pod ręką,
+i przekaż osobom, które będą pracować w systemie:
+
+```
+Osoba/firma:  ......................................
+E-mail:       ......................................
+Telefon:      ......................................
+Godziny:      ......................................
+```
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.1**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.2**.*

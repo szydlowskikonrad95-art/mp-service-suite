@@ -61,6 +61,38 @@ final class CsvParser {
 			return $raw;
 		}
 
+		// ⚠️ Plik NIE jest w calosci poprawnym UTF-8 — ale to jeszcze NIE znaczy, ze jest
+		// w CP1250. Wczesniej kazdy JEDEN zly bajt (np. znak wklejony z Worda) kierowal
+		// CALY plik do konwersji z CP1250, co reinterpretowalo poprawne polskie znaki UTF-8
+		// jako pojedyncze bajty CP1250 => krzaki w calym pliku, bez ostrzezenia.
+		// Znalezione czytaniem liniowym 30.07.
+		//
+		// Rozstrzygamy PROPORCJA, nie pojedynczym bajtem: liczymy, jaka czesc bajtow
+		// wysokich (>= 0x80) sklada sie w POPRAWNE sekwencje UTF-8. Prawdziwy plik UTF-8
+		// z drobnym uszkodzeniem ma ten udzial blisko 1. Plik CP1250 ma go niski — tam bajty
+		// wysokie sa POJEDYNCZYMI znakami i tylko przypadkiem trafiaja w poprawna sekwencje
+		// (np. „ćąą" = E6 B9 B9 to formalnie poprawna trojka UTF-8, dlatego samo „czy jest
+		// jakakolwiek poprawna sekwencja" NIE wystarcza jako kryterium).
+		if ( self::wyglada_na_uszkodzone_utf8( $raw ) ) {
+			// Usuwamy WYLACZNIE nieprawidlowe bajty, reszta (polskie znaki) zostaje nietknieta.
+			$oczyszczone = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $raw );
+			$oczyszczone = is_string( $oczyszczone ) ? $oczyszczone : $raw;
+
+			if ( function_exists( 'iconv' ) ) {
+				$bez_smieci = iconv( 'UTF-8', 'UTF-8//IGNORE', $oczyszczone );
+
+				if ( false !== $bez_smieci && 1 === preg_match( '//u', $bez_smieci ) ) {
+					return $bez_smieci;
+				}
+			}
+
+			$bez_smieci = mb_convert_encoding( $oczyszczone, 'UTF-8', 'UTF-8' );
+
+			if ( is_string( $bez_smieci ) && 1 === preg_match( '//u', $bez_smieci ) ) {
+				return $bez_smieci;
+			}
+		}
+
 		if ( function_exists( 'iconv' ) ) {
 			$converted = iconv( 'CP1250', 'UTF-8//TRANSLIT', $raw );
 
@@ -78,6 +110,46 @@ final class CsvParser {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Czy tresc to UTF-8 z drobnym uszkodzeniem (a nie plik w CP1250)?
+	 *
+	 * Kryterium: udzial bajtow wysokich (>= 0x80) skladajacych sie w POPRAWNE sekwencje
+	 * UTF-8 w stosunku do wszystkich bajtow wysokich. Prog 0.9 — plik UTF-8 z kilkoma
+	 * zlymi bajtami jest blisko 1, plik CP1250 znacznie nizej (tam bajty wysokie to
+	 * pojedyncze znaki, trafiajace w poprawne sekwencje tylko przypadkiem).
+	 *
+	 * @param string $raw Surowe bajty (bez BOM).
+	 * @return bool
+	 */
+	private static function wyglada_na_uszkodzone_utf8( string $raw ): bool {
+		$wysokie = preg_match_all( '/[\x80-\xFF]/', $raw );
+
+		if ( ! is_int( $wysokie ) || 0 === $wysokie ) {
+			// Same bajty ASCII, a mimo to niepoprawne UTF-8 => bajty sterujace. Traktujemy
+			// jak uszkodzone UTF-8 (czyszczenie), nie jak CP1250 (konwersja nic nie da).
+			return true;
+		}
+
+		$dopasowania = array();
+		$sekwencje   = preg_match_all(
+			'/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/',
+			$raw,
+			$dopasowania
+		);
+
+		if ( ! is_int( $sekwencje ) || 0 === $sekwencje ) {
+			return false;
+		}
+
+		$bajty_w_sekwencjach = 0;
+
+		foreach ( $dopasowania[0] as $sekwencja ) {
+			$bajty_w_sekwencjach += strlen( $sekwencja );
+		}
+
+		return ( $bajty_w_sekwencjach / $wysokie ) >= 0.9;
 	}
 
 	/**
@@ -120,6 +192,33 @@ final class CsvParser {
 	 * @return array{ok: bool, row?: array<string, string|null>, error?: string}
 	 */
 	public static function parse_row( array $cells, array $map ): array {
+		// ZŁA LICZBA KOLUMN = wiersz do raportu bledow, NIE do bazy.
+		// Bez tej kontroli wiersz urwany (np. reczna edycja w Notatniku, przerwany eksport)
+		// dawal dla brakujacych kolumn ciche PUSTE ciagi — nieodroznialne od pola celowo
+		// pustego (puste daty sa legalne). Produkt wchodzil wtedy do rejestru BEZ daty zakupu
+		// i gwarancji, a system liczyl klientowi status gwarancji z niepelnych danych.
+		// Sprawdzamy OBECNOSC kolumny (array_key_exists), nie jej wartosc: pole legalnie puste
+		// ma swoj separator, wiec indeks ISTNIEJE i jest pustym ciagiem. Wiersz urwany indeksu
+		// nie ma wcale. Znalezione czytaniem liniowym 30.07.
+		$brakujace = array();
+
+		foreach ( $map as $kolumna => $indeks ) {
+			if ( ! array_key_exists( $indeks, $cells ) ) {
+				$brakujace[] = $kolumna;
+			}
+		}
+
+		if ( array() !== $brakujace ) {
+			return array(
+				'ok'    => false,
+				'error' => sprintf(
+					'zla liczba kolumn (wiersz ma %d, brakuje: %s)',
+					count( $cells ),
+					implode( ', ', $brakujace )
+				),
+			);
+		}
+
 		$get = static function ( string $column ) use ( $cells, $map ): string {
 			return isset( $map[ $column ] ) ? trim( (string) ( $cells[ $map[ $column ] ] ?? '' ) ) : '';
 		};
