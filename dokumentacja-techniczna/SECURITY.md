@@ -97,7 +97,28 @@ wyłącznie na stronę zakładaną przez wtyczkę).
 Zestaw jest nadpisywalny filtrem **`mp_intake_security_headers`** — wdrożenie za CDN/proxy,
 które ustawia własne nagłówki, może je tu przyciąć zamiast walczyć z duplikatami.
 
-## 7. Rate-limit — źródło IP za reverse-proxy (flaga #10)
+## 7. Rate-limit — progi i źródło IP za reverse-proxy (flaga #10)
+
+### Progi domyślne — formularz zgłoszenia
+
+Ochrona jest **warstwowa**: trzy niezależne liczniki, wystarczy przekroczyć jeden. Wartości
+domyślne (`RateLimit::limits()`), nadpisywalne filtrem **`mp_intake_rate_limits`**:
+
+| Licznik | Próg | Okno | Po co |
+|---|---|---|---|
+| **na adres IP** | 10 zgłoszeń | 10 minut | zalew z jednego źródła |
+| **na adres e-mail** | 3 zgłoszenia | 24 godziny | zapychanie kolejki jednym kontem |
+| **na numer seryjny** | 5 zgłoszeń | 24 godziny | wielokrotne zgłaszanie tego samego produktu |
+
+Osobno działa **twarda deduplikacja**: identyczne zgłoszenie (ten sam numer seryjny, e-mail
+i rodzaj sprawy) w oknie **15 minut** nie zakłada nowej sprawy — to nie jest rate-limit, tylko
+ochrona przed podwójnym kliknięciem „wyślij".
+
+⚠️ **Przy testowaniu formularza** próg **3 zgłoszeń na dobę z jednego adresu e-mail** zostanie
+osiągnięty szybciej, niż się spodziewasz. Czwarta próba dostaje odmowę — to działająca ochrona,
+nie awaria. Do testów używaj różnych adresów e-mail albo podnieś progi wspomnianym filtrem.
+
+### Progi domyślne — logowanie klienta
 
 - Rate-limit po IP liczy **domyślnie `$_SERVER['REMOTE_ADDR']`** — bezpieczna domyślka (`RateLimit::client_ip()`).
 - **Żądania magic-linku (logowanie) też są rate-limitowane** (`RateLimit::check_login`, osobne liczniki od formularza): domyślnie **5 żądań / 15 min na IP** i **5 / godz. na e-mail** — chroni skrzynki klientów przed zalewem linkami i endpoint przed nadużyciem (OWASP anti-automation). Komunikat NEUTRALNY (zero enumeracji kont). Progi nadpisywalne filtrem `mp_intake_login_rate_limits`; źródło IP jak niżej (`mp_intake_client_ip`).

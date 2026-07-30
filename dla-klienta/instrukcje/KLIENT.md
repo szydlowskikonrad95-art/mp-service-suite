@@ -87,4 +87,5 @@ jest „Anuluj":
 | Nie dostałem maila potwierdzającego | Sprawdź spam; upewnij się, że adres był poprawny. Możesz wysłać zgłoszenie jeszcze raz. |
 | Link do logowania „nieaktualny" | Link żyje 20 minut i działa raz — poproś o nowy na stronie panelu. |
 | Wysłałem zgłoszenie dwa razy | System sam łapie duplikaty — drugie identyczne zgłoszenie w krótkim czasie nie tworzy nowej sprawy. |
+| „Zbyt wiele zgłoszeń" — nie mogę wysłać kolejnego | To ochrona przed spamem, nie awaria. Z jednego adresu e-mail można wysłać **3 zgłoszenia na dobę**, a dla jednego numeru seryjnego — 5. Poczekaj do następnego dnia albo napisz w sprawie, którą już masz założoną. |
 | Chcę dosłać zdjęcie do sprawy | Napisz wiadomość w sprawie w panelu — serwis się odezwie. |

@@ -25,11 +25,31 @@ TESTOW_SH=$(grep -rhcE "=> *array\( *self::class" mp-*/includes/Admin/SiteHealth
 RETENCJA=$(grep -oE "mp_intake_pending_retention_days', *[0-9]+" mp-service-intake/includes/CaseRepo.php | grep -oE "[0-9]+$")
 OKNO=$(grep -oE "CONFIRM_WINDOW_HOURS *= *[0-9]+" mp-service-intake/includes/CaseRepo.php | grep -oE "[0-9]+$")
 PHP_MIN=$(grep -hoE "Requires PHP: *[0-9.]+" mp-service-intake/mp-service-intake.php | grep -oE "[0-9.]+")
+# Progi ochrony formularza — dokumenty podaja je klientowi liczbowo, wiec musza zgadzac sie
+# z kodem. Zmiana progu bez poprawki instrukcji = obsluga mowi klientowi nieprawde.
+# ⚠️ Czytamy WYLACZNIE z funkcji `limits()`. Te same klucze (`ip_max`, `email_max`) wystepuja
+# drugi raz w progach LOGOWANIA (`login_rate_limits`) — wzorzec po calym pliku zwracal DWIE
+# wartosci naraz („3” i „5”), co daje zepsuty wzorzec i bramke swiecaca na zielono.
+PROGI_FORMULARZA=$(sed -n "/private static function limits/,/^	}/p" mp-service-intake/includes/RateLimit.php)
+LIMIT_MAIL=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'email_max' *=> *[0-9]+" | grep -oE "[0-9]+$")
+LIMIT_SERIAL=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'serial_max' *=> *[0-9]+" | grep -oE "[0-9]+$")
+LIMIT_IP=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'ip_max' *=> *[0-9]+" | grep -oE "[0-9]+$")
+
+# Straznik: licznik, ktory zlapal WIECEJ NIZ JEDNA wartosc, jest zepsuty tak samo jak pusty —
+# w porownaniu trafia wtedy wieloliniowy smiec, a nie liczba.
+for para in "limit-mail:$LIMIT_MAIL" "limit-serial:$LIMIT_SERIAL" "limit-ip:$LIMIT_IP"; do
+	if [ "$(printf '%s' "${para##*:}" | grep -c .)" -ne 1 ]; then
+		echo "  BLAD BRAMKI: licznik '${para%%:*}' zwrocil [${para##*:}] — spodziewana DOKLADNIE jedna liczba."
+		echo "  Wzorzec lapie wiecej niz jedno miejsce w kodzie. Napraw go, zanim uwierzysz wynikowi."
+		exit 2
+	fi
+done
 
 # Straznik na samego straznika: licznik, ktory zwrocil pustke albo zero, oznacza
 # ZEPSUTY WZORZEC, a nie "zero w kodzie" — bramka musialaby wtedy przepuscic wszystko.
 for para in "tabel:$TABEL" "statusow:$STATUSOW" "rodzajow:$RODZAJOW" "testow:$TESTOW_SH" \
-            "retencja:$RETENCJA" "okno:$OKNO" "php:$PHP_MIN"; do
+            "retencja:$RETENCJA" "okno:$OKNO" "php:$PHP_MIN" \
+            "limit-mail:$LIMIT_MAIL" "limit-serial:$LIMIT_SERIAL" "limit-ip:$LIMIT_IP"; do
 	nazwa="${para%%:*}"; wartosc="${para##*:}"
 	case "$wartosc" in
 		''|0) echo "  BLAD BRAMKI: licznik '$nazwa' zwrocil [$wartosc] — wzorzec przestal pasowac do kodu."
@@ -39,6 +59,7 @@ done
 
 echo "Z KODU: tabel=$TABEL statusow=$STATUSOW rodzajow=$RODZAJOW testow-diagnostyki=$TESTOW_SH"
 echo "        retencja=$RETENCJA dni, okno potwierdzenia=$OKNO h, PHP min=$PHP_MIN"
+echo "        limity zgloszen: e-mail=$LIMIT_MAIL/dobe, serial=$LIMIT_SERIAL/dobe, IP=$LIMIT_IP/10min"
 echo
 
 # ── czy dokumenty mowia to samo ─────────────────────────────────────────────
@@ -120,6 +141,19 @@ grep -q "MIGRATION_POLICY.md" build/pakuj-dla-klienta.sh \
 # ── ryzyko wdrozeniowe za proxy opisane PO POLSKU, nie tylko w readme.txt ───
 sprawdz "INSTRUKCJA: nota o proxy/Cloudflare (filtr IP klienta)" "mp_intake_client_ip" dla-klienta/INSTRUKCJA-KLIENTA.md
 
+# ── progi ochrony formularza: dokumenty podaja je LICZBOWO, wiec musza sie zgadzac ──
+# Powod: obsluga mowi klientowi „mozesz wyslac 3 na dobe". Zmiana progu w kodzie bez
+# poprawki instrukcji = klient dostaje nieprawdziwa informacje od pracownika serwisu.
+sprawdz "INSTRUKCJA: limit na e-mail = $LIMIT_MAIL/dobe" "\*\*$LIMIT_MAIL zgłoszenia na dobę\*\*" dla-klienta/INSTRUKCJA-KLIENTA.md
+sprawdz "INSTRUKCJA: limit na serial = $LIMIT_SERIAL/dobe" "\*\*$LIMIT_SERIAL na dobę\*\*" dla-klienta/INSTRUKCJA-KLIENTA.md
+sprawdz "INSTRUKCJA: limit na IP = $LIMIT_IP/10 min" "\*\*$LIMIT_IP w ciągu 10 minut\*\*" dla-klienta/INSTRUKCJA-KLIENTA.md
+sprawdz "KLIENT.md: limit na e-mail = $LIMIT_MAIL/dobe" "\*\*$LIMIT_MAIL zgłoszenia na dobę\*\*" dla-klienta/instrukcje/KLIENT.md
+# Wzorzec wiaze prog z JEGO NAZWA (wiersz tabeli), zeby nie zaliczyc luznej liczby
+# stojacej gdziekolwiek indziej w dokumencie.
+sprawdz "SECURITY.md: limit na e-mail = $LIMIT_MAIL" "na adres e-mail.{0,30}$LIMIT_MAIL zgłosze" dokumentacja-techniczna/SECURITY.md
+sprawdz "SECURITY.md: limit na serial = $LIMIT_SERIAL" "na numer seryjny.{0,30}$LIMIT_SERIAL zgłosze" dokumentacja-techniczna/SECURITY.md
+sprawdz "SECURITY.md: limit na IP = $LIMIT_IP" "na adres IP.{0,30}$LIMIT_IP zgłosze" dokumentacja-techniczna/SECURITY.md
+
 # ── dokumenty NIE MOGA obiecywac tego, czego w kodzie nie ma ────────────────
 brak_obietnicy() { # $1=opis  $2=wzorzec-ktorego-NIE MOZE byc  $3..=pliki
 	local opis="$1" wzor="$2"; shift 2
@@ -200,7 +234,7 @@ echo "WYNIK: $PASS ok, $FAIL fail"
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=33
+MIN_KONTROLI=40
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
