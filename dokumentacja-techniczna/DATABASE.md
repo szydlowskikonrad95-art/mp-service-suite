@@ -119,6 +119,13 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
 - **`wp_mp_case_sla`**: `case_id` PK · `status` (kopia do zapytań) · `sla_policy_version` ·
   `deadline_at` (INDEKS; terminalne → NULL) · `reminder_sent_at` · `escalated_at` ·
   `reminder_attempts` / `escalation_attempts` TINYINT · `updated_at`.
+  ⚠️ **`sla_policy_version` jest kolumną ZAREZERWOWANĄ, obecnie NIEUŻYWANĄ.** Wiersz dostaje
+  stempel przy zapisie, ale **żadne miejsce w kodzie tej wartości nie odczytuje**, a opcja
+  `mp_automator_sla_policy_version` nigdy nie jest podnoszona (akcja „Przelicz SLA" tego nie robi
+  — przelicza wszystkie otwarte sprawy bez patrzenia na wersję polityki). Zamysł był taki, żeby
+  po zmianie godzin SLA dało się odróżnić sprawy liczone starą polityką od nowych; mechanizm nie
+  został dokończony. **Nie polegaj na tej kolumnie i nie usuwaj jej bez migracji** — terminy SLA
+  liczą się poprawnie z bieżącej konfiguracji niezależnie od jej wartości.
 - **`wp_mp_case_checklists`**: `case_id` · `template_id` · `step_key` · `completed` ·
   `completed_by/at` · `step_label` (zamrożony z chwili odhaczenia — wzorzec form_data).
   Wiersz per KROK (atomowy toggle); ZERO pól wolnotekstowych z konstrukcji.

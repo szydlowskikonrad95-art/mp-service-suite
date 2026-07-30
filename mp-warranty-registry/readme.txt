@@ -40,6 +40,9 @@ No. The import ADDS products. A serial number already present in the registry is
 
 == Changelog ==
 
+= 1.3.1 =
+* Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
+
 = 1.3.0 =
 * Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
 

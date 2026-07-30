@@ -63,6 +63,10 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 
 == Changelog ==
 
+= 1.3.1 =
+* Odinstalowanie wtyczki kasuje teraz także opcję techniczną z flagą awarii wysyłki poczty
+  (`mp_intake_mail_alert`) — wcześniej zostawała w bazie jako osierocony wpis.
+
 = 1.3.0 =
 * Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
 
