@@ -4,6 +4,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-07-30
+
+### Poprawione
+- **Dwa zdania w dokumentacji technicznej opisywaly zabezpieczenia szerzej, niz robi to kod.**
+  `API-KONTRAKT.md` mowil, ze z przykladowych danych **generowane sa** mocki i testy kontraktowe —
+  w rzeczywistosci testy sa pisane recznie na podstawie tych przykladow i zadnego generatora nie ma.
+  `DATABASE.md` powolywal sie na test wspolbieznosci na **20 rownoleglych procesach i 1000 numerach**
+  — taki test nie istnieje; realny sprawdzian to 6 rownoleglych zadan (`testy/e2e/c21-dedup-wyscig.sh`),
+  a atomowosc samego przydzialu numeru sprawy opiera sie na gwarancji bazy danych, nie na naszym
+  tescie obciazeniowym. Oba zdania opisuja teraz stan faktyczny i wskazuja testy, ktore naprawde chodza.
+- Dokumentacja, ktora **obiecuje wiecej niz kod**, jest grozniejsza od jej braku: informatyk klienta
+  planuje prace, ufajac opisowi. Poprawka weszla na `main` godzine PO wydaniu 1.3.3, wiec **paczka
+  1.3.3 miala jeszcze stara tresc** — to wydanie ja domyka.
+
+**Zero zmian w kodzie wtyczek.** Numery wersji podniesione w calym pakiecie, zeby paczka
+i repozytorium mowily jednym glosem.
+
 ## [1.3.3] - 2026-07-30
 
 ### Poprawione
@@ -501,7 +518,7 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
   `__message*` / `__note-closed` + reguły w `intake.css`, a zaszyte kolory (`#555`, `#666`, `#2e7d32`, `#a33`,
   `#fff`, `#f6f6f6`) zamienione na zmienne (`--mp-muted`, `--mp-ok` — nowa, `--mp-err`, `--mp-soft-bg`).
   Skutek: **ten sam wygląd na dowolnym motywie** i możliwość dopasowania kolorów bez tykania kodu wtyczki.
-  Zmierzone po naprawie: odstęp pole→przycisk **18 px na OKTANie i 18 px na Twenty Twenty-Five**, kontrast
+  Zmierzone po naprawie: odstęp pole→przycisk **18 px na motywie strony demonstracyjnej i 18 px na Twenty Twenty-Five**, kontrast
   przycisku „Wycofaj zgodę" **5.12:1** (AA). Zero zmian logiki i treści. Honeypot w `FormRenderer` zostaje
   inline świadomie — gdyby arkusz się nie wczytał, pułapka na boty stałaby się widoczna dla ludzi.
 - Registry (B) + Automator (D) — **`str_getcsv`/`fputcsv` bez jawnego `$escape` = deprecated na PHP 8.4+.**
@@ -874,5 +891,5 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
 - Fundament repo (D1): szkielety 3 pluginow (bootstrap OOP, cykl zycia, wspolne role mp_*, i18n),
   wspolna biblioteka `lib/mp-common` (kopiowana do pluginow przy buildzie ze stemplem namespace),
   build ZIP-ow z BUILD-INFO, CI (php -l matrix 8.1-8.5, PHPCS/WPCS, PHPStan lvl 6, Plugin Check,
-  linter cudzych tabel, gitleaks), testy jednostkowe smoke, poligon Docker (WP 6.9.4, MariaDB 11.8,
+  linter cudzych tabel, gitleaks), testy jednostkowe smoke, srodowisko testowe Docker (WP 6.9.4, MariaDB 11.8,
   Mailpit) z realnym cronem i SMTP dev.
