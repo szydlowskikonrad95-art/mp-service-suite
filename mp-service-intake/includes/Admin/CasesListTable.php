@@ -109,6 +109,24 @@ final class CasesListTable extends \WP_List_Table {
 
 		$this->items = $result['rows'];
 
+		// Terminy SLA dla CALEJ strony jednym zapytaniem (kontrakt hurtowy `mp_case_deadlines`).
+		// Wczesniej kolumna terminu wolala `mp_case_deadline` osobno dla kazdego wiersza
+		// = 20 zapytan na strone (audyt wydajnosci 30.07).
+		$ids       = array_map(
+			static function ( $row ) {
+				return (int) ( $row['id'] ?? 0 );
+			},
+			(array) $this->items
+		);
+		$deadlines = apply_filters( 'mp_case_deadlines', null, $ids );
+
+		// null => wariantu hurtowego nikt nie obsluguje (np. starszy modul D).
+		// Wtedy mapa zostaje pusta, flaga NIE wstaje i kolumna spada na `mp_case_deadline`.
+		if ( is_array( $deadlines ) ) {
+			$this->deadlines        = $deadlines;
+			$this->deadlines_loaded = true;
+		}
+
 		$this->set_pagination_args(
 			array(
 				'total_items' => $result['total'],
@@ -227,13 +245,39 @@ final class CasesListTable extends \WP_List_Table {
 	}
 
 	/**
+	 * Terminy SLA dla wierszy BIEZACEJ strony: id sprawy => {deadline_at,warning_at,status}.
+	 * Pobierane raz przez hurtowy kontrakt `mp_case_deadlines` (patrz prepare_items).
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $deadlines = array();
+
+	/**
+	 * Czy mapa terminow zostala zaladowana. Osobna flaga, bo PUSTA mapa jest poprawnym
+	 * wynikiem (zadna sprawa na stronie nie ma jeszcze wpisu SLA) — wnioskowanie
+	 * „pusta => niezaladowana" przywracaloby N+1 w najczestszym przypadku.
+	 *
+	 * @var bool
+	 */
+	private bool $deadlines_loaded = false;
+
+	/**
 	 * Kolumna termin SLA — z kontraktu D (mp_case_deadline). '—' gdy brak.
 	 *
 	 * @param array<string, mixed> $item Wiersz sprawy.
 	 * @return string
 	 */
 	public function column_deadline( $item ): string {
-		$sla = apply_filters( 'mp_case_deadline', null, (int) ( $item['id'] ?? 0 ) );
+		$case_id = (int) ( $item['id'] ?? 0 );
+
+		// Mapa z prepare_items() — jedno zapytanie na strone zamiast jednego na wiersz.
+		// Zapas przez `mp_case_deadline` zostaje: render wiersza poza tabela oraz sytuacja,
+		// gdy Automator nie obsluguje wariantu hurtowego (starsza wersja modulu D).
+		if ( $this->deadlines_loaded ) {
+			$sla = $this->deadlines[ $case_id ] ?? null;
+		} else {
+			$sla = apply_filters( 'mp_case_deadline', null, $case_id );
+		}
 
 		if ( ! is_array( $sla ) || empty( $sla['deadline_at'] ) ) {
 			return '—';

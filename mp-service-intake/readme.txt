@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,13 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.3.5 =
+* Listy w panelu (sprawy, produkty) pobieraja dane jednym zapytaniem na strone zamiast
+  jednego na kazdy wiersz. Ekran spraw zszedl z 43 do 4 zapytan do bazy. Wyglad i dzialanie
+  ekranow bez zmian.
+* Poprawki w instrukcji: nazwa ekranu w menu (MP: Sprawy), opis ekranu MP: Niepotwierdzone,
+  ostrzezenie przy poleceniu kopii bazy dla PIERWSZEJ instalacji.
 
 = 1.3.4 =
 * Wydanie porzadkowe dokumentacji: dwa zdania w dokumentacji technicznej opisywaly
