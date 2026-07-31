@@ -668,7 +668,7 @@ final class PanelScreen {
 
 		$pages = (int) max( 1, (int) ceil( $total / self::EVENTS_PER_PAGE ) );
 
-		$toggle_url   = $show_technical
+		$toggle_url = $show_technical
 			? remove_query_arg( array( 'mp_show_technical', 'ev_page' ) )
 			: add_query_arg(
 				array(
