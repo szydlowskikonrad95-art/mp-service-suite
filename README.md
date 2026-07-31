@@ -190,7 +190,7 @@ tożsamości przy wspólnej skrzynce · [`STATE_MACHINE.md`](dokumentacja-techni
 [`MIGRATION_POLICY.md`](dokumentacja-techniczna/MIGRATION_POLICY.md) — backup i odtwarzanie ·
 [`OWNERSHIP.md`](dokumentacja-techniczna/OWNERSHIP.md) — kto jest właścicielem których danych ·
 [`JAKOSC-I-AUDYTY.md`](dokumentacja-techniczna/JAKOSC-I-AUDYTY.md) — czym i jak sprawdzana jest
-jakość (16 kontroli w CI, audyty przed wydaniem, 42 testy w Stanie witryny) oraz granice tych kontroli.
+jakość (16 kontroli w CI, audyty przed wydaniem, czternaście testów w Stanie witryny) oraz granice tych kontroli.
 
 ## Licencja
 

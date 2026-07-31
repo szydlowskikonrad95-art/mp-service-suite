@@ -72,7 +72,8 @@ politykę kopii zapasowych i cofania zmian w bazie znajdziesz w pliku `MIGRATION
 Przekaż go informatykowi albo hostingowi, jeśli będziesz potrzebować przywrócenia danych.
 
 Dla **każdego** z 3 plików ZIP:
-1. Panel WordPress → **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
+1. Panel WordPress → **Wtyczki → Dodaj wtyczkę → Wyślij wtyczkę na serwer**.
+   ℹ️ W starszych wersjach WordPressa (6.0–6.3) ten przycisk nazywa się **Dodaj nową**.
 2. Wybierz plik ZIP → **Zainstaluj teraz**.
 3. Kliknij **Włącz**.
 
@@ -92,6 +93,27 @@ Dla **każdego** z 3 plików ZIP:
 > Żeby jednak zaczął pracować za Ciebie (przydzielać sprawy, liczyć terminy, sprawdzać gwarancje),
 > wykonaj kroki z sekcji 5 — najważniejszy to **wskazanie pracowników serwisu**, bo bez nich
 > zgłoszenia będą tylko czekać na liście.
+
+### ⚠️ Zanim klienci zaczną wysyłać zgłoszenia — schowaj formularz na czas przygotowań
+
+Strona **„Zgłoszenie serwisowe" jest publiczna od razu po włączeniu wtyczki**. Jeśli ktoś trafi na nią,
+zanim wgrasz produkty do rejestru i wskażesz pracowników, jego zgłoszenie utknie: system nie rozpozna
+gwarancji i nie będzie miał komu przydzielić sprawy.
+
+**Jak ją schować (30 sekund, bez wiedzy technicznej):**
+
+1. W menu po lewej kliknij **Strony**.
+2. Najedź na **Zgłoszenie serwisowe** i kliknij **Edytuj**.
+3. Po prawej stronie, przy napisie **Widoczność** lub **Opublikowany**, przestaw stronę na **Szkic**
+   (w niektórych motywach przycisk nazywa się **Przełącz na szkic**).
+4. Kliknij **Zapisz**.
+
+Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienci dostają komunikat
+„nie znaleziono". **Gdy skończysz konfigurację z sekcji 5** — wróć w to samo miejsce i kliknij
+**Opublikuj**.
+
+> 💡 Nie bój się, że coś zepsujesz: wtyczka **nie utworzy drugiej strony formularza**, gdy ta jest
+> szkicem — rozpozna, że strona istnieje, i zostawi ją w spokoju. Twoja treść i ustawienia zostają.
 
 ## 5. Konfiguracja
 
@@ -365,4 +387,4 @@ Godziny:      ......................................
 ```
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.8**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.9**.*

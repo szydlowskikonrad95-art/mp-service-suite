@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.8
+Stable tag: 1.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,16 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.3.9 =
+* Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest
+  publiczna od chwili wlaczenia wtyczki, a instrukcja nie mowila, jak ja tymczasowo ukryc — przez
+  co zgloszenie moglo trafic do systemu, zanim rejestr gwarancji i pula pracownikow byly gotowe.
+* Dokumentacja: poprawiona sprzeczna liczba testow diagnostyki (bylo „42 testy" w jednym akapicie
+  README, jest czternascie — tyle, ile wtyczki realnie rejestruja w Stanie witryny).
+* Kontrola dokumentow w CI sprawdza teraz SPOJNOSC liczb w calym pliku, a nie tylko obecnosc
+  poprawnej liczby w jednym miejscu (poprzednia wersja przepuszczala blad opisany wyzej).
+* Dzialanie wtyczek bez zmian — wydanie dokumentacyjne.
 
 = 1.3.8 =
 * Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow
