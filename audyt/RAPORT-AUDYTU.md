@@ -1,6 +1,6 @@
 # Raport z audytów — MP Service Suite
 
-**Stan na wydanie 1.3.6:** znalezisk krytycznych **0**, dużych **0**.
+**Stan na wydanie 1.3.7:** znalezisk krytycznych **0**, dużych **0**.
 
 Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
 każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
@@ -22,6 +22,26 @@ błędy, a audytor nie wie, że trwa kalibracja. Kto ich nie znajdzie, tego „c
 jako wynik.
 
 ---
+
+## Runda przy 1.3.7 — powtórzone badanie dostępności
+
+Raport dostępności w paczce klienta opierał się na badaniu paczki **1.3.0** i mówił to wprost
+zamiast podmieniać numer w nagłówku. To była uczciwa, ale niepełna odpowiedź, więc **badanie
+powtórzyliśmy** — tym razem na paczce **1.3.6 pobranej z wydania**, czyli dokładnie na tym, co
+dostaje klient.
+
+Warunki drugiego badania celowo różnią się od pierwszego, żeby wynik nie zależał od jednego
+środowiska: **WordPress 7.0 / PHP 8.2 / MariaDB 11.8** i inny motyw (pierwsze: WP 6.9 / PHP 8.1 /
+Twenty Twenty-Five). Badanie na żywej stronie po HTTPS, w prawdziwej przeglądarce; trzeci ekran
+osiągnięty realną ścieżką klienta — link logowania wysłany na e-mail i odczytany ze skrzynki.
+
+**Wynik: zero naruszeń WCAG 2.1 AA w naszych trzech ekranach** (12, 7 i 9 zdanych reguł).
+Cała strona razem z motywem również zero — w pierwszym badaniu było tam jedno naruszenie,
+w bloku nawigacji WordPressa, czyli poza naszym kodem.
+
+W kodzie wtyczek **nie zmieniono ani jednej linii** — różnica względem 1.3.6 to 6 linii numeru
+wersji. Numer podniesiono dlatego, że zmienia się zawartość paczki: ta sama nazwa przy innej
+zawartości znaczyłaby dwie różne paczki nie do odróżnienia po sumie kontrolnej.
 
 ## Runda przy 1.3.6 — dlaczego nie powtarzaliśmy audytu
 

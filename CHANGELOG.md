@@ -4,6 +4,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.7] - 2026-07-31
+
+### Zmienione (dokumentacja)
+- **Raport dostepnosci (WCAG 2.1 AA) zostal powtorzony na wydanej wersji.** Dotad badanie
+  pochodzilo z paczki **1.3.0** i dokument mowil to wprost, zamiast podmieniac numer w naglowku.
+  Badanie powtorzono **31.07 na paczce 1.3.6 pobranej z wydania**, w prawdziwej przegladarce,
+  po HTTPS, na **WordPressie 7.0 / PHP 8.2 / MariaDB 11.8** i na innym motywie niz za pierwszym
+  razem. **Wynik ten sam: zero naruszen na wszystkich trzech ekranach klienta** (formularz
+  zgloszenia, panel przed zalogowaniem i po zalogowaniu).
+- **Raport pokazuje teraz oba badania obok siebie** — z wersjami, srodowiskiem i motywem kazdego
+  z nich. Czesc wyniku liczona dla calej strony razem z motywem rozni sie miedzy badaniami, bo
+  zalezy od motywu, a nie od naszych wtyczek: na motywie demonstracyjnym wyszlo zero naruszen,
+  na domyslnym Twenty Twenty-Five jedno, w bloku nawigacji WordPressa.
+- Dopisane wyjasnienie, czym jest „regul zdanych", zeby liczba w tabeli nie byla brana za ocene.
+
+**W kodzie wtyczek nie zmieniono ani jednej linii** — podbite wylacznie numery wersji (9 miejsc).
+
 ## [1.3.6] - 2026-07-30
 
 ### Zmienione (dokumentacja)
