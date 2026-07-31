@@ -1,6 +1,6 @@
 # Raport z audytów — MP Service Suite
 
-**Stan na wydanie 1.3.7:** znalezisk krytycznych **0**, dużych **0**.
+**Stan na wydanie 1.3.8:** znalezisk krytycznych **0**, dużych **0**.
 
 Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
 każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
@@ -22,6 +22,37 @@ błędy, a audytor nie wie, że trwa kalibracja. Kto ich nie znajdzie, tego „c
 jako wynik.
 
 ---
+
+## Runda przy 1.3.8 — przegląd oczami użytkownika, nie skryptu
+
+Ta runda nie wyszła z żadnej kontroli automatycznej. **Zamawiający kliknął po panelu** i zapytał
+o trzy rzeczy, które wyglądały podejrzanie. Sprawdzenie ich uruchomiło szerszy przegląd dwiema
+niezależnymi kontrolami: jedna szukała **rozjazdów między instrukcją a panelem**, druga
+**żargonu w polskim interfejsie**. Każde zgłoszone znalezisko zweryfikowaliśmy w kodzie, z numerem
+linii, zanim cokolwiek poprawiliśmy — dwa zgłoszenia okazały się przy tym przesadzone i zostały
+zawężone do tego, co dało się potwierdzić.
+
+**Znaleziono 13 pozycji. Ani jedna nie była usterką działania** — wszystkie dotyczyły języka
+i zgodności materiałów z tym, co widać na ekranie. Najpoważniejsze:
+
+| Co | Gdzie widać |
+|---|---|
+| nagłówek kolumny **„Job"** wśród polskich nagłówków | ekran importu **oraz zdjęcie w instrukcji** |
+| komunikaty błędu mówiące **„job"** | widzi je pracownik, gdy import się przerwie |
+| **zdjęcie wyjątków gwarancyjnych pokazywało pusty ekran** | instrukcja administratora |
+| instrukcja podawała **drogę prowadzącą do tego pustego ekranu** | instrukcja administratora |
+| filtr **„Przydzielony: ja"** — w panelu nazywa się **„Moje sprawy"** | instrukcja pracownika |
+| **„whitelist"**, **„batch"**, **„UTC"** bez wyjaśnienia | panel, eksport CSV |
+
+**Najważniejsza lekcja tej rundy dotyczy przyczyny, nie objawu.** Puste zdjęcie wyjątków nie było
+pomyłką przy jednorazowym renderowaniu — **narzędzie generujące zdjęcia wchodziło na ten ekran bez
+wskazania produktu**, więc błąd wracałby przy każdym odświeżeniu materiałów. Poprawione zostało
+narzędzie, nie sam obrazek.
+
+**Czego ta runda dowodzi o granicach kontroli automatycznych:** 16 kontroli w CI, bramka
+dokumentów (40 sprawdzeń) i audyty przed poprzednimi wydaniami przepuściły wszystkie te pozycje.
+Żadna maszyna nie sprawdzi, **co widać na zdjęciu**, ani czy słowo na przycisku jest zrozumiałe
+dla człowieka. To znajduje wyłącznie ktoś, kto klika.
 
 ## Runda przy 1.3.7 — powtórzone badanie dostępności
 

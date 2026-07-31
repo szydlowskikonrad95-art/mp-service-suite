@@ -4,6 +4,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.8] - 2026-07-31
+
+### Zmienione (jezyk ekranow)
+- **Naglowek kolumny „Job" na ekranie importu zamieniony na „Import".** Bylo to jedyne angielskie
+  slowo posrod polskich naglowkow tej samej tabeli („Status", „Wiersze", „Bledy").
+- **Komunikaty bledow importu przestaly mowic „job".** „Job importu nie istnieje" → „Ten import nie
+  istnieje"; „Nie mozna wznowic: job nie istnieje…" → „…ten import nie istnieje…". Te komunikaty
+  widzi pracownik, gdy import sie przerwie.
+- **„Niepelne dane batcha" → „Niepelne dane porcji importu"** — ta sama wtyczka w innym miejscu
+  uzywa polskiego slowa „Partia" na to samo pojecie.
+- **Lista markerow szablonow podpisana „(lista dozwolonych)" zamiast „(whitelist)".**
+- **Przycisk „Przelicz SLA" → „Przelicz terminy obslugi"**, a testy Stanu witryny mowia
+  „Terminy obslugi zgloszen (SLA)" — skrot jest rozwiniety przy pierwszym uzyciu.
+- **Godziny w czasie UTC opisane po ludzku.** Kolumny „Utworzony (UTC)" i „Wazny do (UTC)" stracily
+  techniczny dopisek, a pod tabelami stoi zdanie: czas uniwersalny, w Polsce zegar jest o 1 godzine
+  (zima) lub 2 godziny (latem) do przodu.
+
+### Poprawione (materialy dla klienta)
+- **Zdjecie wyjatkow gwarancyjnych pokazywalo PUSTY ekran** z podpowiedzia „Wybierz produkt",
+  wklejone pod opisem dzialajacej funkcji. Przyczyna siedziala w narzedziu generujacym zdjecia:
+  wchodzilo na ekran wyjatkow bez wskazania produktu, wiec blad wracalby przy kazdym odswiezeniu.
+  Narzedzie wchodzi teraz tak jak administrator — z listy produktow, odnosnikiem „wyjatki" — i wybiera
+  produkt, ktory JUZ MA wyjatek, zeby zdjecie pokazywalo tresc.
+- **Instrukcja administratora podawala droge prowadzaca do tego pustego ekranu.** Teraz opisuje
+  wlasciwa (Rejestr MP → produkt → kolumna Akcje → „wyjatki") i tlumaczy, czemu pozycja w menu
+  bocznym pokazuje sama podpowiedz.
+- **Nazwy w instrukcjach niezgodne z panelem:** filtr „Przydzielony: ja" → **„Moje sprawy"**,
+  „Rejestr MP → Import" → **„Import CSV"** (2 miejsca).
+- **Instrukcja glowna nie pokazywala zapisu pol podstawianych** w szablonach odpowiedzi. Doszedl
+  przyklad `{{numer_sprawy}}` z wyjasnieniem, gdzie znalezc pelna liste i co sie dzieje z polem
+  spoza niej.
+- Odswiezone zdjecia w instrukcji administratora: import produktow, automatyzacje, wyjatki gwarancyjne.
+
 ## [1.3.7] - 2026-07-31
 
 ### Zmienione (dokumentacja)

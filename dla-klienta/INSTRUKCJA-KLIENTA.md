@@ -120,7 +120,7 @@ Dla **każdego** z 3 plików ZIP:
 - ⚠️ **Bazę produktów wgraj ZANIM udostępnisz formularz klientom.** Zgłoszenie łączy się z produktem
   **w chwili przyjęcia** i to powiązanie nie jest uzupełniane wstecz. Sprawy przyjęte przed importem
   zostaną bez produktu i bez statusu gwarancji (numer seryjny nadal będzie widoczny w opisie zgłoszenia).
-- **Import produktów z CSV**: Rejestr MP → Import. Obsługiwane duże pliki (dziesiątki tysięcy wierszy), wznawianie po przerwaniu.
+- **Import produktów z CSV**: Rejestr MP → Import CSV. Obsługiwane duże pliki (dziesiątki tysięcy wierszy), wznawianie po przerwaniu.
 - 📎 **Gotowy przykład jest w paczce** — plik `przyklady/przyklad-import-produktow.csv` w folderze wtyczki, a na ekranie importu jest
   link **„Pobierz przykładowy plik CSV"**. Otwórz go w Excelu, podmień dane na swoje i wgraj.
 - **Poprawianie danych produktu**: przy produkcie w rejestrze jest odnośnik **„popraw dane"** (tylko
@@ -207,7 +207,11 @@ Dla **każdego** z 3 plików ZIP:
 
 **Szablony i checklisty:**
 - **Automatyzacje MP → sekcja „Checklisty i szablony odpowiedzi"** — gotowe treści maili z podstawianymi polami (numer sprawy,
-  status, termin).
+  status, termin). Takie pole zapisuje się w treści w podwójnych nawiasach klamrowych, np.
+  `{{numer_sprawy}}` — przy wysyłce system podmienia je na prawdziwą wartość (`SRV/2026/0042`).
+  **Spis wszystkich dostępnych pól wraz ze znaczeniem jest na tym samym ekranie, pod edytorem
+  szablonów** (tabela „Dostępne markery szablonów"). Pole spoza tej listy zostaje w treści
+  niezmienione, więc literówka nie wyśle klientowi przypadkowych danych.
 - w tej samej sekcji **checklisty per typ sprawy** — lista kroków obsługi dla każdego rodzaju sprawy; pracownik odhacza
   kroki na karcie sprawy, każde odhaczenie zostaje w historii.
 
@@ -361,4 +365,4 @@ Godziny:      ......................................
 ```
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.7**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.8**.*

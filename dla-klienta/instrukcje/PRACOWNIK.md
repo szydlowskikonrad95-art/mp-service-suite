@@ -5,7 +5,7 @@
 
 ## 1. Twoje sprawy
 
-Panel WordPress → **MP: Sprawy**. Filtr **„Przydzielony: ja"** pokazuje tylko Twoje sprawy.
+Panel WordPress → **MP: Sprawy**. Filtr **„Moje sprawy"** (lista rozwijana obok wyszukiwarki) pokazuje tylko Twoje sprawy.
 Kolumny: numer sprawy, czego dotyczy, klient, rodzaj, status (kolorowa plakietka), przydzielony,
 termin SLA (czerwony = po terminie lub blisko), utworzono. **Priorytet sprawy widzisz po jej
 otwarciu** — na karcie, nie na liście.

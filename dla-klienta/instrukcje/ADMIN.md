@@ -31,7 +31,7 @@ po serialu / kliencie / fakturze / modelu:
 
 ![Rejestr produktów](zdjecia/admin-04-rejestr.png)
 
-**Import CSV** (Rejestr MP → Import) — porcjami, ze wznawianiem i raportem błędów per wiersz;
+**Import CSV** (Rejestr MP → Import CSV) — porcjami, ze wznawianiem i raportem błędów per wiersz;
 na ekranie jest przykładowy plik do pobrania i lista kolumn:
 
 ![Import CSV](zdjecia/admin-05-import-csv.png)
@@ -65,11 +65,18 @@ Produkt w archiwum jest zablokowany do edycji — najpierw go przywróć.
 
 ## 3. Wyjątki gwarancyjne (tylko Ty)
 
-**Rejestr MP → Wyjątki** — ręczne przyznanie/cofnięcie gwarancji dla produktu lub konkretnej
-sprawy (np. gest dobrej woli po terminie). Każdy wyjątek ma powód (notatka wewnętrzna — klient
-jej nie widzi) i zostaje w historii produktu:
+Ręczne przyznanie lub cofnięcie gwarancji dla produktu albo konkretnej sprawy (np. gest dobrej
+woli po terminie). Każdy wyjątek ma powód (notatka wewnętrzna — klient jej nie widzi) i zostaje
+w historii produktu.
 
-![Wyjątki gwarancyjne](zdjecia/admin-06-wyjatki.png)
+**Jak tu wejść:** wyjątek dotyczy zawsze **konkretnego produktu**, więc otwiera się go z listy —
+**Rejestr MP → Rejestr MP**, znajdź produkt i w kolumnie **Akcje** kliknij **„wyjątki"**.
+
+> ⚠️ W menu bocznym jest też pozycja **Wyjątki gwarancyjne**. Wejście przez nią, bez wskazania
+> produktu, pokazuje samą podpowiedź „Wybierz produkt z listy Rejestru MP" — to nie awaria,
+> tylko ekran czekający, aż wskażesz, którego produktu wyjątek ma dotyczyć.
+
+![Wyjątki gwarancyjne wybranego produktu](zdjecia/admin-06-wyjatki.png)
 
 ## 4. RODO — obowiązki administratora
 

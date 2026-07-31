@@ -123,7 +123,7 @@ final class ImportEndpoints {
 		$token  = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['token'] ) ) : '';
 
 		if ( 0 === $job_id || '' === $token ) {
-			wp_send_json_error( array( 'message' => __( 'Niepełne dane batcha.', 'mp-warranty-registry' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Niepełne dane porcji importu.', 'mp-warranty-registry' ) ), 400 );
 		}
 
 		$result = Importer::process_batch( $job_id, $token );
@@ -156,7 +156,7 @@ final class ImportEndpoints {
 		$job = ImportJobs::get( $job_id );
 
 		if ( null === $job || ! is_file( (string) $job['file_path'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Nie można wznowić: job nie istnieje albo jego plik roboczy został już usunięty.', 'mp-warranty-registry' ) ), 409 );
+			wp_send_json_error( array( 'message' => __( 'Nie można wznowić: ten import nie istnieje albo jego plik roboczy został już usunięty.', 'mp-warranty-registry' ) ), 409 );
 		}
 
 		$token = ImportJobs::reclaim( $job_id );
@@ -192,7 +192,7 @@ final class ImportEndpoints {
 		$job = ImportJobs::get( $job_id );
 
 		if ( null === $job ) {
-			wp_die( esc_html__( 'Job importu nie istnieje.', 'mp-warranty-registry' ), '', 404 );
+			wp_die( esc_html__( 'Ten import nie istnieje.', 'mp-warranty-registry' ), '', 404 );
 		}
 
 		$report  = (string) $job['file_path'] . '.bledy.csv';

@@ -290,11 +290,11 @@ final class ImportScreen {
 		<table class="widefat striped mp-import-history">
 			<thead>
 				<tr>
-					<th scope="col"><?php esc_html_e( 'Job', 'mp-warranty-registry' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Import', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Status', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Wiersze', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Błędy', 'mp-warranty-registry' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Utworzony (UTC)', 'mp-warranty-registry' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Utworzony', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Raport błędów', 'mp-warranty-registry' ); ?></th>
 				</tr>
 			</thead>
@@ -319,6 +319,9 @@ final class ImportScreen {
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		<p class="description">
+			<?php esc_html_e( 'Godziny w kolumnie „Utworzony” podane są w czasie uniwersalnym (UTC) — w Polsce zegar jest o 1 godzinę (zimą) lub 2 godziny (latem) do przodu.', 'mp-warranty-registry' ); ?>
+		</p>
 		<?php
 	}
 

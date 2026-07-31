@@ -130,7 +130,7 @@ final class ExceptionsScreen {
 						<th scope="col">ID</th>
 						<th scope="col"><?php esc_html_e( 'Zakres', 'mp-warranty-registry' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Status', 'mp-warranty-registry' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Ważny do (UTC)', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Ważny do', 'mp-warranty-registry' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Powód', 'mp-warranty-registry' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Akcja', 'mp-warranty-registry' ); ?></th>
 					</tr>
@@ -197,7 +197,7 @@ final class ExceptionsScreen {
 						<th scope="row"><label for="mp-exc-until"><?php esc_html_e( 'Ważny do (opcjonalnie)', 'mp-warranty-registry' ); ?></label></th>
 						<td>
 							<input type="date" id="mp-exc-until" name="valid_until" />
-							<p class="description"><?php esc_html_e( 'Puste = bezterminowo. Data musi być w przyszłości (koniec dnia UTC).', 'mp-warranty-registry' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Puste = bezterminowo. Data musi być w przyszłości; wyjątek wygasa z końcem wskazanego dnia (czas UTC — w Polsce zegar jest o 1–2 godziny do przodu).', 'mp-warranty-registry' ); ?></p>
 						</td>
 					</tr>
 					<tr>
