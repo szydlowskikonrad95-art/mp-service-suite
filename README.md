@@ -130,6 +130,28 @@ wydaniem z kalibracją podłożonym błędem · diagnostyka na żywej witrynie),
 tego, czego te kontrole NIE robią:**
 [`JAKOSC-I-AUDYTY.md`](dokumentacja-techniczna/JAKOSC-I-AUDYTY.md).
 
+## Jak prowadzona jest praca w tym repo (i dlaczego widać tylko `main`)
+
+**Żadna zmiana nie trafia na `main` bezpośrednio.** Każda — łącznie z poprawką jednego zdania
+w dokumentacji — idzie tym samym cyklem: **gałąź → pull request → komplet kontroli w CI →
+scalenie**. Gałąź główna jest chroniona: 16 wymaganych kontroli, zakaz wymuszonego zapisu,
+historia liniowa.
+
+**Gałęzie kasujemy zaraz po scaleniu**, dlatego na liście gałęzi widać wyłącznie `main`. To nie
+znaczy, że praca szła jednym ciągiem prosto na główną — dowodem procesu jest lista zgłoszeń zmian:
+
+➡️ **[Pull requests → scalone](https://github.com/szydlowskikonrad95-art/mp-service-suite/pulls?q=is%3Apr+is%3Amerged)**
+— ponad 180 scalonych zgłoszeń zmian (stan: 31 lipca 2026), każde z własną gałęzią, opisem
+i zielonym kompletem kontroli.
+
+Każde wydanie ma **znacznik wersji** (`v1.3.7`, `v1.3.6`, …) wskazujący dokładny stan kodu,
+z którego zbudowano paczkę, oraz wpis w [`CHANGELOG.md`](CHANGELOG.md).
+
+**Czego tu nie ma — świadomie:** wymóg zatwierdzenia pull requesta przez drugą osobę jest
+**wyłączony**. Projekt powstawał w pracy jednoosobowej, a wymóg cudzej recenzji zablokowałby
+scalenie czegokolwiek. Rolę bramki pełni komplet kontroli automatycznych, który musi być zielony
+— tego wyłączyć się nie da.
+
 ## Dział audytu — dowody, nie deklaracje
 
 Opis metody to jedno, wyniki to drugie. Katalog [`audyt/`](audyt/) zawiera **rezultaty
