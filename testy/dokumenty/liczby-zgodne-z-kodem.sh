@@ -251,7 +251,34 @@ while IFS= read -r ROLA; do
 		bad "dokument podaje nazwe roli inaczej niz panel ($ROLA):"
 		echo "$ZLE" | head -3 | sed 's/^/         /'
 	fi
+
+	# ⚠️ Ta sama nieprawda zyje w DWOCH miejscach: w dokumentach i w napisach na ekranach.
+	# 29.07 poprawiono dokumenty, ale komunikaty w kodzie dalej kazaly nadac range
+	# „Pracownik serwisu" (bez „MP") — bramka ich nie widziala, bo patrzyla tylko na *.md.
+	# Zlapane audytem jezyka 31.07. Szukamy nazwy roli w CUDZYSLOWIE DRUKARSKIM, bo tak
+	# cytuja ja komunikaty; zwykle zdania w rodzaju „brak pracownikow serwisu" nie sa cytatem
+	# nazwy z listy rol i nie moga wywolywac falszywego alarmu.
+	ZLE_KOD="$(grep -rn "„$BAZA[\"”]" --include='*.php' mp-service-intake/includes mp-warranty-registry/includes mp-workflow-automator/includes 2>/dev/null \
+		| grep -v "„$ROLA[\"”]" || true)"
+	if [ -z "$ZLE_KOD" ]; then
+		ok "nazwa roli w napisach na ekranach zgodna z panelem: $ROLA"
+	else
+		bad "komunikat w kodzie cytuje nazwe roli inaczej niz lista rol ($ROLA):"
+		echo "$ZLE_KOD" | head -3 | sed 's/^/         /'
+	fi
 done < <(sed -n "s/^[[:space:]]*'mp_[a-z_]*'[[:space:]]*=>[[:space:]]*'\([^']*\)'.*/\1/p" lib/mp-common/src/Roles.php)
+
+# ── Surowe nazwy stalych z kodu w napisach dla uzytkownika ──────────────────
+# Etykieta „Pokaz techniczne (SWEEP_RUN)" pokazywala nazwe stalej PHP wprost na ekranie
+# administratora (audyt jezyka 31.07). Nazwy stalych sa dla programisty, nie dla serwisanta.
+STALE_W_UI="$(grep -rnoE "(__|_e|esc_html__|esc_html_e|esc_attr__|esc_attr_e)\( '[^']*[A-Z]{3,}_[A-Z]{3,}[^']*'" \
+	--include='*.php' mp-service-intake/includes mp-warranty-registry/includes mp-workflow-automator/includes 2>/dev/null || true)"
+if [ -z "$STALE_W_UI" ]; then
+	ok "zaden napis na ekranie nie pokazuje nazwy stalej z kodu"
+else
+	bad "napis dla uzytkownika zawiera surowa nazwe stalej z kodu:"
+	echo "$STALE_W_UI" | head -3 | sed 's/^/         /'
+fi
 
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"

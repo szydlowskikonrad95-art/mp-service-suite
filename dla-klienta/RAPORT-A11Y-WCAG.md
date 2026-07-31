@@ -129,6 +129,12 @@ ani o jeden element**, więc wynik badania obowiązuje dla 1.3.8 bez zastrzeże�
 (instrukcja wdrożenia, README, ten dokument, CHANGELOG) oraz jedną kontrolę jakości w CI.
 Wynik badania obowiązuje dla 1.3.9 bez zastrzeżeń.
 
+**Wydanie 1.3.10 zmienia kod, ale wyłącznie trzy napisy na ekranach ADMINISTRATORA** — komunikat
+o roli pracownika, etykietę przycisku w Rejestrze zdarzeń i nagłówek kolumny w tabeli statusów.
+**Trzy ekrany objęte tym badaniem — publiczny formularz zgłoszenia oraz panel klienta przed
+i po zalogowaniu — nie zostały zmienione ani o jeden element**, więc wynik badania obowiązuje
+dla 1.3.10 bez zastrzeżeń.
+
 ⚠️ Uczciwie: **ekrany administratora nigdy nie były przedmiotem tego badania** — ani przed, ani po
 tej zmianie. Badamy to, co widzi Twój klient. Zmienione napisy nie dotyczą więc wyniku podanego
 w tabelach wyżej ani przed, ani po poprawce.

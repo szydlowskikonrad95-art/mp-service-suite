@@ -1,6 +1,6 @@
 # Raport z audytów — MP Service Suite
 
-**Stan na wydanie 1.3.9:** znalezisk krytycznych **0**, dużych **0**.
+**Stan na wydanie 1.3.10:** znalezisk krytycznych **0**, dużych **0**.
 
 Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
 każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
@@ -48,19 +48,33 @@ klienta albo naszego środowiska pokazowego — nie kodu wtyczek.
 która sprawdzała *obecność* poprawnej liczby zamiast jej *spójności* · brak kroku „schowaj formularz
 na czas przygotowań" w instrukcji · nazwa przycisku instalacji niezgodna z nowszym WordPressem.
 
-### Kalibracja wypadła słabo — i to jest tu napisane
+### Kalibracja: najpierw 1/3, po diagnozie 3/3 — obie liczby są tutaj
 
 Do kodu wstrzyknięto **15 celowych błędów**, z czego **10 wziętych z listy uwag zewnętrznego
 recenzenta**, nie z głowy autora kodu (inaczej kalibracja mierzyłaby własną ślepą plamkę).
-Wylosowano trzy. Audytor znalazł **jeden z trzech** — przy wymaganych dwóch.
 
-Trafił w zawężoną matrycę wersji PHP. **Nie zauważył** podłożonej asymetrii odinstalowania ani
-usuniętej sekcji granic systemu w README.
+**Pierwsze podejście — 1 na 3, poniżej progu.** Audytor trafił w zawężoną matrycę wersji PHP,
+ale nie zauważył podłożonej asymetrii odinstalowania ani usuniętej sekcji granic w README.
+Oba przeoczone obszary sprawdzono wtedy **ręcznie** — wynik pozytywny.
 
-**Co z tym zrobiono:** oba przeoczone obszary sprawdzono **ręcznie** — symetria instalacji
-i odinstalowania jest domknięta w trzech wtyczkach, sekcja granic w README jest na miejscu.
-Wynik pozostaje w raporcie jako ograniczenie: **pojedyncza kontrola bywa ślepa na obszar, którego
-nie ma wprost w jej zadaniu** — dlatego kontroli jest sześć, a nie jedna.
+**Diagnoza: pomiar był nieuczciwy wobec audytora.** Kalibrowany dostał **trzy obszary naraz**
+przy 40 krokach, podczas gdy każda z sześciu prawdziwych kontroli miała **jeden obszar** i 45–55
+kroków. Mierzyliśmy więc coś innego, niż działo się naprawdę.
+
+**Drugie podejście, w warunkach realnych — 3 na 3.** Nowe losowanie z tej samej puli, trzej
+osobni audytorzy, każdy z jednym obszarem. Znaleźli wszystko: brak escapowania znaków
+wieloznacznych w wyszukiwarce, usunięty plik licencji, angielski nagłówek kolumny — każde
+z cytatem z pliku i numerem linii.
+
+**Wniosek, który zmienił sposób pracy:** kontrola przeciążona liczbą zadań przestaje widzieć.
+To nie jest wada narzędzia, tylko sposobu zlecania — i dlatego kontroli jest sześć osobnych,
+a nie jedna zbiorcza.
+
+⚠️ **Kalibracja przy okazji wykryła trzy PRAWDZIWE usterki języka** (nie podłożone): komunikaty
+cytujące nazwę roli inaczej, niż brzmi ona na liście użytkowników; nazwa stałej z kodu na
+przycisku; żargon w nagłówku kolumny. Naprawione w 1.3.10 — opis w [`CHANGELOG.md`](../CHANGELOG.md).
+**To dowód, że naprawa z wydania 1.3.8 objęła część miejsc, nie wszystkie** — i że kalibracja
+opłaca się nawet wtedy, gdy audytor zdaje egzamin.
 
 ### Czego ten audyt nie objął
 

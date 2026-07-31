@@ -241,7 +241,7 @@ final class CaseCard {
 			// myslnik i nie wie, czy to awaria, czy brak pracownikow.
 			if ( array() === $staff ) {
 				echo '<span class="description">'
-					. esc_html__( 'Brak pracowników serwisu — załóż konto z rolą „Pracownik serwisu", żeby móc przydzielać sprawy.', 'mp-service-intake' )
+					. esc_html__( 'Brak pracowników serwisu — załóż konto z rolą „Pracownik serwisu MP", żeby móc przydzielać sprawy.', 'mp-service-intake' )
 					. '</span>';
 			}
 			submit_button( __( 'Przydziel', 'mp-service-intake' ), 'secondary', 'mp_assign_submit', false );

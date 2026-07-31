@@ -387,4 +387,4 @@ Godziny:      ......................................
 ```
 
 ---
-*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.9**.*
+*Wersje w tej paczce: MP Service Intake · MP Warranty & Serial Registry · MP Workflow Automator — wszystkie w wersji **1.3.10**.*
