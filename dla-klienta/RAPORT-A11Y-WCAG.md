@@ -109,7 +109,7 @@ gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
 
 ---
 
-**Nota o powtórzeniu badania oraz o wersjach 1.3.7 i 1.3.8.**
+**Nota o powtórzeniu badania oraz o wersjach 1.3.7, 1.3.8 i 1.3.9.**
 
 Pierwsze badanie wykonaliśmy 29 lipca na paczce **1.3.0**. Ten dokument długo mówił wprost, że
 **nie było powtarzane** — zamiast podmieniać numer wersji w nagłówku. 31 lipca badanie
@@ -124,6 +124,10 @@ na ekranie importu, komunikaty błędów importu, podpis listy pól szablonu, na
 przeliczania terminów oraz zdania objaśniające czas UTC. **Trzy ekrany objęte tym badaniem —
 publiczny formularz zgłoszenia oraz panel klienta przed i po zalogowaniu — nie zostały zmienione
 ani o jeden element**, więc wynik badania obowiązuje dla 1.3.8 bez zastrzeżeń.
+
+**Wydanie 1.3.9 nie zmienia ani jednej linii kodu wtyczek** — poprawia wyłącznie dokumenty
+(instrukcja wdrożenia, README, ten dokument, CHANGELOG) oraz jedną kontrolę jakości w CI.
+Wynik badania obowiązuje dla 1.3.9 bez zastrzeżeń.
 
 ⚠️ Uczciwie: **ekrany administratora nigdy nie były przedmiotem tego badania** — ani przed, ani po
 tej zmianie. Badamy to, co widzi Twój klient. Zmienione napisy nie dotyczą więc wyniku podanego

@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.8
+Stable tag: 1.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,16 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.9 =
+* Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest
+  publiczna od chwili wlaczenia wtyczki, a instrukcja nie mowila, jak ja tymczasowo ukryc — przez
+  co zgloszenie moglo trafic do systemu, zanim rejestr gwarancji i pula pracownikow byly gotowe.
+* Dokumentacja: poprawiona sprzeczna liczba testow diagnostyki (bylo „42 testy" w jednym akapicie
+  README, jest czternascie — tyle, ile wtyczki realnie rejestruja w Stanie witryny).
+* Kontrola dokumentow w CI sprawdza teraz SPOJNOSC liczb w calym pliku, a nie tylko obecnosc
+  poprawnej liczby w jednym miejscu (poprzednia wersja przepuszczala blad opisany wyzej).
+* Dzialanie wtyczek bez zmian — wydanie dokumentacyjne.
 
 = 1.3.8 =
 * Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow

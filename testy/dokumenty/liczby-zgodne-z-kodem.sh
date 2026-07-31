@@ -87,6 +87,24 @@ sprawdz_tekst() { # $1=opis  $2=wzorzec  $3..=pliki
 	fi
 }
 
+# ⚠️ `sprawdz` odpowiada na pytanie „czy poprawna liczba GDZIEKOLWIEK jest" — jedno trafienie
+# wystarczy do PASS. To ZA MALO: dokument moze miec poprawna liczbe w jednym akapicie i bledna
+# w drugim, a bramka i tak swieci na zielono (zlapane 31.07 audytem koncowym: README mowil
+# „czternascie testow" w linii 37 i „42 testy" w linii 193 — kontrola przechodzila).
+# Ponizsza funkcja odpowiada na pytanie odwrotne: „czy w dokumencie NIE MA innej liczby".
+sprawdz_bez_sprzecznych() { # $1=opis  $2=rzeczownik(regex)  $3=poprawna-liczba  $4..=pliki
+	local opis="$1" rzeczownik="$2" poprawna="$3"; shift 3
+	local zle=""
+	for n in $( grep -ohiE "[0-9]+ ${rzeczownik}" "$@" 2>/dev/null | grep -oE "^[0-9]+" | sort -u ); do
+		[ "$n" = "$poprawna" ] || zle="$zle $n"
+	done
+	if [ -n "$zle" ]; then
+		bad "$opis — w dokumencie stoja TEZ inne liczby:$zle (z kodu: $poprawna)"
+	else
+		ok "$opis"
+	fi
+}
+
 # liczby slownie ORAZ cyfra — dokumenty klienta pisza slownie
 sprawdz "README: liczba tabel = $TABEL" "$TABEL tabel" README.md dokumentacja-techniczna/DATABASE.md
 sprawdz "README: liczba statusow = $STATUSOW" "$STATUSOW (konfigurowalnych )?status" README.md
@@ -97,6 +115,13 @@ case "$TESTOW_SH" in
 esac
 sprawdz "README: liczba testow diagnostyki = $TESTOW_SH" "$SLOWNIE testów|$TESTOW_SH testów" README.md
 sprawdz "ADMIN.md: liczba testow diagnostyki = $TESTOW_SH" "$TESTOW_SH testów" dla-klienta/instrukcje/ADMIN.md
+# Kontrola spojnosci (nie tylko istnienia) — patrz komentarz przy `sprawdz_bez_sprzecznych`.
+# ⚠️ Celowo TYLKO dla liczby testow diagnostyki, a nie dla kazdej liczby w dokumentach:
+# ta sama liczba potrafi poprawnie znaczyc co innego w dwoch akapitach (DATABASE.md cytuje
+# „4 tabele" ze specyfikacji klienta, a system ma ich 16 — obie liczby sa prawdziwe).
+# Uniwersalna bramka na wszystkie liczby dawalaby falszywe alarmy i zostalaby wylaczona.
+sprawdz_bez_sprzecznych "README: brak sprzecznej liczby testow diagnostyki" "test(ów|y|ow|u)?" "$TESTOW_SH" README.md
+sprawdz_bez_sprzecznych "ADMIN.md: brak sprzecznej liczby testow diagnostyki" "test(ów|y|ow|u)?" "$TESTOW_SH" dla-klienta/instrukcje/ADMIN.md
 sprawdz "INSTRUKCJA: retencja porzuconych = $RETENCJA dni" "$RETENCJA dniach|$RETENCJA dni" dla-klienta/INSTRUKCJA-KLIENTA.md
 sprawdz "INSTRUKCJA: okno potwierdzenia = $OKNO h" "$OKNO godzin" dla-klienta/INSTRUKCJA-KLIENTA.md
 sprawdz "KOORDYNATOR: retencja = $RETENCJA dni" "$RETENCJA dni" dla-klienta/instrukcje/KOORDYNATOR.md

@@ -4,6 +4,35 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.9] - 2026-07-31
+
+> Wydanie **dokumentacyjne**: dzialanie wtyczek bez zmian. Powstalo z audytu koncowego przed
+> oddaniem — szesc niezaleznych kontroli (zgodnosc ze zrodlem, klikanie na zywej stronie, paczka
+> i repozytorium, bezpieczenstwo, kompletnosc, czytelnik nietechniczny) plus kalibracja audytora
+> podlozonymi bledami.
+
+### Dodane
+- **Instrukcja wdrozenia: krok „schowaj formularz na czas przygotowan" (§4).** Strona zgloszenia
+  jest publiczna od chwili wlaczenia wtyczki, a instrukcja nie mowila, jak ja tymczasowo ukryc.
+  Klient mogl zebrac zgloszenia, zanim rejestr gwarancji i pula pracownikow byly gotowe — sprawa
+  utknelaby bez rozpoznanej gwarancji i bez przydzialu. Opisane jako cztery kliki, z zapewnieniem,
+  ze wtyczka nie utworzy drugiej strony (kod pomija odtworzenie, gdy strona istnieje jako szkic).
+
+### Naprawione
+- **README podawal dwie rozne liczby testow diagnostyki w tym samym pliku** — „czternascie" w §3
+  i „42 testy" w sekcji o jakosci. Prawidlowa liczba to **14** (9 Intake + 2 Registry + 3 Automator,
+  policzone w kodzie). Liczba 42 byla pomylona z liczba kontroli bramki dokumentow.
+- **Bramka `testy/dokumenty/liczby-zgodne-z-kodem.sh` sprawdzala ISTNIENIE poprawnej liczby, nie jej
+  SPOJNOSC.** Jedno trafienie w pliku wystarczalo do zaliczenia, wiec poprawna liczba w jednym
+  akapicie maskowala bledna w drugim — dlatego blad wyzej przechodzil przez CI. Dodana kontrola
+  `sprawdz_bez_sprzecznych`, skalibrowana podlozonym bledem (zlapala go, exit 1).
+
+### Uwagi
+- Kontrola spojnosci celowo obejmuje **tylko liczbe testow diagnostyki**, a nie kazda liczbe
+  w dokumentach: ta sama liczba potrafi poprawnie znaczyc co innego w dwoch akapitach (DATABASE.md
+  cytuje „4 tabele" ze specyfikacji klienta, a system ma ich 16 — obie liczby sa prawdziwe).
+  Uniwersalna bramka dawalaby falszywe alarmy i zostalaby wylaczona.
+
 ## [1.3.8] - 2026-07-31
 
 ### Zmienione (jezyk ekranow)
