@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.9
+Stable tag: 1.3.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,17 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.10 =
+* Komunikaty na ekranach cytuja nazwe roli DOKLADNIE tak, jak brzmi ona na liscie uzytkownikow
+  („Pracownik serwisu MP", nie „Pracownik serwisu") — administrator szukajacy cytowanej nazwy
+  znajdzie ja teraz bez zgadywania.
+* Przycisk w Rejestrze zdarzen nie pokazuje juz nazwy stalej z kodu („SWEEP_RUN") — mowi
+  „Pokaz/Ukryj wpisy automatycznego przegladu".
+* Naglowek kolumny w tabeli statusow: „Terminalny" -> „Konczy sprawe" (bez zargonu maszyn stanow).
+* Kontrola jakosci pilnujaca nazw rol obejmuje teraz TAKZE napisy w kodzie, nie tylko dokumenty
+  — poprzednio te same bledne cytaty przezyly poprawke dokumentow.
+* Dzialanie wtyczek bez zmian — wydanie jezykowe.
 
 = 1.3.9 =
 * Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest

@@ -4,6 +4,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.10] - 2026-07-31
+
+> Wydanie **jezykowe**: dzialanie wtyczek bez zmian. Znalezione przy KALIBRACJI audytora —
+> podlozone bledy mialy sprawdzic czulosc kontroli, a kontrole przy okazji wykryly trzy prawdziwe
+> usterki jezyka tej samej klasy, ktora naprawialo wydanie 1.3.8. Dowod, ze tamta naprawa objela
+> CZESC miejsc, nie wszystkie.
+
+### Naprawione
+- **Komunikaty kazaly nadac role „Pracownik serwisu", a na liscie rol jest „Pracownik serwisu MP".**
+  Dwa miejsca (`CaseCard.php`, `PanelScreen.php`); trzecie, w Stanie witryny, cytowalo poprawnie
+  — system przeczyl sam sobie. Administrator szukajacy dokladnie cytowanej nazwy jej nie widzial.
+- **Przycisk w Rejestrze zdarzen pokazywal nazwe stalej z kodu**: „Pokaz techniczne (SWEEP_RUN)".
+  Teraz: „Pokaz wpisy automatycznego przegladu". Nazwy stalych sa dla programisty, nie dla serwisanta.
+- **Naglowek kolumny „Terminalny"** (zargon maszyn stanow, obok zwyklych „Status" i „Etykieta")
+  zamieniony na **„Konczy sprawe"**.
+
+### Zmienione
+- **Bramka nazw rol obejmuje teraz takze napisy w kodzie, nie tylko dokumenty.** Kontrola powstala
+  29.07 patrzyla wylacznie na `dla-klienta/*.md`, wiec poprawka dokumentow przeszla, a te same
+  bledne cytaty zostaly w PHP i dozyly do dzis. Dolozona tez kontrola wykrywajaca surowe nazwy
+  stalych w napisach dla uzytkownika. **Obie skalibrowane podlozonymi bledami — obie je zlapaly.**
+- Zrzut ekranu panelu automatyzacji przerenderowany (pokazywal stare napisy).
+
 ## [1.3.9] - 2026-07-31
 
 > Wydanie **dokumentacyjne**: dzialanie wtyczek bez zmian. Powstalo z audytu koncowego przed

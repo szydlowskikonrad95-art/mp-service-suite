@@ -398,7 +398,7 @@ final class PanelScreen {
 		<?php if ( array() === $agents ) : ?>
 			<div class="notice notice-warning inline">
 				<p>
-					<?php esc_html_e( 'Nie ma jeszcze żadnego pracownika serwisu. Najpierw dodaj użytkowników z rolą „Pracownik serwisu” (Użytkownicy → Dodaj nowego), potem wróć na ten ekran.', 'mp-workflow-automator' ); ?>
+					<?php esc_html_e( 'Nie ma jeszcze żadnego pracownika serwisu. Najpierw dodaj użytkowników z rolą „Pracownik serwisu MP” (Użytkownicy → Dodaj nowego), potem wróć na ten ekran.', 'mp-workflow-automator' ); ?>
 				</p>
 			</div>
 			<?php
@@ -612,7 +612,7 @@ final class PanelScreen {
 				<tr>
 					<th scope="col"><?php esc_html_e( 'Status', 'mp-workflow-automator' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Etykieta', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Terminalny', 'mp-workflow-automator' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Kończy sprawę', 'mp-workflow-automator' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -676,9 +676,12 @@ final class PanelScreen {
 					'ev_page'           => 1,
 				)
 			);
+		// Etykieta bez nazwy stalej z kodu: „SWEEP_RUN" nic nie mowi osobie obslugujacej serwis
+		// (audyt jezyka 31.07). Chodzi o cykliczny przeglad terminow, ktory zapisuje sie w rejestrze
+		// co 5 minut i przykrywa zdarzenia biznesowe.
 		$toggle_label = $show_technical
-			? __( 'Ukryj techniczne (SWEEP_RUN)', 'mp-workflow-automator' )
-			: __( 'Pokaż techniczne (SWEEP_RUN)', 'mp-workflow-automator' );
+			? __( 'Ukryj wpisy automatycznego przeglądu', 'mp-workflow-automator' )
+			: __( 'Pokaż wpisy automatycznego przeglądu', 'mp-workflow-automator' );
 		?>
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Rejestr zdarzeń', 'mp-workflow-automator' ); ?>
 			<a class="page-title-action" style="margin-left:.5rem" href="<?php echo esc_url( $toggle_url ); ?>"><?php echo esc_html( $toggle_label ); ?></a>

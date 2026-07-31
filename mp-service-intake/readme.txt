@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.9
+Stable tag: 1.3.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,17 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.3.10 =
+* Komunikaty na ekranach cytuja nazwe roli DOKLADNIE tak, jak brzmi ona na liscie uzytkownikow
+  („Pracownik serwisu MP", nie „Pracownik serwisu") — administrator szukajacy cytowanej nazwy
+  znajdzie ja teraz bez zgadywania.
+* Przycisk w Rejestrze zdarzen nie pokazuje juz nazwy stalej z kodu („SWEEP_RUN") — mowi
+  „Pokaz/Ukryj wpisy automatycznego przegladu".
+* Naglowek kolumny w tabeli statusow: „Terminalny" -> „Konczy sprawe" (bez zargonu maszyn stanow).
+* Kontrola jakosci pilnujaca nazw rol obejmuje teraz TAKZE napisy w kodzie, nie tylko dokumenty
+  — poprzednio te same bledne cytaty przezyly poprawke dokumentow.
+* Dzialanie wtyczek bez zmian — wydanie jezykowe.
 
 = 1.3.9 =
 * Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest
