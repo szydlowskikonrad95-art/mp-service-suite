@@ -121,7 +121,7 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   `reminder_attempts` / `escalation_attempts` TINYINT · `updated_at`.
   ⚠️ **`sla_policy_version` jest kolumną ZAREZERWOWANĄ, obecnie NIEUŻYWANĄ.** Wiersz dostaje
   stempel przy zapisie, ale **żadne miejsce w kodzie tej wartości nie odczytuje**, a opcja
-  `mp_automator_sla_policy_version` nigdy nie jest podnoszona (akcja „Przelicz SLA" tego nie robi
+  `mp_automator_sla_policy_version` nigdy nie jest podnoszona (akcja „Przelicz terminy obsługi" tego nie robi
   — przelicza wszystkie otwarte sprawy bez patrzenia na wersję polityki). Zamysł był taki, żeby
   po zmianie godzin SLA dało się odróżnić sprawy liczone starą polityką od nowych; mechanizm nie
   został dokończony. **Nie polegaj na tej kolumnie i nie usuwaj jej bez migracji** — terminy SLA

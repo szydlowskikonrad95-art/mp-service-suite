@@ -46,7 +46,7 @@ czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika ra
   jest sekcja **„Kto dostaje zgłoszenia"** z listą pracowników do zaznaczenia — **ustawia ją
   administrator systemu** (tak samo jak pozostałe konfiguracje). **Pusta lista = sprawy zostają
   nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
-- **Akcje**: „Przelicz SLA" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
+- **Akcje**: „Przelicz terminy obsługi" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
   powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
 - **Statusy spraw** — 7 wbudowanych, nieusuwalnych, pokazanych do odczytu. ⚠️ System przewiduje
   dokładanie własnych statusów, ale nie ma na to ekranu — zrobi to programista.

@@ -72,7 +72,7 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 ## 5. Uploady
 
 - MIME rozpoznawany po TREŚCI (`finfo`) — ZERO fallbacku po nazwie; brak `ext-fileinfo` = odmowa przyjęcia (admin-notice przy aktywacji).
-- Whitelist: JPG/PNG/WebP/PDF. Limity: rozmiar per plik + liczba per zgłoszenie (konfigurowalne). Losowe nazwy bez rozszerzeń.
+- Dozwolone formaty (lista zamknięta): JPG/PNG/WebP/PDF. Limity: rozmiar per plik + liczba per zgłoszenie (konfigurowalne). Losowe nazwy bez rozszerzeń.
 - EXIF/metadane obrazów czyszczone przy uploadzie. **PDF świadomie BEZ strip-EXIF** — reenkoder obrazów nie dotyczy PDF; PDF przechodzi jak jest (brak biblioteki sanityzacji PDF w zakresie; ryzyko = zaufany klient serwisu, nie publiczny upload anonimowy — sprawa jest weryfikowana mailowo).
 
 ## 6. Dane / SQL / wyjścia
