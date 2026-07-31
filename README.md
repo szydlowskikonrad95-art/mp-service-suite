@@ -1,7 +1,17 @@
 # MP Service Suite
 
+[![Kontrole jakości](https://github.com/szydlowskikonrad95-art/mp-service-suite/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/szydlowskikonrad95-art/mp-service-suite/actions/workflows/quality.yml)
+[![Wydanie](https://img.shields.io/github/v/release/szydlowskikonrad95-art/mp-service-suite?label=wydanie)](https://github.com/szydlowskikonrad95-art/mp-service-suite/releases/latest)
+[![Licencja](https://img.shields.io/badge/licencja-GPL--2.0-blue)](LICENSE)
+[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](#wymagania)
+[![PHP](https://img.shields.io/badge/PHP-8.1%E2%80%938.5-blue)](#wymagania)
+
 System obsługi zgłoszeń serwisowych i reklamacyjnych dla firmy MP — **trzy współpracujące,
 ale niezależne wtyczki WordPress**:
+
+> **Chcesz tylko zainstalować?** Pobierz paczkę z **[najnowszego wydania](https://github.com/szydlowskikonrad95-art/mp-service-suite/releases/latest)**
+> i zacznij od pliku `INSTRUKCJA-KLIENTA.md` w środku — prowadzi krok po kroku, bez wiedzy
+> programistycznej. Reszta tego dokumentu opisuje system od strony technicznej.
 
 | Wtyczka | Rola | Najkrócej |
 |---|---|---|
