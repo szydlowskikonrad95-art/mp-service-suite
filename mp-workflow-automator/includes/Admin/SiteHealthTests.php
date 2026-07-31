@@ -173,7 +173,7 @@ final class SiteHealthTests {
 			return SiteHealth::wynik(
 				'mp_automator_cron',
 				'critical',
-				__( 'Terminy SLA i przypomnienia NIE DZIAŁAJĄ — wyłączony WP-Cron', 'mp-workflow-automator' ),
+				__( 'Terminy obsługi zgłoszeń (SLA) i przypomnienia NIE DZIAŁAJĄ — wyłączony WP-Cron', 'mp-workflow-automator' ),
 				__( 'W konfiguracji strony ustawiono DISABLE_WP_CRON. System dalej przyjmuje zgłoszenia, ale nie pilnuje terminów: nie wyśle przypomnienia przed upływem SLA ani nie zgłosi eskalacji po terminie. Awaria jest niewidoczna — wygląda, jakby wszystko działało.', 'mp-workflow-automator' ),
 				__( 'Jeśli hosting wyłączył WP-Cron celowo, ustaw w panelu zadanie systemowe (cron) wywołujące wp-cron.php co 5 minut. To standardowa i zalecana konfiguracja.', 'mp-workflow-automator' )
 			);
@@ -225,7 +225,7 @@ final class SiteHealthTests {
 		return SiteHealth::wynik(
 			'mp_automator_cron',
 			'good',
-			__( 'Terminy SLA są pilnowane', 'mp-workflow-automator' ),
+			__( 'Terminy obsługi zgłoszeń (SLA) są pilnowane', 'mp-workflow-automator' ),
 			sprintf(
 				/* translators: 1: data nastepnego uruchomienia, 2: data ostatniego wykonania albo myslnik. */
 				__( 'Zadanie sprawdzające terminy jest zaplanowane (najbliższe: %1$s) i realnie się wykonuje (ostatni przebieg: %2$s GMT).', 'mp-workflow-automator' ),

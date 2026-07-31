@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,18 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.8 =
+* Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow
+  importu mowia „ten import" zamiast „job", „Niepelne dane batcha" na „Niepelne dane porcji
+  importu", lista markerow szablonow podpisana „(lista dozwolonych)" zamiast „(whitelist)",
+  a przycisk „Przelicz SLA" na „Przelicz terminy obslugi".
+* Godziny podawane w czasie UTC (tabela importow, wyjatki gwarancyjne) sa teraz opisane zdaniem
+  wyjasniajacym roznice wzgledem zegara w Polsce.
+* Instrukcje: poprawione nazwy pozycji menu i filtrow (byly nieaktualne wzgledem panelu), dodany
+  opis pol podstawianych w szablonach odpowiedzi oraz prawidlowa droga do wyjatkow gwarancyjnych.
+* Odswiezone zdjecia w instrukcji administratora — w tym zdjecie wyjatkow gwarancyjnych, ktore
+  wczesniej pokazywalo pusty ekran zamiast dzialajacej funkcji.
 
 = 1.3.7 =
 * Zmiana wylacznie w dokumentacji: raport dostepnosci (WCAG 2.1 AA) zostal powtorzony na

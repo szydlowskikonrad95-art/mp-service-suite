@@ -109,16 +109,25 @@ gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
 
 ---
 
-**Nota o powtórzeniu badania i o wersji 1.3.7.**
+**Nota o powtórzeniu badania oraz o wersjach 1.3.7 i 1.3.8.**
 
 Pierwsze badanie wykonaliśmy 29 lipca na paczce **1.3.0**. Ten dokument długo mówił wprost, że
 **nie było powtarzane** — zamiast podmieniać numer wersji w nagłówku. 31 lipca badanie
 **powtórzyliśmy na paczce 1.3.6 pobranej z wydania**, żeby wynik dotyczył wersji, którą naprawdę
 dostajesz. Wynik w naszej części jest ten sam: **zero naruszeń na wszystkich trzech ekranach**.
 
-**Wydanie 1.3.7 nie zmienia ani jednej linii kodu** — poprawia wyłącznie ten dokument (świeży
-wynik badania) i CHANGELOG. Kod wtyczek jest bit w bit taki sam jak w 1.3.6, więc wynik badania
-przeprowadzonego na 1.3.6 obowiązuje dla 1.3.7 bez żadnych zastrzeżeń.
+**Wydanie 1.3.7 nie zmieniło ani jednej linii kodu** — poprawiło wyłącznie ten dokument (świeży
+wynik badania) i CHANGELOG.
+
+**Wydanie 1.3.8 zmienia kod, ale wyłącznie napisy na ekranach administratora** — nagłówek kolumny
+na ekranie importu, komunikaty błędów importu, podpis listy pól szablonu, nazwę przycisku
+przeliczania terminów oraz zdania objaśniające czas UTC. **Trzy ekrany objęte tym badaniem —
+publiczny formularz zgłoszenia oraz panel klienta przed i po zalogowaniu — nie zostały zmienione
+ani o jeden element**, więc wynik badania obowiązuje dla 1.3.8 bez zastrzeżeń.
+
+⚠️ Uczciwie: **ekrany administratora nigdy nie były przedmiotem tego badania** — ani przed, ani po
+tej zmianie. Badamy to, co widzi Twój klient. Zmienione napisy nie dotyczą więc wyniku podanego
+w tabelach wyżej ani przed, ani po poprawce.
 
 Dla porządku, co działo się z kodem między badaniami: sprzątanie jednej opcji technicznej przy
 odinstalowaniu wtyczki, poprawki w przyjmowaniu plików CSV (kontrola liczby kolumn, rozpoznawanie

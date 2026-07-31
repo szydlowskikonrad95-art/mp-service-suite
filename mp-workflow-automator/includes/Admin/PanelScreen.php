@@ -294,7 +294,7 @@ final class PanelScreen {
 			<?php if ( current_user_can( 'mp_system_admin' ) ) : ?>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mp-automator-action">
 					<?php echo SlaRecalcAction::form_fields(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- form_fields zwraca gotowy, bezpieczny HTML (hidden action + wp_nonce_field). ?>
-					<?php submit_button( __( 'Przelicz SLA', 'mp-workflow-automator' ), 'secondary', 'mp_recalc_submit', false ); ?>
+					<?php submit_button( __( 'Przelicz terminy obsługi', 'mp-workflow-automator' ), 'secondary', 'mp_recalc_submit', false ); ?>
 					<span class="description"><?php esc_html_e( 'Przelicza terminy otwartych spraw wg bieżącej konfiguracji (nie wysyła ponownie już wysłanych powiadomień).', 'mp-workflow-automator' ); ?></span>
 				</form>
 			<?php endif; ?>
@@ -1001,7 +1001,7 @@ final class PanelScreen {
 	private static function render_markers_whitelist(): void {
 		$markers = ResponseTemplates::markers_whitelist();
 		?>
-		<h4 class="mp-automator-h4"><?php esc_html_e( 'Dostępne markery szablonów (whitelist)', 'mp-workflow-automator' ); ?></h4>
+		<h4 class="mp-automator-h4"><?php esc_html_e( 'Dostępne markery szablonów (lista dozwolonych)', 'mp-workflow-automator' ); ?></h4>
 		<p class="description"><?php esc_html_e( 'Tylko poniższe markery są podstawiane w treści szablonu — inne zostają pominięte.', 'mp-workflow-automator' ); ?></p>
 		<table class="widefat striped mp-automator-table">
 			<caption class="screen-reader-text"><?php esc_html_e( 'Lista dostępnych markerów szablonów odpowiedzi', 'mp-workflow-automator' ); ?></caption>

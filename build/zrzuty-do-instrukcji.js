@@ -85,7 +85,28 @@ const ZRZUTY = [
       return new URL(href, BASE).toString();
     },
   },
-  { nazwa: 'admin-06-wyjatki', url: () => `${BASE}/wp-admin/admin.php?page=mp-registry-exceptions` },
+  {
+    // Wyjatki dotycza ZAWSZE konkretnego produktu. Wejscie na sam adres ekranu, bez
+    // parametru `product`, pokazuje wylacznie podpowiedz „Wybierz produkt z listy" —
+    // taki zrzut trafil do instrukcji i ilustrowal funkcje PUSTA strona. Dlatego
+    // wchodzimy tak, jak wchodzi administrator: z listy produktow, odnosnikiem
+    // „wyjatki" w kolumnie Akcje. Preferujemy produkt, ktory JUZ MA wyjatek
+    // (plakietka `.mp-badge-exception`), zeby zdjecie pokazywalo tresc, nie sam formularz.
+    nazwa: 'admin-06-wyjatki',
+    url: async (page) => {
+      if (process.env.MP_PRODUCT_ID) {
+        return `${BASE}/wp-admin/admin.php?page=mp-registry-exceptions&product=${process.env.MP_PRODUCT_ID}`;
+      }
+      await page.goto(`${BASE}/wp-admin/admin.php?page=mp-registry`, { waitUntil: 'networkidle' });
+      const zWyjatkiem = page.locator('tr:has(.mp-badge-exception) a[href*="mp-registry-exceptions"]').first();
+      const dowolny = page.locator('a[href*="mp-registry-exceptions"]').first();
+      const wybrany = (await zWyjatkiem.count()) > 0 ? zWyjatkiem : dowolny;
+      if ((await wybrany.count()) === 0) {
+        throw new Error('Brak produktu w rejestrze — nie ma z czego zrobic zrzutu wyjatkow.');
+      }
+      return new URL(await wybrany.getAttribute('href'), BASE).toString();
+    },
+  },
   { nazwa: 'admin-07-automatyzacje', url: () => `${BASE}/wp-admin/admin.php?page=mp-automator` },
   {
     nazwa: '02-formularz-pusty',

@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,18 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
+
+= 1.3.8 =
+* Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow
+  importu mowia „ten import" zamiast „job", „Niepelne dane batcha" na „Niepelne dane porcji
+  importu", lista markerow szablonow podpisana „(lista dozwolonych)" zamiast „(whitelist)",
+  a przycisk „Przelicz SLA" na „Przelicz terminy obslugi".
+* Godziny podawane w czasie UTC (tabela importow, wyjatki gwarancyjne) sa teraz opisane zdaniem
+  wyjasniajacym roznice wzgledem zegara w Polsce.
+* Instrukcje: poprawione nazwy pozycji menu i filtrow (byly nieaktualne wzgledem panelu), dodany
+  opis pol podstawianych w szablonach odpowiedzi oraz prawidlowa droga do wyjatkow gwarancyjnych.
+* Odswiezone zdjecia w instrukcji administratora — w tym zdjecie wyjatkow gwarancyjnych, ktore
+  wczesniej pokazywalo pusty ekran zamiast dzialajacej funkcji.
 
 = 1.3.7 =
 * Zmiana wylacznie w dokumentacji: raport dostepnosci (WCAG 2.1 AA) zostal powtorzony na
