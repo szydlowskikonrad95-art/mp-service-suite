@@ -4,6 +4,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.11] - 2026-08-01
+
+> Zgloszone przez zamawiajacego przy klikaniu po panelu — **nie znalazla tego zadna kontrola
+> automatyczna**. Ekran spelnial wymog specyfikacji (S-10) i dlatego przeszedl kontrole zgodnosci;
+> zawodzil dopiero wtedy, gdy ktos wszedl na niego pierwszy raz i nie wiedzial, co dalej.
+
+### Naprawione
+- **Ekran „Wyjatki gwarancyjne" otwarty z menu byl slepym zaulkiem.** Bez wybranego produktu
+  pokazywal wylacznie zdanie „wybierz produkt z listy Rejestru MP" — uzytkownik wiedzial, ze ma
+  isc gdzie indziej, ale musial sam szukac tego miejsca. Teraz ekran: (1) tlumaczy, czym jest
+  wyjatek gwarancyjny, (2) wyjasnia, dlaczego jest pusty (wyjatek nadaje sie zawsze dla
+  konkretnego produktu), (3) daje przycisk **„Przejdz do Rejestru MP"**.
+
+### Uwagi
+- Sprawdzono pozostale ekrany panelu pod katem tej samej klasy bledu — **to bylo jedyne miejsce
+  bez wyjscia**; karta sprawy i ekran poprawiania produktu maja odnosniki powrotne.
+- Docelowe rozwiazanie (lista wszystkich aktywnych wyjatkow na tym ekranie) zostaje w planie 1.4
+  — swiadomie nie dokladamy nowej funkcji w dniu przekazania.
+
 ## [1.3.10] - 2026-07-31
 
 > Wydanie **jezykowe**: dzialanie wtyczek bez zmian. Znalezione przy KALIBRACJI audytora —

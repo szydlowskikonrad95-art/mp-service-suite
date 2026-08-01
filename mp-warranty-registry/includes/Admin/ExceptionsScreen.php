@@ -97,10 +97,21 @@ final class ExceptionsScreen {
 		$now = gmdate( 'Y-m-d H:i:s' );
 
 		if ( null === $product ) {
+			// Ekran otwarty z menu, bez wybranego produktu. Wyjatek nadaje sie ZAWSZE dla
+			// konkretnego produktu, wiec nie ma tu czego pokazac — ale samo zdanie „wybierz
+			// produkt" zostawialo slepy zaulek: uzytkownik wie, ze ma isc gdzie indziej, i musi
+			// szukac tego miejsca w menu (zgloszone przy przegladzie panelu 1.08).
+			$rejestr_url = add_query_arg( 'page', ProductsScreen::PAGE_SLUG, admin_url( 'admin.php' ) );
 			?>
 			<div class="wrap mp-exceptions">
 				<h1><?php esc_html_e( 'Wyjątki gwarancyjne', 'mp-warranty-registry' ); ?></h1>
-				<p><?php esc_html_e( 'Wybierz produkt z listy Rejestru MP (kolumna Akcje → „wyjątki").', 'mp-warranty-registry' ); ?></p>
+				<p><?php esc_html_e( 'Wyjątek gwarancyjny to zgoda administratora na obsługę zgłoszenia mimo wygasłej gwarancji lub braku danych. Nadaje się go zawsze dla konkretnego produktu, dlatego ten ekran otwiera się z Rejestru.', 'mp-warranty-registry' ); ?></p>
+				<p><?php esc_html_e( 'Znajdź produkt w Rejestrze MP i kliknij „wyjątki" w kolumnie Akcje.', 'mp-warranty-registry' ); ?></p>
+				<p>
+					<a class="button button-primary" href="<?php echo esc_url( $rejestr_url ); ?>">
+						<?php esc_html_e( 'Przejdź do Rejestru MP', 'mp-warranty-registry' ); ?>
+					</a>
+				</p>
 			</div>
 			<?php
 			return;

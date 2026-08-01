@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.10
+Stable tag: 1.3.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,12 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.3.11 =
+* Ekran „Wyjatki gwarancyjne" otwarty z menu (bez wybranego produktu) mowil tylko „wybierz produkt
+  z listy Rejestru" i zostawial uzytkownika bez wyjscia. Teraz tlumaczy, czym jest wyjatek
+  gwarancyjny i dlaczego ekran jest pusty, oraz daje przycisk „Przejdz do Rejestru MP".
+* Dzialanie bez zmian — poprawka wygody obslugi.
 
 = 1.3.10 =
 * Komunikaty na ekranach cytuja nazwe roli DOKLADNIE tak, jak brzmi ona na liscie uzytkownikow

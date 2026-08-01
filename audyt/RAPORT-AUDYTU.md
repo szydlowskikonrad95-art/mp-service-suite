@@ -1,6 +1,6 @@
 # Raport z audytów — MP Service Suite
 
-**Stan na wydanie 1.3.10:** znalezisk krytycznych **0**, dużych **0**.
+**Stan na wydanie 1.3.11:** znalezisk krytycznych **0**, dużych **0**.
 
 Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
 każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
