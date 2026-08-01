@@ -72,9 +72,9 @@ w historii produktu.
 **Jak tu wejść:** wyjątek dotyczy zawsze **konkretnego produktu**, więc otwiera się go z listy —
 **Rejestr MP → Rejestr MP**, znajdź produkt i w kolumnie **Akcje** kliknij **„wyjątki"**.
 
-> ⚠️ W menu bocznym jest też pozycja **Wyjątki gwarancyjne**. Wejście przez nią, bez wskazania
-> produktu, pokazuje samą podpowiedź „Wybierz produkt z listy Rejestru MP" — to nie awaria,
-> tylko ekran czekający, aż wskażesz, którego produktu wyjątek ma dotyczyć.
+> ℹ️ W menu bocznym jest też pozycja **Wyjątki gwarancyjne**. Wejście przez nią, bez wskazania
+> produktu, pokazuje wyjaśnienie, czym jest wyjątek, oraz przycisk **„Przejdź do Rejestru MP"** —
+> to nie awaria, tylko ekran czekający, aż wskażesz, którego produktu wyjątek ma dotyczyć.
 
 ![Wyjątki gwarancyjne wybranego produktu](zdjecia/admin-06-wyjatki.png)
 
