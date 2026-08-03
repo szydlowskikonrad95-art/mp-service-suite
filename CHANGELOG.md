@@ -4,6 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Naprawione — dostęp ról (wydanie 1.3.12, grupa 1)
+- **Koordynator serwisu przestaje mieć dostęp do MNIEJ ekranów niż podległy mu pracownik.**
+  Role MP nie mają hierarchii (to projekt: kod sprawdza wyłącznie uprawnienia, nigdy nazwy roli),
+  a dwa ekrany — „Zgłoszenia niepotwierdzone" i „Rejestr produktów" — miały uprawnienie pracownika
+  **wpisane na sztywno**, więc odbijały przełożonego osoby, która na nich pracuje. Dwa inne ekrany
+  rozwiązały to samo poprawnie już wcześniej; **rozciągnęliśmy ten wzorzec**, zamiast dokładać
+  uprawnienia rolom (to ruszyłoby wszystkie bramki naraz).
+- Bramka „czy to personel" i wybór uprawnienia do menu są teraz **jedną funkcją we wspólnej
+  bibliotece**, a nie kopią warunku w każdym ekranie z osobna.
+- ⛔ **Granica naprawy pilnowana testem:** import i wyjątki gwarancyjne **zostają** za administratorem
+  systemu — tak wymaga zamówienie („wyjątki zatwierdzane przez uprawnionego administratora").
+
 ### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0)
 - 🔴 **Żądanie usunięcia i żądanie wydania danych obejmuje ZGŁOSZENIA NIEPOTWIERDZONE.** Zgłoszenie,
   którego nikt nie potwierdził, nie ma rekordu klienta — a spis żądań RODO chodził wyłącznie po

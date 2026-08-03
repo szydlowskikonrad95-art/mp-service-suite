@@ -13,6 +13,8 @@
 
 namespace MP\Intake\Admin;
 
+use MP\Intake\Common\Roles;
+
 /**
  * Rejestracja menu i render ekranu spraw personelu.
  */
@@ -40,9 +42,9 @@ final class CasesScreen {
 	 * @return bool
 	 */
 	public static function current_user_is_staff(): bool {
-		return current_user_can( 'mp_agent' )
-			|| current_user_can( 'mp_coordinator' )
-			|| current_user_can( 'mp_system_admin' );
+		// Jedna definicja personelu dla calego zestawu (Common\Roles); tu zostaje
+		// wylacznie delegat, zeby nie mnozyc kopii tego samego warunku.
+		return Roles::current_user_is_staff();
 	}
 
 	/**
@@ -54,14 +56,10 @@ final class CasesScreen {
 	 * @return void
 	 */
 	public static function add_menu(): void {
-		$cap = current_user_can( 'mp_system_admin' )
-			? 'mp_system_admin'
-			: ( current_user_can( 'mp_coordinator' ) ? 'mp_coordinator' : 'mp_agent' );
-
 		add_menu_page(
 			__( 'Sprawy serwisowe MP', 'mp-service-intake' ),
 			__( 'MP: Sprawy', 'mp-service-intake' ),
-			$cap,
+			Roles::menu_cap_for_current_user(),
 			self::PAGE_SLUG,
 			array( self::class, 'render' ),
 			'dashicons-clipboard',

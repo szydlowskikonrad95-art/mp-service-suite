@@ -65,4 +65,48 @@ final class Roles {
 			}
 		}
 	}
+
+	/**
+	 * Czy biezacy uzytkownik to personel serwisu (dowolna z trzech rol).
+	 *
+	 * ⛔ Role MP NIE MAJA HIERARCHII — i to jest projekt, nie usterka: kod
+	 * sprawdza wylacznie capability, nigdy nazwe roli. Konsekwencja jest jednak
+	 * taka, ze `current_user_can( 'mp_agent' )` odbija koordynatora, choc ten
+	 * nadzoruje ludzi pracujacych na danym ekranie. Dlatego bramka personelu ma
+	 * byc JEDNA funkcja, a nie kopia warunku w kazdym ekranie z osobna.
+	 *
+	 * @return bool
+	 */
+	public static function current_user_is_staff(): bool {
+		foreach ( self::STAFF_CAPS as $cap ) {
+			if ( current_user_can( $cap ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Capability do `add_menu_page()` dla BIEZACEGO uzytkownika.
+	 *
+	 * `add_menu_page` przyjmuje JEDEN cap, a role nie dziedzicza po sobie —
+	 * wiec wpisanie tam `mp_agent` na sztywno chowa ekran przed koordynatorem,
+	 * czyli przelozonym osoby, ktora na nim pracuje. Zwracamy cap, ktory
+	 * uzytkownik FAKTYCZNIE ma; klient i gosc nie maja zadnego, wiec pozycja
+	 * menu im sie nie pokaze, a render sprawdza personel osobno (obrona
+	 * warstwowa).
+	 *
+	 * @return string
+	 */
+	public static function menu_cap_for_current_user(): string {
+		foreach ( self::STAFF_CAPS as $cap ) {
+			if ( current_user_can( $cap ) ) {
+				return $cap;
+			}
+		}
+
+		// Nikt z personelu — cap, ktorego taki uzytkownik nie ma (menu ukryte).
+		return 'mp_system_admin';
+	}
 }

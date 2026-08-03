@@ -201,6 +201,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c27-rodo-potwierdzenie.sh
       - name: Testy nazw rodzaju i statusu (jedna sprawa = jedna nazwa)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-nazwy-rodzaju-i-statusu.sh
+      - name: Testy dostępu ról do ekranów (koordynator nie mniej niż pracownik)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-dostep-rol-ekrany.sh
       - name: Testy tożsamości konta klienta (konto WP bez danych osobowych)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-tozsamosc-konta-klienta.sh
       - name: Testy RODO — zgłoszenia niepotwierdzone (usunięcie i wydanie danych)

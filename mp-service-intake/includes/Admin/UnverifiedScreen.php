@@ -14,6 +14,8 @@
 
 namespace MP\Intake\Admin;
 
+use MP\Intake\Common\Roles;
+
 use MP\Intake\Audit;
 use MP\Intake\CaseRepo;
 use MP\Intake\Front\Mailer;
@@ -30,6 +32,11 @@ final class UnverifiedScreen {
 
 	/**
 	 * Capability wymagana do ekranu i akcji (personel serwisu).
+	 *
+	 * ⚠️ Zostaje jako ZGODNOSC WSTECZ (stala publiczna). Bramek NIE opieramy juz
+	 * na niej wprost: role MP nie maja hierarchii, wiec `mp_agent` odbijalo
+	 * koordynatora — przelozonego osoby, ktora na tym ekranie pracuje.
+	 * Rozstrzyga `Common\Roles::current_user_is_staff()`.
 	 */
 	public const CAP = 'mp_agent';
 
@@ -65,7 +72,7 @@ final class UnverifiedScreen {
 		add_menu_page(
 			__( 'Zgłoszenia niepotwierdzone', 'mp-service-intake' ),
 			__( 'MP: Niepotwierdzone', 'mp-service-intake' ),
-			self::CAP,
+			Roles::menu_cap_for_current_user(),
 			self::PAGE_SLUG,
 			array( self::class, 'render_page' ),
 			'dashicons-email-alt',
@@ -79,7 +86,7 @@ final class UnverifiedScreen {
 	 * @return void
 	 */
 	public static function render_page(): void {
-		if ( ! current_user_can( self::CAP ) ) {
+		if ( ! Roles::current_user_is_staff() ) {
 			wp_die( esc_html__( 'Brak uprawnień.', 'mp-service-intake' ), '', array( 'response' => 403 ) );
 		}
 
@@ -200,7 +207,7 @@ final class UnverifiedScreen {
 	 * @return void
 	 */
 	public static function handle_resend(): void {
-		if ( ! current_user_can( self::CAP ) ) {
+		if ( ! Roles::current_user_is_staff() ) {
 			wp_die( esc_html__( 'Brak uprawnień do tej operacji.', 'mp-service-intake' ), '', array( 'response' => 403 ) );
 		}
 
