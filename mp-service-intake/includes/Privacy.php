@@ -142,6 +142,31 @@ final class Privacy {
 			// FLAGA #6: redakcja e-maila (PII) w zgodach — rozliczalnosc art. 7 zostaje (tekst+daty).
 			Consents::redact_email_for_customer( $customer_id );
 
+			// ⛔ SLAD REDAKCJI ZAPISUJEMY W TRANSAKCJI, PRZED punktem bez powrotu.
+			// Wczesniej szedl na samym koncu — PO skasowaniu plikow i konta WP,
+			// czyli za dwiema operacjami nieodwracalnymi, i bez sprawdzenia wyniku.
+			// Skutek: dane zanonimizowane, pliki skasowane, konto usuniete,
+			// a w historii sprawy ANI SLADU, ze operacje wykonano. Ten wpis jest
+			// dowodem rozliczalnosci przy zadaniu usuniecia danych — bez niego
+			// nie da sie wykazac ani ZE, ani KIEDY.
+			$slady_ok = true;
+
+			foreach ( $case_ids as $case_id ) {
+				$slady_ok = CaseEvents::log( $case_id, CaseEvents::PII_REDACTION, array( 'target' => 'customer' ), null ) && $slady_ok;
+			}
+
+			if ( ! $slady_ok ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+
+				// Alarm PO wycofaniu transakcji — inaczej zniknalby razem z nia
+				// (`wp_options` jest w tej samej transakcji).
+				Common\EventWrite::alert( Tables::full( Tables::CASE_EVENTS ), CaseEvents::PII_REDACTION );
+
+				$retained   = true;
+				$messages[] = __( 'Usunięcie danych zostało wstrzymane: nie udało się zapisać śladu operacji. Żądanie pozostaje do wykonania.', 'mp-service-intake' );
+				continue;
+			}
+
 			$wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			// PO COMMIT — operacje nieodwracalne lub poza naszymi tabelami.
@@ -153,10 +178,6 @@ final class Privacy {
 			// Tylko czyste konto klienta — personel/admin nietkniety (Accounts).
 			if ( null !== $wp_user_id ) {
 				Accounts::purge_client_account( $wp_user_id );
-			}
-
-			foreach ( $case_ids as $case_id ) {
-				CaseEvents::log( $case_id, CaseEvents::PII_REDACTION, array( 'target' => 'customer' ), null );
 			}
 
 			$removed    = true;

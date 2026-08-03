@@ -133,15 +133,14 @@ final class CaseEvents {
 	 * @param string               $event_type Typ (stala z tej klasy).
 	 * @param array<string, mixed> $payload    Dane STRUKTURALNE (bez wolnego tekstu).
 	 * @param int|null             $actor_id   Kto (null = system/klient).
-	 * @return void
+	 * @return bool True gdy wpis powstal. ⛔ Wczesniej `: void` — nieudany zapis
+	 *              przechodzil niezauwazony, bo `$wpdb->insert()` przy bledzie
+	 *              zwraca wartosc falszywa, a nie przerywa wykonania.
 	 */
-	public static function log( int $case_id, string $event_type, array $payload, ?int $actor_id ): void {
-		global $wpdb;
-
+	public static function log( int $case_id, string $event_type, array $payload, ?int $actor_id ): bool {
 		$table = Tables::full( Tables::CASE_EVENTS );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna append-only.
-		$wpdb->insert(
+		return Common\EventWrite::insert(
 			$table,
 			array(
 				'case_id'        => $case_id,
@@ -152,6 +151,5 @@ final class CaseEvents {
 				'created_at'     => gmdate( 'Y-m-d H:i:s' ),
 			)
 		);
-		// phpcs:enable
 	}
 }

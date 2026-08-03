@@ -44,15 +44,14 @@ final class ProductEvents {
 	 * @param string               $event_type          Typ zdarzenia.
 	 * @param array<string, mixed> $payload             Dane zdarzenia (skalary/tablice).
 	 * @param int|null             $actor_id            Kto (null = system).
-	 * @return void
+	 * @return bool True gdy wpis powstal (wczesniej `: void` — nieudany zapis
+	 *              przechodzil niezauwazony i decyzja gwarancyjna zostawala
+	 *              w bazie bez sladu, kto ja podjal).
 	 */
-	public static function log( int $product_registry_id, string $event_type, array $payload, ?int $actor_id ): void {
-		global $wpdb;
-
+	public static function log( int $product_registry_id, string $event_type, array $payload, ?int $actor_id ): bool {
 		$table = Tables::full( Tables::PRODUCT_EVENTS );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna append-only.
-		$wpdb->insert(
+		return Common\EventWrite::insert(
 			$table,
 			array(
 				'product_registry_id' => $product_registry_id,
@@ -62,7 +61,6 @@ final class ProductEvents {
 				'created_at'          => gmdate( 'Y-m-d H:i:s' ),
 			)
 		);
-		// phpcs:enable
 	}
 
 	/**

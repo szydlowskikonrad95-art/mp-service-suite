@@ -118,7 +118,12 @@ final class WarrantyExceptions {
 
 		$exception_id = (int) $wpdb->insert_id;
 
-		ProductEvents::log(
+		// ⛔ Slad decyzji gwarancyjnej jest CZESCIA tej decyzji, nie dodatkiem.
+		// Wynik zapisu wyjatku sprawdzamy dwie linijki wyzej — a zapis sladu
+		// szedl bez kontroli, po czym COMMIT byl bezwarunkowy. Skutek: decyzja
+		// zostawala w bazie, a to, KTO i KIEDY ja podjal, znikalo bez sygnalu —
+		// przy sporze z klientem nie ma czym sie bronic.
+		$slad = ProductEvents::log(
 			$product_registry_id,
 			ProductEvents::EXCEPTION_CREATED,
 			array(
@@ -128,6 +133,17 @@ final class WarrantyExceptions {
 			),
 			$actor_id
 		);
+
+		if ( ! $slad ) {
+			$wpdb->query( 'ROLLBACK' );
+
+			// ⚠️ Alarm PO wycofaniu transakcji — `wp_options` siedzi w tej samej
+			// transakcji, wiec alarm podniesiony w srodku zniknalby razem z nia.
+			// Zlapane wlasnym testem, nie czytaniem kodu.
+			Common\EventWrite::alert( Tables::full( Tables::PRODUCT_EVENTS ), 'EXCEPTION_CREATED' );
+
+			return array( 'error' => __( 'Nie udało się zapisać śladu decyzji — wyjątek NIE został nadany. Spróbuj ponownie.', 'mp-warranty-registry' ) );
+		}
 
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
@@ -183,7 +199,9 @@ final class WarrantyExceptions {
 			return array( 'error' => __( 'Ten wyjątek jest już cofnięty.', 'mp-warranty-registry' ) );
 		}
 
-		ProductEvents::log(
+		// Ta sama zasada co przy nadaniu: bez sladu nie ma decyzji (cofniecie
+		// wyjatku tez jest decyzja gwarancyjna).
+		$slad = ProductEvents::log(
 			(int) $row['product_registry_id'],
 			ProductEvents::EXCEPTION_REVOKED,
 			array(
@@ -193,6 +211,15 @@ final class WarrantyExceptions {
 			),
 			$actor_id
 		);
+
+		if ( ! $slad ) {
+			$wpdb->query( 'ROLLBACK' );
+
+			// Alarm PO wycofaniu — patrz komentarz przy nadawaniu wyjatku.
+			Common\EventWrite::alert( Tables::full( Tables::PRODUCT_EVENTS ), 'EXCEPTION_REVOKED' );
+
+			return array( 'error' => __( 'Nie udało się zapisać śladu decyzji — wyjątek NIE został cofnięty. Spróbuj ponownie.', 'mp-warranty-registry' ) );
+		}
 
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable

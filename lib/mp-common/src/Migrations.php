@@ -49,11 +49,35 @@ final class Migrations {
 	 * Rygor DATABASE.md pilnowany w TRESCI schematu (dwie spacje po PRIMARY KEY,
 	 * KEY nie INDEX, bez FOREIGN KEY, LONGTEXT nie JSON).
 	 *
+	 * ⛔ Wynik `dbDelta()` JEST sprawdzany. To narzedzie potrafi po cichu pominac
+	 * zmiane typu kolumny albo indeksu, gdy zapis SQL nie spelnia jego rygoru
+	 * skladniowego — migracja wtedy „przechodzi", nie zmieniajac niczego, i nikt
+	 * sie nie dowiaduje. Bledu bazy nie da sie odczytac z wartosci zwracanej
+	 * (to opis wykonanych zmian), wiec patrzymy na `last_error` i podnosimy
+	 * alarm widoczny w „Narzedzia → Stan witryny".
+	 *
 	 * @param string $sql Pelna instrukcja CREATE TABLE.
-	 * @return void
+	 * @return bool True gdy baza nie zglosila bledu.
 	 */
-	public static function db_delta( string $sql ): void {
+	public static function db_delta( string $sql ): bool {
+		global $wpdb;
+
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// Nie zerujemy `last_error` (to pole cudzej klasy) — porownujemy stan
+		// sprzed i po wywolaniu.
+		$przed = (string) $wpdb->last_error;
+
 		dbDelta( $sql );
+
+		$po = (string) $wpdb->last_error;
+
+		if ( '' !== $po && $po !== $przed ) {
+			EventWrite::alert( 'dbDelta', 'MIGRATION_FAILED' );
+
+			return false;
+		}
+
+		return true;
 	}
 }

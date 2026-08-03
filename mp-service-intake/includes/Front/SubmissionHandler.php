@@ -198,13 +198,32 @@ final class SubmissionHandler {
 		// dysk przy zapisie plikow) nie moze zostawic sprawy z danymi bez
 		// utrwalonej zgody.
 		// Zgoda RODO: pelny tekst zamrozony, spieta ze sprawa (podpiecie do klienta przy weryfikacji).
-		Consents::record(
+		$zgoda_id = Consents::record(
 			$email,
 			(int) $result['case_id'],
 			Consents::KEY_PROCESSING,
 			Consents::VERSION,
 			Consents::processing_text()
 		);
+
+		// ⛔ Wynik zapisu ZGODY sprawdzamy — wczesniej metoda byla wolana jak
+		// instrukcja, a zwracana wartosc nie byla ani przypisywana, ani badana.
+		// Komentarz trzy linie wyzej nazywa te awarie po imieniu: „pad w srodku
+		// nie moze zostawic sprawy z danymi bez utrwalonej zgody". Kolejnosc
+		// chronila przed padem PO zapisie zgody — nie chronila przed nieudanym
+		// zapisem samej zgody. Sprawa bez zgody = przetwarzanie bez mozliwosci
+		// wykazania podstawy prawnej (RODO art. 7 ust. 1), wiec jej nie
+		// zostawiamy: kasujemy zgloszenie i prosimy czlowieka o ponowienie.
+		if ( 0 === $zgoda_id ) {
+			CaseRepo::purge_pending_cases( array( (int) $result['case_id'] ) );
+			RateLimit::release_claim( $email, $serial, $kind );
+
+			self::redirect_back(
+				array(
+					'notice' => __( 'Nie udało się zapisać Twojej zgody, więc zgłoszenie nie zostało przyjęte. Spróbuj ponownie za chwilę.', 'mp-service-intake' ),
+				)
+			);
+		}
 
 		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
 		// sprzatane cronem sierot razem ze sprawa). `$files` zebrane wyzej przy
