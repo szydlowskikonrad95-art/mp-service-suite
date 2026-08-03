@@ -335,5 +335,4 @@ final class CsvExport {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- zapis do strumienia odpowiedzi (download w locie).
 		fwrite( $handle, Common\Csv::row( $cells ) );
 	}
-
 }
