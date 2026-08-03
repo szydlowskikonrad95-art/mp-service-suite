@@ -47,7 +47,7 @@ submit() {
 	local email="$1" kind="$2"; shift 2
 	local args=( --data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE"
 		--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" --data-urlencode "kind=$kind"
-		--data-urlencode "email=$email" --data-urlencode "mp_consent=1" )
+		--data-urlencode "email=$email" --data-urlencode "customer_name=Klient Testowy" --data-urlencode "mp_consent=1" )
 	local kv
 	for kv in "$@"; do args+=( --data-urlencode "$kv" ); done
 	curl -s -o /dev/null "${args[@]}" "$MP_BASE/wp-admin/admin-post.php"

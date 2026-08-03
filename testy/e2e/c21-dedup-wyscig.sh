@@ -48,7 +48,7 @@ for i in 1 2 3 4 5 6; do
 	curl -s "${HOSTHDR[@]}" -o /dev/null \
 		--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 		--data-urlencode "mp_ts=$TS" \
-		--data-urlencode "kind=zapytanie" --data-urlencode "email=wyscig-dedup@example.com" \
+		--data-urlencode "kind=zapytanie" --data-urlencode "email=wyscig-dedup@example.com" --data-urlencode "customer_name=Klient Testowy" \
 		--data-urlencode "issue_description=to samo zgloszenie rownolegle" \
 		--data-urlencode "mp_consent=1" \
 		"$MP_BASE/wp-admin/admin-post.php" &
@@ -63,7 +63,7 @@ ILE=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE JSON_UNQUOTE(JSON_EXTRAC
 curl -s "${HOSTHDR[@]}" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$TS" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "mp_consent=1" \
 	"$MP_BASE/wp-admin/admin-post.php"
 ILE_R1=$(q "SELECT COUNT(*) FROM wp_mp_consents WHERE email='retry@example.com'")
@@ -72,7 +72,7 @@ ILE_R1=$(q "SELECT COUNT(*) FROM wp_mp_consents WHERE email='retry@example.com'"
 curl -s "${HOSTHDR[@]}" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$TS" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "serial=BEZ-REJESTRU-1" --data-urlencode "purchase_document=FV/77" \
 	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=poprawiony opis" \
 	--data-urlencode "mp_consent=1" \
@@ -84,7 +84,7 @@ ILE_R2=$(q "SELECT COUNT(*) FROM wp_mp_consents WHERE email='retry@example.com'"
 curl -s "${HOSTHDR[@]}" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$TS" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "serial=BEZ-REJESTRU-1" --data-urlencode "purchase_document=FV/77" \
 	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=poprawiony opis" \
 	--data-urlencode "mp_consent=1" \

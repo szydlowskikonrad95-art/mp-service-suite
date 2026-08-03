@@ -63,7 +63,7 @@ wyslij() {
 	local args=(-c "$JAR" -b "$JAR" -L -e "$PAGE_URL"
 		-F "action=mp_intake_submit" -F "_mp_nonce=$nonce"
 		-F "mp_ts=$(( $(date +%s) - 60 ))" -F "mp_hp="
-		-F "kind=reklamacja" -F "category=$kat" -F "email=$email"
+		-F "kind=reklamacja" -F "category=$kat" -F "email=$email" -F "customer_name=Klient Testowy"
 		-F "serial=$serial" -F "purchase_document=FV/2026/9" -F "purchase_date=2026-03-15"
 		-F "issue_description=nie wlacza sie po podlaczeniu" -F "mp_consent=1")
 

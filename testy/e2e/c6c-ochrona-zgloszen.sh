@@ -32,7 +32,7 @@ submit() {
 	curl -s -o /dev/null \
 		--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 		--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
-		--data-urlencode "kind=reklamacja" --data-urlencode "email=$email" \
+		--data-urlencode "kind=reklamacja" --data-urlencode "email=$email" --data-urlencode "customer_name=Klient Testowy" \
 		--data-urlencode "mp_consent=1" \
 		--data-urlencode "serial=$serial" --data-urlencode "purchase_document=FV/1" \
 		--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
@@ -65,7 +65,7 @@ for s in D5-1 D5-2 D5-3; do
 	curl -s -o /dev/null \
 		--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 		--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
-		--data-urlencode "kind=reklamacja" --data-urlencode "email=d5@example.com" \
+		--data-urlencode "kind=reklamacja" --data-urlencode "email=d5@example.com" --data-urlencode "customer_name=Klient Testowy" \
 		--data-urlencode "serial=$s" --data-urlencode "purchase_document=FV/1" \
 		--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
 		"$MP_BASE/wp-admin/admin-post.php"   # BEZ mp_consent => odrzucone (walidacja)
@@ -82,7 +82,7 @@ reset_all
 curl -s -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=retry@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "serial=RT-1" --data-urlencode "purchase_document=FV/1" \
 	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
 	"$MP_BASE/wp-admin/admin-post.php"
@@ -122,7 +122,7 @@ FILTERED_IP="203.0.113.99"
 curl -s -o /dev/null -H "X-MP-Test-IP: $FILTERED_IP" \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=proxy@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=proxy@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "mp_consent=1" \
 	--data-urlencode "serial=PROXY-1" --data-urlencode "purchase_document=FV/1" \
 	--data-urlencode "purchase_date=2026-03-15" --data-urlencode "issue_description=usterka" \
