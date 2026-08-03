@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 3;
+	public const LATEST = 4;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -40,8 +40,23 @@ final class Schema {
 				1 => array( self::class, 'migration_1_tables' ),
 				2 => array( self::class, 'migration_2_rate_counters' ),
 				3 => array( self::class, 'migration_3_assigned_index' ),
+				4 => array( self::class, 'migration_4_redact_client_accounts' ),
 			)
 		);
+	}
+
+	/**
+	 * V4: jednorazowa naprawa kont klientow zalozonych przed poprawka 2.54.
+	 *
+	 * Nie zmienia struktury — czysci dane, ktore WordPress publikuje na stronie
+	 * autora (nazwa wyswietlana i czlon adresu). Bez tego kroku poprawka dziala
+	 * tylko dla kont zakladanych OD TERAZ, a ludzie juz ujawnieni pozostaja
+	 * ujawnieni: nazwa wyswietlana zapisywana jest raz i nic jej nie aktualizuje.
+	 *
+	 * @return void
+	 */
+	public static function migration_4_redact_client_accounts(): void {
+		Accounts::redact_public_identities();
 	}
 
 	/**

@@ -16,6 +16,7 @@ use MP\Intake\CaseRepo;
 use MP\Intake\Consents;
 use MP\Intake\FormConfig;
 use MP\Intake\RateLimit;
+use MP\Intake\Validator;
 
 /**
  * Handlery admin-post frontu Intake.
@@ -98,9 +99,11 @@ final class SubmissionHandler {
 			$category = '';
 		}
 
-		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
-		$consent = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
-		$values  = self::collect_values( $kind, $category );
+		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( (string) $_POST['email'] ) ) : '';
+		$customer = isset( $_POST['customer_name'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['customer_name'] ) ) : '';
+		$customer = trim( $customer );
+		$consent  = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
+		$values   = self::collect_values( $kind, $category );
 
 		// Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy. Po honeypocie,
 		// przed tworzeniem sprawy. Marker dedup dopiero po sukcesie (mark_submitted).
@@ -117,12 +120,27 @@ final class SubmissionHandler {
 			self::redirect_back( array( 'notice' => $notice ) );
 		}
 
-		// Zgoda RODO wymagana PRZED przyjeciem zgloszenia.
+		// Zgoda RODO i imie zglaszajacego — JEDNA bramka, nie dwie. Bramki
+		// sekwencyjne kaza czlowiekowi krazyc (poz. 2.57): poprawia jedno,
+		// wysyla, dostaje nastepne. Oba braki sa znane w tym samym momencie,
+		// wiec wracaja razem.
+		$gate_errors = array();
+
 		if ( ! $consent ) {
+			$gate_errors['mp_consent'] = 'REQUIRED';
+		}
+
+		$name_error = Validator::validate_customer_name( $customer );
+
+		if ( null !== $name_error ) {
+			$gate_errors['customer_name'] = $name_error;
+		}
+
+		if ( array() !== $gate_errors ) {
 			self::redirect_back(
 				array(
-					'errors' => array( 'mp_consent' => 'REQUIRED' ),
-					'values' => self::echo_values( $values, $kind, $category, $email ),
+					'errors' => $gate_errors,
+					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
 				)
 			);
 		}
@@ -138,7 +156,7 @@ final class SubmissionHandler {
 			self::redirect_back(
 				array(
 					'errors' => array( 'mp_files' => 'ATTACHMENT_REQUIRED' ),
-					'values' => self::echo_values( $values, $kind, $category, $email ),
+					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
 				)
 			);
 		}
@@ -157,6 +175,7 @@ final class SubmissionHandler {
 				'kind'     => $kind,
 				'category' => $category,
 				'email'    => $email,
+				'name'     => $customer,
 				'values'   => $values,
 			)
 		);
@@ -169,7 +188,7 @@ final class SubmissionHandler {
 			self::redirect_back(
 				array(
 					'errors' => self::flatten_errors( $result['validation'] ?? array() ),
-					'values' => self::echo_values( $values, $kind, $category, $email ),
+					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
 				)
 			);
 		}
@@ -351,15 +370,17 @@ final class SubmissionHandler {
 	 * @param string               $kind     Rodzaj sprawy.
 	 * @param string               $category Slug kategorii (moze byc pusty).
 	 * @param string               $email    E-mail kontaktowy.
+	 * @param string               $customer Imie i nazwisko zglaszajacego.
 	 * @return array<string, mixed>
 	 */
-	public static function echo_values( array $values, string $kind, string $category, string $email ): array {
+	public static function echo_values( array $values, string $kind, string $category, string $email, string $customer = '' ): array {
 		return array_merge(
 			$values,
 			array(
-				'kind'     => $kind,
-				'category' => $category,
-				'email'    => $email,
+				'kind'          => $kind,
+				'category'      => $category,
+				'email'         => $email,
+				'customer_name' => $customer,
 			)
 		);
 	}

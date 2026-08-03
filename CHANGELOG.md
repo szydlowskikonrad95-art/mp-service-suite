@@ -4,6 +4,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0)
+- 🔴 **Adres e-mail klienta przestaje byc widoczny publicznie.** Konto WordPressa zakladane przy
+  potwierdzeniu zgloszenia bralo nazwe wyswietlana z nazwiska, a gdy nazwiska nie bylo — z adresu
+  e-mail. Formularz o nazwisko **nie pytal**, wiec w normalnym torze zgloszenia nazwa konta byla
+  adresem, a WordPress publikuje ja na stronie autora (jawnej i indeksowalnej). Teraz konto WP
+  **z zalozenia nie nosi danych osobowych**: nazwa wyswietlana, login i czlon adresu strony autora
+  sa neutralne (`Klient serwisu #N`, `mp-klient-N`), a imie i nazwisko zyje wylacznie w tabeli
+  klientow wtyczki, gdzie obsluguje je eraser RODO. Strona autora konta klienta dostaje `noindex`.
+- 🔴 **Konta zalozone WCZESNIEJ sa poprawiane jednorazowo** (migracja schematu 4). Bez tego kroku
+  poprawka chronilaby tylko nowych klientow: nazwa wyswietlana zapisywana jest **raz w zyciu konta**
+  i nic jej nigdy nie aktualizowalo, wiec osoby juz ujawnione pozostalyby ujawnione. Kont personelu
+  i administratora migracja nie tyka.
+- **Formularz publiczny pyta o imie i nazwisko.** To korzen obu powyzszych wad i trzeciej:
+  ochrona przed sklejeniem dwoch osob pod wspolna skrzynka (recepcja, sekretariat) wymagala dwoch
+  niepustych nazwisk, wiec **nigdy sie nie wlaczala**. Teraz dwie osoby pod jednym adresem dostaja
+  osobne rekordy klienta, a ta sama osoba (inna pisownia) nadal jeden.
+- **Brak zgody i brak imienia wracaja do czlowieka RAZEM**, jedna bramka zamiast dwoch — poprawianie
+  formularza nie wymaga kolejnego okrazenia.
+
+### Dowody
+- Test przegladarkowy `testy/e2e/c-tozsamosc-konta-klienta.sh` (w CI): 20 kontroli, w tym proby
+  kontrolne detektora, odtworzenie stanu sprzed poprawki i sprawdzenie anonimowym zadaniem HTTP,
+  ze strona autora nie zdradza ani adresu, ani nazwiska.
+- Testy jednostkowe `TozsamoscKlientaTest` (granica dlugosci liczona w znakach, nie bajtach).
+
 ## [1.3.11] - 2026-08-01
 
 > Zgloszone przez zamawiajacego przy klikaniu po panelu — **nie znalazla tego zadna kontrola

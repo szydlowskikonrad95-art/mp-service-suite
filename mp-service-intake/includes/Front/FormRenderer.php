@@ -90,6 +90,17 @@ final class FormRenderer {
 			$errors
 		);
 
+		// Imie i nazwisko (zawsze). Bez tego pola nazwa konta WP schodzila do
+		// e-maila (WP publikuje ja na stronie autora), a ochrona przed sklejeniem
+		// dwoch osob pod wspolna skrzynka nie miala jak zadzialac — obie wady
+		// mialy TEN SAM korzen: formularz nie pytal o osobe.
+		$out .= self::field_wrap(
+			'customer_name',
+			esc_html__( 'Imię i nazwisko', 'mp-service-intake' ),
+			'<input type="text" id="mp-f-customer_name" name="customer_name" value="' . esc_attr( (string) ( $values['customer_name'] ?? '' ) ) . '" required maxlength="190" autocomplete="name" aria-describedby="' . self::err_id( 'customer_name' ) . '" />',
+			$errors
+		);
+
 		// E-mail kontaktowy (zawsze).
 		$out .= self::field_wrap(
 			'email',

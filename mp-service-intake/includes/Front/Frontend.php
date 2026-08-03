@@ -42,6 +42,33 @@ final class Frontend {
 		add_shortcode( 'mp_intake_form', array( self::class, 'render_shortcode' ) );
 		add_action( 'init', array( self::class, 'register_block' ) );
 		add_action( 'template_redirect', array( self::class, 'maybe_security_headers' ) );
+		add_filter( 'wp_robots', array( self::class, 'no_index_client_author_archive' ) );
+	}
+
+	/**
+	 * Archiwum autora konta KLIENTA nie idzie do wyszukiwarek.
+	 *
+	 * Pas zapasowy do naprawy 2.54. Nazwa wyswietlana i adres strony sa juz
+	 * neutralne, wiec dane osobowe stamtad nie wyciekaja — ale ta strona nadal
+	 * powstaje dla kazdego konta klienta, a konto klienta nie jest autorem
+	 * zadnej tresci. Panel klienta ma `noindex` od poczatku; tutaj brakowalo
+	 * czegokolwiek. Ekrany personelu i administratora zostaja bez zmian.
+	 *
+	 * @param array<string, bool> $robots Dyrektywy dla robotow.
+	 * @return array<string, bool>
+	 */
+	public static function no_index_client_author_archive( $robots ) {
+		if ( ! is_array( $robots ) || ! is_author() ) {
+			return $robots;
+		}
+
+		$autor = get_queried_object();
+
+		if ( ! $autor instanceof \WP_User || ! \MP\Intake\Accounts::is_client_only( $autor ) ) {
+			return $robots;
+		}
+
+		return wp_robots_no_robots( $robots );
 	}
 
 	/**

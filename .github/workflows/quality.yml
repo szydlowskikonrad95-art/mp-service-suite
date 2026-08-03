@@ -199,6 +199,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c28-eksport-rodo-kompletny.sh
       - name: Testy C27 (RODO — krok potwierdzenia przed usunięciem danych)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c27-rodo-potwierdzenie.sh
+      - name: Testy tożsamości konta klienta (konto WP bez danych osobowych)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-tozsamosc-konta-klienta.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c26-widok-zwrot-i-etykiety.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)

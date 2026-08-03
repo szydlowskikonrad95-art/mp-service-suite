@@ -1714,7 +1714,9 @@ final class CaseRepo {
 		// phpcs:enable
 
 		// Konto WP klienta DOPIERO teraz (panel „moje zgloszenia"; edge personel/admin — Accounts).
-		Accounts::ensure_for_customer( $customer_id, (string) $pending['email'], (string) ( $pending['name'] ?? '' ) );
+		// Nazwiska tu NIE przekazujemy — konto WP z zalozenia nie nosi danych
+		// osobowych (patrz Accounts::ensure_for_customer).
+		Accounts::ensure_for_customer( $customer_id, (string) $pending['email'] );
 
 		delete_option( 'mp_pending_contact_' . $case_id );
 
