@@ -94,6 +94,7 @@ def sciezka(nazwa, przegladarka):
     s.wait_for_timeout(400)
     # example.com — domena zarezerwowana (RFC 2606). `przyklad.pl` jest prawdziwa i cudza.
     s.fill('input[name="email"]', f"przegladarki-{nazwa}-{int(time.time())}@example.com")
+    s.fill('input[name="customer_name"]', "Klient Testowy")
     s.fill('input[name="serial"]', "SN-AUD-1001")
     s.fill('input[name="purchase_document"]', "FV/2026/0410")
     s.fill('input[name="purchase_date"]', "2026-04-12")

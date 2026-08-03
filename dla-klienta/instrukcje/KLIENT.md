@@ -11,8 +11,12 @@ tylko o opis).
 
 ![Formularz zgłoszenia](zdjecia/02-formularz-pusty.jpg)
 
-Wypełnij pola, w razie potrzeby **dodaj zdjęcie lub PDF** (np. dowód zakupu, zdjęcie usterki)
-i zaznacz zgodę na przetwarzanie danych. Kliknij **Wyślij**.
+Podaj **imię i nazwisko** oraz **e-mail** — po nich serwis rozpozna, czyja to sprawa. Ma to
+znaczenie zwłaszcza wtedy, gdy kilka osób zgłasza z jednej wspólnej skrzynki (np. sekretariat):
+każda z nich dostaje wtedy własną kartotekę i widzi w panelu **tylko swoje** zgłoszenia.
+
+Wypełnij pozostałe pola, w razie potrzeby **dodaj zdjęcie lub PDF** (np. dowód zakupu, zdjęcie
+usterki) i zaznacz zgodę na przetwarzanie danych. Kliknij **Wyślij**.
 
 Dla kategorii **AGD drobne** i **Elektronarzędzia** załącznik jest **wymagany** — dodaj zdjęcie
 tabliczki znamionowej (albo numeru partii), inaczej serwis nie ustali modelu ani mocy urządzenia.

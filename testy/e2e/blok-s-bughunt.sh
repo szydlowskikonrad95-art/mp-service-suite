@@ -51,7 +51,7 @@ clean; N=$(nonce "$PAGE_URL")
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=zapytanie" --data-urlencode "email=paranoid@example.com" \
+	--data-urlencode "kind=zapytanie" --data-urlencode "email=paranoid@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "name=Jan Kowalski" --data-urlencode "issue_description=pytanie" \
 	"$POST_URL"
 NOCONSENT=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE identity_status='pending'")
@@ -62,7 +62,7 @@ clean; N=$(nonce "$PAGE_URL")
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=zapytanie" --data-urlencode "email=pii-leak@secret.xx" \
+	--data-urlencode "kind=zapytanie" --data-urlencode "email=pii-leak@secret.xx" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "name=TajneNazwisko Kowalski" --data-urlencode "issue_description=Moj PESEL 99010112345" \
 	--data-urlencode "mp_consent=1" "$POST_URL"
 sleep 1
@@ -83,7 +83,7 @@ clean; N=$(nonce "$PAGE_URL")
 XSSHTML=$(cget -c "$JAR" -b "$JAR" \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=zapytanie" --data-urlencode "email=nie-email" \
+	--data-urlencode "kind=zapytanie" --data-urlencode "email=nie-email" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "name=<script>alert(1)</script>" \
 	--data-urlencode "issue_description=<script>alert('xss')</script>" \
 	--data-urlencode "mp_consent=1" "$POST_URL")
@@ -97,7 +97,7 @@ clean; N=$(nonce "$PAGE_URL")
 SQLHTML=$(cget -c "$JAR" -b "$JAR" \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=sqli@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=sqli@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "serial=' OR '1'='1" --data-urlencode "purchase_document=FV/1" \
 	--data-urlencode "purchase_date=2026-03-01" --data-urlencode "issue_description=x" \
 	--data-urlencode "mp_consent=1" "$POST_URL")
@@ -123,7 +123,7 @@ clean; N=$(nonce "$PAGE_URL"); BIG=$(printf 'A%.0s' $(seq 1 50000))
 CODE=$(cget -c "$JAR" -b "$JAR" -o /dev/null -w '%{http_code}' \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=zapytanie" --data-urlencode "email=chaos@example.com" \
+	--data-urlencode "kind=zapytanie" --data-urlencode "email=chaos@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "name=Chaos" --data-urlencode "issue_description=$BIG" \
 	--data-urlencode "mp_consent=1" "$POST_URL")
 { [ "$CODE" != "500" ] && [ -n "$CODE" ]; } && ok "chaos: opis 50k znakow obsluzony bez 500 (HTTP $CODE, LONGTEXT stabilny)" || bad "chaos: BUG — 500 na duzym opisie (HTTP $CODE)"
@@ -132,7 +132,7 @@ clean; N=$(nonce "$PAGE_URL")
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$N" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=braki@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=braki@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "issue_description=bez serialu" --data-urlencode "mp_consent=1" "$POST_URL"
 BRAKI=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
 [ "${BRAKI:-0}" = "0" ] && ok "chaos: reklamacja bez wymaganych pol (serial/dokument/data) ODRZUCONA" || bad "chaos: BUG — reklamacja bez wymaganych pol przeszla ($BRAKI)"

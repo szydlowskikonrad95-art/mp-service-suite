@@ -19,7 +19,11 @@ q()   { wp db query "$1" --skip-column-names 2>/dev/null | tr -d '[:space:]'; }
 # migruje przy aktywacji i to jest no-op.
 wp eval 'MP\Intake\Lifecycle::maybe_upgrade();' >/dev/null 2>&1
 WERSJA=$(wp option get mp_intake_schema_version 2>/dev/null | tr -d '[:space:]')
-[ "$WERSJA" = "3" ] && ok "wersja schematu intake = 3 (migracja przeszla)" || bad "wersja schematu = $WERSJA (oczekiwana 3)"
+# Wersje bierzemy Z KODU, nie z liczby wpisanej w test: kazda kolejna migracja
+# ja podnosi, a twarda liczba dawalaby czerwone CI przy poprawnej zmianie.
+LATEST=$(wp eval 'echo (int) MP\Intake\Schema::LATEST;' 2>/dev/null | tr -d '[:space:]')
+{ [ -n "$WERSJA" ] && [ "$WERSJA" = "$LATEST" ]; } && ok "wersja schematu intake = $LATEST (== Schema::LATEST)" || bad "wersja schematu = $WERSJA (oczekiwana $LATEST)"
+{ [ -n "$WERSJA" ] && [ "$WERSJA" -ge 3 ]; } && ok "migracja v3 (indeks przydzialu) odnotowana" || bad "wersja ponizej 3 — migracji indeksu nie bylo"
 
 # Klucz zlozony: 2 kolumny w dobrej kolejnosci.
 KOL1=$(q "SELECT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='wp_mp_service_cases' AND INDEX_NAME='assigned_to' AND SEQ_IN_INDEX=1")

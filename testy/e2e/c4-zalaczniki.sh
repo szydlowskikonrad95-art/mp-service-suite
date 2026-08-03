@@ -55,7 +55,7 @@ echo "$HTML" | grep -q 'name="mp_files\[\]"' && ok "formularz ma pole zalaczniko
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	-F "action=mp_intake_submit" -F "_mp_nonce=$NONCE" \
 	-F "mp_ts=$(( $(date +%s) - 30 ))" \
-	-F "kind=reklamacja" -F "email=foto@example.com" \
+	-F "kind=reklamacja" -F "email=foto@example.com" -F "customer_name=Klient Testowy" \
 	-F "serial=FOTO-1" -F "purchase_document=FV/2026/5" \
 	-F "purchase_date=2026-03-15" -F "issue_description=Zdjecie usterki" -F "mp_consent=1" \
 	-F "mp_files[]=@$IMG;type=image/jpeg" \
@@ -139,7 +139,7 @@ printf 'to nie jest obraz, tylko zwykly tekst' > /tmp/mp-skip.txt
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	-F "action=mp_intake_submit" -F "_mp_nonce=$NONCE" \
 	-F "mp_ts=$(( $(date +%s) - 30 ))" \
-	-F "kind=reklamacja" -F "email=skip@example.com" \
+	-F "kind=reklamacja" -F "email=skip@example.com" -F "customer_name=Klient Testowy" \
 	-F "serial=SKIP-1" -F "purchase_document=FV/2026/9" \
 	-F "purchase_date=2026-03-15" -F "issue_description=Zgloszenie z plikiem zlego typu" -F "mp_consent=1" \
 	-F "mp_files[]=@/tmp/mp-skip.txt;type=text/plain" \

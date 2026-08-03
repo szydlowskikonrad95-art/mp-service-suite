@@ -77,7 +77,7 @@ echo "$HTML" | grep -q 'name="action" value="mp_intake_submit"' && ok "KROK 1: f
 cget -c "$JAR" -b "$JAR" -o /dev/null \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 30 ))" \
-	--data-urlencode "kind=reklamacja" --data-urlencode "email=e2e-klient@example.com" \
+	--data-urlencode "kind=reklamacja" --data-urlencode "email=e2e-klient@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "name=Anna E2E" \
 	--data-urlencode "serial=$SER" --data-urlencode "purchase_document=FV/2026/777" \
 	--data-urlencode "purchase_date=2026-03-01" --data-urlencode "issue_description=Piec nie grzeje po tygodniu" \

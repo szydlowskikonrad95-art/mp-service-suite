@@ -41,7 +41,7 @@ wyslij_zgloszenie() { # $1=plik zalacznika (pusty = bez zalacznika)
   local plik="${1:-}" args
   args=(-F "action=mp_intake_submit" -F "_mp_nonce=$NONCE"
         -F "mp_ts=$(( $(date +%s) - 60 ))" -F "mp_hp="
-        -F "kind=reklamacja" -F "email=$EMAIL"
+        -F "kind=reklamacja" -F "email=$EMAIL" -F "customer_name=Klient Testowy"
         -F "category=agd" -F "cat_agd_model=Robot MX-200"
         -F "serial=SN-TEST-0001" -F "purchase_document=FV/2026/07/11"
         -F "purchase_date=2026-03-15"

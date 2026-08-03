@@ -48,7 +48,7 @@ JAR=$(mktemp)
 curl -s -o /dev/null -c "$JAR" \
 	--data-urlencode "action=mp_intake_submit" --data-urlencode "_mp_nonce=$NONCE" \
 	--data-urlencode "mp_ts=$(( $(date +%s) - 60 ))" \
-	--data-urlencode "kind=zapytanie" --data-urlencode "email=cta16@example.com" \
+	--data-urlencode "kind=zapytanie" --data-urlencode "email=cta16@example.com" --data-urlencode "customer_name=Klient Testowy" \
 	--data-urlencode "mp_consent=1" --data-urlencode "issue_description=Pytanie do CTA" \
 	"$MP_BASE/wp-admin/admin-post.php"
 

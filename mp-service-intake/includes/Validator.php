@@ -185,6 +185,28 @@ final class Validator {
 	}
 
 	/**
+	 * Imie i nazwisko zglaszajacego: niepuste, mieszczace sie w kolumnie.
+	 *
+	 * Limit 190 = szerokosc `customers.name` (VARCHAR(190)) — ta sama zasada
+	 * co przy dokumencie zakupu: kod pilnuje tego, co uniesie baza, zamiast
+	 * oddawac czlowiekowi „blad zapisu do bazy" (poz. 2.4).
+	 * Ksztaltu nazwiska NIE narzucamy (jeden znak, znaki diakrytyczne, apostrof,
+	 * lacznik — wszystko to sa prawdziwe nazwiska).
+	 *
+	 * @param string $value Wartosc z formularza.
+	 * @return string|null Kod bledu albo null.
+	 */
+	public static function validate_customer_name( string $value ): ?string {
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return 'REQUIRED';
+		}
+
+		return Common\Str::len( $value ) > 190 ? 'TOO_LONG' : null;
+	}
+
+	/**
 	 * Walidacja e-maila (czysta — bez zaleznosci od WP w testach).
 	 *
 	 * @param string $email E-mail.
