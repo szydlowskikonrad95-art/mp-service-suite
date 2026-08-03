@@ -152,4 +152,60 @@ final class CaseEvents {
 			)
 		);
 	}
+
+	/**
+	 * Sprawy, ktorym NIE WYSZEDL ostatnio wyslany link potwierdzajacy (audyt 2.1b).
+	 *
+	 * PO CO: awaria poczty byla zapisywana na osi sprawy i podnosila alarm globalny
+	 * („poczta nie dziala"), ale personel obslugujacy kolejke potrzebuje odpowiedzi
+	 * na pytanie o POJEDYNCZA sprawe — „ktoremu klientowi nie doszedl link".
+	 * Ekran „Niepotwierdzone" pokazywal takie sprawy nieodroznialnie od udanych.
+	 *
+	 * KTORE liczymy: tylko awarie NOWSZE niz wydanie aktualnego tokenu. Kazda ponowna
+	 * wysylka wydaje swiezy token (`CaseRepo::regenerate_token`), wiec udana ponowka
+	 * gasi oznaczenie sama, bez kasowania czegokolwiek (os czasu jest append-only).
+	 * Moment wydania liczymy z `verify_token_expires_at` minus TTL — obie wartosci
+	 * sa w GMT, tak samo jak `created_at` zdarzen.
+	 *
+	 * JEDNO zapytanie na caly ekran, nie jedno na wiersz (lista ma do 100 spraw).
+	 *
+	 * @param array<int, int> $case_ids Sprawy z listy.
+	 * @return array<int, true> Mapa case_id => true (tylko sprawy z nieudana wysylka).
+	 */
+	public static function cases_with_failed_mail( array $case_ids ): array {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $case_ids ) ) ) );
+
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$events       = Tables::full( Tables::CASE_EVENTS );
+		$cases        = Tables::full( Tables::CASES );
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- tabele wlasne, zapytanie przygotowane; liczba placeholderow jest ZMIENNA (tyle, ile id), wiec sniff nie policzy jej statycznie — argumenty ida jedna tablica przez array_merge.
+		$rows = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT e.case_id
+				FROM {$events} e
+				INNER JOIN {$cases} c ON c.id = e.case_id
+				WHERE e.case_id IN ( {$placeholders} )
+				AND e.event_type = %s
+				AND c.verify_token_expires_at IS NOT NULL
+				AND e.created_at >= DATE_SUB( c.verify_token_expires_at, INTERVAL %d HOUR )",
+				array_merge( $ids, array( self::MAIL_FAILED, CaseRepo::TOKEN_TTL_HOURS ) )
+			)
+		);
+		// phpcs:enable
+
+		$out = array();
+
+		foreach ( (array) $rows as $id ) {
+			$out[ (int) $id ] = true;
+		}
+
+		return $out;
+	}
 }

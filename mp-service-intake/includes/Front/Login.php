@@ -102,6 +102,12 @@ final class Login {
 			Mailer::send_login_link( $email, $issued['selector'], $issued['token'] );
 		}
 
+		// 2.1b — ŚWIADOMIE BEZ ZMIANY, w odroznieniu od zgloszenia i ponownej wysylki.
+		// Tam przy padnietej poczcie mowimy klientowi wprost, ze mail nie wyszedl. TU BY
+		// SZKODZILO: maila wysylamy WYLACZNIE dla istniejacego konta, wiec osobny komunikat
+		// o nieudanej wysylce pojawialby sie tylko dla adresow, ktore SA w bazie — przy
+		// zepsutej poczcie kazdy moglby tak sprawdzac, kto jest klientem. Awaria zostaje
+		// widoczna dla administratora (alarm globalny z `Mailer::deliver`).
 		// Zawsze ten sam komunikat — zero enumeracji kont.
 		self::back_with_notice( __( 'Jeśli konto istnieje, wysłaliśmy link do logowania na podany adres e-mail.', 'mp-service-intake' ) );
 	}
