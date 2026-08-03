@@ -68,6 +68,11 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   produktu, np. zapytanie bez serialu — wtedy `warranty_snapshot` i jej wersja jawnie NULL) ·
   `case_number` UNIQUE (SRV/RRRR/NNNN) · `status` **NULL = nieporwierdzona (unverified)**, `IS NULL`
   w pierwszym przejściu (patrz STATE_MACHINE.md) · `identity_status` (pending/verified) ·
+  `pending_email` **+ indeks** (migracja v5) — adres zgłaszającego **do czasu weryfikacji**,
+  czyszczony w chwili wpięcia klienta. Powód: sprawa niepotwierdzona **nie ma rekordu klienta**,
+  a spis żądań RODO chodzi po klientach — bez tej kolumny żądanie usunięcia i żądanie dostępu
+  **nie sięgały** danych osób, które nigdy klientem nie zostały (dane leżały w migawce formularza,
+  bez indeksu) ·
   `verify_token_hash` UNIQUE + `verify_token_expires_at` + `verify_token_used_at` (NULL=żywy; w bazie
   WYŁĄCZNIE hashe tokenów) · `created_at` (=submit) · `verified_at` · `status_changed_at` ·
   `rejection_reason_code` (NULL poza odrzuconymi) · `possible_duplicate` (flaga, nie blokada) ·

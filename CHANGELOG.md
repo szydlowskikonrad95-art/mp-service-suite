@@ -5,6 +5,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ## [Unreleased]
 
 ### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0)
+- 🔴 **Żądanie usunięcia i żądanie wydania danych obejmuje ZGŁOSZENIA NIEPOTWIERDZONE.** Zgłoszenie,
+  którego nikt nie potwierdził, nie ma rekordu klienta — a spis żądań RODO chodził wyłącznie po
+  klientach. W takim zgłoszeniu leżą: adres, telefon, opis usterki i **załączone zdjęcia** osoby,
+  która nigdy klientem nie została, i **nie było żadnej drogi**, żeby je usunąć przed upływem
+  30 dni. Gorzej: procedura meldowała „usunięto", a przycisk w panelu klienta pisał wprost
+  **„Twoje dane osobowe zostały usunięte"** — czyli produkt składał nieprawdziwe oświadczenie
+  osobie, której dane dotyczą, w odpowiedzi na jej żądanie.
+- Adres zgłaszającego stoi teraz w **indeksowanej kolumnie** (`pending_email`, migracja schematu 5)
+  i **znika w chwili weryfikacji**, żeby nie zostawał jako druga kopia danych. Migracja uzupełnia
+  go dla zgłoszeń **już leżących w bazie** — inaczej poprawka nie objęłaby nikogo, kto złożył
+  zgłoszenie przed aktualizacją.
+- Kasowanie zgłoszeń niepotwierdzonych ma **jeden mechanizm dla dwóch powodów**: upływu czasu
+  (retencja) i żądania osoby. Wcześniej istniał tylko pierwszy.
+
+### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0) — konto klienta
 - 🔴 **Adres e-mail klienta przestaje byc widoczny publicznie.** Konto WordPressa zakladane przy
   potwierdzeniu zgloszenia bralo nazwe wyswietlana z nazwiska, a gdy nazwiska nie bylo — z adresu
   e-mail. Formularz o nazwisko **nie pytal**, wiec w normalnym torze zgloszenia nazwa konta byla
