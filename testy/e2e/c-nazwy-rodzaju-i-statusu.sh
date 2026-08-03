@@ -8,6 +8,10 @@
 # patrzy czlowiek.
 set -u
 
+# Katalog repozytorium ZE SCIEZKI SKRYPTU — w CI test chodzi z /tmp/wp, wiec
+# sciezki wzgledne nie istnieja (falszywe „FAIL", wada pomiaru nie produktu).
+REPO="${MP_REPO:-$(cd "$(dirname "$0")/../.." && pwd)}"
+
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); echo "  OK  $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
@@ -39,12 +43,12 @@ case "$HTML" in *">zapytanie<"*|*"· zapytanie ·"*) bad "panel klienta nadal po
 case "$HTML" in *"nowe"*) ok "status sprawy widoczny w panelu (jest co oceniac)" ;; *) bad "brak statusu w panelu — asercja nizej nic nie znaczy" ;; esac
 
 echo "== 4. LISTA SPRAW PERSONELU =="
-grep -q "FormConfig::kind_label" mp-service-intake/includes/Admin/CasesListTable.php && ok "lista spraw tlumaczy rodzaj (kolumna i filtr)" || bad "lista spraw nadal pokazuje surowy klucz"
+grep -q "FormConfig::kind_label" "$REPO"/mp-service-intake/includes/Admin/CasesListTable.php && ok "lista spraw tlumaczy rodzaj (kolumna i filtr)" || bad "lista spraw nadal pokazuje surowy klucz"
 
 echo "== 5. GRANICA: STATUSY GWARANCJI ZOSTAJA NIETKNIETE =="
 # Zakres sprawdzony celowo, zeby NIE uogolnic: rodzina gwarancyjna tlumaczyla
 # sie poprawnie w trzech miejscach i tej naprawy nie dotyczy.
-grep -q "status_map\|\$status_map" mp-service-intake/includes/Admin/CaseCard.php && ok "mapa statusow gwarancji na karcie sprawy nietknieta" || bad "ruszono mape statusow gwarancji"
+grep -q "status_map\|\$status_map" "$REPO"/mp-service-intake/includes/Admin/CaseCard.php && ok "mapa statusow gwarancji na karcie sprawy nietknieta" || bad "ruszono mape statusow gwarancji"
 
 echo "== 6. NIEZNANY RODZAJ NIE ZNIKA =="
 NIEZNANY=$(wp eval 'echo MP\Intake\FormConfig::kind_label( "cos_nowego" );' 2>/dev/null)
