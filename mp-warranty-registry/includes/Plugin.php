@@ -105,5 +105,4 @@ final class Plugin {
 
 		return is_array( $counts ) ? (int) ( $counts['total'] ?? 0 ) : null;
 	}
-
 }
