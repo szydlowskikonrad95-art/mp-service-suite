@@ -45,7 +45,6 @@ final class Plugin {
 			Common\Contract::register_mismatch_notice( 'MP Service Intake' );
 		}
 
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		// Slownik nazw rodzajow dla innych modulow (kontrakt `mp_case_kind_labels`).
 		add_filter( 'mp_case_kind_labels', array( FormConfig::class, 'provide_kind_labels' ) );
@@ -347,16 +346,4 @@ final class Plugin {
 		}
 	}
 
-	/**
-	 * Laduje tlumaczenia pluginu (na init — wymog WP 6.7+).
-	 *
-	 * @return void
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'mp-service-intake',
-			false,
-			dirname( plugin_basename( MP_INTAKE_FILE ) ) . '/languages'
-		);
-	}
 }

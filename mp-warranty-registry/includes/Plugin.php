@@ -45,7 +45,6 @@ final class Plugin {
 			Common\Contract::register_mismatch_notice( 'MP Warranty & Serial Registry' );
 		}
 
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_filter( 'mp_warranty_check', array( WarrantyCheck::class, 'handle' ), 10, 4 );
 		add_filter( 'mp_serial_usage_count', array( $this, 'serial_usage_count' ), 10, 2 );
 		add_action(
@@ -107,16 +106,4 @@ final class Plugin {
 		return is_array( $counts ) ? (int) ( $counts['total'] ?? 0 ) : null;
 	}
 
-	/**
-	 * Laduje tlumaczenia pluginu (na init — wymog WP 6.7+).
-	 *
-	 * @return void
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'mp-warranty-registry',
-			false,
-			dirname( plugin_basename( MP_REGISTRY_FILE ) ) . '/languages'
-		);
-	}
 }

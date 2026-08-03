@@ -60,6 +60,8 @@ if ( $mp_automator_delete_data ) {
 
 MP\Automator\Common\Uninstall::run(
 	'mp_module_automator',
-	array( 'mp_automator_schema_version', 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
+	// Patrz komentarz w module zgloszen: wersja schematu zyje i umiera RAZEM
+	// z tabelami, wiec nie kasujemy jej w warstwie technicznej.
+	array( 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
 	MP\Automator\Lifecycle::CRON_HOOKS
 );
