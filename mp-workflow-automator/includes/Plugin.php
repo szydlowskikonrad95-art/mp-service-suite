@@ -45,7 +45,6 @@ final class Plugin {
 			Common\Contract::register_mismatch_notice( 'MP Workflow Automator' );
 		}
 
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
 		// Statusy wlasne (P3.2): D = zrodlo definicji => publikuje je do walidatora C.
@@ -128,19 +127,6 @@ final class Plugin {
 				'action' => 'cases_data_erased',
 				'powod'  => 'uninstall_intake',
 			)
-		);
-	}
-
-	/**
-	 * Laduje tlumaczenia pluginu (na init — wymog WP 6.7+).
-	 *
-	 * @return void
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'mp-workflow-automator',
-			false,
-			dirname( plugin_basename( MP_AUTOMATOR_FILE ) ) . '/languages'
 		);
 	}
 }

@@ -22,11 +22,22 @@ final class PageDetect {
 	/**
 	 * Czy biezace zadanie to strona wtyczki (auto-strona albo shortcode w tresci).
 	 *
+	 * ⛔ Rozpoznanie musi widziec OBIE drogi wstawienia. Produkt renderuje
+	 * formularz **blokiem i skrotem**, przy czym blok jest droga GLOWNA (tak
+	 * zaklada sie strona automatyczna, tak robia buildery). Sprawdzany byl sam
+	 * skrot — a `has_shortcode()` zaczyna od warunku „jesli w tresci nie ma
+	 * znaku `[` — zwroc falsz", zas blok zapisany jest jako komentarz
+	 * `<!-- wp:mp/... /-->` i nawiasu kwadratowego NIE zawiera. Odpowiedz
+	 * brzmiala wiec zawsze „to nie nasza strona", a klient, ktory przenosil
+	 * formularz na wlasna podstrone blokiem, dostawal ja **bez naglowkow
+	 * bezpieczenstwa** (mozna ja bylo osadzic w ramce na obcej stronie).
+	 *
 	 * @param int    $configured_page_id ID auto-strony z opcji (0 = brak).
 	 * @param string $shortcode          Nazwa shortcode'u, np. `mp_intake_form`.
+	 * @param string $block              Nazwa bloku, np. `mp/intake-form` (pusty = brak bloku).
 	 * @return bool
 	 */
-	public static function is_plugin_page( int $configured_page_id, string $shortcode ): bool {
+	public static function is_plugin_page( int $configured_page_id, string $shortcode, string $block = '' ): bool {
 		if ( $configured_page_id > 0 && is_page( $configured_page_id ) ) {
 			return true;
 		}
@@ -41,7 +52,11 @@ final class PageDetect {
 			return false;
 		}
 
-		return has_shortcode( (string) $post->post_content, $shortcode );
+		if ( has_shortcode( (string) $post->post_content, $shortcode ) ) {
+			return true;
+		}
+
+		return '' !== $block && function_exists( 'has_block' ) && has_block( $block, $post );
 	}
 
 	/**

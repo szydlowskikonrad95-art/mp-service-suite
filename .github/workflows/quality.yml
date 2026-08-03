@@ -205,6 +205,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-dostep-rol-ekrany.sh
       - name: Testy śladu operacji (nieudany zapis dziennika zatrzymuje operację)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-slad-operacji-nie-ginie.sh
+      - name: Testy drobnych napraw (nagłówki przy bloku, wersja schematu, zbędna praca)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-drobne-2-52-2-59-2-61.sh
       - name: Testy tożsamości konta klienta (konto WP bez danych osobowych)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-tozsamosc-konta-klienta.sh
       - name: Testy RODO — zgłoszenia niepotwierdzone (usunięcie i wydanie danych)
