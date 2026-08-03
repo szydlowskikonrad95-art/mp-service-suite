@@ -11,6 +11,11 @@
 # („wyjatki zatwierdzane przez uprawnionego administratora").
 set -u
 
+# Katalog repozytorium liczony ZE SCIEZKI SKRYPTU — w CI test chodzi z /tmp/wp,
+# wiec sciezki wzgledne nie istnieja i grep dawal falszywe „FAIL" (wada pomiaru,
+# nie produktu; zlapane w CI przy pierwszym przebiegu).
+REPO="${MP_REPO:-$(cd "$(dirname "$0")/../.." && pwd)}"
+
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); echo "  OK  $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
@@ -46,12 +51,17 @@ CAPK=$(cap_dla mp_client)
 echo "== 3. EKRANY, KTORE MIALY CAP NA SZTYWNO =="
 NIEPOTW=$(wp eval "echo MP\\Intake\\Admin\\UnverifiedScreen::CAP;" 2>/dev/null | tr -d '[:space:]')
 [ "$NIEPOTW" = "mp_agent" ] && ok "stala zgodnosci wstecz zachowana ($NIEPOTW)" || bad "stala CAP zmieniona ($NIEPOTW) — sprawdz zgodnosc wstecz"
-grep -q "Roles::menu_cap_for_current_user()" mp-service-intake/includes/Admin/UnverifiedScreen.php 2>/dev/null && ok "ekran niepotwierdzonych: cap menu dynamiczny" || bad "ekran niepotwierdzonych nadal z capem na sztywno"
-grep -q "Roles::menu_cap_for_current_user()" mp-warranty-registry/includes/Admin/ProductsScreen.php 2>/dev/null && ok "rejestr produktow: cap menu dynamiczny" || bad "rejestr produktow nadal z capem na sztywno"
+grep -q "Roles::menu_cap_for_current_user()" "$REPO"/mp-service-intake/includes/Admin/UnverifiedScreen.php 2>/dev/null && ok "ekran niepotwierdzonych: cap menu dynamiczny" || bad "ekran niepotwierdzonych nadal z capem na sztywno"
+grep -q "Roles::menu_cap_for_current_user()" "$REPO"/mp-warranty-registry/includes/Admin/ProductsScreen.php 2>/dev/null && ok "rejestr produktow: cap menu dynamiczny" || bad "rejestr produktow nadal z capem na sztywno"
+
+echo "== 3b. POMIAR ZACHOWANIA: MENU REJESTRUJE SIE DLA KOORDYNATORA =="
+MENU=$(wp eval "wp_set_current_user( get_user_by( 'login', 'test-mp_coordinator' )->ID ); global \$menu; \$menu = array(); MP\\Intake\\Admin\\UnverifiedScreen::add_menu(); MP\\Intake\\Admin\\CasesScreen::add_menu(); \$slugi = array(); foreach ( (array) \$menu as \$poz ) { \$slugi[] = \$poz[2] ?? ''; } echo implode( ',', \$slugi );" 2>/dev/null)
+case "$MENU" in *mp-intake-unverified*) ok "koordynator DOSTAJE pozycje menu zgloszen niepotwierdzonych" ;; *) bad "menu koordynatora bez ekranu niepotwierdzonych ($MENU)" ;; esac
+case "$MENU" in *mp-intake-cases*|*cases*) ok "koordynator ma tez ekran spraw (kontrola: pomiar w ogole widzi menu)" ;; *) bad "pomiar nie widzi zadnego menu — wynik wyzej nic nie znaczy" ;; esac
 
 echo "== 4. GRANICA NAPRAWY — TO MA ZOSTAC ZAMKNIETE =="
-grep -q "'mp_system_admin'" mp-warranty-registry/includes/Admin/ImportScreen.php 2>/dev/null && ok "import zostaje za administratorem systemu (wymog zamowienia)" || bad "import stracil bramke administratora!"
-grep -q "'mp_system_admin'" mp-warranty-registry/includes/Admin/ExceptionsScreen.php 2>/dev/null && ok "wyjatki gwarancyjne zostaja za administratorem systemu" || bad "wyjatki straciły bramke administratora!"
+grep -q "'mp_system_admin'" "$REPO"/mp-warranty-registry/includes/Admin/ImportScreen.php 2>/dev/null && ok "import zostaje za administratorem systemu (wymog zamowienia)" || bad "import stracil bramke administratora!"
+grep -q "'mp_system_admin'" "$REPO"/mp-warranty-registry/includes/Admin/ExceptionsScreen.php 2>/dev/null && ok "wyjatki gwarancyjne zostaja za administratorem systemu" || bad "wyjatki straciły bramke administratora!"
 
 echo "----"
 echo "PASS=$PASS FAIL=$FAIL"
