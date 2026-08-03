@@ -11,6 +11,8 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Common\Roles;
+
 use MP\Registry\Archive;
 use MP\Registry\Categories;
 use MP\Registry\Repo;
@@ -90,7 +92,7 @@ final class ProductsScreen {
 		self::$hook_suffix = (string) add_menu_page(
 			__( 'Rejestr produktów MP', 'mp-warranty-registry' ),
 			__( 'Rejestr MP', 'mp-warranty-registry' ),
-			'mp_agent',
+			Roles::menu_cap_for_current_user(),
 			self::PAGE_SLUG,
 			array( self::class, 'render' ),
 			'dashicons-database'
