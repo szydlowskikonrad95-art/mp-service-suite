@@ -63,6 +63,18 @@ echo "== 4. GRANICA NAPRAWY — TO MA ZOSTAC ZAMKNIETE =="
 grep -q "'mp_system_admin'" "$REPO"/mp-warranty-registry/includes/Admin/ImportScreen.php 2>/dev/null && ok "import zostaje za administratorem systemu (wymog zamowienia)" || bad "import stracil bramke administratora!"
 grep -q "'mp_system_admin'" "$REPO"/mp-warranty-registry/includes/Admin/ExceptionsScreen.php 2>/dev/null && ok "wyjatki gwarancyjne zostaja za administratorem systemu" || bad "wyjatki straciły bramke administratora!"
 
+# ⛔ SPRZATANIE OBOWIAZKOWE: te konta zmieniaja SKLAD PERSONELU, a kolejne testy
+# w tym samym przebiegu licza adresatow powiadomien (SLA wysyla do koordynatora).
+# Zostawione konto testowe = czerwony test cztery pozycje dalej, w miejscu,
+# ktore z ta zmiana nie ma nic wspolnego.
+for R in mp_coordinator mp_agent mp_client; do
+	UID_T=$(wp user get "test-$R" --field=ID 2>/dev/null | tr -d '[:space:]')
+	[ -n "$UID_T" ] && wp user delete "$UID_T" --yes >/dev/null 2>&1
+done
+
+ZOSTALO=$(wp user list --role=mp_coordinator --field=user_login 2>/dev/null | grep -c '^test-' || true)
+[ "${ZOSTALO:-0}" = "0" ] && ok "konta testowe posprzatane (kolejne testy dostaja czyste srodowisko)" || bad "konta testowe zostaly — nastepne testy dostana falszywy wynik"
+
 echo "----"
 echo "PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1
