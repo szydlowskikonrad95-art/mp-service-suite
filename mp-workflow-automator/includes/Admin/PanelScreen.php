@@ -985,6 +985,16 @@ final class PanelScreen {
 	 * @return string
 	 */
 	private static function kind_label( string $kind ): string {
+		// Zrodlem nazw jest modul zgloszen (tam mieszka slownik rodzajow); pytamy
+		// go zaczepem, zeby te same sprawy nie nazywaly sie u nas inaczej niz
+		// u klienta. Wlasna mapa zostaje jako ZAPAS na wypadek braku tamtej
+		// wtyczki — kazdy modul ma dzialac sam.
+		$zewnetrzne = apply_filters( 'mp_case_kind_labels', array() );
+
+		if ( is_array( $zewnetrzne ) && isset( $zewnetrzne[ $kind ] ) ) {
+			return (string) $zewnetrzne[ $kind ];
+		}
+
 		$labels = array(
 			'reklamacja' => __( 'Reklamacja', 'mp-workflow-automator' ),
 			'naprawa'    => __( 'Naprawa', 'mp-workflow-automator' ),

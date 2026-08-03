@@ -148,7 +148,7 @@ final class CasesListTable extends \WP_List_Table {
 	public function column_default( $item, $column ): string {
 		switch ( $column ) {
 			case 'kind':
-				return esc_html( (string) ( $item['kind'] ?? '' ) );
+				return esc_html( FormConfig::kind_label( (string) ( $item['kind'] ?? '' ) ) );
 			case 'status':
 				return self::status_badge( (string) ( $item['status'] ?? '' ) );
 			case 'created_at':
@@ -401,7 +401,7 @@ final class CasesListTable extends \WP_List_Table {
 				'<option value="%s"%s>%s</option>',
 				esc_attr( (string) $kind ),
 				selected( $cur_kind, (string) $kind, false ),
-				esc_html( (string) $kind )
+				esc_html( FormConfig::kind_label( (string) $kind ) )
 			);
 		}
 		echo '</select> ';
