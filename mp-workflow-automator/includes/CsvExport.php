@@ -35,11 +35,6 @@ final class CsvExport {
 	private const MAX_PAGES = 1000;
 
 	/**
-	 * Separator CSV — srednik (Excel PL domyslnie czyta listy po sredniku).
-	 */
-	private const SEP = ';';
-
-	/**
 	 * Rejestruje handler (priv I nopriv => ten sam handler; capability PIERWSZA,
 	 * wiec subscriber/anon dostaja JAWNE 403, nie 400 z braku handlera).
 	 *
@@ -335,32 +330,10 @@ final class CsvExport {
 	 * @return void
 	 */
 	private static function put_row( $handle, array $cells ): void {
-		$safe = array_map( array( self::class, 'harden' ), $cells );
-
-		// $escape PUSTY = RFC-4180 (jak Excel). Jawnie, bo PHP 8.4+ deprecuje
-		// pominiecie argumentu, a jego domyslna wartosc ma sie zmienic.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv -- zapis wiersza do strumienia odpowiedzi (download w locie).
-		fputcsv( $handle, $safe, self::SEP, '"', '' );
+		// Regula wspolna dla calego zestawu (Common\Csv) — ta sama ochrona
+		// przed formula i ta sama konwencja co w raporcie bledow importu.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- zapis do strumienia odpowiedzi (download w locie).
+		fwrite( $handle, Common\Csv::row( $cells ) );
 	}
 
-	/**
-	 * CSV-formula-injection: pole zaczynajace sie od = + - @ TAB CR => prefiks
-	 * apostrofu (Excel/Sheets nie wykona jako formuly). OBOWIAZKOWE (RCE u klienta).
-	 *
-	 * @param string $value Wartosc.
-	 * @return string
-	 */
-	private static function harden( string $value ): string {
-		if ( '' === $value ) {
-			return $value;
-		}
-
-		$first = $value[0];
-
-		if ( in_array( $first, array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
-			return "'" . $value;
-		}
-
-		return $value;
-	}
 }

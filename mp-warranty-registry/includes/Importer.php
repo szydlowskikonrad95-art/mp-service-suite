@@ -547,7 +547,12 @@ final class Importer {
 		$lines  = '';
 
 		if ( ! file_exists( $report ) ) {
-			$lines .= "wiersz;serial;blad\n";
+			// Znacznik kolejnosci bajtow PRZED naglowkiem — bez niego arkusz
+			// kalkulacyjny czyta polskie znaki jako krzaki. Eksport raportow
+			// (bliźniaczy modul) mial go od poczatku, raport bledow nie:
+			// wlasne komunikaty produktu sa bez ogonkow, ale wartosci z pliku
+			// klienta (numer seryjny, model) moga je zawierac.
+			$lines .= Common\Csv::BOM . "wiersz;serial;blad\n";
 		}
 
 		// ⚠️ CYTUJEMY jak CSV, nie skladamy `implode`.
@@ -573,23 +578,10 @@ final class Importer {
 	 * @return string Wiersz zakonczony znakiem nowej linii.
 	 */
 	private static function wiersz_csv( array $pola ): string {
-		$wyjscie = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- bufor w pamieci, nie plik.
-
-		if ( false === $wyjscie ) {
-			// Awaryjnie: cytujemy recznie, zeby raport nie rozjechal kolumn.
-			$bezpieczne = array_map(
-				static fn( string $p ): string => '"' . str_replace( '"', '""', $p ) . '"',
-				$pola
-			);
-
-			return implode( ';', $bezpieczne ) . "\n";
-		}
-
-		fputcsv( $wyjscie, $pola, ';', '"', '\\' );
-		rewind( $wyjscie );
-		$wiersz = (string) stream_get_contents( $wyjscie );
-		fclose( $wyjscie ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- para do fopen.
-
-		return $wiersz;
+		// ⛔ Wartosci ida WPROST Z PLIKU KLIENTA — administrator pobiera ten raport
+		// i otwiera w arkuszu, wiec komorka zaczynajaca sie od znaku rownosci
+		// jest tam formula i wykona sie. Bliźniaczy modul mial te ochrone od
+		// poczatku; tutaj jej nie bylo. Wspolna regula = jedno miejsce na obie.
+		return Common\Csv::row( $pola );
 	}
 }
