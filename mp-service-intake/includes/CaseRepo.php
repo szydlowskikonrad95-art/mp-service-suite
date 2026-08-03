@@ -92,6 +92,10 @@ final class CaseRepo {
 					'kind'                             => $kind,
 					'status'                           => null,
 					'identity_status'                  => 'pending',
+					// Adres do czasu weryfikacji: sprawa niepotwierdzona nie ma
+					// rekordu klienta, wiec bez tej kolumny zadanie RODO nie ma
+					// jak jej znalezc (dane leza w migawce formularza, bez indeksu).
+					'pending_email'                    => substr( sanitize_email( (string) ( $input['email'] ?? '' ) ), 0, 190 ),
 					'verify_token_hash'                => self::hash_token( $token ),
 					'verify_token_expires_at'          => gmdate( 'Y-m-d H:i:s', time() + self::TOKEN_TTL_HOURS * HOUR_IN_SECONDS ),
 					'verify_token_used_at'             => null,
@@ -1701,9 +1705,12 @@ final class CaseRepo {
 
 		$table = Tables::full( Tables::CASES );
 
+		// `pending_email` czyscimy przy wpieciu klienta: od tej chwili tozsamosc
+		// sprawy trzyma rekord klienta i to po nim chodzi eraser. Zostawiony
+		// adres bylby druga kopia danych osobowych bez potrzeby.
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET customer_id = %d, updated_at = %s WHERE id = %d",
+				"UPDATE {$table} SET customer_id = %d, pending_email = '', updated_at = %s WHERE id = %d",
 				$customer_id,
 				gmdate( 'Y-m-d H:i:s' ),
 				$case_id
@@ -1781,11 +1788,67 @@ final class CaseRepo {
 		);
 
 		$ids = array_map( 'intval', (array) $ids );
+		// phpcs:enable
+
+		return self::purge_pending_cases( $ids );
+	}
+
+	/**
+	 * ID zgloszen NIEPOTWIERDZONYCH nalezacych do danego adresu e-mail.
+	 *
+	 * Sprawa niepotwierdzona nie ma rekordu klienta (`customer_id` puste), wiec
+	 * spis erasera po klientach jej NIE WIDZI — a to w niej leza dane osoby,
+	 * ktora nigdy klientem nie zostala. Dlatego adres stoi w indeksowanej
+	 * kolumnie `pending_email`, kasowanej przy weryfikacji (potem tozsamosc
+	 * trzyma juz rekord klienta).
+	 *
+	 * @param string $email E-mail.
+	 * @return array<int, int>
+	 */
+	public static function pending_ids_by_email( string $email ): array {
+		global $wpdb;
+
+		$email = trim( $email );
+
+		if ( '' === $email ) {
+			return array();
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT id FROM {$cases} WHERE identity_status = 'pending' AND pending_email = %s ORDER BY id ASC",
+				$email
+			)
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
+	 * Kasuje WSKAZANE zgloszenia niepotwierdzone razem z ich danymi.
+	 *
+	 * Jeden mechanizm dla dwoch powodow kasowania: uplyw czasu (cron retencji)
+	 * i ZADANIE OSOBY (art. 17). Wczesniej istnial tylko pierwszy, wiec zadanie
+	 * usuniecia danych nie siegalo zgloszen niepotwierdzonych — a osoba i tak
+	 * dostawala na pismie, ze dane usunieto.
+	 *
+	 * @param array<int, int> $ids ID spraw niepotwierdzonych.
+	 * @return int Liczba skasowanych spraw.
+	 */
+	public static function purge_pending_cases( array $ids ): int {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
 
 		if ( array() === $ids ) {
-			// phpcs:enable
 			return 0;
 		}
+
+		$cases = Tables::full( Tables::CASES );
 
 		// Zalaczniki NAJPIERW: kasuja tez PLIKI z dysku (sam DELETE wiersza
 		// zostawilby zdjecia klienta w uploads na zawsze).

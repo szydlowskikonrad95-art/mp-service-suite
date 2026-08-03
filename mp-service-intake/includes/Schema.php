@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 4;
+	public const LATEST = 5;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -41,6 +41,7 @@ final class Schema {
 				2 => array( self::class, 'migration_2_rate_counters' ),
 				3 => array( self::class, 'migration_3_assigned_index' ),
 				4 => array( self::class, 'migration_4_redact_client_accounts' ),
+				5 => array( self::class, 'migration_5_pending_email' ),
 			)
 		);
 	}
@@ -287,5 +288,87 @@ final class Schema {
 				KEY assigned_to (assigned_to,identity_status)
 			) {$charset};"
 		);
+	}
+
+	/**
+	 * V5: kolumna `pending_email` + indeks — zeby zadanie RODO SIEGALO zgloszen
+	 * niepotwierdzonych.
+	 *
+	 * Sprawa niepotwierdzona nie ma rekordu klienta, a dane zglaszajacego lezaly
+	 * wylacznie w migawce formularza i w opcji `mp_pending_contact_*` — w polach
+	 * bez indeksu. Spis erasera chodzi po klientach, wiec takiej sprawy nie
+	 * widzial ani przy zadaniu usuniecia, ani przy zadaniu dostepu do danych.
+	 *
+	 * Zmiana ADDYTYWNA (nowa kolumna + indeks), wiec `dbDelta` wystarczy;
+	 * uzupelnienie istniejacych wierszy idzie z opcji `mp_pending_contact_*`,
+	 * partiami, bez ruszania spraw juz potwierdzonych.
+	 *
+	 * @return void
+	 */
+	public static function migration_5_pending_email(): void {
+		global $wpdb;
+
+		$charset = $wpdb->get_charset_collate();
+		$cases   = Tables::full( Tables::CASES );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$cases} (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				case_number VARCHAR(20) NOT NULL,
+				customer_id BIGINT UNSIGNED NULL,
+				product_registry_id BIGINT UNSIGNED NULL,
+				kind VARCHAR(20) NOT NULL DEFAULT '',
+				status VARCHAR(20) NULL,
+				identity_status VARCHAR(10) NOT NULL DEFAULT 'pending',
+				pending_email VARCHAR(190) NOT NULL DEFAULT '',
+				verify_token_hash CHAR(64) NULL,
+				verify_token_expires_at DATETIME NULL,
+				verify_token_used_at DATETIME NULL,
+				rejection_reason_code VARCHAR(64) NULL,
+				possible_duplicate TINYINT(1) NOT NULL DEFAULT 0,
+				form_data LONGTEXT NULL,
+				form_schema_version INT UNSIGNED NOT NULL DEFAULT 1,
+				warranty_snapshot LONGTEXT NULL,
+				warranty_snapshot_schema_version INT UNSIGNED NULL,
+				priority VARCHAR(10) NOT NULL DEFAULT 'normal',
+				assigned_to BIGINT UNSIGNED NULL,
+				country VARCHAR(2) NOT NULL DEFAULT '',
+				lang VARCHAR(10) NOT NULL DEFAULT '',
+				created_at DATETIME NOT NULL,
+				verified_at DATETIME NULL,
+				status_changed_at DATETIME NULL,
+				updated_at DATETIME NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY case_number (case_number),
+				UNIQUE KEY verify_token_hash (verify_token_hash),
+				KEY customer_id (customer_id),
+				KEY product_registry_id (product_registry_id),
+				KEY status (status),
+				KEY identity_status (identity_status),
+				KEY created_at (created_at),
+				KEY pending_email (pending_email),
+				KEY assigned_to (assigned_to,identity_status)
+			) {$charset};"
+		);
+
+		// Uzupelnienie istniejacych zgloszen niepotwierdzonych z odlozonych
+		// danych kontaktowych. Bez tego kroku zadanie RODO nie siegnie zgloszen
+		// zlozonych PRZED ta poprawka — a wlasnie one leza w bazie do 30 dni.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col( "SELECT id FROM {$cases} WHERE identity_status = 'pending' AND pending_email = ''" );
+
+		foreach ( array_map( 'intval', (array) $ids ) as $case_id ) {
+			$pending = get_option( 'mp_pending_contact_' . $case_id, array() );
+			$email   = is_array( $pending ) ? sanitize_email( (string) ( $pending['email'] ?? '' ) ) : '';
+
+			if ( '' === $email ) {
+				continue;
+			}
+
+			$wpdb->query(
+				$wpdb->prepare( "UPDATE {$cases} SET pending_email = %s WHERE id = %d", substr( $email, 0, 190 ), $case_id )
+			);
+		}
+		// phpcs:enable
 	}
 }

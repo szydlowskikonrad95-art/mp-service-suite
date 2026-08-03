@@ -349,6 +349,9 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
   (link potwierdzający jest ważny 72 godziny, więc takie zgłoszenie i tak nie może już ruszyć).
   Sprawy **potwierdzone** — czyli realna praca serwisu — nie są przez to ruszane. Jeśli chcesz inny
   okres, powiedz: to jedna linijka w konfiguracji.
+- **Żądanie usunięcia danych obejmuje także takie porzucone zgłoszenia** — nie trzeba czekać tych
+  30 dni. Tak samo żądanie wydania danych: człowiek dostaje również to, co wpisał w formularzu,
+  którego nigdy nie potwierdził (razem z załącznikami).
 
 ## 9. Najczęstsze pytania / kłopoty
 

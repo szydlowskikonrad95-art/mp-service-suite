@@ -163,6 +163,22 @@ final class Privacy {
 			$messages[] = __( 'Dane osobowe powiązane ze zgłoszeniami serwisowymi zostały zanonimizowane.', 'mp-service-intake' );
 		}
 
+		// ZGLOSZENIA NIEPOTWIERDZONE — poza spisem po klientach, bo klienta
+		// jeszcze nie maja. To w nich leza dane osoby, ktora nigdy klientem nie
+		// zostala: adres, telefon, opis usterki i ZALACZNIKI. Kasujemy je w
+		// calosci (nie ma czego anonimizowac — sprawa bez potwierdzenia nie jest
+		// dowodem niczego), ta sama mechanika co retencja porzuconych zgloszen.
+		$pending_ids = CaseRepo::pending_ids_by_email( $email );
+
+		if ( array() !== $pending_ids ) {
+			$skasowane = CaseRepo::purge_pending_cases( $pending_ids );
+
+			if ( $skasowane > 0 ) {
+				$removed    = true;
+				$messages[] = __( 'Niepotwierdzone zgłoszenia z tego adresu zostały usunięte razem z załącznikami.', 'mp-service-intake' );
+			}
+		}
+
 		return array(
 			'items_removed'  => $removed,
 			'items_retained' => $retained,
@@ -293,6 +309,56 @@ final class Privacy {
 					);
 				}
 			}
+		}
+
+		// ZGLOSZENIA NIEPOTWIERDZONE — art. 15 obejmuje je tak samo jak art. 17
+		// (patrz `erase`). Bez tego czlowiek, ktory zlozyl zgloszenie i nie
+		// kliknal linku, dostawal odpowiedz „nie mamy Twoich danych", choc
+		// w bazie lezal jego adres, telefon, opis usterki i zdjecia.
+		foreach ( CaseRepo::pending_ids_by_email( trim( $email ) ) as $case_id ) {
+			$pending = get_option( 'mp_pending_contact_' . $case_id, array() );
+			$dane    = array(
+				array(
+					'name'  => __( 'Numer sprawy', 'mp-service-intake' ),
+					'value' => CaseRepo::case_number( $case_id ),
+				),
+				array(
+					'name'  => __( 'Stan', 'mp-service-intake' ),
+					'value' => __( 'zgłoszenie niepotwierdzone (nie kliknięto linku potwierdzającego)', 'mp-service-intake' ),
+				),
+				array(
+					'name'  => __( 'Imię i nazwisko', 'mp-service-intake' ),
+					'value' => is_array( $pending ) ? (string) ( $pending['name'] ?? '' ) : '',
+				),
+				array(
+					'name'  => __( 'Telefon', 'mp-service-intake' ),
+					'value' => is_array( $pending ) ? (string) ( $pending['phone'] ?? '' ) : '',
+				),
+				array(
+					'name'  => __( 'Załączniki', 'mp-service-intake' ),
+					'value' => self::attachments_summary( $case_id ),
+				),
+			);
+
+			foreach ( CaseRepo::form_data_for_case( $case_id ) as $pole ) {
+				$wartosc = trim( (string) $pole['value'] );
+
+				if ( '' === $wartosc ) {
+					continue;
+				}
+
+				$dane[] = array(
+					'name'  => '' !== $pole['label'] ? $pole['label'] : $pole['key'],
+					'value' => $wartosc,
+				);
+			}
+
+			$export[] = array(
+				'group_id'    => 'mp_pending_cases',
+				'group_label' => __( 'Zgłoszenia niepotwierdzone MP', 'mp-service-intake' ),
+				'item_id'     => 'pending-case-' . $case_id,
+				'data'        => $dane,
+			);
 		}
 
 		return array(

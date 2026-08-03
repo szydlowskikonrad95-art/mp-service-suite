@@ -10,9 +10,13 @@ Kolejność wg `warsztat/dzial-audytu/KOLEJNOSC-NAPRAW-1312.md`. Decyzja Dzidka 
 | 2.54 (krytyczna) — e-mail publicznie na stronie autora | ✅ naprawione | `testy/e2e/c-tozsamosc-konta-klienta.sh` (20 kontroli, próby kontrolne + żądanie anonimowe HTTP) |
 | 2.55 (średnia) — martwa ochrona przed sklejeniem osób | ✅ naprawione tą samą zmianą | ten sam test, sekcja 3 |
 | konta założone WCZEŚNIEJ | ✅ migracja schematu 4 | ten sam test, sekcja 2 (odtworzenie stanu sprzed poprawki) |
-| 2.58 (krytyczna) — usunięcie danych pomija zgłoszenia niepotwierdzone | ⬜ następne | — |
+| 2.58 (krytyczna) — usunięcie danych pomija zgłoszenia niepotwierdzone | ✅ naprawione | `testy/e2e/c-rodo-zgloszenia-niepotwierdzone.sh` (12 kontroli + **kalibracja podłożonym błędem**: bez naprawy pada w 3 miejscach) |
+
+**GRUPA 0 ZAMKNIĘTA** — trzy pozycje krytyczne z listy: 2.54, 2.58 (dane osobowe) naprawione; 2.10 zostaje do grupy 1.
 
 ## ŚLADY DO SPRZĄTNIĘCIA PRZED WYDANIEM
+- ⚠️ **2.34 (72 h vs 24 h) czeka** — zdanie o ważności linku stoi w `INSTRUKCJA-KLIENTA.md:349`
+  i w dwóch innych plikach; naprawiać jako **wzorzec** (4 miejsca + bramka), nie egzemplarz.
 - 🔴 **Zrzuty ekranu formularza są nieaktualne** — `dla-klienta/instrukcje/zdjecia/02-formularz-pusty.jpg`
   i `03-formularz-wypelniony-zalacznik.jpg` pokazują formularz **bez pola imienia i nazwiska**.
   Zrobić nowe przed wydaniem (grupa 3 — dokumenty).
