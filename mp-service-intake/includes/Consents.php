@@ -46,7 +46,12 @@ final class Consents {
 	 * @param string   $key     Klucz zgody.
 	 * @param string   $version Wersja tresci.
 	 * @param string   $text    Pelna tresc zgody z chwili zbierania.
-	 * @return int ID wiersza zgody.
+	 * @return int ID wiersza zgody. ⛔ **0 = ZAPIS SIE NIE UDAL** — wolajacy MUSI
+	 *             to sprawdzic. RODO art. 7 ust. 1 wymaga, zeby administrator
+	 *             potrafil WYKAZAC udzielenie zgody; sprawa z danymi osobowymi
+	 *             bez wiersza zgody to przetwarzanie bez mozliwosci wykazania
+	 *             podstawy prawnej. Wczesniej wynik nie byl ani zwracany
+	 *             uczciwie, ani sprawdzany w jedynym miejscu wywolania.
 	 */
 	public static function record( string $email, ?int $case_id, string $key, string $version, string $text ): int {
 		global $wpdb;
@@ -54,7 +59,7 @@ final class Consents {
 		$now = gmdate( 'Y-m-d H:i:s' );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna.
-		$wpdb->insert(
+		$zapisano = $wpdb->insert(
 			Tables::full( Tables::CONSENTS ),
 			array(
 				'customer_id'     => null,
@@ -67,6 +72,14 @@ final class Consents {
 			)
 		);
 		// phpcs:enable
+
+		if ( 1 !== (int) $zapisano ) {
+			// Alarm ta sama droga co awaria dziennika — administrator widzi to
+			// w „Narzedzia → Stan witryny", zamiast nie dowiedziec sie wcale.
+			Common\EventWrite::alert( Tables::full( Tables::CONSENTS ), 'CONSENT_WRITE_FAILED' );
+
+			return 0;
+		}
 
 		return (int) $wpdb->insert_id;
 	}

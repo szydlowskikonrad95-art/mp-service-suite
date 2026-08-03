@@ -98,15 +98,12 @@ final class WorkflowEvents {
 	 * @param array<string, mixed> $payload    Dane STRUKTURALNE (bez wolnego tekstu/PII).
 	 * @param int|null             $case_id    ID sprawy (null = zdarzenie nie-per-sprawa).
 	 * @param int|null             $actor_id   Kto (null = system).
-	 * @return void
+	 * @return bool True gdy wpis powstal (wczesniej `: void`).
 	 */
-	public static function log( string $event_type, array $payload, ?int $case_id = null, ?int $actor_id = null ): void {
-		global $wpdb;
-
+	public static function log( string $event_type, array $payload, ?int $case_id = null, ?int $actor_id = null ): bool {
 		$table = Tables::full( Tables::WORKFLOW_EVENTS );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna append-only.
-		$wpdb->insert(
+		return Common\EventWrite::insert(
 			$table,
 			array(
 				'case_id'        => $case_id,
@@ -117,7 +114,6 @@ final class WorkflowEvents {
 				'created_at'     => gmdate( 'Y-m-d H:i:s' ),
 			)
 		);
-		// phpcs:enable
 	}
 
 	/**
