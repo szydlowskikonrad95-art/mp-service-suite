@@ -81,6 +81,10 @@ final class Plugin {
 			Admin\UnverifiedScreen::register();
 			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
 			Admin\CasesScreen::register();
+			// Ustawienia modulu (1.3.12): przelacznik kasowania danych przy
+			// odinstalowaniu. Opcje czytal uninstall.php, a ustawic jej nie dalo
+			// sie z zadnego ekranu — czytana trzy razy, zapisywana zero.
+			Admin\SettingsScreen::register();
 			// D9: ostrzez admina gdy brak biblioteki obrazow (EXIF/GPS nieusuwany).
 			add_action( 'admin_notices', array( Attachments::class, 'admin_notice_no_image_library' ) );
 		}
