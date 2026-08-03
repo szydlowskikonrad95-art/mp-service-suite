@@ -47,6 +47,9 @@ final class Plugin {
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
+		// Slownik nazw rodzajow dla innych modulow (kontrakt `mp_case_kind_labels`).
+		add_filter( 'mp_case_kind_labels', array( FormConfig::class, 'provide_kind_labels' ) );
+
 		Front\Frontend::register();
 		Front\SubmissionHandler::register();
 		Front\AccountPage::register();

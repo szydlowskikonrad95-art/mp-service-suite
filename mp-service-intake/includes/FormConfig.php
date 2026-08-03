@@ -131,6 +131,63 @@ final class FormConfig {
 	}
 
 	/**
+	 * Etykiety rodzajow sprawy — JEDNO zrodlo dla calego zestawu.
+	 *
+	 * Ten sam rodzaj nazywal sie w produkcie na TRZY sposoby: „Zapytanie" na
+	 * formularzu, „Zapytanie techniczne" w panelu automatu i surowy klucz
+	 * `zapytanie` na liscie spraw personelu. Klient, koordynator i pracownik
+	 * mowili o jednej sprawie trzema slowami — przy rozmowie telefonicznej to
+	 * realne nieporozumienie. Brzmienie bierzemy z zamowienia („zapytanie
+	 * techniczne"), a inne moduly czytaja te mape zaczepem `mp_case_kind_labels`,
+	 * zeby nie zalezec od tej wtyczki twardo.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function kind_labels(): array {
+		$filtered = apply_filters( 'mp_case_kind_labels', self::default_kind_labels() );
+
+		return ( is_array( $filtered ) && array() !== $filtered ) ? $filtered : self::default_kind_labels();
+	}
+
+	/**
+	 * Domyslne etykiety rodzajow (bez filtra — zrodlo, nie wynik).
+	 *
+	 * @return array<string, string>
+	 */
+	public static function default_kind_labels(): array {
+		return array(
+			'reklamacja' => __( 'Reklamacja', 'mp-service-intake' ),
+			'naprawa'    => __( 'Naprawa', 'mp-service-intake' ),
+			'zapytanie'  => __( 'Zapytanie techniczne', 'mp-service-intake' ),
+			'zwrot'      => __( 'Zwrot', 'mp-service-intake' ),
+		);
+	}
+
+	/**
+	 * Odpowiedz na zaczep `mp_case_kind_labels` — zeby INNE moduly pytaly o nazwy
+	 * rodzajow zamiast trzymac wlasne kopie (stad brala sie rozbieznosc nazw).
+	 * Gdy ktos przekazal juz niepusta mape, zostawiamy jego.
+	 *
+	 * @param mixed $labels Mapa przekazana przez pytajacego.
+	 * @return array<string, string>
+	 */
+	public static function provide_kind_labels( $labels ): array {
+		return ( is_array( $labels ) && array() !== $labels ) ? $labels : self::default_kind_labels();
+	}
+
+	/**
+	 * Etykieta jednego rodzaju (nieznany => surowy klucz, zeby nic nie zniknelo).
+	 *
+	 * @param string $kind Klucz rodzaju.
+	 * @return string
+	 */
+	public static function kind_label( string $kind ): string {
+		$labels = self::kind_labels();
+
+		return isset( $labels[ $kind ] ) ? (string) $labels[ $kind ] : $kind;
+	}
+
+	/**
 	 * Czy rodzaj jest dozwolony.
 	 *
 	 * @param string $kind Rodzaj.

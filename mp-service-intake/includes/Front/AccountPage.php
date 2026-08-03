@@ -15,6 +15,10 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\Statuses;
+
+use MP\Intake\FormConfig;
+
 use MP\Intake\CaseEvents;
 use MP\Intake\CaseRepo;
 use MP\Intake\Consents;
@@ -487,9 +491,11 @@ final class AccountPage {
 
 		$out  = '<section class="mp-account__case">';
 		$out .= '<h3>' . esc_html( (string) ( $row['case_number'] ?? '' ) ) . '</h3>';
+		// Klient widzi NAZWY, nie wartosci techniczne: funkcje tlumaczace stoja
+		// w tym samym produkcie i po prostu nie byly tu uzyte.
 		$out .= '<p class="mp-account__meta">'
-			. esc_html( (string) ( $row['kind'] ?? '' ) ) . ' · '
-			. esc_html__( 'Status:', 'mp-service-intake' ) . ' <strong>' . esc_html( '' !== $status ? $status : '—' ) . '</strong> · '
+			. esc_html( FormConfig::kind_label( (string) ( $row['kind'] ?? '' ) ) ) . ' · '
+			. esc_html__( 'Status:', 'mp-service-intake' ) . ' <strong>' . esc_html( '' !== $status ? Statuses::label( $status ) : '—' ) . '</strong> · '
 			. esc_html( $date ) . '</p>';
 
 		$out .= self::render_messages( $case_id );

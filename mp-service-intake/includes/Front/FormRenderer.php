@@ -282,18 +282,13 @@ final class FormRenderer {
 	 * @return string
 	 */
 	private static function kind_select( string $selected ): string {
-		$labels = array(
-			'reklamacja' => __( 'Reklamacja', 'mp-service-intake' ),
-			'naprawa'    => __( 'Naprawa', 'mp-service-intake' ),
-			'zapytanie'  => __( 'Zapytanie', 'mp-service-intake' ),
-			'zwrot'      => __( 'Zwrot', 'mp-service-intake' ),
-		);
+		$labels = FormConfig::kind_labels();
 
 		$out = '<select id="mp-f-kind" name="kind">';
 
 		foreach ( FormConfig::KINDS as $kind ) {
 			$out .= '<option value="' . esc_attr( $kind ) . '"' . selected( $selected, $kind, false ) . '>'
-				. esc_html( $labels[ $kind ] ) . '</option>';
+				. esc_html( $labels[ $kind ] ?? $kind ) . '</option>';
 		}
 
 		return $out . '</select>';
