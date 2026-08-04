@@ -172,6 +172,13 @@ if ( $mp_intake_delete_data ) {
 
 MP\Intake\Common\Uninstall::run(
 	'mp_module_intake',
-	array( 'mp_intake_schema_version', 'mp_intake_delete_data', MP\Intake\Front\Mailer::ALERT_OPTION ),
+	// ⛔ `mp_intake_schema_version` NIE trafia do warstwy technicznej (kasowanej
+	// ZAWSZE) — kasujemy ja wylacznie razem z tabelami, w galezi „usun dane".
+	// Przy domyslnym ustawieniu tabele ZOSTAJA; skasowana wersja schematu
+	// przepuscilaby po reinstalacji wszystkie migracje po istniejacych danych
+	// i pozbawilaby punktu odniesienia procedure wycofania zmiany struktury.
+	// Modul rejestru robil to poprawnie i sam zapisal, dlaczego — rozciagamy
+	// jego wzorzec na dwa pozostale.
+	array( 'mp_intake_delete_data', MP\Intake\Front\Mailer::ALERT_OPTION ),
 	MP\Intake\Lifecycle::CRON_HOOKS
 );

@@ -14,6 +14,19 @@ Kolejność wg `warsztat/dzial-audytu/KOLEJNOSC-NAPRAW-1312.md`. Decyzja Dzidka 
 
 **GRUPA 0 ZAMKNIĘTA** — trzy pozycje krytyczne z listy: 2.54, 2.58 (dane osobowe) naprawione; 2.10 zostaje do grupy 1.
 
+## GRUPA 1 i 2 — postęp
+
+| Poz. | Stan | Czym udowodnione |
+|---|---|---|
+| 2.25 — koordynator miał mniej ekranów niż podwładny | ✅ scalone (#195) | `c-dostep-rol-ekrany.sh` (15 kontroli) |
+| 2.5 + 2.8 — jedna sprawa, trzy nazwy; surowe klucze u klienta | ✅ scalone (#196) | `c-nazwy-rodzaju-i-statusu.sh` (9, panel mierzony renderem) |
+| **2.10 — ślad operacji bez kontroli wyniku (KRYTYCZNA)** | ✅ scalone (#197) | `c-slad-operacji-nie-ginie.sh` (9, awarie wywoływane naprawdę) |
+| 2.59 + 2.52 + 2.61 | 🔄 PR #198 | `c-drobne-2-52-2-59-2-61.sh` (12, pomiar na żywo) |
+
+⬜ **Największy kawałek, jaki został: WARSTWA USTAWIEŃ** — zamyka **cztery** pozycje naraz
+(2.16, 2.35, 2.11 i punkt 4 części 1). Robić PRZED naprawą statusów i reguł, inaczej te naprawy
+trzeba będzie pisać dwa razy. Zaczynać na świeżym kontekście — to nie jest robota na resztki.
+
 ## ŚLADY DO SPRZĄTNIĘCIA PRZED WYDANIEM
 - ⚠️ **2.34 (72 h vs 24 h) czeka** — zdanie o ważności linku stoi w `INSTRUKCJA-KLIENTA.md:349`
   i w dwóch innych plikach; naprawiać jako **wzorzec** (4 miejsca + bramka), nie egzemplarz.

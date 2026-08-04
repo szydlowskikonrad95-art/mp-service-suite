@@ -119,7 +119,7 @@ final class Frontend {
 	public static function maybe_security_headers(): void {
 		$page_id = (int) get_option( self::PAGE_OPTION, 0 );
 
-		if ( ! PageDetect::is_plugin_page( $page_id, 'mp_intake_form' ) ) {
+		if ( ! PageDetect::is_plugin_page( $page_id, 'mp_intake_form', 'mp/intake-form' ) ) {
 			return;
 		}
 
