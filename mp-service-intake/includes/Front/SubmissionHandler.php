@@ -137,26 +137,39 @@ final class SubmissionHandler {
 			$gate_errors['customer_name'] = $name_error;
 		}
 
-		if ( array() !== $gate_errors ) {
-			self::redirect_back(
-				array(
-					'errors' => $gate_errors,
-					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
-				)
-			);
-		}
-
 		// P1.2 (kartka: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
 		// produktu"). Bramka PRZED utworzeniem sprawy i PRZED rezerwacja dedup:
 		// sprawa nie moze powstac bez obowiazkowego zdjecia, bo klient dostalby
 		// wtedy tylko notke „czesc zalacznikow nie zostala dolaczona", a serwis
 		// sprawe bez tabliczki znamionowej.
+		// ⛔ 2.57: to byla OSOBNA bramka z wlasnym powrotem — czlowiek poprawial
+		// zgode, wysylal, i dopiero WTEDY dowiadywal sie o brakujacym zdjeciu.
 		$files = self::collect_files();
 
 		if ( FormConfig::attachments_for( $category )['required'] && ! self::has_usable_attachment( $files ) ) {
+			$gate_errors['mp_files'] = 'ATTACHMENT_REQUIRED';
+		}
+
+		// ⛔ 2.57: WSZYSTKIE braki wracaja RAZEM, w jednym przebiegu. Bramki byly
+		// sekwencyjne, wiec przy pustym formularzu klient krazyl co najmniej TRZY
+		// razy (zgoda → zalacznik → pola), choc wszystkie braki byly znane juz
+		// przy pierwszym wyslaniu.
+		// ⚠️ Wolamy TE SAMA funkcje, ktorej uzywa `CaseRepo::create` — nie wlasna
+		// kopie regul. Gdyby reguly rozjechaly sie na dwie, formularz zaczalby
+		// odrzucac co innego niz zapis i nikt by tego nie zauwazyl. `create`
+		// waliduje dalej po swojemu — to zostaje jako druga warstwa.
+		$bledy_pol = self::flatten_errors(
+			CaseRepo::collect_validation_errors( $kind, $email, $values, gmdate( 'Y-m-d' ), $category )
+		);
+
+		// Braki z bramek WYGRYWAJA nad walidacja pol: mowia konkretniej (o imieniu
+		// decyduje `validate_customer_name`, nie ogolna regula pola).
+		$gate_errors = array_merge( $bledy_pol, $gate_errors );
+
+		if ( array() !== $gate_errors ) {
 			self::redirect_back(
 				array(
-					'errors' => array( 'mp_files' => 'ATTACHMENT_REQUIRED' ),
+					'errors' => $gate_errors,
 					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
 				)
 			);
