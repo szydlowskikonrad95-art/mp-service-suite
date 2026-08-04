@@ -528,10 +528,18 @@ final class Attachments {
 		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		// ⛔ RODO: razem z plikiem znika NAZWA NADANA PRZEZ KLIENTA. Wiersz zostaje —
+		// jest sladem operacji (kiedy, jaka sprawa, jaki typ, jaki rozmiar) i tego nie
+		// odbieramy — ale `original_name` to tresc pisana przez czlowieka: skany dowodow
+		// zakupu ludzie nazywaja wlasnym imieniem i nazwiskiem. Po skasowaniu pliku ta
+		// nazwa nie sluzy juz do niczego, a przezywala zadanie usuniecia danych.
+		// Redagujemy TU, w jednym gardle: te metode wola i sciezka RODO
+		// (delete_for_cases), i cron retencji, i kasowanie recznie.
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$att_table} SET deleted_at = %s WHERE id = %d",
+				"UPDATE {$att_table} SET deleted_at = %s, original_name = %s WHERE id = %d",
 				gmdate( 'Y-m-d H:i:s' ),
+				Messages::REDACTED,
 				$attachment_id
 			)
 		);

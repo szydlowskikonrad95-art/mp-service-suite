@@ -1717,8 +1717,18 @@ final class CaseRepo {
 	 * @return array<string, mixed>
 	 */
 	public static function redact_pii_fields( array $form_data ): array {
+		// ⛔ Flaga zapisana w WIERSZU pochodzi z chwili zlozenia zgloszenia, wiec sama
+		// poprawka konfiguracji chronilaby wylacznie sprawy przyszle. Bierzemy wiec
+		// AKTUALNA liste kluczy wrazliwych i traktujemy ja jako obowiazujaca — dzieki
+		// temu sprawy zlozone PRZED poprawka tez sa czyszczone, bez migracji.
+		$wrazliwe_klucze = array_flip( FormConfig::sensitive_keys() );
+
 		foreach ( $form_data as $key => $field ) {
-			if ( is_array( $field ) && ! empty( $field['pii_sensitive'] ) ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+
+			if ( ! empty( $field['pii_sensitive'] ) || isset( $wrazliwe_klucze[ (string) $key ] ) ) {
 				$form_data[ $key ]['value'] = Messages::REDACTED;
 			}
 		}
