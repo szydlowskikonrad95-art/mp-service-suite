@@ -159,7 +159,7 @@ nie zero).
 ### `mp_product_category( $default, $product_registry_id )` — odpowiada B
 Kategoria produktu po ID (slug ze słownika: audio/agd/elektronarzedzia/inne). Read-only; brak
 produktu / brak kategorii → zwraca `$default` (zwykle `null`), nigdy błąd. Zasila
-`get_context.kategoria` w C → oś przydziału (P3.1) w D. Implementacja: `MP\Registry\Repo::category_for`.
+`get_context.kategoria` w C → oś przydziału w D. Implementacja: `MP\Registry\Repo::category_for`.
 
 ### `mp_customer_find_products( $result, $query )` — pyta B, odpowiada C
 Wyszukiwarka „po kliencie" w B mechaniką odwróconą (C zna mapping klient→sprawy→produkty).
@@ -204,7 +204,7 @@ Definicje statusów WŁASNYCH (D = źródło definicji, C = walidator przejść)
 ```php
 array( 'ekspertyza_zew' => array( 'label' => 'Ekspertyza zewnętrzna', 'terminal' => false ) );
 ```
-**Limit sluga: ≤ 20 znaków** — `wp_mp_service_cases.status` = `VARCHAR(20)`. Slug to KLUCZ MASZYNOWY (po `sanitize_key`); długą nazwę ludzką niesie `label` (bez limitu). Slug > 20 znaków jest **odrzucany przy rejestracji** (`StatusDefs::SLUG_MAX=20` → `continue`/`return ''`, NIE ucina — zero kolizji). C jest chroniony **przechodnio**: `mp_case_change_status` puszcza tylko `Statuses::exists()`, a slug > 20 nigdy się nie zarejestruje → dostałby `INVALID_STATUS`; dlatego osobny check długości w C jest zbędny. *(Poprzednia wersja przykładu — `ekspertyza_zewnetrzna`, 21 zn — łamała ten limit i była cicho ucinana; złapane samo-kontrolą buildera + strażnik, 22.07.)*
+**Limit sluga: ≤ 20 znaków** — `wp_mp_service_cases.status` = `VARCHAR(20)`. Slug to KLUCZ MASZYNOWY (po `sanitize_key`); długą nazwę ludzką niesie `label` (bez limitu). Slug > 20 znaków jest **odrzucany przy rejestracji** (`StatusDefs::SLUG_MAX=20` → `continue`/`return ''`, NIE ucina — zero kolizji). C jest chroniony **przechodnio**: `mp_case_change_status` puszcza tylko `Statuses::exists()`, a slug > 20 nigdy się nie zarejestruje → dostałby `INVALID_STATUS`; dlatego osobny check długości w C jest zbędny. *(Uwaga przy dobieraniu slugów: `ekspertyza_zewnetrzna` ma 21 znaków i ten limit przekracza — dlatego przykład wyżej używa krótszej formy.)*
 
 ### Karta sprawy — sekcje D przez DEDYKOWANE filtry (renderuje C, odpowiada D)
 > *(Audyt #15: wcześniej opisany tu `mp_case_card_sections` NIE istniał w kodzie — hook-widmo;

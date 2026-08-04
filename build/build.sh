@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build 3 pluginow MP: stempluje kopie lib/mp-common (namespace per plugin),
-# generuje BUILD-INFO (commit+hash+czas), sklada ZIP-y i robi smoke-test kopii.
+# generuje BUILD-INFO OBOK paczek (commit+hash+czas), sklada ZIP-y i robi smoke-test kopii.
 # Kopie w drzewie zrodel (includes/Common/) sa GENEROWANE i gitignorowane —
 # edycje wspolnego kodu WYLACZNIE w lib/mp-common (dyscyplina z rundy W).
 set -euo pipefail
@@ -45,9 +45,12 @@ for entry in "${PLUGINS[@]}"; do
   rsync -a --exclude 'includes/Common' "$dir/" "$DIST/$dir/"
   stamp_common "$DIST/$dir/includes/Common" "$ns"
 
-  # 3) slad pochodzenia builda (ZIP bez wiarygodnego BUILD-INFO = nie z CI)
+  # 3) slad pochodzenia builda — OBOK paczki, nie W SRODKU.
+  #    Powod: BUILD-INFO niesie hash NASZEGO commita. Do weryfikacji artefaktu w CI
+  #    jest potrzebny, ale na serwerze klienta nie ma czego szukac — klient dostaje
+  #    produkt, nie zapis naszej pracy. Plik zostaje w $DIST, do ZIP-a nie wchodzi.
   printf '{"plugin":"%s","commit":"%s","common_hash":"%s","built_at":"%s"}\n' \
-    "$dir" "$COMMIT" "$COMMON_HASH" "$BUILD_TIME" > "$DIST/$dir/BUILD-INFO.json"
+    "$dir" "$COMMIT" "$COMMON_HASH" "$BUILD_TIME" > "$DIST/$dir-BUILD-INFO.json"
 
   # 4) smoke: autoloader kopii dystrybucyjnej laduje klase Common
   php -r "require '$DIST/$dir/includes/Autoloader.php'; MP\\${ns}\\Autoloader::register(); exit(class_exists('MP\\${ns}\\Common\\Common') ? 0 : 1);"

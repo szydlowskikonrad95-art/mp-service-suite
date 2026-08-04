@@ -23,8 +23,11 @@ done
 wp plugin activate mp-workflow-automator mp-warranty-registry mp-service-intake >/dev/null 2>&1
 ACT=$(wp plugin list --status=active --field=name 2>/dev/null | grep -c "^mp-")
 [ "$ACT" = "3" ] && ok "3 wtyczki z ZIP zainstalowane+aktywne (odwrotna kolejnosc)" || bad "aktywnych mp-: $ACT"
+# Odwrocone celowo: BUILD-INFO niesie hash NASZEGO commita i NIE MA go w paczce
+# instalowanej u klienta. Slad pochodzenia lezy obok ZIP-a (build/dist/<wtyczka>-BUILD-INFO.json)
+# i sprawdzamy go u siebie, a nie na cudzym serwerze.
 BI=$(wp eval 'echo file_exists(WP_PLUGIN_DIR."/mp-service-intake/BUILD-INFO.json") ? "1" : "0";' 2>/dev/null)
-[ "$BI" = "1" ] && ok "BUILD-INFO.json w paczce (artefakt CI, nie dev)" || bad "brak BUILD-INFO.json"
+[ "$BI" = "0" ] && ok "BUILD-INFO.json NIE trafil do zainstalowanej paczki (nasz slad zostaje u nas)" || bad "BUILD-INFO.json wyladowal na serwerze docelowym"
 [ "$(has_table mp_service_cases)" = "1" ] && ok "schemat utworzony przy aktywacji z ZIP" || bad "brak tabel po aktywacji z ZIP"
 
 # ── 2. WP_DEBUG smoke: przeklikanie kluczowych ekranow ─────────────────────
