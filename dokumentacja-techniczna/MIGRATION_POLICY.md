@@ -1,6 +1,6 @@
-# MIGRATION_POLICY.md — migracje, kopia zapasowa, cofanie (kartka: „Kopie i odtworzenie")
+# MIGRATION_POLICY.md — migracje, kopia zapasowa, cofanie (wymóg zamówienia: „Kopie i odtworzenie")
 
-> Kartka, sekcja 4: **„Backup przed wdrożeniem oraz możliwość cofnięcia migracji bazy na środowisku testowym."**
+> Wymóg zamówienia: **„Backup przed wdrożeniem oraz możliwość cofnięcia migracji bazy na środowisku testowym."**
 > Ten dokument opisuje jak działają migracje w 3 wtyczkach, jak zrobić backup PRZED wdrożeniem i jak
 > **cofnąć migrację na środowisku testowym**. Odnośnik z `DATABASE.md` §4 i `lib/mp-common/src/Migrations.php`.
 

@@ -1,6 +1,6 @@
 # DATABASE.md — kontrakt bazy danych (ZAMROŻONY)
 
-> Część kontraktu MP (`MP_CONTRACT_VERSION = 1`). Zmiana = świadoma decyzja + sweep po dokumentach
+> Część kontraktu MP (`MP_CONTRACT_VERSION = 1`). Zmiana = świadoma decyzja + przegląd dokumentów
 > i kodzie. Pełne DDL powstaje w migracjach; TEN dokument ustala tabele, właścicieli, kolumny
 > KONTRAKTOWE (te, na których wiszą mechanizmy międzypluginowe) i rygor techniczny.
 
@@ -32,35 +32,35 @@ patrz OWNERSHIP.md; pilnuje tego linter cudzych tabel w CI).
 | `wp_mp_customers` | spec, tabela bazowa (relacja 1) |
 | `wp_mp_service_cases` | spec, tabela bazowa (relacje 1‑3) |
 | `wp_mp_case_events` | spec, tabela bazowa (relacja 3: „nieusuwalny wpis w osi czasu sprawy") |
-| `wp_mp_messages` | spec P1.5: „konto klienta z … historią wiadomości" — rozmowa ≠ log audytu, wiadomości są redagowalne (RODO), events nietykalne |
-| `wp_mp_attachments` | spec T5/RODO: „limity typów i rozmiaru plików" + „zdefiniowana retencja załączników" — cron retencji chodzi po tej tabeli |
+| `wp_mp_messages` | wymóg zamówienia: „konto klienta z … historią wiadomości" — rozmowa ≠ log audytu, wiadomości są redagowalne (RODO), events nietykalne |
+| `wp_mp_attachments` | wymóg zamówienia/RODO: „limity typów i rozmiaru plików" + „zdefiniowana retencja załączników" — cron retencji chodzi po tej tabeli |
 | `wp_mp_consents` | spec RODO: „rejestr zgód" |
-| `wp_mp_srv_counters` | techniczna; spec P1.3: „automatyczne generowanie numeru sprawy" + sekcja 2: „unikalny numer sprawy" — licznik atomowy per rok (patrz §4) |
-| `wp_mp_rate_counters` | techniczna (migracja v2); spec P1.6: „ochrona formularza przed spamem, duplikatami" — atomowe liczniki rate‑limitu i rezerwacje dedup w oknach przesuwanych (dawne transienty przepuszczały równoległe żądania); klucze to HASHE (md5), zero PII; wygasłe wiersze sprząta cron retencji |
+| `wp_mp_srv_counters` | techniczna; wymóg zamówienia: „automatyczne generowanie numeru sprawy" + sekcja 2: „unikalny numer sprawy" — licznik atomowy per rok (patrz §4) |
+| `wp_mp_rate_counters` | techniczna (migracja v2); wymóg zamówienia: „ochrona formularza przed spamem, duplikatami" — atomowe liczniki rate‑limitu i rezerwacje dedup w oknach przesuwanych (dawne transienty przepuszczały równoległe żądania); klucze to HASHE (md5), zero PII; wygasłe wiersze sprząta cron retencji |
 
 ### Własność B — mp-warranty-registry (4)
 
 | Tabela | Uzasadnienie |
 |---|---|
 | `wp_mp_product_registry` | spec, tabela bazowa (relacja 2) |
-| `wp_mp_product_events` | spec P2.5: „historia zmian danych produktu i decyzji gwarancyjnych" |
-| `wp_mp_warranty_exceptions` | spec P2.4: „obsługa wyjątków gwarancyjnych zatwierdzanych przez uprawnionego administratora" — wyjątek ma STAN i cykl życia (active/revoked, ważność), stanu nie odczytuje się z event‑logu |
-| `wp_mp_import_jobs` | spec P2.1: „import … z pliku CSV" — import asynchroniczny porcjami wymaga trwałego stanu przebiegu (wznowienie po padnięciu) |
+| `wp_mp_product_events` | wymóg zamówienia: „historia zmian danych produktu i decyzji gwarancyjnych" |
+| `wp_mp_warranty_exceptions` | wymóg zamówienia: „obsługa wyjątków gwarancyjnych zatwierdzanych przez uprawnionego administratora" — wyjątek ma STAN i cykl życia (active/revoked, ważność), stanu nie odczytuje się z event‑logu |
+| `wp_mp_import_jobs` | wymóg zamówienia: „import … z pliku CSV" — import asynchroniczny porcjami wymaga trwałego stanu przebiegu (wznowienie po padnięciu) |
 
 ### Własność D — mp-workflow-automator (4)
 
 | Tabela | Uzasadnienie |
 |---|---|
-| `wp_mp_workflow_rules` | spec P3.1: „automatyczny przydział … według kategorii, kraju, języka lub priorytetu" — reguły konfigurowalne przez admina bez zmiany kodu |
-| `wp_mp_case_sla` | spec P3.4: „przypomnienie przed przekroczeniem terminu oraz eskalacja po przekroczeniu SLA" — księgowość terminów i markerów wysyłek (idempotencja sweepa) |
-| `wp_mp_case_checklists` | spec P3.5: „checklisty dla poszczególnych typów spraw" + krok 7: „pracownik realizuje checklistę" — stan odhaczeń per krok |
+| `wp_mp_workflow_rules` | wymóg zamówienia: „automatyczny przydział … według kategorii, kraju, języka lub priorytetu" — reguły konfigurowalne przez admina bez zmiany kodu |
+| `wp_mp_case_sla` | wymóg zamówienia: „przypomnienie przed przekroczeniem terminu oraz eskalacja po przekroczeniu SLA" — księgowość terminów i markerów wysyłek (idempotencja sweepa) |
+| `wp_mp_case_checklists` | wymóg zamówienia: „checklisty dla poszczególnych typów spraw" + krok 7: „pracownik realizuje checklistę" — stan odhaczeń per krok |
 | `wp_mp_workflow_events` | spec sekcja 1: „każdy plugin będzie posiadał … rejestr operacji istotnych" — rejestr operacji automatora |
 
 ## 2. Kolumny kontraktowe (minimum; pełne DDL w migracjach)
 
 **Każda tabela:** PK `id BIGINT UNSIGNED AUTO_INCREMENT` (wyjątki: `srv_counters.year` PK,
 `case_sla.case_id` PK) · `utf8mb4` z `get_charset_collate()` · czasy w **UTC** (konwersja do strefy
-witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
+witryny wyłącznie przy prezentacji).
 
 - **`wp_mp_customers`**: dane kontaktowe klienta · `anonymized_at` (flaga anonimizacji; wiersz
   i relacje ZOSTAJĄ) · powiązanie z kontem WP (odpinane przy anonimizacji).
@@ -101,7 +101,7 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   spacji/myślników — `MP\Common\Str::normalize_serial()`) · model · partia · `category`
   (VARCHAR(32) NOT NULL DEFAULT 'inne', KEY category; dodana migracją v2 addytywnie — istniejące
   wiersze => 'inne'; słownik audio/agd/elektronarzedzia/inne konfigurowalny filtrem
-  `mp_product_categories`; oś przydziału P3.1 przez hak `mp_product_category`) · `warranty_until`
+  `mp_product_categories`; oś przydziału przez hak `mp_product_category`) · `warranty_until`
   (INDEKS — filtry statusu SARGABLE: warunek na kolumnie, wartość z PHP w UTC) · `purchase_document`
   (pii_sensitive; indeks „invoice") · `purchase_date` · `source` (csv_import/manual) ·
   `import_job_id` · `archived` + `deleted_at/by` (soft delete; archived ORTOGONALNE do statusu
@@ -155,7 +155,7 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
    przez tabelę tymczasową → kopiowanie → RENAME **wyłącznie pod `.maintenance` lub
    `LOCK TABLES … WRITE`** + `DROP … IF EXISTS` osieroconej tabeli tymczasowej na starcie;
    szczegóły i rollback: MIGRATION_POLICY.md.
-5. Środowisko: MySQL 8 / MariaDB 10.6+ (spec T1); demo pinowane na MariaDB 11.8 LTS.
+5. Środowisko: MySQL 8 / MariaDB 10.6+ (wymóg zamówienia); demo pinowane na MariaDB 11.8 LTS.
 
 ## 4. Numer sprawy SRV/RRRR/NNNN — JEDEN algorytm
 
@@ -201,7 +201,7 @@ sprawach → duplikaty SRV po reinstalacji w tym samym roku).
 Erasery szukają po **EMAILU**, nie user_id (łapią sprawy bez konta). Sprawa aktywna / okno roszczeń →
 odroczenie EN BLOC z `items_retained` (żadnej częściowej anonimizacji). Pełna orkiestracja: OWNERSHIP.md.
 
-## 6. Kontrolowane usuwanie danych (kartka §2 „kontrolowane usuwanie" — B4)
+## 6. Kontrolowane usuwanie danych (wymóg zamówienia: „kontrolowane usuwanie")
 
 Dane NIE znikają twardo „z panelu jednym kliknięciem". Każda ścieżka usuwania jest kontrolowana:
 
@@ -212,7 +212,7 @@ Dane NIE znikają twardo „z panelu jednym kliknięciem". Każda ścieżka usuw
   wiersz **i** plik z dysku (twardo). Endpoint serwujący respektuje `deleted_at IS NULL`.
 - **RODO / anonimizacja klienta:** anonimizacja EN BLOC (odroczona przy aktywnej sprawie), redakcja PII w
   `messages`/`form_data`/`consents`, kasacja załączników klienta — orkiestracja w OWNERSHIP.md (§5 wyżej).
-- **Oś zdarzeń (`case_events`, `workflow_events`):** **append‑only, nieusuwalna** (kartka relacja 3 — „nieusuwalny
+- **Oś zdarzeń (`case_events`, `workflow_events`):** **append‑only, nieusuwalna** (wymóg zamówienia: „nieusuwalny
   wpis w osi czasu"). Zawiera wyłącznie zdarzenia NO‑PII / zredagowane.
 - **Odinstalowanie:** **opt‑in** — domyślnie dane ZOSTAJĄ (usuwane tylko role/opcje techniczne); tabele znikają
   dopiero po jawnym `mp_<plugin>_delete_data=1`. Test symetrii aktywacja↔uninstall (grep‑zero) w CI.
