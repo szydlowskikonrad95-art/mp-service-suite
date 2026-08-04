@@ -66,6 +66,11 @@ jobs:
       # Kontrola zaczepow idzie w OBIE strony — samo „z kodu do dokumentu" przepuscilo dwa widma.
       - name: Kontrakt i SECURITY zgodne z kodem (zero zaczepów-widm)
         run: bash testy/dokumenty/kontrakt-i-bezpieczenstwo-zgodne-z-kodem.sh
+      # Wersja wtyczki w naglowku, stalej, readme.txt i .pot musi byc TA SAMA.
+      # Ta sama klasa bledu zlapana dwa razy przypadkiem: .pot na 0.5.0 przy
+      # wtyczkach 1.3.11 (#253), potem .pot na 1.3.11 przy wtyczkach 1.3.12.
+      - name: Wersje zgodne we wszystkich czterech źródłach (3 wtyczki × 3 pary)
+        run: bash testy/dokumenty/wersje-zgodne-z-wtyczkami.sh
       - name: Linter cudzych tabel (tokenowy)
         run: php build/lint-cudze-tabele.php
 
