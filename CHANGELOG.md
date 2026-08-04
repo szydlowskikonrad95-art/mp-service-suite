@@ -70,6 +70,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 - **Dwa ekrany personelu mieszczą się w oknie przy powiększeniu 200%** na szerokości typowego
   monitora: panel automatyzacji i „Zgłoszenia niepotwierdzone" (dotąd wychodziły poza okno o 184
   i 165 pikseli przy 1280 px). ⚠️ **Część zarzutu zostaje otwarta** — patrz pomiar niżej.
+- **Pole listy powodów odrzucenia na ekranie „Ustawienia zgłoszeń" dostało nazwę dla czytnika
+  ekranu.** Naruszenie reguły `label` (waga krytyczna): pole nie miało ani `id`, ani etykiety
+  spiętej z kontrolką, więc czytnik czytał je jako pole bez nazwy — nagłówek i opis nad nim są
+  wyłącznie wizualne. **Znalezione własnym pomiarem na tym wydaniu**, wyszło dopiero dzięki
+  rozszerzeniu narzędzia na ekrany personelu. Zmiana obejmuje jedną linię, zachowanie bez zmian.
 - **Narzędzie badające dostępność sięga ekranów personelu i drukuje zakres badania.** Zawężenie
   siedziało w samym przyrządzie: badał wyłącznie trzy powierzchnie klienta, więc każde wydanie
   wychodziło „zielone", opisując część systemu i nie mówiąc, że to część.
@@ -80,19 +85,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   Zbadane **11 powierzchni, zero pominiętych**: trzy ekrany klienta i osiem ekranów personelu.
   - **Trzy ekrany klienta: zero naruszeń** (13, 7 i 7 zdanych reguł). Poprzednie badanie
     (1.3.6) też dawało zero, ale nie obejmowało zmian z tego wydania.
-  - **Siedem z ośmiu ekranów personelu: zero naruszeń.**
-  - 🔴 **Jedno naruszenie otwarte:** reguła `label` (waga krytyczna) na ekranie „Ustawienia
-    zgłoszeń" — pole tekstowe listy powodów odrzucenia nie ma etykiety spiętej z kontrolką
-    (`mp-service-intake/includes/Admin/SettingsScreen.php`). Znalezione **dopiero** dzięki
-    rozszerzeniu narzędzia na ekrany personelu.
+  - **Osiem ekranów personelu: zero naruszeń.**
+  - Pierwszy przebieg (przed naprawą) pokazał **jedno naruszenie** — regułę `label` na ekranie
+    „Ustawienia zgłoszeń". Poprawka opisana wyżej weszła w tym samym wydaniu, a **przebieg po niej
+    kończy się wynikiem „zero naruszeń w naszych powierzchniach"** i kodem powodzenia. Oba wydruki,
+    sprzed i po, zostają w repozytorium — żeby dało się je porównać, a nie tylko uwierzyć.
+    Ekran „Ustawienia zgłoszeń" ma po naprawie 10 zdanych reguł zamiast 5: brakująca etykieta
+    sprawiała, że część reguł nie miała czego badać.
   - Naruszenie w bloku nawigacji motywu WordPressa występuje na stronach publicznych i **nie
     pochodzi z naszego kodu** — tak samo jak w poprzednim badaniu.
 - **Pomiar mieszczenia się w oknie przy powiększeniu** (`testy/a11y/zoom200-panel.py`, z próbą
-  kontrolną na sąsiednim ekranie): panel automatyzacji przy 1280 px i 200% — zero nadmiaru.
-  🔴 **Otwarte:** przy 768 px z powiększeniem 200% nadmiar **167 px**, przy 390 px bez powiększenia
-  **78 px** — w obu punktach próba kontrolna ma zero, więc to wada tego ekranu, nie stanowiska.
-  Osobno: przy 1024 px i 200% poza okno wychodzą **oba** ekrany (176 i 185 px), czyli to szersza
-  sprawa produktu.
+  kontrolną na sąsiednim ekranie):
+  - **„Zgłoszenia niepotwierdzone" — czysto.** Nigdzie nie wychodzi poza okno tam, gdzie próba
+    kontrolna się mieści. ⚠️ Ten ekran **nie był wcześniej mierzony w ogóle** — narzędzie zna
+    tylko panel automatyzacji, więc zmierzyliśmy go osobno, tą samą metodą.
+  - 🔴 **Panel automatyzacji — otwarte.** Przy 1280 px i 200% zero nadmiaru, ale przy 768 px
+    z powiększeniem 200% nadmiar **167 px**, a przy 390 px bez powiększenia **78 px** — w obu
+    punktach próba kontrolna ma zero, więc to wada tego ekranu, nie stanowiska. **Pozycja 2.6
+    jest zamknięta w części, nie w całości**, i tak stoi też w raporcie dla klienta.
+  - ⚠️ Osobno: przy 1024 px i 200% poza okno wychodzą **wszystkie** mierzone ekrany, łącznie
+    z próbą kontrolną — to szersza sprawa układu panelu, nie tej pozycji.
 - Surowe wydruki obu przebiegów leżą w repozytorium: `audyt/pomiary-a11y-1312/` (katalog `audyt/`
   nie wchodzi do paczki dla klienta — jest dla osoby, która chce zweryfikować te liczby).
 

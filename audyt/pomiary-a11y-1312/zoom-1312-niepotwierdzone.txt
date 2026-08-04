@@ -1,0 +1,26 @@
+
+=== Zgloszenia niepotwierdzone
+       1280px @ 100%: 0 (mieści się)
+       1280px @ 200%: 0 (mieści się)
+       1024px @ 100%: 0 (mieści się)
+       1024px @ 200%: NADMIAR 176 px
+        768px @ 100%: 0 (mieści się)
+        768px @ 200%: 0 (mieści się)
+        390px @ 100%: 0 (mieści się)
+        390px @ 200%: NADMIAR 90 px
+
+=== Sprawy (proba kontrolna)
+       1280px @ 100%: 0 (mieści się)
+       1280px @ 200%: 0 (mieści się)
+       1024px @ 100%: 0 (mieści się)
+       1024px @ 200%: NADMIAR 185 px
+        768px @ 100%: 0 (mieści się)
+        768px @ 200%: 0 (mieści się)
+        390px @ 100%: 0 (mieści się)
+        390px @ 200%: NADMIAR 90 px
+
+{"Zgloszenia niepotwierdzone": {"1280px @ 100%": 0, "1280px @ 200%": 0, "1024px @ 100%": 0, "1024px @ 200%": 176, "768px @ 100%": 0, "768px @ 200%": 0, "390px @ 100%": 0, "390px @ 200%": 90}, "Sprawy (proba kontrolna)": {"1280px @ 100%": 0, "1280px @ 200%": 0, "1024px @ 100%": 0, "1024px @ 200%": 185, "768px @ 100%": 0, "768px @ 200%": 0, "390px @ 100%": 0, "390px @ 200%": 90}}
+
+⚠️ Punkty, w ktorych OBA ekrany wychodza poza okno (to nie jest wada wylacznie tego ekranu — zglosic osobno): 1024px @ 200% = 176 px, 390px @ 200% = 90 px
+
+✅ Nigdzie, gdzie proba kontrolna ma zero, ten ekran nie wychodzi poza okno.
