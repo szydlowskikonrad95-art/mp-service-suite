@@ -115,6 +115,21 @@ final class CaseEvents {
 	public const MAIL_SENT = 'MAIL_SENT';
 
 	/**
+	 * Klient zmienil swoje dane kontaktowe w panelu (audyt 2.49).
+	 *
+	 * Payload: {fields, actor} — WYLACZNIE NAZWY POL, ktore sie zmienily, nigdy
+	 * wartosci. Historia sprawy jest dziennikiem NO-PII (zelazna zasada tej klasy),
+	 * a numer telefonu jest dana osobowa — wpis ma odpowiadac na pytanie „czy i kiedy
+	 * numer sie zmienil", a nie przechowywac drugi raz to, co i tak stoi w kartotece.
+	 *
+	 * PO CO: serwis dzwonil pod numer, ktory klient w miedzyczasie zmienil, i nie
+	 * mial jak ustalic, ze zmiana w ogole zaszla. Trzy najwazniejsze zdarzenia tego
+	 * produktu (status, przydzial, priorytet) nios juz wartosc STARA i NOWA — tu
+	 * rozciagamy sam fakt zapisu, bez wartosci, bo tresc jest danymi osobowymi.
+	 */
+	public const CONTACT_UPDATED = 'CONTACT_UPDATED';
+
+	/**
 	 * Os czasu sprawy (append-only) — chronologicznie. Do karty sprawy personelu.
 	 *
 	 * @param int $case_id ID sprawy.
