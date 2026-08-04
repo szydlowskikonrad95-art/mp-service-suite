@@ -12,6 +12,7 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\Assets;
 use MP\Intake\FormConfig;
 use MP\Intake\Validator;
 
@@ -154,8 +155,9 @@ final class FormRenderer {
 	 * Config pol per rodzaj idzie czysto przez wp_localize_script (JSON w
 	 * `window.mpIntakeForm`); JS TYLKO pokazuje/ukrywa pola i toggluje
 	 * `required` — zero oslabienia walidacji serwerowej (fields_for(kind)
-	 * waliduje na submit niezaleznie). Wersjonowanie po MP_INTAKE_VERSION
-	 * (bump wersji = nowy ?ver — uniknij starego cache).
+	 * waliduje na submit niezaleznie). Wersjonowanie przez `Assets::ver()` —
+	 * wersja wtyczki PLUS znacznik czasu pliku, wiec poprawka samego skryptu
+	 * dociera do przegladarek nawet bez podbicia wersji wtyczki (2.41).
 	 *
 	 * @return void
 	 */
@@ -174,7 +176,7 @@ final class FormRenderer {
 			'mp-intake-form',
 			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/js/intake-form.js',
 			array(),
-			MP_INTAKE_VERSION,
+			Assets::ver( 'assets/js/intake-form.js' ),
 			true
 		);
 
@@ -203,8 +205,9 @@ final class FormRenderer {
 	 * Wpina arkusz stylu frontu Intake (formularz + panel klienta).
 	 *
 	 * Wspoldzielony przez FormRenderer (formularz) i AccountPage (panel) —
-	 * jeden handle, wp_enqueue_style idempotentne. Wersjonowanie po
-	 * MP_INTAKE_VERSION (bump = nowy ?ver). Sam wyglad, zero logiki.
+	 * jeden handle, wp_enqueue_style idempotentne. Wersjonowanie przez
+	 * `Assets::ver()` (wersja wtyczki + znacznik czasu pliku, 2.41) — korzysta
+	 * z tego takze panel klienta, ktory wola te metode. Sam wyglad, zero logiki.
 	 *
 	 * @return void
 	 */
@@ -213,7 +216,7 @@ final class FormRenderer {
 			'mp-intake',
 			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/css/intake.css',
 			array(),
-			MP_INTAKE_VERSION
+			Assets::ver( 'assets/css/intake.css' )
 		);
 	}
 

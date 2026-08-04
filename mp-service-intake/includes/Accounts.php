@@ -67,7 +67,10 @@ final class Accounts {
 	public static function ensure_for_customer( int $customer_id, string $email ): int {
 		$email = sanitize_email( $email );
 
-		if ( '' === $email || ! is_email( $email ) ) {
+		// 2.4 (b): dlugosc tak samo jak ksztalt. Kolumna `customers.email` to
+		// VARCHAR(190) — konto zalozone na dluzszym adresie i tak by sie nie
+		// zapisalo, a blad wyszedlby z bazy, nie z walidacji.
+		if ( '' === $email || null !== Validator::validate_email( $email ) ) {
 			return 0;
 		}
 
