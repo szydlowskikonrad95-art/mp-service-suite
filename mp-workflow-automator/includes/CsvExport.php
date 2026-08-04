@@ -174,6 +174,7 @@ final class CsvExport {
 			'by_status' => array(),
 			'by_reason' => array(),
 			'closed'    => 0,
+			'timed'     => 0,
 			'sum_sec'   => 0,
 		);
 		$page = 1;
@@ -234,8 +235,27 @@ final class CsvExport {
 		self::put_row( $out, array( '' ) );
 		self::put_row( $out, array( __( 'Czas obsługi (sprawy zamknięte)', 'mp-workflow-automator' ) ) );
 		self::put_row( $out, array( __( 'Liczba spraw zamkniętych', 'mp-workflow-automator' ), (string) $summary['closed_count'] ) );
+		self::put_row( $out, array( __( 'W tym z policzonym czasem obsługi', 'mp-workflow-automator' ), (string) $summary['timed_count'] ) );
 		self::put_row( $out, array( __( 'Średni czas obsługi (godz.)', 'mp-workflow-automator' ), $summary['avg_hours'] ) );
 		self::put_row( $out, array( __( 'Łączny czas obsługi (godz.)', 'mp-workflow-automator' ), $summary['total_hours'] ) );
+
+		// Roznica MUSI byc nazwana w samym pliku — koordynator czyta CSV bez nas.
+		$bez_czasu = (int) $summary['closed_count'] - (int) $summary['timed_count'];
+		if ( $bez_czasu > 0 ) {
+			self::put_row(
+				$out,
+				array(
+					__( 'Sprawy zamknięte bez policzonego czasu obsługi', 'mp-workflow-automator' ),
+					(string) $bez_czasu,
+				)
+			);
+			self::put_row(
+				$out,
+				array(
+					__( 'Brak znacznika zmiany statusu albo znacznik wcześniejszy niż data utworzenia sprawy. Sprawy te liczą się do liczby zamkniętych i do rozkładu po statusach, ale nie wchodzą do średniego ani łącznego czasu obsługi.', 'mp-workflow-automator' ),
+				)
+			);
+		}
 
 		self::put_row( $out, array( '' ) );
 		self::put_row( $out, array( __( 'Rozkład powodów odrzuceń', 'mp-workflow-automator' ) ) );
@@ -275,8 +295,26 @@ final class CsvExport {
 		++$acc['by_status'][ $status ];
 
 		$handling = $sprawa['handling_seconds'] ?? null;
-		if ( null !== $handling ) {
+
+		/*
+		 * DWIE ROZNE WIELKOSCI, wczesniej liczone jako jedna (2.50):
+		 *  * `closed` — sprawa ZAMKNIETA. Kontrakt `mp_cases_query` oddaje `closed_at`
+		 *    wtedy i tylko wtedy, gdy status jest terminalny, wiec to ta sama sprawa,
+		 *    ktora w rozkladzie po statusach stoi przy statusie zamknietym.
+		 *  * `timed` — sprawa, dla ktorej DALO SIE policzyc czas obslugi. Czas zostaje
+		 *    pusty przy braku znacznika zmiany statusu albo gdy znacznik wypada PRZED
+		 *    data utworzenia (uszkodzone/cofniete dane).
+		 *
+		 * Do sredniej i sumy godzin wchodzi tylko `timed` — i tak ma byc. Ale wiersz
+		 * „Liczba spraw zamknietych" mial dotad wartosc `timed`, wiec przy anomalii
+		 * czasu pokazywal mniej, niz rozklad po statusach — bez slowa wyjasnienia.
+		 */
+		if ( '' !== (string) ( $sprawa['closed_at'] ?? '' ) || null !== $handling ) {
 			++$acc['closed'];
+		}
+
+		if ( null !== $handling ) {
+			$acc['timed']    = (int) ( $acc['timed'] ?? 0 ) + 1;
 			$acc['sum_sec'] += (int) $handling;
 		}
 
@@ -296,13 +334,17 @@ final class CsvExport {
 	 */
 	private static function summary_finish( array $acc ): array {
 		$closed  = (int) $acc['closed'];
+		$timed   = (int) ( $acc['timed'] ?? 0 );
 		$sum_sec = (int) $acc['sum_sec'];
 
 		return array(
 			'total'        => (int) $acc['total'],
 			'by_status'    => (array) $acc['by_status'],
 			'closed_count' => $closed,
-			'avg_hours'    => $closed > 0 ? self::hours( (int) round( $sum_sec / $closed ) ) : '',
+			'timed_count'  => $timed,
+			// Srednia dzieli sie przez liczbe spraw Z CZASEM, nie przez liczbe
+			// zamknietych — sprawa bez czasu nie ma czego wniesc do sredniej.
+			'avg_hours'    => $timed > 0 ? self::hours( (int) round( $sum_sec / $timed ) ) : '',
 			'total_hours'  => self::hours( $sum_sec ),
 			'by_reason'    => (array) $acc['by_reason'],
 		);
