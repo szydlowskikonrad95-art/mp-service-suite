@@ -1,6 +1,6 @@
 <?php
 /**
- * Panel admina automatora (klocek D) — pierwszy ekran menu wtyczki.
+ * Panel admina automatora (moduł D) — pierwszy ekran menu wtyczki.
  *
  * TU `add_menu_page` JEST wlasciwe: to menu spina istniejace handlery
  * backend-only (Przelicz SLA — SlaRecalcAction; Eksport CSV — CsvExport) oraz

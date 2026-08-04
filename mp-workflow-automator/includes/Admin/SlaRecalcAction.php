@@ -34,7 +34,7 @@ final class SlaRecalcAction {
 
 	/**
 	 * Wymagana capability — WASKO: przeliczenie WSZYSTKICH terminow to operacja
-	 * poziomu system-config, nie codzienna robota koordynatora (decyzja straznika).
+	 * poziomu system-config, nie codzienna robota koordynatora (decyzja testu pilnujacego).
 	 */
 	public const CAP = 'mp_system_admin';
 

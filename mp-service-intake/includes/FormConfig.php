@@ -12,7 +12,7 @@
  * opcja `mp_intake_form_config` byla tylko CZYTANA (`fields_for`), a zapisu nie
  * bylo nigdzie — ani ekranu, ani polecenia wiersza polecen.
  *
- * Zamawiajacy edytowania pol z panelu NIE zamawial (kartka wymaga „wymaganych pol
+ * Zamawiajacy edytowania pol z panelu NIE zamawial (specyfikacja wymaga „wymaganych pol
  * i zalacznikow zaleznych od kategorii produktu" — to robia `category_fields`
  * i `attachments_for`), wiec ekranu nie dokladamy. Nadpisanie zostaje jako furtka
  * dla WDROZENIOWCA: ustawia sie ja programowo albo z wiersza polecen, np.
@@ -51,7 +51,7 @@ final class FormConfig {
 
 	/**
 	 * Dozwolone kategorie produktu (spojne z Registry\Categories — slownik klepniety 21.07).
-	 * Formularz P1.2: pola zaleza od WYBRANEJ kategorii (kartka). Pusta = brak kategorii (fallback).
+	 * Formularz P1.2: pola zaleza od WYBRANEJ kategorii (specyfikacja). Pusta = brak kategorii (fallback).
 	 */
 	public const CATEGORY_SLUGS = array( 'audio', 'agd', 'elektronarzedzia', 'inne' );
 
@@ -417,7 +417,7 @@ final class FormConfig {
 	/**
 	 * Domyslne reguly ZALACZNIKOW per kategoria (druga polowa P1.2).
 	 *
-	 * Kartka, Plugin 1: „wymagane pola I ZALACZNIKI zalezne od wybranej
+	 * Specyfikacja, Plugin 1: „wymagane pola I ZALACZNIKI zalezne od wybranej
 	 * kategorii produktu". Pola robil `category_fields()` od poczatku,
 	 * zalaczniki NIE — we wszystkich kategoriach byly identyczne i zawsze
 	 * opcjonalne (wlasny GAP-TRACKER trzymal P1.2 na 🔨, nie ✅).

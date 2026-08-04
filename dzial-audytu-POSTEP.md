@@ -37,7 +37,7 @@ trzeba będzie pisać dwa razy. Zaczynać na świeżym kontekście — to nie je
 
 ## DECYZJE PODJĘTE PRZY NAPRAWIE (ślad, bo kształtują produkt)
 1. **Pole imienia jest WYMAGANE.** Opcjonalne zostawiłoby wadę 2.55 tylko częściowo zamkniętą
-   (puste nazwisko = ochrona przed sklejeniem osób znowu nie startuje). Kartka pola nie wymaga,
+   (puste nazwisko = ochrona przed sklejeniem osób znowu nie startuje). Specyfikacja pola nie wymaga,
    ale też go nie zakazuje; wada była nasza, więc zamykamy ją u korzenia.
 2. **Konto WordPressa nie nosi danych osobowych W OGÓLE** — ani e-maila, ani nazwiska.
    Alternatywa („wpisujmy nazwisko zamiast adresu") zamieniłaby wyciek adresu na wyciek

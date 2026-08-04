@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD (2.38, czesc rejestru): historia egzemplarza jest HISTORIA, nie licznikiem.
 #
-# Kartka, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
+# Specyfikacja, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
 # Do 1.3.12 dziennik `wp_mp_product_events` byl ZAPISYWANY I NIGDY NIECZYTANY —
 # w calym produkcie nie bylo ani jednego SELECT-a z tej tabeli. Ekran poprawiania
 # danych obiecywal wprost „zmiana zapisuje sie w historii produktu: kto, kiedy

@@ -50,7 +50,7 @@ final class ProductsScreen {
 		// WordPress konczy wlasnym 400 („nieprawidlowe zadanie"), a reszta naszych endpointow
 		// oddaje 403. Macierz bezpieczenstwa wymaga 403 wszedzie — zlapane przez CI.
 		add_action( 'admin_post_nopriv_mp_product_edit', array( self::class, 'handle_edit' ) );
-		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep DoD sekcja 3).
+		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep kryteria odbioru sekcja 3).
 		add_action( 'admin_post_nopriv_mp_product_archive', array( self::class, 'handle_archive' ) );
 		add_action( 'admin_post_nopriv_mp_product_restore', array( self::class, 'handle_restore' ) );
 	}
@@ -251,7 +251,7 @@ final class ProductsScreen {
 	}
 
 	/**
-	 * Widok poprawiania danych produktu (kartka: „historia zmian danych produktu").
+	 * Widok poprawiania danych produktu (specyfikacja: „historia zmian danych produktu").
 	 *
 	 * Numer seryjny pokazujemy, ale tylko do odczytu — jest kluczem, po ktorym sprawy
 	 * trzymaja sie produktu (patrz `Repo::EDITABLE_FIELDS`).
@@ -372,7 +372,7 @@ final class ProductsScreen {
 	}
 
 	/**
-	 * Widok historii egzemplarza (kartka: „historia zmian danych produktu
+	 * Widok historii egzemplarza (specyfikacja: „historia zmian danych produktu
 	 * i decyzji gwarancyjnych").
 	 *
 	 * ⛔ Dziennik `wp_mp_product_events` byl do 1.3.12 zapisywany i nieczytany —

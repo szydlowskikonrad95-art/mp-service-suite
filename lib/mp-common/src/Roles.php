@@ -37,7 +37,7 @@ final class Roles {
 	 * takze po awaryjnym zdjeciu rol; runda W: aktywacja zawsze odtwarza).
 	 *
 	 * Kazda rola niesie wlasna cap-marke (kod sprawdza WYLACZNIE capability,
-	 * nigdy nazwe roli). To minimalny zestaw pod klocek B; pelna macierz
+	 * nigdy nazwe roli). To minimalny zestaw pod moduł B; pelna macierz
 	 * uprawnien doprecyzuje SECURITY.md (D2) — rozszerzenie, nie przebudowa.
 	 *
 	 * @return void

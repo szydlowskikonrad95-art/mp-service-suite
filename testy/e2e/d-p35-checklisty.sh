@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZYWY DOWOD P3.5 (checklisty per typ + szablony odpowiedzi, klocek D):
+# ZYWY DOWOD P3.5 (checklisty per typ + szablony odpowiedzi, moduł D):
 # (a) checklist per rodzaj + toggle przez hook C dziala i egzekwuje ownership
 #     (obcy agent NIE zatwierdzi cudzej sprawy — C blokuje, D nie zapisuje),
 # (b) event CHECKLIST_ITEM_TOGGLED na osi + stan w case_checklists (label zamrozony),

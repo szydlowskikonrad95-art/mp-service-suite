@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev.
+# kryteria odbioru C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev.
 # Instaluj z ZIP -> aktywuj 3 w odwrotnej kolejnosci -> klik kluczowych ekranow
 # z WP_DEBUG -> deaktywuj -> uninstall (opt-in) -> grep-zero (tabele/opcje/role).
 # + integralnosc ZIP (zero plikow dev) + wersja spojna (header == readme Stable tag).

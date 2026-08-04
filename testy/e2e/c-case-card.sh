@@ -53,7 +53,7 @@ STRUCT=$(wp eval "\$r=MP\\Intake\\CaseEvents::for_case($CID); \$x=\$r[0]; echo (
 FIRST=$(wp eval "\$r=MP\\Intake\\CaseEvents::for_case($CID); echo \$r[0]['event_type'];" 2>/dev/null)
 [ "$FIRST" = "CASE_CREATED" ] && ok "for_case: pierwsze zdarzenie = CASE_CREATED (chronologicznie)" || bad "for_case pierwsze zle ($FIRST)"
 HASSC=$(wp eval "\$r=MP\\Intake\\CaseEvents::for_case($CID); echo in_array('STATUS_CHANGED', array_column(\$r,'event_type'), true)?'1':'0';" 2>/dev/null)
-[ "$HASSC" = "1" ] && ok "for_case: STATUS_CHANGED obecne po zmianie statusu (kartka: 'kazda decyzja w historii')" || bad "for_case brak STATUS_CHANGED ($HASSC)"
+[ "$HASSC" = "1" ] && ok "for_case: STATUS_CHANGED obecne po zmianie statusu (specyfikacja: 'kazda decyzja w historii')" || bad "for_case brak STATUS_CHANGED ($HASSC)"
 ORD=$(wp eval "\$r=MP\\Intake\\CaseEvents::for_case($CID); echo (\$r[0]['created_at'] <= \$r[count(\$r)-1]['created_at'])?'1':'0';" 2>/dev/null)
 [ "$ORD" = "1" ] && ok "for_case: created_at niemalejaco (ASC)" || bad "for_case kolejnosc zla ($ORD)"
 

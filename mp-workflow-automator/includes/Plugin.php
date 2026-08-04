@@ -88,7 +88,7 @@ final class Plugin {
 		ResponseTemplates::register();
 
 		// READ-API D->C dla karty sprawy personelu (C): stan checklisty, szablony
-		// odpowiedzi, termin SLA jako filtry kontraktowe (kartka krok 7).
+		// odpowiedzi, termin SLA jako filtry kontraktowe (specyfikacja krok 7).
 		CaseCardApi::register();
 
 		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)

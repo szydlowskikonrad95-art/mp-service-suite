@@ -7,7 +7,7 @@
 #       („wyslalismy link") takze wtedy, gdy mail nie wyszedl — czekal na link,
 #       ktory nie mial prawa przyjsc, a zgloszenie umieralo niepotwierdzone;
 #   (b) po klikanieciu linku klient slyszal, ze numer sprawy poszedl mailem —
-#       a numer poznaje WYLACZNIE z tego maila (krok 6 kartki);
+#       a numer poznaje WYLACZNIE z tego maila (krok 6 specyfikacji);
 #   (c) personel na ekranie „Niepotwierdzone" widzial takie zgloszenie
 #       NIEODROZNIALNIE od udanego, a po kliknieciu „Wyslij ponownie" dostawal
 #       „wyslany ponownie" nawet gdy poczta znowu odmowila.
@@ -209,7 +209,7 @@ wp db query "UPDATE wp_mp_case_events SET created_at='2026-01-01 00:00:00' WHERE
 	|| bad "oznaczenie nie zapala sie po kolejnej awarii — kontrola odwrotna padla"
 
 # ── 4b. POTWIERDZENIE przy padnietej poczcie: prawda BEZ numeru sprawy ──────
-# Numer SRV wychodzi wylacznie mailem albo panelem (krok 6 kartki, pilnuje C3).
+# Numer SRV wychodzi wylacznie mailem albo panelem (krok 6 specyfikacji, pilnuje C3).
 # Pierwsza wersja tej poprawki pokazywala numer na ekranie „skoro mail nie
 # wyszedl" — i C3 od razu ja zlapal. Zmiana tamtej reguly to decyzja wlasciciela
 # produktu, nie skutek uboczny naprawy komunikatu. Ta kontrola pilnuje obu rzeczy

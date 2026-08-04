@@ -33,7 +33,7 @@ EKSPORT=$(ev "\$w = MP\\Intake\\Privacy::export('$EMAIL');
 	}
 	echo \$t;")
 
-# to, co juz dzialalo — straznik regresji
+# to, co juz dzialalo — test pilnujacy regresji
 case "$EKSPORT" in *"$EMAIL"*) ok "eksport zawiera e-mail" ;; *) bad "eksport BEZ e-maila" ;; esac
 case "$EKSPORT" in *"Klient Eksport"*) ok "eksport zawiera imie i nazwisko" ;; *) bad "eksport BEZ imienia" ;; esac
 case "$EKSPORT" in *SRV/*) ok "eksport zawiera numer sprawy" ;; *) bad "eksport BEZ numeru sprawy" ;; esac

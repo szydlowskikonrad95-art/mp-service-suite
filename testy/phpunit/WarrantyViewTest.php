@@ -2,7 +2,7 @@
 /**
  * Testy: JAKI status gwarancji widzi pracownik na karcie sprawy.
  *
- * Kartka P2.2 wymaga czterech statusow, w tym „wymagana weryfikacja". Karta
+ * Specyfikacja P2.2 wymaga czterech statusow, w tym „wymagana weryfikacja". Karta
  * sprawy pokazywala jednak status liczony NA ZYWO z samej daty gwarancji
  * (`Repo::details_for` wola `WarrantyStatus::compute( ..., null, null )`),
  * a nie decyzje zapisana przy zgloszeniu. Skutek na zywym systemie:

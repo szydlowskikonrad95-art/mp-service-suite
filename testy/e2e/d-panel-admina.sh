@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZYWY DOWOD: panel admina automatora (klocek D) — menu + wpiecie handlerow.
+# ZYWY DOWOD: panel admina automatora (moduł D) — menu + wpiecie handlerow.
 #  (a) menu WIDOCZNE dla system_admin/koordynatora/admina WP, NIEWIDOCZNE dla
 #      subscribera/anona (add_menu_page: cap = ten ktory user MA; klient nie ma zadnego),
 #  (b) przycisk „Przelicz SLA” obecny w panelu TYLKO dla system_admin + poprawny

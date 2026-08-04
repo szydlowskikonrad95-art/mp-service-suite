@@ -4,7 +4,7 @@
  *
  * Szablony w C z kotwicami (C degraded bez D — nie zalezy od szablonow D).
  * Magic-link: token w URL, GET na endpoint weryfikacji. 2. mail (po weryfikacji)
- * niesie NUMER SRV (krok 6 kartki) — SRV ujawniany dopiero po potwierdzeniu.
+ * niesie NUMER SRV (krok 6 specyfikacji) — SRV ujawniany dopiero po potwierdzeniu.
  *
  * @package MP\Intake
  */
