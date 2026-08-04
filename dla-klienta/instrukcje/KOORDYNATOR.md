@@ -64,6 +64,16 @@ wysyłkę dla tej samej sprawy można wywołać **raz na 5 minut**.
   w treściach działają wyłącznie markery z listy pod edytorem (np. `{{numer_sprawy}}`,
   `{{status}}`) — inne są pomijane.
 
+## 3a. Notatki wewnętrzne — co zespół musi o nich wiedzieć
+
+Notatka wewnętrzna przy sprawie jest niewidoczna w panelu klienta i **nie idzie do niego mailem** —
+służy do uwag dla kolegi (podejrzenie ingerencji, ustalenia co do wyceny, kontekst rozmowy).
+
+🔴 **Ale klient może ją przeczytać.** Wniosek o dostęp do danych (art. 15 RODO) obejmuje także
+**opinie o osobie**, więc notatka o kliencie jest jego daną i **wchodzi do paczki**, którą
+administrator wydaje na taki wniosek. **Powiedz to zespołowi wprost:** notatka ma być rzeczowa
+i dotyczyć sprawy, a nie zawierać ocen, których nie da się obronić w oczy.
+
 ## 4. Terminy zespołu (SLA)
 
 - Przypomnienia przed terminem idą do przypisanego pracownika; **eskalacje po terminie — do
