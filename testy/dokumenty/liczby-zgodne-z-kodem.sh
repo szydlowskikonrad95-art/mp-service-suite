@@ -10,10 +10,56 @@
 # zmianie. Dlatego bramka jest maszyna: liczbe bierzemy Z KODU i szukamy jej
 # w dokumentach. Rozjazd = czerwone CI, zanim zobaczy to klient.
 #
+# ⛔ CO TA BRAMKA POKRYWA, A CZEGO NIE — czytaj, ZANIM uznasz zielony wynik za dowod.
+# Nazwa („liczby w dokumentach zgodne z kodem") i zielony wynik sugeruja pokrycie
+# PELNE. Nie jest pelne i nigdy nie bylo. Kontrola wybiorcza, ktora wyglada na
+# calosciowa, jest grozniejsza niz brak kontroli, bo wytwarza zaufanie (poz. 2.36).
+#
+# POKRYTE (liczba brana Z KODU i szukana w dokumentach):
+#   · liczba tabel, statusow rdzenia, rodzajow spraw, testow diagnostyki,
+#   · retencja zgloszen niepotwierdzonych (dni), okno potwierdzenia (h),
+#   · WAZNOSC LINKU potwierdzajacego (TOKEN_TTL_HOURS) — w INSTRUKCJA-KLIENTA.md
+#     i KOORDYNATOR.md, ze sprawdzeniem, ze zdanie o niej w ogole istnieje,
+#   · minimalna wersja PHP, progi ochrony formularza (e-mail / serial / IP),
+#   · nazwy rol i statusow w dokumentach ORAZ w napisach na ekranach,
+#   · brak obietnic bez pokrycia (komendy i funkcje, ktorych kod nie ma),
+#   · liczba kontroli deklarowana w JAKOSC-I-AUDYTY.md (pilnuje sie sama).
+#
+# ⛔ NIEPOKRYTE — tu bramka NIE POWIE ANI SLOWA:
+#   · godziny terminow SLA per status (konfigurowalne od 1.3.12 — dokumenty podaja
+#     je jako PRZYKLAD „np. 24 godziny", wiec twardego zrodla prawdy nie ma),
+#   · tresci szablonow wiadomosci i ich liczba,
+#   · zrzuty ekranu i to, co na nich widac (maszyna nie oceni obrazka),
+#   · zgodnosc instrukcji z UKLADEM ekranu (nazwy przyciskow czesciowo, reszta nie),
+#   · liczby w dokumentach POZA lista plikow wymieniona w tym skrypcie.
+#
 # Uruchomienie z katalogu repo:  bash testy/dokumenty/liczby-zgodne-z-kodem.sh
 set -u
 
 PASS=0; FAIL=0
+
+# Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
+# w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
+# prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
+#
+# ⛔ TA LICZBA JEST ZMIERZONA, NIE OSZACOWANA. Stan na 4.08.2026, na scalonym `main`
+# (po #254): pelny przebieg wykonal 56 kontroli — policzone dwa razy, niezaleznie:
+# licznikiem samego skryptu (PASS+FAIL) i zliczeniem wierszy wydruku
+# (`bash testy/dokumenty/liczby-zgodne-z-kodem.sh | grep -cE '^  (OK|FAIL)'`).
+# Wczesniej stalo 44 przy 55 wykonywanych — czyli byl luz na JEDENASCIE kontroli,
+# ktore mogly cicho zniknac, a straznik by tego nie zobaczyl. Prog ma stac
+# DOKLADNIE na liczbie wykonywanych, bo inaczej pilnuje sam siebie, nie kontroli.
+#
+# ⚠️ CZESC KONTROLI JEST WARUNKOWA — odpalaja sie tylko, gdy w dokumencie stoi
+# konkretna fraza albo gdy w kodzie czegos NIE MA. Przeformulowanie zdania
+# w dokumencie albo dolozenie czegos do kodu WYLACZY taka kontrole i ten straznik
+# zaswieci na czerwono. To jest zamierzone: znikniecie kontroli ma byc widoczne,
+# a nie ciche. Gdy zniknieta kontrola jest uzasadniona — zmien te liczbe i dopisz
+# w komentarzu, ktora to i dlaczego.
+#
+# PO DOLOZENIU KONTROLI: uruchom bramke, przepisz nowa liczbe TUTAJ. Nie zgaduj.
+MIN_KONTROLI=56
+
 ok()  { PASS=$((PASS+1)); echo "  OK   $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  FAIL $1"; }
 
@@ -422,29 +468,24 @@ if grep -q "35 z 39" "$RUBRYKA" 2>/dev/null; then
 fi
 
 echo
+# ── 2.36: liczba kontroli w DOKUMENCIE = liczba pilnowana przez te bramke ───
+# `JAKOSC-I-AUDYTY.md` opisuje te bramke z liczby („N kontroli"). Liczba stala tam
+# nieaktualna — a to jest DOKLADNIE ta klasa bledu, ktorej ta bramka pilnuje:
+# liczba w dokumencie niezgodna z kodem, w dokumencie o tej wlasnie bramce.
+# Teraz pilnuje sie sama: zrodlem prawdy jest MIN_KONTROLI, czyli liczba ZMIERZONA.
+DOK_JAKOSC=dokumentacja-techniczna/JAKOSC-I-AUDYTY.md
+LICZBA_W_DOK=$(grep -ohiE "[0-9]+ kontrol[a-zęąićó]*" "$DOK_JAKOSC" 2>/dev/null | grep -oE "^[0-9]+" | head -1)
+if [ -z "$LICZBA_W_DOK" ]; then
+	bad "JAKOSC-I-AUDYTY: nie znalazlem ANI JEDNEJ liczby kontroli — wzorzec przestal pasowac (proba kontrolna)"
+elif [ "$LICZBA_W_DOK" = "$MIN_KONTROLI" ]; then
+	ok "JAKOSC-I-AUDYTY: liczba kontroli w dokumencie ($LICZBA_W_DOK) zgodna z bramka"
+else
+	bad "JAKOSC-I-AUDYTY: dokument mowi $LICZBA_W_DOK kontroli, a bramka pilnuje $MIN_KONTROLI"
+fi
+
+echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
-# Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
-# w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
-# prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-#
-# ⛔ TA LICZBA JEST ZMIERZONA, NIE OSZACOWANA. Stan na 4.08.2026, na scalonym `main`
-# (po #254): pelny przebieg wykonal 55 kontroli — policzone dwa razy, niezaleznie:
-# licznikiem samego skryptu (PASS+FAIL) i zliczeniem wierszy wydruku
-# (`bash testy/dokumenty/liczby-zgodne-z-kodem.sh | grep -cE '^  (OK|FAIL)'`).
-# Wczesniej stalo 44 przy 55 wykonywanych — czyli byl luz na JEDENASCIE kontroli,
-# ktore mogly cicho zniknac, a straznik by tego nie zobaczyl. Prog ma stac
-# DOKLADNIE na liczbie wykonywanych, bo inaczej pilnuje sam siebie, nie kontroli.
-#
-# ⚠️ CZESC KONTROLI JEST WARUNKOWA — odpalaja sie tylko, gdy w dokumencie stoi
-# konkretna fraza albo gdy w kodzie czegos NIE MA. Przeformulowanie zdania
-# w dokumencie albo dolozenie czegos do kodu WYLACZY taka kontrole i ten straznik
-# zaswieci na czerwono. To jest zamierzone: znikniecie kontroli ma byc widoczne,
-# a nie ciche. Gdy zniknieta kontrola jest uzasadniona — zmien te liczbe i dopisz
-# w komentarzu, ktora to i dlaczego.
-#
-# PO DOLOZENIU KONTROLI: uruchom bramke, przepisz nowa liczbe TUTAJ. Nie zgaduj.
-MIN_KONTROLI=55
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
