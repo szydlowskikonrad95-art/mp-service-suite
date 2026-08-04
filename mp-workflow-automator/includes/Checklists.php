@@ -123,23 +123,33 @@ final class Checklists {
 			? $wpdb->prepare( '%d, %s', get_current_user_id(), $now )
 			: 'NULL, NULL';
 
+		// ⛔ Ta sama para wartosci MUSI wrocic w klauzuli aktualizacji. Wczesniej brala
+		// ja funkcja VALUES(), WYCOFANA w MySQL 8.0.20 — a zamowienie dopuszcza MySQL 8
+		// rownorzednie z MariaDB. Zamiennik z aliasem wiersza (`AS nowy`) odpada, bo
+		// MariaDB go NIE ZNA; przenosna jest tylko ta droga: podac wartosc drugi raz.
+		$meta_update = $done
+			? $wpdb->prepare( 'completed_by = %d, completed_at = %s', get_current_user_id(), $now )
+			: 'completed_by = NULL, completed_at = NULL';
+
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$table}
 					(case_id, template_id, step_key, step_label, completed, completed_by, completed_at, created_at, updated_at)
 				VALUES (%d, %s, %s, %s, %d, {$meta_sql}, %s, %s)
 				ON DUPLICATE KEY UPDATE
-					step_label = VALUES(step_label),
-					completed = VALUES(completed),
-					completed_by = VALUES(completed_by),
-					completed_at = VALUES(completed_at),
-					updated_at = VALUES(updated_at)",
+					step_label = %s,
+					completed = %d,
+					{$meta_update},
+					updated_at = %s",
 				$case_id,
 				$kind,
 				$step_key,
 				$label,
 				$done ? 1 : 0,
 				$now,
+				$now,
+				$label,
+				$done ? 1 : 0,
 				$now
 			)
 		);
