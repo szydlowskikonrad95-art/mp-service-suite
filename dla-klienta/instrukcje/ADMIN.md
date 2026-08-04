@@ -111,6 +111,11 @@ w historii produktu.
   ustalić, czyja to była sprawa. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
 - **Wspólny adres wielu osób** (sekretariat): narzędzie WordPressa „Usuń dane osobowe" działa po adresie e-mail i obejmie wszystkie kartoteki
   z tego adresu — przed uruchomieniem potwierdź tożsamość i zakres wniosku.
+- 🔴 **Notatki wewnętrzne personelu WCHODZĄ do paczki wydawanej klientowi.** Wniosek o dostęp
+  do danych (art. 15 RODO) obejmuje także **opinie o osobie**, więc notatka pracownika o kliencie
+  jest daną tego klienta i musi zostać wydana — w paczce jest opisana jako *„notatka wewnętrzna
+  personelu (nie była wysyłana do klienta)"*. **Uprzedź o tym zespół**: notatka jest niewidoczna
+  w panelu klienta i nie idzie mailem, ale **przy wniosku RODO klient ją przeczyta**.
 - Retencja załączników i sprzątanie danych tymczasowych chodzą automatycznie (cron).
 
 ## 5. Utrzymanie
