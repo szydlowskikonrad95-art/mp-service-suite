@@ -599,19 +599,72 @@ final class Attachments {
 	/**
 	 * Cron retencji: kasuje zalaczniki po retention_until (wiersz + plik).
 	 *
+	 * ⛔ SPRAWA ZYWA NIE TRACI DOWODOW (cz.1 pkt 2, waga duza). Zapytanie NIE MIALO
+	 * zadnego warunku o stanie sprawy: liczyla sie wylacznie data. Poniewaz
+	 * `retention_until` wyliczane jest RAZ, przy wgraniu pliku (`store_for_case`),
+	 * i nigdy nie bylo przeliczane, sprawa prowadzona dluzej niz okno retencji
+	 * tracila zalaczniki W TRAKCIE — po cichu, bez sladu i bez kopii. Przy rodzaju
+	 * „zapytanie" okno wynosi TRZY MIESIACE, wiec wystarczylo, ze sprawa czekala
+	 * kwartal. To samo dotyczylo sprawy WZNOWIONEJ: produkt pozwala otworzyc
+	 * zamknieta sprawe (`CaseRepo::change_status`, REOPEN), a terminu kasowania
+	 * dowodow nigdy przy tym nie przeliczal.
+	 *
+	 * ⛔ CHRONIMY DOKLADNIE JEDNO: sprawe ZYWA, czyli POTWIERDZONA przez klienta
+	 * i NIE w statusie koncowym. Wszystko inne sprzatamy po terminie:
+	 *  · sprawa w statusie TERMINALNYM — zamknieta naprawde, sprzatamy;
+	 *  · sprawa NIGDY NIEPOTWIERDZONA (`identity_status <> 'verified'`) — klient
+	 *    nie dokonczyl zgloszenia, to nie jest praca w toku;
+	 *  · wiersza sprawy JUZ NIE MA — zalacznik osierocony.
+	 *
+	 * ⚠️ Dwie ostatnie galezie NIE sa ozdobnikiem i nie wolno ich sciac „dla
+	 * prostoty":
+	 *  · sciezka usuwania danych osobowych (RODO) jawnie liczy na to, ze
+	 *    osierocone pliki posprzata retencja — zwykle zlaczenie z tabela spraw
+	 *    wycieloby ta droge PO CICHU, dlatego LEFT JOIN i jawne `s.id IS NULL`;
+	 *  · porzucone zgloszenia niepotwierdzone maja WLASNY limit przestrzeni
+	 *    (`pending_usage_bytes`) — gdyby ich zalaczniki przestaly znikac, limit
+	 *    zatkalby sie plikami po ludziach, ktorzy nigdy nie potwierdzili zgloszenia.
+	 *
+	 * ⚠️ Lista statusow terminalnych jest DYNAMICZNA (`Statuses::terminal_slugs()`),
+	 * bo administrator moze dodac wlasny status i sam oznaczyc go jako konczacy.
+	 *
 	 * @return int Liczba skasowanych.
 	 */
 	public static function run_retention_sweep(): int {
 		global $wpdb;
 
-		$att_table = Tables::full( Tables::ATTACHMENTS );
-		$now       = gmdate( 'Y-m-d H:i:s' );
+		$att_table  = Tables::full( Tables::ATTACHMENTS );
+		$case_table = Tables::full( Tables::CASES );
+		$now        = gmdate( 'Y-m-d H:i:s' );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$terminalne = Statuses::terminal_slugs();
+
+		// Gdy nie ma ANI JEDNEGO statusu terminalnego (ktos odebral rdzeniowi
+		// terminalnosc filtrem), zostaja same sieroty — pusta lista w SQL-owym
+		// IN() jest bledem skladni, a nie "zadnym dopasowaniem".
+		// „Sprawa NIE jest zywa" — wspolna czesc dla obu wariantow nizej.
+		$nie_zyje = "s.id IS NULL OR s.identity_status <> 'verified' OR s.status IS NULL";
+
+		if ( array() === $terminalne ) {
+			$warunek_stanu = "( {$nie_zyje} )";
+			$parametry     = array( $now );
+		} else {
+			$miejsca       = implode( ',', array_fill( 0, count( $terminalne ), '%s' ) );
+			$warunek_stanu = "( {$nie_zyje} OR s.status IN ({$miejsca}) )";
+			$parametry     = array_merge( array( $now ), $terminalne );
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne, zapytanie przygotowane; lista miejsc na statusy zbudowana z LICZBY elementow, nie z ich tresci.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT id FROM {$att_table} WHERE deleted_at IS NULL AND retention_until IS NOT NULL AND retention_until < %s LIMIT 500",
-				$now
+				"SELECT a.id FROM {$att_table} a
+				LEFT JOIN {$case_table} s ON s.id = a.case_id
+				WHERE a.deleted_at IS NULL
+					AND a.retention_until IS NOT NULL
+					AND a.retention_until < %s
+					AND {$warunek_stanu}
+				LIMIT 500",
+				$parametry
 			)
 		);
 		// phpcs:enable
@@ -621,6 +674,54 @@ final class Attachments {
 		}
 
 		return count( (array) $ids );
+	}
+
+	/**
+	 * Przelicza `retention_until` zalacznikow sprawy OD TERAZ (cz.1 pkt 2).
+	 *
+	 * Wolane, gdy sprawa wchodzi w status terminalny — czyli w chwili, od ktorej
+	 * okno retencji ma naprawde biec. Wczesniej termin byl ustawiany raz, przy
+	 * wgraniu pliku, wiec dla sprawy prowadzonej dlugo potrafil minac, ZANIM
+	 * ktokolwiek sprawe zamknal.
+	 *
+	 * ⚠️ Sprawa WZNOWIONA nie potrzebuje tu nic osobnego: przestaje byc terminalna,
+	 * wiec sprzatanie ja pomija (patrz `run_retention_sweep`), a przy kolejnym
+	 * zamknieciu termin policzy sie na nowo, od tamtej chwili.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return int Liczba zalacznikow, ktorym przesunieto termin.
+	 */
+	public static function refresh_retention_for_case( int $case_id ): int {
+		global $wpdb;
+
+		if ( $case_id <= 0 ) {
+			return 0;
+		}
+
+		$att_table  = Tables::full( Tables::ATTACHMENTS );
+		$case_table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne, zapytanie przygotowane.
+		$kind = (string) $wpdb->get_var(
+			$wpdb->prepare( "SELECT kind FROM {$case_table} WHERE id = %d", $case_id )
+		);
+
+		if ( '' === $kind ) {
+			return 0;
+		}
+
+		$until = self::retention_until_for_kind( $kind, gmdate( 'Y-m-d H:i:s' ) );
+
+		$zmienione = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$att_table} SET retention_until = %s WHERE case_id = %d AND deleted_at IS NULL",
+				$until,
+				$case_id
+			)
+		);
+		// phpcs:enable
+
+		return (int) $zmienione;
 	}
 
 	/**
