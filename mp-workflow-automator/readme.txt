@@ -27,21 +27,19 @@ Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 == Changelog ==
 
 = 1.3.11 =
-* Ekran „Wyjatki gwarancyjne" otwarty z menu (bez wybranego produktu) mowil tylko „wybierz produkt
-  z listy Rejestru" i zostawial uzytkownika bez wyjscia. Teraz tlumaczy, czym jest wyjatek
-  gwarancyjny i dlaczego ekran jest pusty, oraz daje przycisk „Przejdz do Rejestru MP".
-* Dzialanie bez zmian — poprawka wygody obslugi.
+* Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
+  Jedyna poprawka tego wydania dotyczy ekranu „Wyjątki gwarancyjne" w module Rejestr MP.
 
 = 1.3.10 =
-* Komunikaty na ekranach cytuja nazwe roli DOKLADNIE tak, jak brzmi ona na liscie uzytkownikow
-  („Pracownik serwisu MP", nie „Pracownik serwisu") — administrator szukajacy cytowanej nazwy
-  znajdzie ja teraz bez zgadywania.
-* Przycisk w Rejestrze zdarzen nie pokazuje juz nazwy stalej z kodu („SWEEP_RUN") — mowi
-  „Pokaz/Ukryj wpisy automatycznego przegladu".
-* Naglowek kolumny w tabeli statusow: „Terminalny" -> „Konczy sprawe" (bez zargonu maszyn stanow).
-* Kontrola jakosci pilnujaca nazw rol obejmuje teraz TAKZE napisy w kodzie, nie tylko dokumenty
-  — poprzednio te same bledne cytaty przezyly poprawke dokumentow.
-* Dzialanie wtyczek bez zmian — wydanie jezykowe.
+* Komunikat na ekranie panelu cytuje nazwę roli DOKŁADNIE tak, jak brzmi ona na liście
+  użytkowników („Pracownik serwisu MP", nie „Pracownik serwisu") — administrator szukający
+  cytowanej nazwy znajdzie ją teraz bez zgadywania.
+* Przycisk w Rejestrze zdarzeń nie pokazuje już nazwy stałej z kodu („SWEEP_RUN") — mówi
+  „Pokaż/Ukryj wpisy automatycznego przeglądu".
+* Nagłówek kolumny w tabeli statusów: „Terminalny" -> „Kończy sprawę" (bez żargonu maszyn stanów).
+* Kontrola jakości pilnująca nazw ról obejmuje teraz TAKŻE napisy w kodzie, nie tylko dokumenty
+  — poprzednio te same błędne cytaty przeżyły poprawkę dokumentów.
+* Działanie wtyczki bez zmian — wydanie językowe.
 
 = 1.3.9 =
 * Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest
@@ -54,16 +52,13 @@ Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 * Dzialanie wtyczek bez zmian — wydanie dokumentacyjne.
 
 = 1.3.8 =
-* Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow
-  importu mowia „ten import" zamiast „job", „Niepelne dane batcha" na „Niepelne dane porcji
-  importu", lista markerow szablonow podpisana „(lista dozwolonych)" zamiast „(whitelist)",
-  a przycisk „Przelicz SLA" na „Przelicz terminy obslugi".
-* Godziny podawane w czasie UTC (tabela importow, wyjatki gwarancyjne) sa teraz opisane zdaniem
-  wyjasniajacym roznice wzgledem zegara w Polsce.
-* Instrukcje: poprawione nazwy pozycji menu i filtrow (byly nieaktualne wzgledem panelu), dodany
-  opis pol podstawianych w szablonach odpowiedzi oraz prawidlowa droga do wyjatkow gwarancyjnych.
-* Odswiezone zdjecia w instrukcji administratora — w tym zdjecie wyjatkow gwarancyjnych, ktore
-  wczesniej pokazywalo pusty ekran zamiast dzialajacej funkcji.
+* Poprawki języka na ekranach tego modułu: przycisk „Przelicz SLA" nazywa się teraz „Przelicz
+  terminy obsługi", a lista markerów szablonów jest podpisana „(lista dozwolonych)" zamiast
+  „(whitelist)".
+* Testy diagnostyki w Stanie witryny mówią „Terminy obsługi zgłoszeń (SLA)" zamiast samego
+  skrótu — czytelne także dla osoby, która skrótu nie zna.
+* Instrukcje (materiał wspólny dla pakietu): poprawione nazwy pozycji menu i filtrów (były
+  nieaktualne względem panelu) oraz dodany opis pól podstawianych w szablonach odpowiedzi.
 
 = 1.3.7 =
 * Zmiana wylacznie w dokumentacji: raport dostepnosci (WCAG 2.1 AA) zostal powtorzony na

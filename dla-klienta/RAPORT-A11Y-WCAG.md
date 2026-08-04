@@ -1,7 +1,13 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-07-31 · **Wersja badana:** 1.3.6 — czyli **kod tej paczki**. Wydanie 1.3.7
-nie zmienia ani jednej linii kodu: poprawia wyłącznie ten dokument i CHANGELOG (patrz nota niżej).
+**Data badania:** 2026-07-31 · **Wersja badana:** 1.3.6
+**Wersja:** 1.3.12 — tyle ma paczka, z którą ten dokument jedzie.
+
+⚠️ **Numeru w nagłówku nie podmieniamy** — badanie przeglądarką wykonaliśmy na 1.3.6 i tak to
+zapisujemy. Dla każdego kolejnego wydania mówimy osobno, czy wynik nadal obowiązuje: noty
+o wersjach **1.3.7 – 1.3.12** stoją na końcu tego dokumentu. ⛔ **Przeczytaj je, zanim uznasz ten
+wynik za aktualny — wydanie 1.3.12 jest pierwszym od czasu badania, które zmienia badane ekrany,
+i badania na nim NIE powtórzyliśmy.**
 
 Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
 z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
@@ -101,15 +107,38 @@ Naruszenia motywu wypisuje osobno, z dopiskiem `[motyw]`, i nie przerywa przez n
 badania. Jeśli strony zostały u Ciebie przeniesione pod inne adresy, wskaż je wprost:
 `MP_URL_FORMULARZ=... MP_URL_PANEL=...`.
 
-**Ile ekranów zbadasz u siebie.** Dwa publiczne — formularz i panel przed zalogowaniem —
-od ręki. Trzeci, panel **po zalogowaniu**, wymaga wejścia na konto linkiem wysłanym
-mailem, więc skrypt musi mieć dostęp do skrzynki. Bez tego dostępu po prostu go pomija
-i mówi o tym wprost — **to nie jest błąd**. My zbadaliśmy go na instalacji testowej,
-gdzie taki dostęp mamy; wynik z tego ekranu widzisz w tabeli wyżej.
+**Ile ekranów zbadasz u siebie.** Narzędzie sięga **jedenastu powierzchni**: trzech, które widzi
+Twój klient (formularz, panel przed i po zalogowaniu), oraz **ośmiu ekranów personelu w panelu
+WordPressa** — rejestr produktów, wyjątki gwarancyjne, import CSV, sprawy, zgłoszenia
+niepotwierdzone, ustawienia zgłoszeń, automat i jego ustawienia.
+
+- **Dwa publiczne ekrany zbadasz od ręki** — formularz i panel przed zalogowaniem.
+- **Panel po zalogowaniu** wymaga wejścia na konto linkiem wysłanym mailem, więc skrypt musi mieć
+  dostęp do skrzynki (`MP_MAILPIT`). Bez tego dostępu po prostu go pomija i mówi o tym wprost —
+  **to nie jest błąd**. My zbadaliśmy go na instalacji testowej, gdzie taki dostęp mamy.
+- **Ekrany personelu** wymagają konta w panelu: `MP_ADMIN_USER` i `MP_ADMIN_PASS`. Bez nich
+  narzędzie je pomija — również bez błędu.
+
+**Każdy przebieg drukuje ZDANIE O ZAKRESIE**: co zbadał i czego nie zbadał, z nazwy. Wynik „zero
+naruszeń" bez tego zdania mówiłby tylko tyle, że coś zbadano i nie wiadomo co. Sam zakres możesz
+obejrzeć bez uruchamiania przeglądarki:
+
+```bash
+MP_BASE=https://twoja-strona.pl python3 dla-informatyka/audyt-dostepnosci/audyt-axe.py --lista-powierzchni
+```
+
+⚠️ **Do wydania 1.3.11 to narzędzie badało wyłącznie trzy powierzchnie klienta** — i to zawężenie
+siedziało w samym przyrządzie, nie w jednym przebiegu. Skutek: kolejne wydania wychodziły
+„zielone" na dostępności, opisując część systemu i nie mówiąc, że to część. Luka nie była
+teoretyczna — w obszarze, którego przyrząd nie sięgał, leżała prawdziwa wada (ekran automatu przy
+powiększeniu 200% wychodził 184 piksele poza okno). **Poprawiliśmy przyrząd w 1.3.12**, a wynik
+z tabel wyżej pochodzi sprzed tej zmiany i dotyczy trzech ekranów klienta — tak jak napisano.
 
 ---
 
-**Nota o powtórzeniu badania oraz o wersjach 1.3.7, 1.3.8 i 1.3.9.**
+**Nota o powtórzeniu badania oraz o wersjach od 1.3.7 do 1.3.12** — wydanie po wydaniu, czy wynik
+badania nadal obowiązuje. Tak utrzymujemy ważność tego dokumentu: **nie podmieniając numeru
+w nagłówku**, tylko uzasadniając każdy krok. Tam, gdzie uzasadnić się nie da — piszemy to wprost.
 
 Pierwsze badanie wykonaliśmy 29 lipca na paczce **1.3.0**. Ten dokument długo mówił wprost, że
 **nie było powtarzane** — zamiast podmieniać numer wersji w nagłówku. 31 lipca badanie
@@ -135,9 +164,50 @@ o roli pracownika, etykietę przycisku w Rejestrze zdarzeń i nagłówek kolumny
 i po zalogowaniu — nie zostały zmienione ani o jeden element**, więc wynik badania obowiązuje
 dla 1.3.10 bez zastrzeżeń.
 
-⚠️ Uczciwie: **ekrany administratora nigdy nie były przedmiotem tego badania** — ani przed, ani po
-tej zmianie. Badamy to, co widzi Twój klient. Zmienione napisy nie dotyczą więc wyniku podanego
-w tabelach wyżej ani przed, ani po poprawce.
+⚠️ Uczciwie: **ekrany administratora nie były przedmiotem tego badania** — ani przed, ani po
+tej zmianie. Mierzyliśmy to, co widzi Twój klient. Zmienione napisy nie dotyczą więc wyniku
+podanego w tabelach wyżej ani przed, ani po poprawce. (Samo narzędzie sięga ekranów personelu
+od 1.3.12 — patrz rozdział „Jak powtórzyć to badanie u siebie". Pomiar z tabel wyżej jest
+starszy od tej zmiany i ekranów personelu nie obejmuje.)
+
+**Wydanie 1.3.11 zmienia kod, ale wyłącznie jeden ekran ADMINISTRATORA** — „Wyjątki gwarancyjne"
+otwarte z menu, bez wybranego produktu, było ślepym zaułkiem; teraz tłumaczy, czym jest wyjątek,
+i daje przycisk powrotu do Rejestru. Sprawdzone w historii zmian: to jedyny plik kodu ruszony
+w tym wydaniu. **Trzy ekrany objęte tym badaniem nie zostały zmienione ani o jeden element**,
+więc wynik badania obowiązuje dla 1.3.11 bez zastrzeżeń.
+
+🔴 **Wydanie 1.3.12 jest pierwszym od czasu badania, które ZMIENIA badane ekrany — i dlatego
+łańcucha „nic się nie zmieniło" tutaj NIE ciągniemy.** Na powierzchniach klienta zmieniło się:
+
+- formularz zgłoszenia ma **nowe, wymagane pole „imię i nazwisko"** (to element, którego w chwili
+  badania na tym ekranie nie było),
+- **komunikat o błędzie prowadzi teraz do konkretnego pola**: podsumowanie błędów jest listą
+  odnośników do pól, a pole z błędem jest oznaczone `aria-invalid`,
+- **przycisk wysyłki ogłasza, że wysyłka trwa** — formularz dostaje `aria-busy`, napis przycisku
+  się zmienia, a powtórne kliknięcie jest blokowane bez wyłączania kontrolki,
+- w panelu klienta zmieniło się to, co wynika z ochrony danych osobowych (konto nie nosi już
+  adresu e-mail w nazwie wyświetlanej).
+
+⛔ **Badania axe-core w przeglądarce na 1.3.12 NIE powtórzyliśmy.** Piszemy to wprost, zamiast
+podmieniać numer wersji w nagłówku.
+
+**Czego przy tym NIE twierdzimy — bo to sprawdziliśmy.** Wszystkie powyższe zmiany **dokładają**
+mechanizmy dostępności, nie odbierają ich; dwie z nich (błąd wskazujący pole, stan „to trwa")
+powstały właśnie z zarzutu o dostępność. **Żaden arkusz stylów strony klienta nie został ruszony** —
+jedyny zmieniony arkusz w tym wydaniu dotyczy panelu administratora — więc **kontrast kolorów**,
+czyli ta część wyniku, której nie da się sprawdzić bez przeglądarki, zmian nie ma. W tym samym
+wydaniu naprawiliśmy dwa ekrany personelu wychodzące poza okno przy powiększeniu 200%
+(WCAG 1.4.10): panel automatu i „Zgłoszenia niepotwierdzone".
+
+**Co za to sprawdzamy przy KAŻDEJ zmianie kodu, także w 1.3.12** — automatyczne kontrole
+strukturalne w naszym systemie ciągłej kontroli, na renderach formularza, panelu klienta przed
+i po zalogowaniu oraz ekranów personelu: etykieta spięta z każdym widocznym polem, błędy
+w obszarze `role="alert"`, błąd spięty z polem przez `aria-describedby`, oznaczenie pól
+wymaganych, brak powtórzonych identyfikatorów, opis alternatywny przy każdym obrazie, nazwa
+dostępna przy każdym przycisku. **To warstwa strukturalna i nie zastępuje przebiegu
+w przeglądarce** — kontrastu kolorów ani pełnych reguł ARIA tak sprawdzić się nie da.
+Dlatego: chcesz mieć pomiar na 1.3.12, uruchom narzędzie z rozdziału wyżej u siebie —
+albo poproś nas o powtórzenie badania.
 
 Dla porządku, co działo się z kodem między badaniami: sprzątanie jednej opcji technicznej przy
 odinstalowaniu wtyczki, poprawki w przyjmowaniu plików CSV (kontrola liczby kolumn, rozpoznawanie
