@@ -1996,6 +1996,66 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Czy sprawa o tym ID W OGOLE ISTNIEJE (audyt 2.20).
+	 *
+	 * ⛔ TO NIE TO SAMO co „modul automatyzacji widzi jej kontekst". Kontekst
+	 * dostaja wylacznie sprawy ZWERYFIKOWANE, wiec sprawa istniejaca, ale jeszcze
+	 * niepotwierdzona, wyglada stamtad jak nieistniejaca. Sprzatanie osieroconych
+	 * wierszy musi rozrozniac te dwie rzeczy, bo w pierwszym przypadku kasowanie
+	 * jest porzadkiem, a w drugim — utrata danych.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return bool
+	 */
+	public static function exists( int $case_id ): bool {
+		global $wpdb;
+
+		if ( $case_id <= 0 ) {
+			return false;
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$cases} WHERE id = %d", $case_id ) );
+		// phpcs:enable
+
+		return null !== $id;
+	}
+
+	/**
+	 * Ktore z podanych spraw ISTNIEJA — JEDNYM zapytaniem (audyt 2.22, wzorzec).
+	 *
+	 * Pytanie po jednej sprawie kosztuje tyle zapytan, ile wierszy sprawdzamy —
+	 * a sprzatanie osieroconych wierszy chodzi w zadaniu cyklicznym co piec minut.
+	 * To ta sama klasa kosztu co pozycja 2.22, wiec zamykamy ja tu od razu, zamiast
+	 * czekac, az urosnie.
+	 *
+	 * @param array<int, int> $case_ids ID spraw.
+	 * @return array<int, int> ID tych, ktore istnieja.
+	 */
+	public static function existing_ids( array $case_ids ): array {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $case_ids ) ) ) );
+
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$cases        = Tables::full( Tables::CASES );
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; liczba placeholderow ZMIENNA (tyle, ile ID).
+		$znalezione = (array) $wpdb->get_col(
+			$wpdb->prepare( "SELECT id FROM {$cases} WHERE id IN ( {$placeholders} )", $ids )
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', $znalezione );
+	}
+
+	/**
 	 * ID spraw ZWERYFIKOWANYCH w ostatnich dniach (funkcja kontraktowa
 	 * `mp_cases_verified_ids`) — do resynchronizacji Automatora (audyt 27.07).
 	 *

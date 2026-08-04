@@ -33,7 +33,19 @@ done
 # tworza katalog z guardami .htaccess + index.php).
 # Audyt 29.07: Registry NIE kasowal `mp-imports` przy odinstalowaniu, choc OWNERSHIP.md
 # obiecuje "warstwa (i) ZAWSZE: ... pliki techniczne". Intake swoj katalog kasowal.
+#
+# ⛔ ZMIANA KONTRAKTU (audyt 2.2, 4.08) — te dwa katalogi NIE sa juz tym samym:
+#   · `mp-imports`     = pliki wsadowe i raporty importu. Artefakty TECHNICZNE,
+#                        nie wskazuje na nie zadna przezywajaca sprawa => kasowane ZAWSZE.
+#   · `mp-attachments` = zdjecia uszkodzen i skany dokumentow zakupu, czyli DOWODY
+#                        w sprawach. Ida za TYM SAMYM przelacznikiem co reszta danych
+#                        sprawy => przy WYLACZONYM przelaczniku ZOSTAJA.
+# Wczesniej ten test wymagal, zeby zniknely oba. To wymaganie kodowalo dokladnie
+# te wade, ktora audyt 2.2 zglosil: pliki gina nieodwracalnie, a wiersze w bazie
+# (odwracalne) zostaja — czyli sprawy przezywaja BEZ dowodow.
 KATALOGI="mp-attachments mp-imports"
+KATALOGI_TECHNICZNE="mp-imports"
+KATALOGI_DOWODOWE="mp-attachments"
 
 wp eval '
 $base = wp_upload_dir()["basedir"];
@@ -51,6 +63,16 @@ for kat in $KATALOGI; do
 		&& ok "stan wyjsciowy: katalog $kat istnieje i ma pliki" \
 		|| bad "stan wyjsciowy: nie udalo sie zalozyc $kat (test nic nie dowiedzie)"
 done
+
+# ── 0c. Przelacznik kasowania danych MUSI byc wylaczony ────────────────────
+# Bez tego kontrola zalacznikow nizej jest dwuznaczna: gdyby ktorys wczesniejszy
+# test zostawil przelacznik WLACZONY, dowody znikneloby zgodnie z umowa, a my
+# zameldowalibysmy wade. Odtwarzamy wprost sytuacje PRZYPADKOWEGO odinstalowania.
+wp eval "delete_option('mp_intake_delete_data');" >/dev/null 2>&1
+PRZELACZNIK=$(wp eval "echo (string) get_option('mp_intake_delete_data', '0');" 2>/dev/null | tr -d '[:space:]')
+[ "$PRZELACZNIK" = "0" ] \
+	&& ok "stan wyjsciowy: przelacznik kasowania danych WYLACZONY (przypadkowe odinstalowanie)" \
+	|| bad "przelacznik kasowania danych = [$PRZELACZNIK] — kontrola dowodow bylaby dwuznaczna"
 
 # ── 1. Odinstalowanie WSZYSTKICH trzech wtyczek ─────────────────────────────
 wp plugin deactivate mp-service-intake mp-warranty-registry mp-workflow-automator >/dev/null 2>&1
@@ -70,18 +92,35 @@ SLAD=$(wp db query "SELECT COUNT(*) FROM wp_options WHERE option_name='cron' AND
 	&& ok "wpis 'cron' w opcjach nie zawiera juz naszych hakow" \
 	|| bad "haki MP dalej siedza w opcji 'cron' ($SLAD)"
 
-# ── 4. SEDNO 2: zero katalogow roboczych z plikami po odinstalowaniu ────────
-# Pliki wsadowe importu zawieraja numery seryjne, faktury i daty zakupu; zalaczniki
-# to dane klientow. Zostawienie ich na dysku po odinstalowaniu lamie warstwe (i).
-for kat in $KATALOGI; do
-	ZOSTAL=$(wp eval "
-		\$d = rtrim(wp_upload_dir()['basedir'],'/').'/$kat';
+# ── 4. SEDNO 2: katalogi TECHNICZNE znikaja, DOWODOWE zostaja ───────────────
+# Pliki wsadowe importu zawieraja numery seryjne, faktury i daty zakupu, ale nie
+# jest do nich przypieta zadna sprawa — to artefakty techniczne warstwy (i).
+ile_plikow() {
+	wp eval "
+		\$d = rtrim(wp_upload_dir()['basedir'],'/').'/$1';
 		if ( ! is_dir(\$d) ) { echo '0'; }
 		else { \$f = glob(\$d.'/*'); echo count(false === \$f ? array() : \$f) + (is_file(\$d.'/.htaccess') ? 1 : 0); }
-	" 2>/dev/null)
+	" 2>/dev/null
+}
+
+for kat in $KATALOGI_TECHNICZNE; do
+	ZOSTAL=$(ile_plikow "$kat")
 	[ "${ZOSTAL:-1}" = "0" ] \
-		&& ok "katalog $kat sprzatniety przy odinstalowaniu (zero plikow na dysku)" \
-		|| bad "katalog $kat ZOSTAL po odinstalowaniu ($ZOSTAL plikow) — dane klienta na serwerze"
+		&& ok "katalog techniczny $kat sprzatniety przy odinstalowaniu (zero plikow na dysku)" \
+		|| bad "katalog $kat ZOSTAL po odinstalowaniu ($ZOSTAL plikow) — artefakty techniczne na serwerze"
+done
+
+# ⛔ Tu kontrola jest ODWROTNA i to jest zamierzone (audyt 2.2). Przy WYLACZONYM
+# przelaczniku wiersze spraw zostaja w bazie — gdyby pliki zniknely, zostalyby
+# sprawy wskazujace na dowody, ktorych juz nie ma. Kasowanie pliku jest
+# NIEODWRACALNE, zostawienie tabeli odwracalne; produkt nie moze usuwac tego,
+# czego nie da sie odtworzyc, i zachowywac tego, co odtworzyc mozna.
+# Pelny dowod obu stron przelacznika: testy/e2e/c-2-2-zalaczniki-przy-odinstalowaniu.sh
+for kat in $KATALOGI_DOWODOWE; do
+	ZOSTAL=$(ile_plikow "$kat")
+	[ "${ZOSTAL:-0}" -ge 1 ] 2>/dev/null \
+		&& ok "katalog dowodowy $kat ZOSTAL przy odinstalowaniu bez zgody ($ZOSTAL plikow) — sprawy nie traca dowodow" \
+		|| bad "katalog $kat skasowany mimo wylaczonego przelacznika — sprawy zostaja bez dowodow (wada 2.2)"
 done
 
 echo ""

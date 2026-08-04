@@ -314,6 +314,17 @@ final class Sweep {
 				&& $rounds < self::MAX_ROUNDS
 				&& ( self::BATCH === $last_rem || self::ESCALATION_BATCH === $last_esc ) );
 
+			// 2.20: sprzatanie sierot NA KONIEC przebiegu, nigdy przed nim.
+			// Pierwsza wersja wolala je na poczatku i kasowala wiersze, ZANIM
+			// zamiatarka zdazyla je obsluzyc — licznik eskalacji zszedl ze 120 na 71
+			// (zlapal to istniejacy test „jeden digest na przebieg"). Kolejnosc jest
+			// tu czescia poprawnosci: najpierw robimy robote, potem sprzatamy.
+			//
+			// Sprzatanie ma WLASNY wpis w rejestrze (`action=cleanup_orphans`) i tylko
+			// wtedy, gdy naprawde cos skasowalo — wiec warunek 2.21 ponizej go nie
+			// dotyczy i nic przez to nie ginie.
+			Sla::cleanup_orphans();
+
 			// BICIE SERCA: zawsze, jedna nadpisywana wartosc. To ona odpowiada
 			// na pytanie „czy zadanie sie WYKONUJE" (Stan witryny) — nie rejestr.
 			update_option( self::HEARTBEAT_OPTION, gmdate( 'Y-m-d H:i:s' ), false );
