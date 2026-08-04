@@ -170,6 +170,22 @@ if ( $mp_intake_delete_data ) {
 	// wiersz, ktory po ponownej instalacji po cichu nadpisywalby domyslne pola.
 	delete_option( MP\Intake\FormConfig::OPTION );
 
+	// Powody odrzucenia sprawy — TA SAMA KLASA CO 2.56, w tym samym pliku.
+	//
+	// ⛔ DLACZEGO TU, A NIE W WARSTWIE (i). To jest TRESC NAPISANA PRZEZ KLIENTA:
+	// lista powodow, ktora serwis dopasowal do swojej praktyki („sprzet po terminie
+	// akcji serwisowej", „naprawa nieoplacalna" — cokolwiek u siebie wpisal).
+	// Warstwa (i) chodzi ZAWSZE, takze przy odinstalowaniu przez pomylke, wiec
+	// postawienie tego kasowania tam odebraloby klientowi jego wlasna konfiguracje
+	// BEZ PYTANIA — wada CIEZSZA niz ta, ktora naprawiamy. Warstwa (ii) = jawna
+	// zgoda admina, dokladnie jak przy szablonach, checklistach i statusach wlasnych.
+	//
+	// Skutek braku (przed ta poprawka): po odinstalowaniu ZA ZGODA opcja zostawala
+	// w bazie i po ponownej instalacji po cichu podmieniala domyslny slownik
+	// (`RejectionReasons::defaults()`, 6 pozycji) na poprzednia liste — czyli stan
+	// „czysta instalacja" nie byl czysty.
+	delete_option( MP\Intake\RejectionReasons::OPTION );
+
 	/**
 	 * Sygnal kontraktowy: tabele spraw przestaly istniec (API-KONTRAKT.md §A).
 	 *
