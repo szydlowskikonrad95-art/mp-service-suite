@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# STRAZNIK: twarde liczby w dokumentach MUSZA zgadzac sie z kodem.
+# TEST PILNUJACY: twarde liczby w dokumentach MUSZA zgadzac sie z kodem.
 #
 # Powod: "dokumentacja klamie wzgledem kodu" to NAJCZESTSZA uwaga zamawiajacego
 # (3x w poprzednim projekcie, wpisana do BRAMKI-ANTY-POWTORKA jako #8). Raz
@@ -38,7 +38,7 @@ set -u
 
 PASS=0; FAIL=0
 
-# Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
+# Test pilnujacy na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
 #
@@ -47,12 +47,12 @@ PASS=0; FAIL=0
 # licznikiem samego skryptu (PASS+FAIL) i zliczeniem wierszy wydruku
 # (`bash testy/dokumenty/liczby-zgodne-z-kodem.sh | grep -cE '^  (OK|FAIL)'`).
 # Wczesniej stalo 44 przy 55 wykonywanych — czyli byl luz na JEDENASCIE kontroli,
-# ktore mogly cicho zniknac, a straznik by tego nie zobaczyl. Prog ma stac
+# ktore mogly cicho zniknac, a test pilnujacy by tego nie zobaczyl. Prog ma stac
 # DOKLADNIE na liczbie wykonywanych, bo inaczej pilnuje sam siebie, nie kontroli.
 #
 # ⚠️ CZESC KONTROLI JEST WARUNKOWA — odpalaja sie tylko, gdy w dokumencie stoi
 # konkretna fraza albo gdy w kodzie czegos NIE MA. Przeformulowanie zdania
-# w dokumencie albo dolozenie czegos do kodu WYLACZY taka kontrole i ten straznik
+# w dokumencie albo dolozenie czegos do kodu WYLACZY taka kontrole i ten test pilnujacy
 # zaswieci na czerwono. To jest zamierzone: znikniecie kontroli ma byc widoczne,
 # a nie ciche. Gdy zniknieta kontrola jest uzasadniona — zmien te liczbe i dopisz
 # w komentarzu, ktora to i dlaczego.
@@ -88,7 +88,7 @@ LIMIT_MAIL=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'email_max' *=> *[0-9]+
 LIMIT_SERIAL=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'serial_max' *=> *[0-9]+" | grep -oE "[0-9]+$")
 LIMIT_IP=$(printf '%s' "$PROGI_FORMULARZA" | grep -oE "'ip_max' *=> *[0-9]+" | grep -oE "[0-9]+$")
 
-# Straznik: licznik, ktory zlapal WIECEJ NIZ JEDNA wartosc, jest zepsuty tak samo jak pusty —
+# Test pilnujacy: licznik, ktory zlapal WIECEJ NIZ JEDNA wartosc, jest zepsuty tak samo jak pusty —
 # w porownaniu trafia wtedy wieloliniowy smiec, a nie liczba.
 for para in "limit-mail:$LIMIT_MAIL" "limit-serial:$LIMIT_SERIAL" "limit-ip:$LIMIT_IP"; do
 	if [ "$(printf '%s' "${para##*:}" | grep -c .)" -ne 1 ]; then
@@ -98,7 +98,7 @@ for para in "limit-mail:$LIMIT_MAIL" "limit-serial:$LIMIT_SERIAL" "limit-ip:$LIM
 	fi
 done
 
-# Straznik na samego straznika: licznik, ktory zwrocil pustke albo zero, oznacza
+# Test pilnujacy na samego testu pilnujacego: licznik, ktory zwrocil pustke albo zero, oznacza
 # ZEPSUTY WZORZEC, a nie "zero w kodzie" — bramka musialaby wtedy przepuscic wszystko.
 for para in "tabel:$TABEL" "statusow:$STATUSOW" "rodzajow:$RODZAJOW" "testow:$TESTOW_SH" \
             "retencja:$RETENCJA" "okno:$OKNO" "php:$PHP_MIN" \
@@ -191,7 +191,7 @@ sprawdz "PRZECZYTAJ-MNIE: minimum PHP = $PHP_MIN" "PHP $PHP_MIN" dla-klienta/PRZ
 
 # ── P1.2: wymog zalacznika wg kategorii MUSI byc opisany dla klienta ────────
 # Regula zyje w kodzie (konfigurowalna filtrem) — dokument ma za nia nadazac.
-# Straznik na wzorzec: brak samej funkcji = zepsuty wzorzec, nie „zero wymogow".
+# Test pilnujacy na wzorzec: brak samej funkcji = zepsuty wzorzec, nie „zero wymogow".
 grep -q "category_attachments_defaults" mp-service-intake/includes/FormConfig.php \
 	|| { echo "  BLAD BRAMKI: nie znalazlem category_attachments_defaults — wzorzec przestal pasowac do kodu."; exit 2; }
 KAT_WYMAG=$(sed -n "/function category_attachments_defaults/,/^	}/p" mp-service-intake/includes/FormConfig.php | grep -c "'required' => true")

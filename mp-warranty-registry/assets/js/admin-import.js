@@ -181,7 +181,7 @@
 		} )();
 	}
 
-	// ⚠️ STRAŻNIK WZNAWIANIA. Flaga `running` jest WSPÓLNA dla wszystkich zadań, więc przy
+	// ⚠️ TEST PILNUJĄCY WZNAWIANIA. Flaga `running` jest WSPÓLNA dla wszystkich zadań, więc przy
 	// dwóch zawieszonych importach i szybkim kliknięciu obu przycisków serwer rezerwował OBA,
 	// ale pętla ruszała tylko dla tego, którego odpowiedź wróciła pierwsza — drugi zostawał
 	// zarezerwowany i nieodpytywany (osierocony import). Znalezione czytaniem liniowym 30.07.

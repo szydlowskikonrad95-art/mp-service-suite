@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi.
+# kryteria odbioru C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi.
 # Install v0.2.0 -> wpisz dane (registry) -> podmien pliki na v0.3.0 (BEZ reaktywacji,
 # jak WP updater) -> admin_init odpala maybe_upgrade -> dane+schemat+cron+role+opcje przetrwaly.
 # V020_SRC / V030_SRC = katalogi ze zbudowanymi wtyczkami (z kopiami Common).

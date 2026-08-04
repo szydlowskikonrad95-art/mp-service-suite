@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD C sekcja 3 — SECURITY-SWEEP: macierz rol NEGATYWNA.
+# kryteria odbioru C sekcja 3 — SECURITY-SWEEP: macierz rol NEGATYWNA.
 # Kazdy endpoint admina (admin-post + ajax) 3 wtyczek zwraca 403 komu NIE wolno:
 # anon (niezalogowany), subscriber, mp_client. Zaden nie wykonuje akcji.
 # Public (login/submit/verify) i klient (message/withdraw — ownership) testowane osobno.
@@ -55,5 +55,5 @@ for ep in mp_import_batch mp_import_reclaim; do
 done
 
 echo
-echo "WYNIK DoD-security-matrix: $PASS ok, $FAIL fail"
+echo "WYNIK kryteria odbioru-security-matrix: $PASS ok, $FAIL fail"
 [ "$FAIL" -eq 0 ]

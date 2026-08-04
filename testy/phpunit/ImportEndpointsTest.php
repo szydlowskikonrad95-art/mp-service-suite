@@ -123,7 +123,7 @@ final class ImportEndpointsTest extends TestCase {
 	/**
 	 * D10: limit importu jest pamieciowo bezpieczny. create_job_from_file wczytuje
 	 * caly plik do pamieci (file_get_contents + preg_split w tablice), wiec limit
-	 * musi zostac maly (<= 8 MB) — straznik przed przypadkowym bumpem do 20 MB (OOM na 128 M).
+	 * musi zostac maly (<= 8 MB) — test pilnujacy przed przypadkowym bumpem do 20 MB (OOM na 128 M).
 	 */
 	public function test_import_limit_is_memory_safe(): void {
 		self::assertLessThanOrEqual( 8 * 1024 * 1024, Importer::MAX_FILE_BYTES );

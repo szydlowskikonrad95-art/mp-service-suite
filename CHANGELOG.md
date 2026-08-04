@@ -718,7 +718,7 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
   importu linkuje do niego („Pobierz przykładowy plik CSV"). Ekran wymienia teraz też **kolumny opcjonalne**
   (dotąd tylko wymaganą `serial`), formaty dat, listę kategorii **czytaną z `Categories::slugs()`** (nie
   przepisaną ręcznie — nie może się rozjechać) oraz jawnie mówi, że import DODAJE produkty i nie nadpisuje
-  duplikatu serialu. Test-strażnik `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
+  duplikatu serialu. Test pilnujący `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
 ### Changed
@@ -840,7 +840,7 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
   cały plik do pamięci (`file_get_contents` + `to_utf8` + `preg_split` w tablicę), co przy ~20 MB mogło
   przekroczyć domyślny `memory_limit` 128 MB. Limit obniżony do 8 MB (bezpieczny zapas); większe importy
   klient dzieli na części. Właściwe przetwarzanie (`process_batch`) i tak streamuje przez `fgetcsv`.
-  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (strażnik przed przyszłym bumpem).
+  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (test pilnujący przed przyszłym bumpem).
 - Intake (C) — **honeypot czasowy: brak/za stary `mp_ts` też odrzucany** (#D11). Wcześniej pominięcie pola
   `mp_ts` omijało pułapkę czasu (warunek `$started > 0`) — bot mógł nie wysyłać znacznika. Teraz brak,
   zbyt szybkie (<2 s) i zbyt stare (>3 h, replay) znaczniki wpadają w cichy odrzut. Warstwa bonusowa —
@@ -992,7 +992,7 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
   `{{data}}` (`wp_date('Y-m-d H:i')`, granica minuty). Dwie IDENTYCZNE notyfikacje sekundy od siebie na granicy
   minuty → różny body → różny hash → dedup gubił duplikat (~1/60 runów). Fix W PRZYCZYNIE: `MailTemplates::render`
   zwraca dodatkowo `dedup_key` = treść BEZ zmiennego `{{data}}` (numer/status/rodzaj podstawione, data pominięta);
-  `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-strażnik
+  `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-test pilnujący
   w `d-p33d-dedup`.
 
 - Intake (C): **kolumna „Sprawy" i wyszukiwarka po kliencie w Rejestrze** — Intake nie rejestrował listenerów
@@ -1004,7 +1004,7 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
 
 ## [0.4.0] - 2026-07-23
 
-Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
+Moduł D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
 checklisty + szablony, eksport CSV, panel admina — spięte z Intake (C) i Registry (B)
 kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
 
@@ -1045,7 +1045,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
 - Automator (D): schemat D — 4 tabele (`wp_mp_workflow_rules`, `wp_mp_case_sla`,
   `wp_mp_case_checklists`, `wp_mp_workflow_events` = rejestr operacji APPEND-ONLY, NO-PII);
   migracje bez reaktywacji (`maybe_upgrade`), uninstall opt-in kasuje wszystkie artefakty D
-  i nic cudzego (kanarki + role współdzielone nietknięte). Test d1-schema + DoD D.
+  i nic cudzego (kanarki + role współdzielone nietknięte). Test d1-schema + kryteria odbioru D.
 - Automator (D): P3.1 silnik reguł + auto-przydział round-robin — reguły STRUKTURALNE
   (trigger/warunek/akcja, zero eval), kursor RR per reguła, nasłuch `mp_case_created`;
   seed reguły domyślnej przydziału przy aktywacji (jednorazowo, skasowana nie wraca).
@@ -1082,7 +1082,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   chunk 500, respekt roli, pola zminimalizowane), `mp_case_checklist_authorize`
   (ownership + event `CHECKLIST_ITEM_TOGGLED`), `mp_all_statuses` (read-only lista statusów
   C→D, degrade gdy Intake OFF).
-- Testy klocka D w CI: seria `d-*` (schemat, hooki, P3.1–P3.6), DoD D (uninstall zero-śladu +
+- Testy modułu D w CI: seria `d-*` (schemat, hooki, P3.1–P3.6), kryteria odbioru D (uninstall zero-śladu +
   kanarki + tryb degraded C/B OFF + macierz uprawnień NEGATYWNA anon/subscriber/klient/agent),
   panel admina (widoczność per rola); odślepione niezmienniki BLOK-S (E2E/tabletop/bug-hunt/
   a11y) na P3.1/P3.2.
@@ -1157,7 +1157,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   przyznanie + cofniecie) i archiwizacja za `mp_system_admin`; import przeniesiony do submenu
   Rejestru MP; CLI `wp mp product-archive` / `product-restore`.
 - Registry (B): `wp mp import-resume <job>` (wznowienie przerwanego importu z CLI — ta sama
-  mechanika co "Wznow" w UI) oraz testy DoD klocka B w CI (job e2e-import na zywym WP 6.9.4
+  mechanika co "Wznow" w UI) oraz testy kryteria odbioru modułu B w CI (job e2e-import na zywym WP 6.9.4
   + MariaDB 11.8): import 10 000 wierszy, kill -9 klienta w polowie + wznowienie z offsetu
   (ksiegowosc joba == wiersze w bazie, zero duplikatow), partia CSV->mp_warranty_check,
   negatywne uprawnienia, snapshot-uninstall (default OFF: dane zostaja; opt-in: tabele znikaja,

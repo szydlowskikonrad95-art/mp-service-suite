@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD D — twardy audyt gotowosci automatora (3 sekcje). Prefix-agnostic (wp db prefix)
+# kryteria odbioru D — twardy audyt gotowosci automatora (3 sekcje). Prefix-agnostic (wp db prefix)
 # => chodzi na e2e-import (wp_) I na dirty-env (cms_x9_ + object-cache + WP_DEBUG).
 # (1) UNINSTALL ZERO-SLADU: opt-in delete_data kasuje WSZYSTKIE artefakty D (tabele+
 #     opcje+cron+marker) i NIC cudzego — kanarki (obca opcja/tabela/cron) + rodzenstwo
@@ -128,7 +128,7 @@ RCFGA=$(wp option get mp_automator_response_templates --format=json 2>/dev/null)
 [ "$RCFGB" = "$RCFGA" ] && ok "response_config: mp_agent zablokowany (opcja nietknieta)" || bad "response_config: agent zmienil konfig!"
 
 # checklist_toggle: mp_agent NIE-wlasciciel => C blokuje (ownership) => brak zapisu.
-O=$(wp mp case-create --kind=reklamacja --email=d@example.com --name='D' --serial=DOD-1 --document=FV/1 --date=2026-05-01 --desc=x 2>/dev/null)
+O=$(wp mp case-create --kind=reklamacja --email=d@example.com --name='D' --serial=ODBIOR-1 --document=FV/1 --date=2026-05-01 --desc=x 2>/dev/null)
 CID=$(echo "$O" | grep '^case_id=' | cut -d= -f2); TOK=$(echo "$O" | grep '^token=' | cut -d= -f2)
 wp eval "MP\\Intake\\CaseRepo::verify('$TOK');" >/dev/null 2>&1
 # NIE przydzielamy sprawy agentowi => nie jest wlascicielem.
@@ -184,5 +184,5 @@ STAN=$(wp eval 'require_once ABSPATH . "wp-admin/includes/class-wp-site-health.p
 [ "$STAN" = "good" ] && ok "diagnostyka Stanu witryny potwierdza dzialajacy cron SLA" || bad "diagnostyka mowi: $STAN"
 
 echo ""
-echo "WYNIK DoD D: PASS=$PASS FAIL=$FAIL"
+echo "WYNIK kryteria odbioru D: PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
