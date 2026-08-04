@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD P3.3 dedup-okno: identyczny mail (adresat+WYRENDEROWANA tresc) w oknie
 # jest POMIJANY (MAIL_DEDUPED); dwie ROZNE informacje NIGDY nie sa dedupowane.
-# Okno konfigurowalne per typ (wiadomosci 300 s, domyslne 60 s). Dedup = best-effort
-# (transient) — dotyczy WYLACZNIE maili zdarzeniowych, nie gwarancji SLA (tabela).
+# Okno konfigurowalne per typ (wiadomosci 300 s, domyslne 60 s). Rezerwacja jest
+# ATOMOWA — ta sama, co przy dedupie zgloszen w module C (2.23); transient zostaje
+# tylko jako droga ratunkowa przy braku modulu C.
 # Exit 0 = OK.
 set -u
+
+# Sprzatanie NA WEJSCIU (pulapka #6: zostawiona rezerwacja dedupu wywala powtorke
+# testu w miejscu bez zwiazku ze zmiana). To samo na wyjsciu, nizej.
+sprzatnij_dedup() {
+	wp db query "DELETE FROM wp_mp_rate_counters WHERE rl_key LIKE 'mp_adedup_%'" >/dev/null 2>&1
+	wp eval 'foreach ((array) $GLOBALS["wpdb"]->get_col("SELECT option_name FROM {$GLOBALS[\"wpdb\"]->options} WHERE option_name LIKE \"%transient%mp_adedup%\"") as $o) delete_option($o);' >/dev/null 2>&1
+}
+sprzatnij_dedup
 
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); echo "  OK  $1"; }
@@ -68,6 +77,59 @@ wp eval "apply_filters('mp_case_change_status', null, $CID, 'zaakceptowane', 'w 
 # NO-PII w MAIL_DEDUPED
 PAY=$(q "SELECT payload FROM wp_mp_workflow_events WHERE event_type='MAIL_DEDUPED' LIMIT 1")
 echo "$PAY" | grep -q 'dedup@example.com' && bad "adres w logu MAIL_DEDUPED (PII!)" || ok "MAIL_DEDUPED bez adresu (NO-PII)"
+
+# ── 3. POZYCJA 2.23: JEDNA odpowiedz produktu na „nie zrob tego dwa razy" ────
+# Co bylo zle: ten sam problem byl rozwiazany w dwoch modulach na dwa sposoby i z
+# dwoma poziomami pewnosci. Modul C odsiewa podwojne zgloszenia ATOMOWA rezerwacja
+# klucza w tabeli (wp_mp_rate_counters), a modul D odsiewal podwojne maile
+# transientem, czyli sprawdz-potem-zapisz. Dwa rownolegle zadania (cron i klikniecie,
+# dwa wywolania webhooka) widzialy pusty klucz OBA i wysylaly ten sam mail dwa razy.
+sprzatnij_dedup
+
+# (a) Rezerwacja maila laduje w TEJ SAMEJ atomowej tabeli, co rezerwacja zgloszenia.
+wp eval 'MP\Automator\MailDedup::claim("spojnosc@example.com","tresc spojnosci",60);' >/dev/null 2>&1
+REZ=$(q "SELECT COUNT(*) FROM wp_mp_rate_counters WHERE rl_key LIKE 'mp_adedup_%'")
+[ "$REZ" = "1" ] \
+	&& ok "SEDNO 2.23: rezerwacja maila idzie tym samym mechanizmem, co dedup zgloszen (jedna tabela, jedna odpowiedz)" \
+	|| bad "mail dedupuje sie inaczej niz zgloszenia — dwa mechanizmy, dwa poziomy pewnosci ($REZ)"
+
+# (b) PRAWDZIWY WYSCIG: 6 rownoleglych procesow probuje wyslac te same 30 maili.
+# Procesy startuja rownoczesnie (czekaja do wspolnego znacznika czasu), zeby zderzyc
+# sie naprawde. Kazdy mail ma wyjsc DOKLADNIE RAZ: 30 zgod, zero maili przepuszczonych
+# dwa razy. Na kodzie sprzed naprawy: 124 zgody i 29 maili wyslanych wielokrotnie.
+sprzatnij_dedup
+TMPD=$(mktemp -d)
+START=$(( $(date +%s) + 3 ))
+for i in 1 2 3 4 5 6; do
+	wp eval "
+		\$s = $START;
+		while ( time() < \$s ) { usleep( 2000 ); }
+		\$out = array();
+		for ( \$n = 1; \$n <= 30; \$n++ ) {
+			if ( MP\\Automator\\MailDedup::claim( 'wyscig@example.com', 'mail $START nr ' . \$n, 60 ) ) { \$out[] = \$n; }
+		}
+		echo implode( \"\n\", \$out );
+	" >"$TMPD/$i" 2>/dev/null &
+done
+wait
+ZGODY=$(cat "$TMPD"/* 2>/dev/null | grep -c '[0-9]')
+KOLIZJE=$(cat "$TMPD"/* 2>/dev/null | grep '[0-9]' | sort | uniq -d | grep -c '[0-9]')
+rm -rf "$TMPD"
+{ [ "$ZGODY" = "30" ] && [ "$KOLIZJE" = "0" ]; } \
+	&& ok "SEDNO 2.23: 6 procesow x 30 maili rownolegle => kazdy mail wychodzi DOKLADNIE raz" \
+	|| bad "wyscig: $ZGODY zgod na 30 maili, $KOLIZJE maili przepuszczonych wiecej niz raz — klient dostaje dublet"
+
+# (c) Semantyka bez zmian: inna tresc w tym samym oknie przechodzi.
+INNA=$(wp eval "echo MP\\Automator\\MailDedup::claim( 'wyscig@example.com', 'INNA tresc $START', 60 ) ? '1' : '0';" 2>/dev/null)
+[ "$INNA" = "1" ] \
+	&& ok "inna tresc w tym samym oknie dalej przechodzi (dedup lapie duplikaty, nie rozne informacje)" \
+	|| bad "inna tresc zablokowana — dedup lapie za szeroko ($INNA)"
+
+sprzatnij_dedup
+POZOSTALO=$(q "SELECT COUNT(*) FROM wp_mp_rate_counters WHERE rl_key LIKE 'mp_adedup_%'")
+[ "$POZOSTALO" = "0" ] \
+	&& ok "test posprzatal rezerwacje po sobie (wspolna baza w CI)" \
+	|| bad "zostaly rezerwacje dedupu — nastepny test dostanie falszywy duplikat ($POZOSTALO)"
 
 capclear
 echo ""
