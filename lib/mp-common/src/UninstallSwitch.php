@@ -23,7 +23,7 @@ final class UninstallSwitch {
 	/**
 	 * Akcja admin-post => {option, cap}. Wypelniane przez register().
 	 *
-	 * @var array<string, array{option: string, cap: string}>
+	 * @var array<string, array{option: string, cap: string, msg_403: callable}>
 	 */
 	private static array $zarejestrowane = array();
 
@@ -33,15 +33,19 @@ final class UninstallSwitch {
 	 *
 	 * ⚠️ Komunikat odmowy przychodzi Z WTYCZKI, a nie stad: wspolny kod trafia do
 	 * trzech wtyczek o TRZECH roznych domenach tlumaczen i nie ma jak przetlumaczyc
-	 * wlasnego zdania. Tekst przygotowany po stronie wtyczki jest juz przetlumaczony.
+	 * wlasnego zdania.
+	 * ⛔ I przychodzi jako FUNKCJA, nie jako gotowy tekst: rejestracja dzieje sie przy
+	 * wczytaniu wtyczki, a tlumaczenie wywolane tak wczesnie WordPress 6.7+ zglasza
+	 * jako blad uzycia (i slusznie — jezyk nie jest jeszcze ustalony). Funkcje wolamy
+	 * dopiero przy zapisie, czyli long po `init`.
 	 *
 	 * @param string $action  Nazwa akcji admin-post (= akcja nonce).
 	 * @param string $option  Nazwa opcji czytanej przez uninstall.php tej wtyczki.
 	 * @param string $cap     Wymagana capability.
-	 * @param string $msg_403 Komunikat odmowy (juz przetlumaczony przez wtyczke).
+	 * @param callable $msg_403 Funkcja zwracajaca komunikat odmowy (wolana przy zapisie).
 	 * @return void
 	 */
-	public static function register( string $action, string $option, string $cap, string $msg_403 ): void {
+	public static function register( string $action, string $option, string $cap, callable $msg_403 ): void {
 		self::$zarejestrowane[ $action ] = array(
 			'option'  => $option,
 			'cap'     => $cap,
@@ -107,7 +111,7 @@ final class UninstallSwitch {
 		$cfg = self::$zarejestrowane[ $action ];
 
 		if ( ! current_user_can( $cfg['cap'] ) ) {
-			wp_die( esc_html( $cfg['msg_403'] ), '', array( 'response' => 403 ) );
+			wp_die( esc_html( (string) call_user_func( $cfg['msg_403'] ) ), '', array( 'response' => 403 ) );
 		}
 
 		check_admin_referer( $action );

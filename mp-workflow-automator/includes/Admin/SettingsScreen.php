@@ -64,7 +64,7 @@ final class SettingsScreen {
 			self::ACTION_UNINSTALL,
 			self::OPTION_DELETE_DATA,
 			self::CAP,
-			__( 'Brak uprawnień do ustawień odinstalowania.', 'mp-workflow-automator' )
+			static fn(): string => __( 'Brak uprawnień do ustawień odinstalowania.', 'mp-workflow-automator' )
 		);
 		add_action( 'mp_uninstall_switch_changed', array( self::class, 'log_uninstall_switch' ), 10, 2 );
 	}

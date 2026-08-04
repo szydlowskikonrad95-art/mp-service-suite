@@ -50,7 +50,7 @@ final class SettingsScreen {
 			self::ACTION_UNINSTALL,
 			self::OPTION_DELETE_DATA,
 			self::CAP,
-			__( 'Brak uprawnień do ustawień rejestru.', 'mp-warranty-registry' )
+			static fn(): string => __( 'Brak uprawnień do ustawień rejestru.', 'mp-warranty-registry' )
 		);
 	}
 
