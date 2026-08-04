@@ -40,7 +40,9 @@ ile_ponowien() {
 		echo $n;' 2>/dev/null | tr -d '[:space:]'
 }
 
-# Argumenty PIERWSZEGO czekajacego ponowienia, rozdzielone srednikiem.
+# Argumenty czekajacego ponowienia DLA WSKAZANEJ SPRAWY, rozdzielone srednikiem.
+# ⛔ Po sprawie, nie „pierwsze z brzegu": harmonogram jest wspolny dla calego
+# WordPressa, wiec branie pierwszego lepszego zadania wciaga smiec z innego biegu.
 argumenty_ponowienia() {
 	wp eval '
 		foreach ( (array) _get_cron_array() as $slot ) {
@@ -48,14 +50,20 @@ argumenty_ponowienia() {
 				continue;
 			}
 			foreach ( $slot["'"$HOOK"'"] as $zadanie ) {
-				echo implode( ";", (array) $zadanie["args"] );
-				return;
+				$args = (array) $zadanie["args"];
+				if ( (int) ( $args[0] ?? 0 ) === '"$1"' ) {
+					echo implode( ";", $args );
+					return;
+				}
 			}
 		}' 2>/dev/null | tr -d '[:space:]'
 }
 
+# ⚠️ `wp_clear_scheduled_hook()` kasuje WYLACZNIE zadania bez argumentow — nasze
+# ponowienia niosa piec argumentow, wiec tamta funkcja nie ruszalaby ich wcale
+# i „sprzatanie" byloby zyczeniem. `wp_unschedule_hook()` czysci zaczep w calosci.
 sprzataj_cron() {
-	wp eval 'wp_clear_scheduled_hook( "'"$HOOK"'" );' >/dev/null 2>&1
+	wp eval 'wp_unschedule_hook( "'"$HOOK"'" );' >/dev/null 2>&1
 }
 
 mkcase() {
@@ -106,7 +114,7 @@ PON=$(ile_ponowien)
 
 # Argumenty nie moga niesc adresu e-mail — zadania crona siedza w opcji, ktora
 # trafia do kopii zapasowej i do eksportu danych.
-ARGS=$(argumenty_ponowienia)
+ARGS=$(argumenty_ponowienia "$CID")
 printf '%s' "$ARGS" | grep -q "@" \
 	&& bad "argumenty ponowienia niosa adres e-mail ($ARGS) — dane osobowe w opcji crona" \
 	|| ok "argumenty ponowienia bez danych osobowych (kategoria odbiorcy, nie adres)"
@@ -185,10 +193,23 @@ AL_KONIEC=$(wp option get "$ALERT" --format=json 2>/dev/null)
 	&& ok "alarm poczty oddany w stanie zastanym (nastepny test nie dziedziczy naszego)" \
 	|| bad "zostawiamy alarm w innym stanie niz zastany (zastany=$ALERT_ZASTANY, koniec=$AL_KONIEC)"
 
+# Nie wolno zostawic WIECEJ, niz zastalismy. Mniej wolno: `wp_unschedule_hook`
+# czysci zaczep w calosci, wiec zabiera tez smiec z wczesniejszych biegow — a to
+# jest poprawa, nie szkoda (zadania tego zaczepu tworza wylacznie nasze testy).
 PON_KONIEC=$(ile_ponowien)
-[ "${PON_KONIEC:-0}" = "${PONOWIENIA_ZASTANE:-0}" ] \
-	&& ok "harmonogram oddany w stanie zastanym (zero naszych ponowien)" \
+[ "${PON_KONIEC:-0}" -le "${PONOWIENIA_ZASTANE:-0}" ] 2>/dev/null \
+	&& ok "harmonogram nie rosnie po nas (zastano $PONOWIENIA_ZASTANE, zostaje $PON_KONIEC)" \
 	|| bad "zostawiamy $PON_KONIEC zadan ponowienia (zastano $PONOWIENIA_ZASTANE) — wybuchnie u kogos dalej"
+
+# Sprawy testowe: kasujemy PO NUMERACH, nie hurtem — cudzych danych nie ruszamy.
+for ID in "$CID" "$CID2"; do
+	[ -n "$ID" ] && wp db query "DELETE FROM wp_mp_service_cases WHERE id=$ID; DELETE FROM wp_mp_workflow_events WHERE case_id=$ID; DELETE FROM wp_mp_case_events WHERE case_id=$ID; DELETE FROM wp_mp_case_sla WHERE case_id=$ID;" >/dev/null 2>&1
+done
+
+ZOSTALO=$(q "SELECT COUNT(*) FROM wp_mp_service_cases WHERE id IN ($CID, $CID2)")
+[ "${ZOSTALO:-1}" = "0" ] \
+	&& ok "sprawy testowe posprzatane (nastepny test nie policzy ich jako swoich)" \
+	|| bad "zostawiamy $ZOSTALO naszych spraw w bazie"
 
 echo ""
 echo "WYNIK 2.12: PASS=$PASS FAIL=$FAIL"
