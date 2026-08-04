@@ -179,6 +179,10 @@ final class Sweep {
 			// wiec wlasny stan z lista spraw C i doszywamy roznice.
 			Sla::reconcile_untracked();
 
+			// 2.20: wiersze-sieroty po usunietych sprawach. Cztery komentarze w tym
+			// module obiecywaly, ze „sweep sprzata osobno" — i nikt tego nie napisal.
+			$sieroty = Sla::cleanup_orphans();
+
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 
