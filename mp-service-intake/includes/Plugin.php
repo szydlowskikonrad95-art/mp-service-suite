@@ -172,13 +172,16 @@ final class Plugin {
 		// crona, wiec BEZ bramki uprawnien — jak `mp_case_get_context`.
 		add_filter(
 			'mp_cases_verified_ids',
-			static function ( $result, $days = 30, $limit = 200 ) {
+			static function ( $result, $days = 30, $limit = 200, $order = 'DESC' ) {
 				unset( $result );
 
-				return CaseRepo::verified_ids_recent( (int) $days, (int) $limit );
+				// 2.18: czwarty argument (kolejnosc) jest OPCJONALNY i domyslnie
+				// zachowuje dotychczasowe zachowanie — starsi konsumenci wolajacy
+				// filtr z trzema argumentami dostaja dokladnie to, co dotad.
+				return CaseRepo::verified_ids_recent( (int) $days, (int) $limit, (string) $order );
 			},
 			10,
-			3
+			4
 		);
 
 		// Kontrakt D->C: paginowana lista spraw do RAPORTOW/EKSPORTU/RESYNC D
