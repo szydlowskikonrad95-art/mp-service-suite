@@ -1030,6 +1030,62 @@ final class CaseRepo {
 	 *
 	 * @return string SCOPE_ALL | SCOPE_OWN | SCOPE_NONE.
 	 */
+	/**
+	 * Czy BIEZACY uzytkownik ma prawo zobaczyc TE sprawe (audyt 2.24, druga polowa).
+	 *
+	 * ⛔ PO CO OSOBNA FUNKCJA, SKORO JEST JUZ `scope_for_current_user()`:
+	 * zeby karta sprawy i lista spraw bramkowaly TAK SAMO, jednym kodem. Naprawa
+	 * 2.24 objela zapytanie listy, a KARTY nie — wystarczylo wpisac numer sprawy
+	 * w adresie, zeby pracownik otworzyl pelna karte cudzej sprawy z danymi
+	 * osobowymi klienta, ktorego nie obsluguje. Ostrzezenie przed tym stalo
+	 * w komentarzu OBOK, w tym samym pliku: „ekran i tak bramkuje" — a nie bramkowal.
+	 * Drugi, wlasny sposob sprawdzania rozjechalby sie po raz trzeci.
+	 *
+	 * ⛔ Sprawa NIEISTNIEJACA i sprawa NIEDOSTEPNA daja ten sam wynik i ten sam
+	 * komunikat na ekranie. Inaczej sam komunikat zdradzalby, ze sprawa o tym
+	 * numerze istnieje — czyli wyciek przez roznice odpowiedzi.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return bool Czy wolno pokazac.
+	 */
+	public static function can_current_user_see( int $case_id ): bool {
+		global $wpdb;
+
+		$scope = self::scope_for_current_user();
+
+		if ( self::SCOPE_NONE === $scope ) {
+			return false;
+		}
+
+		if ( self::SCOPE_ALL === $scope ) {
+			return true;
+		}
+
+		$table = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$assigned = $wpdb->get_var(
+			$wpdb->prepare( "SELECT assigned_to FROM {$table} WHERE id = %d", $case_id )
+		);
+		// phpcs:enable
+
+		if ( null === $assigned ) {
+			return false;
+		}
+
+		$biezacy = get_current_user_id();
+
+		return $biezacy > 0 && (int) $assigned === $biezacy;
+	}
+
+	/**
+	 * JEDEN kontrakt widocznosci spraw dla biezacego uzytkownika (audyt 2.24).
+	 *
+	 * ⛔ Kod pyta o CAPABILITY, nigdy o nazwe roli — role MP nie maja hierarchii.
+	 * Pelne uzasadnienie stoi w komentarzu nad `can_current_user_see()` wyzej.
+	 *
+	 * @return string SCOPE_ALL | SCOPE_OWN | SCOPE_NONE.
+	 */
 	public static function scope_for_current_user(): string {
 		if ( current_user_can( 'mp_coordinator' ) || current_user_can( 'mp_system_admin' ) ) {
 			return self::SCOPE_ALL;
