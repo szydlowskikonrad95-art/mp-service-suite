@@ -24,6 +24,8 @@ c-warstwa-ustawien.sh
 c-tozsamosc-konta-klienta.sh
 c-rodo-zgloszenia-niepotwierdzone.sh
 c-2-1b-poczta-nie-milczy.sh
+c-2-1-duplikat-i-komunikat.sh
+d-2-12-ponowienia-powiadomien.sh
 c26-widok-zwrot-i-etykiety.sh
 c6c-ochrona-zgloszen.sh
 c-form-dynamic.sh

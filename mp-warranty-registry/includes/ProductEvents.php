@@ -64,6 +64,90 @@ final class ProductEvents {
 	}
 
 	/**
+	 * Historia egzemplarza — WIERSZE, nie licznik.
+	 *
+	 * ⛔ Do 1.3.12 ta tabela byla zapisywana i NIGDY nieczytana: w calym produkcie
+	 * nie bylo ani jednego SELECT-a z `wp_mp_product_events`. Ekran poprawiania
+	 * danych obiecywal „zmiana zapisuje sie w historii produktu", a historii nie
+	 * dalo sie nigdzie zobaczyc — dziennik istnial jako zapis, nie jako historia.
+	 *
+	 * @param int $product_registry_id ID produktu.
+	 * @param int $limit               Gorny limit wpisow (1..500, domyslnie 100).
+	 * @return array<int, array<string, mixed>> Wpisy od najnowszego; `payload`
+	 *                                          zdekodowany do tablicy.
+	 */
+	public static function history( int $product_registry_id, int $limit = 100 ): array {
+		global $wpdb;
+
+		if ( $product_registry_id <= 0 ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 500, $limit ) );
+		$table = Tables::full( Tables::PRODUCT_EVENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, event_type, payload, actor_id, created_at
+				FROM {$table}
+				WHERE product_registry_id = %d
+				ORDER BY id DESC
+				LIMIT %d",
+				$product_registry_id,
+				$limit
+			),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$out = array();
+
+		foreach ( $rows as $row ) {
+			$payload = json_decode( (string) $row['payload'], true );
+
+			$out[] = array(
+				'id'         => (int) $row['id'],
+				'event_type' => (string) $row['event_type'],
+				'payload'    => is_array( $payload ) ? $payload : array(),
+				'actor_id'   => null === $row['actor_id'] ? null : (int) $row['actor_id'],
+				'created_at' => (string) $row['created_at'],
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Ile wpisow ma historia egzemplarza (do informacji „pokazujemy N z M").
+	 *
+	 * @param int $product_registry_id ID produktu.
+	 * @return int
+	 */
+	public static function history_count( int $product_registry_id ): int {
+		global $wpdb;
+
+		if ( $product_registry_id <= 0 ) {
+			return 0;
+		}
+
+		$table = Tables::full( Tables::PRODUCT_EVENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d",
+				$product_registry_id
+			)
+		);
+		// phpcs:enable
+	}
+
+	/**
 	 * Pas bezpieczenstwa payloadu: wycina `reason` i maskuje pola PII.
 	 *
 	 * Czysta funkcja (testowana jednostkowo). Klucze z PII_FIELDS w diffach

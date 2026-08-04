@@ -206,6 +206,12 @@ final class ProductsTable extends \WP_List_Table {
 		$id  = (int) $item['id'];
 		$out = array();
 
+		// Historia egzemplarza — POZA blokiem administratora: pracownik prowadzacy
+		// sprawe musi widziec, co i kiedy zmieniano przy tym produkcie. Bez tego
+		// linku dziennik `wp_mp_product_events` nie ma zadnego wejscia z ekranu.
+		$out[] = '<a href="' . esc_url( ProductsScreen::history_url( $id ) ) . '">'
+			. esc_html__( 'historia', 'mp-warranty-registry' ) . '</a>';
+
 		if ( current_user_can( 'mp_system_admin' ) ) {
 			$out[] = '<a href="' . esc_url(
 				add_query_arg(
