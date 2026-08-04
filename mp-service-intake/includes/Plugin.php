@@ -80,6 +80,27 @@ final class Plugin {
 			}
 		);
 
+		// cz.1 pkt 2: okno retencji zalacznikow biegnie OD ZAMKNIECIA sprawy.
+		// Termin byl ustawiany raz, przy wgraniu pliku, i nigdy nieprzeliczany —
+		// wiec sprawa prowadzona dluzej niz okno tracila dowody W TRAKCIE (rodzaj
+		// „zapytanie" ma okno TRZECH miesiecy). Przeliczamy w chwili, od ktorej
+		// termin ma sens: gdy sprawa naprawde sie konczy.
+		// ⚠️ Zaczep leci PO COMMIT (`CaseRepo::change_status`), wiec widzimy stan
+		// juz zapisany. Wznowienie nie wymaga tu nic osobnego: sprawa przestaje
+		// byc terminalna, a sprzatanie pomija sprawy zywe.
+		add_action(
+			'mp_case_status_changed',
+			static function ( int $case_id, string $from, string $to ): void {
+				unset( $from );
+
+				if ( Statuses::is_terminal( $to ) ) {
+					Attachments::refresh_retention_for_case( $case_id );
+				}
+			},
+			10,
+			3
+		);
+
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
 			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
