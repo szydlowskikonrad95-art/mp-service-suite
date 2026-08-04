@@ -40,7 +40,11 @@ final class SlaTerminyTest extends TestCase {
 	public static function terminy_rdzenia(): array {
 		return array(
 			'nowe'            => array( 'nowe', 24, '2026-03-02 08:00:00' ),
-			'do uzupełnienia' => array( 'do uzupełnienia', 72, '2026-03-04 08:00:00' ),
+			// ZERO GODZIN = BRAK TERMINU (4.08, standard branzowy): „do uzupelnienia" to
+			// jedyny status, w ktorym czekamy na KLIENTA, wiec licznik stoi. Oczekiwana
+			// wartoscia jest tu NULL i to jest CALA tresc tej zmiany — nie mozemy karac
+			// terminem za milczenie klienta.
+			'do uzupełnienia' => array( 'do uzupełnienia', 0, null ),
 			'w analizie'      => array( 'w analizie', 48, '2026-03-03 08:00:00' ),
 			'zaakceptowane'   => array( 'zaakceptowane', 24, '2026-03-02 08:00:00' ),
 			'w naprawie'      => array( 'w naprawie', 120, '2026-03-06 08:00:00' ),
@@ -57,13 +61,19 @@ final class SlaTerminyTest extends TestCase {
 	 *
 	 * @param string $status    Status rdzenia.
 	 * @param int    $godziny   Obiecane godziny (STATE_MACHINE.md).
-	 * @param string $oczekiwany Deadline liczony od KOTWICA.
+	 * @param string|null $oczekiwany Deadline liczony od KOTWICA; NULL = status bez terminu.
 	 */
-	public function test_terminy_rdzenia_zgodne_z_kartka( string $status, int $godziny, string $oczekiwany ): void {
+	public function test_terminy_rdzenia_zgodne_z_kartka( string $status, int $godziny, ?string $oczekiwany ): void {
 		self::assertSame(
 			$oczekiwany,
 			SlaConfig::deadline_for( $status, self::KOTWICA, 'normal' ),
-			sprintf( 'Status „%s" ma mieć %d godzin od zmiany statusu.', $status, $godziny )
+			sprintf(
+				0 === $godziny
+					? 'Status „%s" ma NIE mieć terminu (licznik stoi, czekamy na klienta).'
+					: 'Status „%s" ma mieć %d godzin od zmiany statusu.',
+				$status,
+				$godziny
+			)
 		);
 	}
 

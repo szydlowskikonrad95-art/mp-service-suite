@@ -47,7 +47,26 @@ final class SlaConfig {
 	// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze z diakrytykami (ą/ę) mylą sniff (bajty vs znaki).
 	private const CORE_HOURS = array(
 		'nowe'            => 24,
-		'do uzupełnienia' => 72,
+
+		/*
+		 * ZERO ZNACZY: LICZNIK STOI, GDY CZEKAMY NA KLIENTA (standard branzowy, 4.08).
+		 *
+		 * „Do uzupelnienia" to jedyny status z kartki, w ktorym pilka jest po stronie
+		 * KLIENTA — czekamy, az dosle dokument albo zdjecie. Do 1.3.12 status mial wlasne
+		 * okno 72 h, ktore bieglo przez caly czas oczekiwania: po trzech dobach sprawa byla
+		 * „po terminie" i ESKALOWALA DO KOORDYNATORA za to, ze klient nie odpisal. Falszywe
+		 * przekroczenia to nie drobiazg — po nich ludzie przestaja czytac alarmy, takze te
+		 * prawdziwe. Zafalszowywaly tez sredni czas obslugi w eksporcie.
+		 *
+		 * Zera nie trzeba obslugiwac osobno: `deadline_for()` ma juz sciezke
+		 * `sla_hours <= 0 => deadline NULL`, a zamiatarka wybiera wylacznie wiersze
+		 * z `deadline_at IS NOT NULL`. Zegar rusza z powrotem sam, gdy sprawa wroci do
+		 * statusu roboczego — kazda zmiana statusu liczy termin od nowa.
+		 *
+		 * ⛔ SPRAWA NIE ZNIKA Z RADARU: sprawe zaparkowana tu na zawsze lapie osobna miara
+		 * wieku (`Sla::stale_cases`, cz.1 pkt 3), ktora nie zalezy od terminow.
+		 */
+		'do uzupełnienia' => 0,
 		'w analizie'      => 48,
 		'zaakceptowane'   => 24,
 		'w naprawie'      => 120,
