@@ -111,7 +111,9 @@ sprawdz "README: liczba statusow = $STATUSOW" "$STATUSOW (konfigurowalnych )?sta
 sprawdz "README: liczba rodzajow spraw = $RODZAJOW" "$RODZAJOW rodzaj" README.md
 case "$TESTOW_SH" in
 	10) SLOWNIE="dziesięć" ;; 11) SLOWNIE="jedenaście" ;; 12) SLOWNIE="dwanaście" ;;
-	13) SLOWNIE="trzynaście" ;; 14) SLOWNIE="czternaście" ;; *) SLOWNIE="__brak_mapy__" ;;
+	13) SLOWNIE="trzynaście" ;; 14) SLOWNIE="czternaście" ;; 15) SLOWNIE="piętnaście" ;;
+	16) SLOWNIE="szesnaście" ;; 17) SLOWNIE="siedemnaście" ;; 18) SLOWNIE="osiemnaście" ;;
+	*) SLOWNIE="__brak_mapy__" ;;
 esac
 sprawdz "README: liczba testow diagnostyki = $TESTOW_SH" "$SLOWNIE testów|$TESTOW_SH testów" README.md
 sprawdz "ADMIN.md: liczba testow diagnostyki = $TESTOW_SH" "$TESTOW_SH testów" dla-klienta/instrukcje/ADMIN.md
