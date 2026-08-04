@@ -9,7 +9,7 @@
  *   · raport bledow importu (modul rejestru) — wartosc z pliku uzytkownika
  *     szla do pliku SUROWA, bez znacznika i z inna konwencja ucieczki.
  *
- * To nie byly trzy przypadki, tylko jeden moduł dokonczony i drugi nie. Autor
+ * To nie byly trzy przypadki, tylko jeden modul dokonczony i drugi nie. Autor
  * sam opisal wage tej ochrony w komentarzu: „OBOWIAZKOWE (RCE u klienta)".
  *
  * Sciezka wyzwolenia jest zwykla, nie egzotyczna: ten sam numer seryjny dwa
