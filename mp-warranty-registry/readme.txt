@@ -47,15 +47,10 @@ No. The import ADDS products. A serial number already present in the registry is
 * Dzialanie bez zmian — poprawka wygody obslugi.
 
 = 1.3.10 =
-* Komunikaty na ekranach cytuja nazwe roli DOKLADNIE tak, jak brzmi ona na liscie uzytkownikow
-  („Pracownik serwisu MP", nie „Pracownik serwisu") — administrator szukajacy cytowanej nazwy
-  znajdzie ja teraz bez zgadywania.
-* Przycisk w Rejestrze zdarzen nie pokazuje juz nazwy stalej z kodu („SWEEP_RUN") — mowi
-  „Pokaz/Ukryj wpisy automatycznego przegladu".
-* Naglowek kolumny w tabeli statusow: „Terminalny" -> „Konczy sprawe" (bez zargonu maszyn stanow).
-* Kontrola jakosci pilnujaca nazw rol obejmuje teraz TAKZE napisy w kodzie, nie tylko dokumenty
-  — poprzednio te same bledne cytaty przezyly poprawke dokumentow.
-* Dzialanie wtyczek bez zmian — wydanie jezykowe.
+* Wydanie zbiorcze pakietu: bez zmian w kodzie tego modułu, numer wersji podniesiony razem
+  z pozostałymi. Poprawki językowe tego wydania (cytowana nazwa roli, etykieta przycisku
+  w Rejestrze zdarzeń, nagłówek kolumny w tabeli statusów) dotyczą modułów Zgłoszenia MP
+  i Automatyzacja MP.
 
 = 1.3.9 =
 * Instrukcja wdrozenia: nowy krok „schowaj formularz na czas przygotowan". Strona zgloszenia jest
@@ -68,16 +63,15 @@ No. The import ADDS products. A serial number already present in the registry is
 * Dzialanie wtyczek bez zmian — wydanie dokumentacyjne.
 
 = 1.3.8 =
-* Poprawki jezyka na ekranach: nagłowek kolumny „Job" zamieniony na „Import", komunikaty bledow
-  importu mowia „ten import" zamiast „job", „Niepelne dane batcha" na „Niepelne dane porcji
-  importu", lista markerow szablonow podpisana „(lista dozwolonych)" zamiast „(whitelist)",
-  a przycisk „Przelicz SLA" na „Przelicz terminy obslugi".
-* Godziny podawane w czasie UTC (tabela importow, wyjatki gwarancyjne) sa teraz opisane zdaniem
-  wyjasniajacym roznice wzgledem zegara w Polsce.
-* Instrukcje: poprawione nazwy pozycji menu i filtrow (byly nieaktualne wzgledem panelu), dodany
-  opis pol podstawianych w szablonach odpowiedzi oraz prawidlowa droga do wyjatkow gwarancyjnych.
-* Odswiezone zdjecia w instrukcji administratora — w tym zdjecie wyjatkow gwarancyjnych, ktore
-  wczesniej pokazywalo pusty ekran zamiast dzialajacej funkcji.
+* Poprawki języka na ekranach tego modułu: nagłówek kolumny „Job" zamieniony na „Import",
+  komunikaty błędów importu mówią „ten import" zamiast „job", a „Niepełne dane batcha" —
+  „Niepełne dane porcji importu".
+* Godziny podawane w czasie UTC (tabela importów, wyjątki gwarancyjne) są teraz opisane zdaniem
+  wyjaśniającym różnicę względem zegara w Polsce.
+* Instrukcje (materiał wspólny dla pakietu): poprawione nazwy pozycji menu i filtrów (były
+  nieaktualne względem panelu) oraz prawidłowa droga do wyjątków gwarancyjnych. Odświeżone
+  zdjęcia w instrukcji administratora — w tym zdjęcie wyjątków gwarancyjnych, które wcześniej
+  pokazywało pusty ekran zamiast działającej funkcji.
 
 = 1.3.7 =
 * Zmiana wylacznie w dokumentacji: raport dostepnosci (WCAG 2.1 AA) zostal powtorzony na

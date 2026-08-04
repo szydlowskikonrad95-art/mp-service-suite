@@ -1,6 +1,24 @@
 # Raport z audytów — MP Service Suite
 
-**Stan na wydanie 1.3.11:** znalezisk krytycznych **0**, dużych **0**.
+**Ten dokument jest protokołem z kolejnych przebiegów przeglądu — nie oświadczeniem o stanie
+produktu.** Każda runda niżej ma własną datę, własny zakres i własny wynik. Wynik jednej rundy
+nie rozciąga się ani na wydania późniejsze, ani na obszary, których ta runda nie obejmowała.
+
+**Ostatnia runda — audyt osobnego działu, lista złożona 3.08.2026, wersja audytowana 1.3.11.**
+Zakres: trzy wtyczki, paczka dla klienta, dokumentacja i zgodność z **oryginalnym zamówieniem**
+(nie z naszym opracowaniem), bez prawa zmiany kodu. **Wynik: 61 żywych pozycji** — rozkład wag
+policzony z nagłówków listy: **3 krytyczne**, 16 dużych, 27 średnich, 15 drobnych — plus 5 miejsc
+w części pierwszej. Naprawy wchodzą w wydaniu **1.3.12**; co zamknięte i czym udowodnione, mówią
+[`CHANGELOG.md`](../CHANGELOG.md) i [`dzial-audytu-POSTEP.md`](../dzial-audytu-POSTEP.md).
+
+⛔ **Poprzednie brzmienie tego nagłówka było jedną z wad, które ta runda znalazła.** Stało tu
+zdanie *„Stan na wydanie 1.3.11: znalezisk krytycznych 0, dużych 0"* — **bez daty i bez zakresu**,
+więc czytało się jak stan produktu, a nie jak wynik jednego przebiegu z określonego dnia. Sama
+liczba nie wzięła się znikąd: audyt końcowy przed oddaniem (1.08, [`AUDYT-RAPORT.md`](../AUDYT-RAPORT.md)
+w korzeniu repozytorium) **w swoim zakresie** nie znalazł pozycji krytycznych ani dużych. Audyt
+działu, z innymi kątami patrzenia, znalazł w tym samym kodzie trzy pozycje krytyczne — dwie z nich
+dotyczą danych osobowych. **Obie liczby są prawdziwe i żadnej nie wycofujemy — dlatego każda musi
+stać przy swojej dacie i swoim zakresie.**
 
 Dokument zbiera wyniki kolejnych rund przeglądu. Jest pisany tak, żeby dało się go zweryfikować:
 każde twierdzenie ma liczbę albo miejsce, w którym można je sprawdzić. Zawiera też rzeczy, które
