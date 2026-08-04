@@ -32,8 +32,8 @@ const USER = process.env.MP_USER || '';
 const PASS = process.env.MP_PASS || '';
 const CASE_ID = process.env.MP_CASE_ID || '';
 
-if (!BASE || !USER || !PASS) {
-  console.error('Brakuje MP_BASE / MP_USER / MP_PASS w środowisku.');
+if (!BASE) {
+  console.error('Brakuje MP_BASE w środowisku.');
   process.exit(2);
 }
 
@@ -126,13 +126,15 @@ const ZRZUTY = [
     akcje: async (page) => {
       await page.selectOption('#mp-f-kind', 'reklamacja');
       await page.selectOption('#mp-f-category', 'agd');
+      // Pole WYMAGANE — bez niego zrzut pokazywalby blad walidacji.
+      await page.fill('input[name="customer_name"]', 'Anna Kowalska');
       await page.fill('#mp-f-email', 'anna.kowalska@example.com');
       await page.fill('#mp-f-serial', 'AGD-2024-118834');
       await page.fill('#mp-f-purchase_document', 'FV/2026/03/118');
       await page.fill('#mp-f-purchase_date', '2026-03-14');
       await page.fill('#mp-f-issue_description', 'Odkurzacz po miesiącu przestał trzymać moc ssania, przy pracy słychać piszczenie.');
       await page.setInputFiles('#mp-f-mp_files', plikPrzykladowy());
-      await page.check('#mp-f-consent');
+      await page.check('input[name="mp_consent"]');
     },
   },
   {
@@ -146,6 +148,8 @@ const ZRZUTY = [
     akcje: async (page) => {
       await page.selectOption('#mp-f-kind', 'naprawa');
       await page.selectOption('#mp-f-category', 'elektronarzedzia');
+      // Pole WYMAGANE — bez niego zrzut pokazywalby blad walidacji.
+      await page.fill('input[name="customer_name"]', 'Anna Kowalska');
       await page.fill('#mp-f-email', 'anna.kowalska@example.com');
       await page.fill('#mp-f-serial', 'ETN-2025-004120');
       await page.fill('#mp-f-issue_description', 'Wkrętarka nie ładuje się do końca — dioda miga na czerwono.');
@@ -169,13 +173,30 @@ const ZRZUTY = [
   const kontekst = await browser.newContext({ viewport: { width: SZEROKOSC, height: 900 }, locale: 'pl-PL' });
 
   // Logowanie RAZ, przez prawdziwy formularz — sesja starcza na wszystkie ekrany.
-  const logowanie = await kontekst.newPage();
-  await logowanie.goto(`${BASE}/wp-login.php`, { waitUntil: 'domcontentloaded' });
-  await logowanie.fill('#user_login', USER);
-  await logowanie.fill('#user_pass', PASS);
-  await Promise.all([logowanie.waitForNavigation({ waitUntil: 'networkidle' }), logowanie.click('#wp-submit')]);
-  const zalogowany = await logowanie.locator('#wpadminbar').count();
-  await logowanie.close();
+  //
+  // ⛔ TYLKO gdy wybrane zrzuty go potrzebują. Ekrany klienta (`wyloguj: true`)
+  //    oglada sie jako GOSC, wiec zadanie samych tych trzech nie ma powodu wymagac
+  //    hasla administratora. Bezwarunkowe logowanie oznaczalo, ze zeby zrobic zdjecie
+  //    PUSTEGO FORMULARZA trzeba miec konto w cudzym srodowisku — albo je tam zalozyc.
+  const trzebaSieLogowac = doZrobienia.some((z) => !z.wyloguj);
+
+  if (trzebaSieLogowac && (!USER || !PASS)) {
+    console.error('Wybrane zrzuty wymagaja panelu — podaj MP_USER i MP_PASS.');
+    await browser.close();
+    process.exit(2);
+  }
+
+  const logowanie = trzebaSieLogowac ? await kontekst.newPage() : null;
+  let zalogowany = true;
+
+  if (logowanie) {
+    await logowanie.goto(`${BASE}/wp-login.php`, { waitUntil: 'domcontentloaded' });
+    await logowanie.fill('#user_login', USER);
+    await logowanie.fill('#user_pass', PASS);
+    await Promise.all([logowanie.waitForNavigation({ waitUntil: 'networkidle' }), logowanie.click('#wp-submit')]);
+    zalogowany = Boolean(await logowanie.locator('#wpadminbar').count());
+    await logowanie.close();
+  }
 
   if (!zalogowany) {
     console.error('Nie udało się zalogować — sprawdź MP_USER / MP_PASS.');

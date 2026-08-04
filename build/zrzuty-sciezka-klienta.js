@@ -35,6 +35,12 @@ const SZEROKOSC = 1440;
 // Dane demo: człowiek, nie „test1@example.com". Numer seryjny musi istnieć
 // w rejestrze, inaczej ekrany pokażą „brak danych" zamiast gwarancji.
 const KLIENT = {
+  // Pole „Imię i nazwisko" jest WYMAGANE. Brakowało go tu w ogóle: skrypt wypełniał
+  // resztę, wysyłał formularz, dostawał czerwony komunikat „To pole jest wymagane"
+  // — i zapisywał ten ekran jako `04-po-wyslaniu-komunikat.jpg`, czyli wkładał
+  // klientowi do instrukcji zdjęcie NASZEGO formularza odrzucającego zgłoszenie.
+  // Kod wyjścia był przy tym zerowy.
+  imie: process.env.MP_KLIENT_IMIE || 'Anna Nowak',
   email: process.env.MP_KLIENT_EMAIL || 'anna.nowak@example.com',
   serial: process.env.MP_SERIAL || 'SN-AGD-2001',
   dokument: process.env.MP_DOKUMENT || 'FV/2026/0155',
@@ -173,13 +179,21 @@ function linkZMaila(mail, wzorzec) {
   async function wypelnijFormularz() {
     await page.selectOption('#mp-f-kind', 'reklamacja');
     await page.selectOption('#mp-f-category', 'agd');
+    // Selektory po NAZWIE pola, nie po `id`: identyfikator jest składany
+    // z klucza w konfiguracji formularza i zmienia się razem z nią.
+    await page.fill('input[name="customer_name"]', KLIENT.imie);
     await page.fill('#mp-f-email', KLIENT.email);
     await page.fill('#mp-f-serial', KLIENT.serial);
     await page.fill('#mp-f-purchase_document', KLIENT.dokument);
     await page.fill('#mp-f-purchase_date', KLIENT.data);
     await page.fill('#mp-f-issue_description', KLIENT.opis);
     await page.setInputFiles('#mp-f-mp_files', plikPrzykladowy());
-    await page.check('#mp-f-consent');
+    // Po nazwie pola, nie po `id`. Identyfikator jest SKLADANY z klucza pola
+    // z konfiguracji formularza (`mp-f-` + klucz), wiec `#mp-f-consent` przestal
+    // istniec, gdy pole zgody dostalo klucz `mp_consent`. Zrzut wisial wtedy
+    // 30 sekund na czekaniu i przerywal caly przebieg. `name` jest kontraktem
+    // wysylki i nie zmienia sie razem ze schematem identyfikatorow.
+    await page.check('input[name="mp_consent"]');
   }
 
   await page.goto(FORM, { waitUntil: 'networkidle' });
