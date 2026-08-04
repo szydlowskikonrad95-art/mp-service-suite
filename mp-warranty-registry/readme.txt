@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.11
+Stable tag: 1.3.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,38 @@ Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detec
 No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
 
 == Changelog ==
+
+= 1.3.12 =
+Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
+
+Bezpieczeństwo danych:
+* **Raport błędów importu nie wypuszcza już formuły do arkusza kalkulacyjnego.** Wartość z pliku
+  zaczynająca się od znaku formuły trafiała do raportu tak, jak stała — a arkusz wykonuje ją przy
+  otwarciu. Waga: krytyczna.
+* **Nieudany zapis do dziennika rejestru zatrzymuje operację** zamiast przepuścić ją dalej.
+  Wcześniej zmiana danych mogła zostać zatwierdzona bez wpisu, który ma być jej dowodem.
+
+Dostępność (WCAG 2.1 AA):
+* **Ekran importu ogłasza postęp, zakończenie i błąd także czytnikowi ekranu.** Dotąd pasek postępu
+  zmieniał się w ciszy — osoba niewidoma nie wiedziała, czy import jeszcze trwa.
+
+Ekrany i praca administratora:
+* **Administrator widzi wszystkie udzielone wyjątki gwarancyjne** na jednym ekranie, a nie tylko
+  wyjątek produktu, który akurat otworzył.
+* **Historia egzemplarza jest widoczna, a nie tylko zapisywana** — nowy ekran pokazuje, co się
+  z danym produktem działo, kto i kiedy zmienił dane. ⚠️ Domknięta jest strona rejestru: **lista
+  spraw danego egzemplarza i wskazanie, z którą sprawą coś jest duplikatem, nadal nie istnieją**
+  — kontrakt między wtyczkami oddaje w tym miejscu wyłącznie liczbę.
+* **Koordynator serwisu ma dostęp do Rejestru produktów** (wcześniej ekran wpuszczał pracownika,
+  a odbijał jego przełożonego).
+* **Import mówi, które pole jest za długie i jaki jest limit**, zamiast odrzucać wiersz bez powodu.
+  ⚠️ To jest część zarzutu: komunikaty przy pozostałych regułach importu zostają bez zmian.
+* Wpis w dzienniku rejestru i odpowiedzi kontraktowe **niosą wersję swojego kształtu** — moduł,
+  który je czyta, wie, z jaką wersją danych rozmawia.
+* Poprawka stylu albo skryptu dociera do przeglądarek, zamiast zostać w pamięci podręcznej.
+* Nagłówki przy blokach ekranu, wersja schematu i zbędna praca przy wczytywaniu — porządki.
+* Wspólna dla pakietu warstwa ustawień: administrator ustawia statusy, terminy i reguły bez
+  programisty.
 
 = 1.3.11 =
 * Ekran „Wyjatki gwarancyjne" otwarty z menu (bez wybranego produktu) mowil tylko „wybierz produkt

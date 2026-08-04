@@ -1,6 +1,6 @@
 # Jakość i audyty — jak ten system jest sprawdzany
 
-**Wersja:** 1.3.11
+**Wersja:** 1.3.12
 
 Ten dokument opisuje, **czym i jak kontrolowana jest jakość** trzech wtyczek MP: co sprawdza
 się automatycznie przy każdej zmianie kodu, co sprawdza się ręcznie przed wydaniem, a co system

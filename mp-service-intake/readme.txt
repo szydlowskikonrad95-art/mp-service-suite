@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.11
+Stable tag: 1.3.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,60 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 * Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
+
+= 1.3.12 =
+Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
+
+Dane osobowe i RODO:
+* **Konto klienta przestało nosić dane osobowe.** Konto zakładane przy potwierdzeniu zgłoszenia
+  brało nazwę wyświetlaną z adresu e-mail, a WordPress publikuje ją na stronie autora — jawnej
+  i indeksowalnej. Teraz nazwa, login i adres strony autora są neutralne, a imię i nazwisko żyje
+  wyłącznie w tabeli klientów, gdzie sięga po nie mechanizm RODO. Konta założone wcześniej
+  poprawia jednorazowa migracja — bez niej osoby już ujawnione pozostałyby ujawnione.
+* **Żądanie usunięcia i wydania danych obejmuje zgłoszenia niepotwierdzone.** Leżą w nich adres,
+  telefon, opis usterki i zdjęcia osoby, która nigdy nie została klientem — a procedura chodziła
+  wyłącznie po klientach i mimo to meldowała „usunięto".
+* **Formularz pyta o imię i nazwisko.** Bez tego ochrona przed sklejeniem dwóch osób pod wspólną
+  skrzynką (recepcja, sekretariat) nigdy się nie włączała.
+* Notatka wewnętrzna personelu: klient jej nie widzi i nie dostaje o niej powiadomienia, ale
+  wchodzi do paczki wydawanej na żądanie RODO.
+* Powód wyjątku gwarancyjnego znika z migawki sprawy przy żądaniu usunięcia danych.
+* Sprzątanie po terminie retencji **nie zabiera już załączników sprawie, która żyje** albo wróciła
+  ze stanu zamkniętego; termin jest przeliczany, a nie wyliczany raz przy wgraniu pliku.
+
+Dostępność (WCAG 2.1 AA):
+* **Błąd formularza prowadzi do konkretnego pola:** podsumowanie błędów jest listą odnośników,
+  a pole z błędem jest oznaczone dla czytnika ekranu.
+* **Wysyłka ogłasza, że trwa** — przycisk zmienia napis i nie da się kliknąć drugi raz; kontrolka
+  nie jest przy tym wyłączana, bo to wycinałoby ją z przesyłanych danych.
+* Ekran „Zgłoszenia niepotwierdzone" mieści się w oknie przy powiększeniu 200%.
+
+Praca personelu, statusy i terminy:
+* **Administrator ustawia statusy, terminy i reguły bez programisty** — nowa warstwa ustawień.
+* **Status „odrzucone" da się nie tylko wybrać, ale i zapisać**, a lista powodów odrzucenia jest
+  ustawieniem administratora, nie listą w kodzie.
+* Pracownik widzi na liście **tylko swoje sprawy**; koordynator ma dostęp do tych samych ekranów,
+  co podległy mu pracownik (wcześniej miał do mniejszej liczby).
+* Jedna sprawa **nazywa się wszędzie tak samo** — rodzaj i status nie mają już trzech nazw.
+* „Czas obsługi" znaczy to samo w panelu i w eksporcie, a **wiek sprawy jest liczony osobno**,
+  od złożenia. ⚠️ Terminy obsługi (SLA) nadal liczą się od ostatniej zmiany statusu — zostawiliśmy
+  to świadomie, a wykrywanie sprawy krążącej między statusami oparliśmy na nowej, osobnej mierze
+  wieku sprawy.
+* Mechanizm ratunkowy przydziału sięga spraw czekających najdłużej, a nie najnowszych.
+
+Rzetelność zapisu i drobiazgi:
+* **Nieudany zapis do dziennika zdarzeń zatrzymuje operację** zamiast przepuścić ją dalej —
+  wcześniej zmiana statusu mogła zostać zatwierdzona bez wpisu, który ma być jej dowodem.
+* Zmiana danych kontaktowych zostawia ślad w historii sprawy.
+* **Duplikat rozpoznawany po numerze sprzętu, nie po sposobie jego zapisania.** ⚠️ Produkt nadal
+  oznacza duplikat samą flagą i **nie wskazuje, z którą sprawą** — to zostaje otwarte.
+* Oznaczenie „link nie doszedł" rozstrzyga kolejnością wpisów, nie porównaniem czasów.
+* Gdy poczta pada, słyszą to i klient, i personel — awaria przestała być niewidoczna.
+* Okno wykrywania powtórnego zgłoszenia i okno ogranicznika to ustawienia, nie liczby w kodzie.
+* Ważność linku potwierdzającego zgadza się z tym, co piszą materiały dla człowieka.
+* Odinstalowanie modułu nie zabiera dowodów sprawom, które zostają.
+* Wiersze-sieroty w tabeli terminów są naprawdę sprzątane (dotąd obiecywał to tylko komentarz).
+* Poprawka stylu lub skryptu dociera do przeglądarek, zamiast zostać w pamięci podręcznej.
 
 = 1.3.11 =
 * Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.

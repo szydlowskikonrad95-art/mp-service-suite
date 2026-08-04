@@ -111,7 +111,7 @@ final class SettingsScreen {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( RejectionReasons::ACTION_CONFIG ); ?>" />
 				<?php wp_nonce_field( RejectionReasons::ACTION_CONFIG ); ?>
-				<textarea name="mp_rejection_reasons" rows="8" cols="70" class="large-text code"><?php echo esc_textarea( RejectionReasons::to_text() ); ?></textarea>
+				<textarea id="mp-rejection-reasons" name="mp_rejection_reasons" rows="8" cols="70" class="large-text code" aria-label="<?php esc_attr_e( 'Powody odrzucenia sprawy — jeden powód w linii', 'mp-service-intake' ); ?>"><?php echo esc_textarea( RejectionReasons::to_text() ); ?></textarea>
 				<?php submit_button( __( 'Zapisz powody odrzucenia', 'mp-service-intake' ) ); ?>
 			</form>
 

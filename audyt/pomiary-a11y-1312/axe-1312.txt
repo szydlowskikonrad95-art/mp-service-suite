@@ -1,0 +1,68 @@
+Badane adresy:
+  formularz: http://localhost:8097/?page_id=4
+  panel:     http://localhost:8097/?page_id=5
+
+--- Formularz zgloszenia (publiczny)
+     nasza czesc (.mp-intake): przeszlo 13 regul, naruszen 0
+     cala strona z motywem: przeszlo 25 regul, naruszen 1 (w tym 1 poza naszym kodem)
+       [motyw] list [serious] x1 — .is-responsive.items-justified-right.wp-block-navigation__container
+
+--- Panel klienta — przed zalogowaniem
+     nasza czesc (.mp-account): przeszlo 7 regul, naruszen 0
+     cala strona z motywem: przeszlo 24 regul, naruszen 1 (w tym 1 poza naszym kodem)
+       [motyw] list [serious] x1 — .is-responsive.items-justified-right.wp-block-navigation__container
+
+--- Panel klienta — po zalogowaniu
+     nasza czesc (.mp-account): przeszlo 7 regul, naruszen 0
+     cala strona z motywem: przeszlo 23 regul, naruszen 1 (w tym 1 poza naszym kodem)
+       [motyw] list [serious] x1 — .is-responsive.items-justified-right.wp-block-navigation__container
+
+--- Panel — rejestr produktow
+     nasza czesc (#wpbody-content .wrap): przeszlo 6 regul, naruszen 0
+     cala strona z motywem: przeszlo 29 regul, naruszen 0
+
+--- Panel — wyjatki gwarancyjne
+     nasza czesc (#wpbody-content .wrap): przeszlo 9 regul, naruszen 0
+     cala strona z motywem: przeszlo 31 regul, naruszen 0
+
+--- Panel — import CSV
+     nasza czesc (#wpbody-content .wrap): przeszlo 15 regul, naruszen 0
+     cala strona z motywem: przeszlo 29 regul, naruszen 0
+
+--- Panel — sprawy
+     nasza czesc (#wpbody-content .wrap): przeszlo 11 regul, naruszen 0
+     cala strona z motywem: przeszlo 32 regul, naruszen 0
+
+--- Panel — zgloszenia niepotwierdzone
+     nasza czesc (#wpbody-content .wrap): przeszlo 1 regul, naruszen 0
+     cala strona z motywem: przeszlo 25 regul, naruszen 0
+
+--- Panel — ustawienia zgloszen
+     nasza czesc (#wpbody-content .wrap): przeszlo 5 regul, naruszen 1
+       label [critical] x1 — textarea
+     cala strona z motywem: przeszlo 28 regul, naruszen 1
+
+--- Panel — automat
+     nasza czesc (#wpbody-content .wrap): przeszlo 20 regul, naruszen 0
+     cala strona z motywem: przeszlo 33 regul, naruszen 0
+
+--- Panel — ustawienia automatu
+     nasza czesc (#wpbody-content .wrap): przeszlo 17 regul, naruszen 0
+     cala strona z motywem: przeszlo 32 regul, naruszen 0
+
+ZAKRES BADANIA
+  zbadane powierzchnie (11):
+    + Formularz zgloszenia (publiczny)
+    + Panel klienta — przed zalogowaniem
+    + Panel klienta — po zalogowaniu
+    + Panel — rejestr produktow
+    + Panel — wyjatki gwarancyjne
+    + Panel — import CSV
+    + Panel — sprawy
+    + Panel — zgloszenia niepotwierdzone
+    + Panel — ustawienia zgloszen
+    + Panel — automat
+    + Panel — ustawienia automatu
+  pominietych: brak
+
+WYNIK: naruszen w naszych powierzchniach: 1

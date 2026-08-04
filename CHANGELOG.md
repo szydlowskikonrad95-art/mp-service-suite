@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.12] — 2026-08-04
+
 ### Naprawione — dostęp ról (wydanie 1.3.12, grupa 1)
 - **Koordynator serwisu przestaje mieć dostęp do MNIEJ ekranów niż podległy mu pracownik.**
   Role MP nie mają hierarchii (to projekt: kod sprawdza wyłącznie uprawnienia, nigdy nazwy roli),
@@ -55,6 +57,56 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   kontrolne detektora, odtworzenie stanu sprzed poprawki i sprawdzenie anonimowym zadaniem HTTP,
   ze strona autora nie zdradza ani adresu, ani nazwiska.
 - Testy jednostkowe `TozsamoscKlientaTest` (granica dlugosci liczona w znakach, nie bajtach).
+
+### Naprawione — dostępność (WCAG 2.1 AA)
+- **Błąd formularza prowadzi do konkretnego pola.** Podsumowanie błędów jest listą odnośników,
+  a pole z błędem dostaje `aria-invalid`; komunikat i pole są spięte `aria-describedby`. Dotąd
+  osoba z czytnikiem ekranu słyszała, że coś jest nie tak, ale nie dowiadywała się, **co**.
+- **Wysyłka zgłoszenia ogłasza, że trwa** — formularz dostaje `aria-busy`, przycisk zmienia napis
+  i blokuje powtórne kliknięcie. ⛔ Kontrolki **nie wyłączamy** przez `disabled`: wyłączona wypada
+  z przesyłanych danych, a część przeglądarek przerywa przez to samą wysyłkę.
+- **Ekran importu CSV ogłasza postęp, zakończenie i błąd także czytnikowi ekranu** (`role="status"`
+  dla postępu, komunikat błędu asertywnie). Dotąd pasek postępu zmieniał się w ciszy.
+- **Dwa ekrany personelu mieszczą się w oknie przy powiększeniu 200%** na szerokości typowego
+  monitora: panel automatyzacji i „Zgłoszenia niepotwierdzone" (dotąd wychodziły poza okno o 184
+  i 165 pikseli przy 1280 px). ⚠️ **Część zarzutu zostaje otwarta** — patrz pomiar niżej.
+- **Pole listy powodów odrzucenia na ekranie „Ustawienia zgłoszeń" dostało nazwę dla czytnika
+  ekranu.** Naruszenie reguły `label` (waga krytyczna): pole nie miało ani `id`, ani etykiety
+  spiętej z kontrolką, więc czytnik czytał je jako pole bez nazwy — nagłówek i opis nad nim są
+  wyłącznie wizualne. **Znalezione własnym pomiarem na tym wydaniu**, wyszło dopiero dzięki
+  rozszerzeniu narzędzia na ekrany personelu. Zmiana obejmuje jedną linię, zachowanie bez zmian.
+- **Narzędzie badające dostępność sięga ekranów personelu i drukuje zakres badania.** Zawężenie
+  siedziało w samym przyrządzie: badał wyłącznie trzy powierzchnie klienta, więc każde wydanie
+  wychodziło „zielone", opisując część systemu i nie mówiąc, że to część.
+
+### Dowody — dostępność
+- **Badanie axe-core powtórzone na wydaniu 1.3.12**, na czystej instalacji postawionej z paczki dla
+  klienta (WordPress 6.9 / PHP 8.1 / MySQL 8), po HTTPS-owej ścieżce klienta z odczytem poczty.
+  Zbadane **11 powierzchni, zero pominiętych**: trzy ekrany klienta i osiem ekranów personelu.
+  - **Trzy ekrany klienta: zero naruszeń** (13, 7 i 7 zdanych reguł). Poprzednie badanie
+    (1.3.6) też dawało zero, ale nie obejmowało zmian z tego wydania.
+  - **Osiem ekranów personelu: zero naruszeń.**
+  - Pierwszy przebieg (przed naprawą) pokazał **jedno naruszenie** — regułę `label` na ekranie
+    „Ustawienia zgłoszeń". Poprawka opisana wyżej weszła w tym samym wydaniu, a **przebieg po niej
+    kończy się wynikiem „zero naruszeń w naszych powierzchniach"** i kodem powodzenia. Oba wydruki,
+    sprzed i po, zostają w repozytorium — żeby dało się je porównać, a nie tylko uwierzyć.
+    Ekran „Ustawienia zgłoszeń" ma po naprawie 10 zdanych reguł zamiast 5: brakująca etykieta
+    sprawiała, że część reguł nie miała czego badać.
+  - Naruszenie w bloku nawigacji motywu WordPressa występuje na stronach publicznych i **nie
+    pochodzi z naszego kodu** — tak samo jak w poprzednim badaniu.
+- **Pomiar mieszczenia się w oknie przy powiększeniu** (`testy/a11y/zoom200-panel.py`, z próbą
+  kontrolną na sąsiednim ekranie):
+  - **„Zgłoszenia niepotwierdzone" — czysto.** Nigdzie nie wychodzi poza okno tam, gdzie próba
+    kontrolna się mieści. ⚠️ Ten ekran **nie był wcześniej mierzony w ogóle** — narzędzie zna
+    tylko panel automatyzacji, więc zmierzyliśmy go osobno, tą samą metodą.
+  - 🔴 **Panel automatyzacji — otwarte.** Przy 1280 px i 200% zero nadmiaru, ale przy 768 px
+    z powiększeniem 200% nadmiar **167 px**, a przy 390 px bez powiększenia **78 px** — w obu
+    punktach próba kontrolna ma zero, więc to wada tego ekranu, nie stanowiska. **Pozycja 2.6
+    jest zamknięta w części, nie w całości**, i tak stoi też w raporcie dla klienta.
+  - ⚠️ Osobno: przy 1024 px i 200% poza okno wychodzą **wszystkie** mierzone ekrany, łącznie
+    z próbą kontrolną — to szersza sprawa układu panelu, nie tej pozycji.
+- Surowe wydruki obu przebiegów leżą w repozytorium: `audyt/pomiary-a11y-1312/` (katalog `audyt/`
+  nie wchodzi do paczki dla klienta — jest dla osoby, która chce zweryfikować te liczby).
 
 ## [1.3.11] - 2026-08-01
 

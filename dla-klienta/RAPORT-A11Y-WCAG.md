@@ -1,13 +1,50 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-07-31 · **Wersja badana:** 1.3.6
-**Wersja:** 1.3.12 — tyle ma paczka, z którą ten dokument jedzie.
+**Data badania:** 2026-08-04 · **Wersja badana:** 1.3.12 — czyli **kod tej paczki**.
+**Wersja:** 1.3.12.
 
-⚠️ **Numeru w nagłówku nie podmieniamy** — badanie przeglądarką wykonaliśmy na 1.3.6 i tak to
-zapisujemy. Dla każdego kolejnego wydania mówimy osobno, czy wynik nadal obowiązuje: noty
-o wersjach **1.3.7 – 1.3.12** stoją na końcu tego dokumentu. ⛔ **Przeczytaj je, zanim uznasz ten
-wynik za aktualny — wydanie 1.3.12 jest pierwszym od czasu badania, które zmienia badane ekrany,
-i badania na nim NIE powtórzyliśmy.**
+## Co zmieniło się od poprzedniego badania
+
+Poprzedni pomiar wykonaliśmy 31 lipca na wersji **1.3.6** i obejmował **trzy ekrany klienta**.
+Ten pomiar wykonaliśmy **na kodzie, który trzymasz w ręku**, i obejmuje **jedenaście
+powierzchni** — trzy ekrany klienta oraz osiem ekranów personelu w panelu WordPressa.
+Powtórzyliśmy go, bo wydanie 1.3.12 **zmieniło badane ekrany**, a stary wynik przestałby o nich
+mówić cokolwiek. Zmiany, które to wymusiły, wyszły z zewnętrznego audytu — podajemy je z nazwy,
+żeby dało się sprawdzić, skąd się wzięły:
+
+- **Pozycja 2.57 — błąd formularza prowadzi do konkretnego pola.** Podsumowanie błędów jest listą
+  odnośników, pole z błędem jest oznaczone dla czytnika ekranu, a wysyłka ogłasza, że trwa.
+  Wcześniej osoba korzystająca z czytnika słyszała, że coś jest nie tak, ale nie **co**.
+- **Pozycja 2.47 — ekran importu ogłasza postęp, zakończenie i błąd** także czytnikowi ekranu.
+  Dotąd pasek postępu zmieniał się w ciszy.
+- **Pozycja 2.6 — dwa ekrany personelu mieszczą się w oknie przy powiększeniu 200%.**
+  Co z tej pozycji **zostaje otwarte**, piszemy niżej, w osobnym rozdziale.
+- **Pozycja 2.46 — samo narzędzie badające dostępność sięga teraz ekranów personelu** i drukuje
+  zakres badania. To dlatego ten raport mówi o jedenastu powierzchniach, a poprzedni o trzech.
+- **Znalezione tym pomiarem i naprawione w tym samym wydaniu:** pole listy powodów odrzucenia
+  na ekranie „Ustawienia zgłoszeń" nie miało nazwy dla czytnika ekranu (reguła `label`, waga
+  krytyczna). Wyszło **dopiero** dzięki rozszerzeniu narzędzia z pozycji 2.46. Wynik w tabelach
+  niżej pochodzi z przebiegu **po** tej poprawce; wydruk sprzed niej też zostawiamy w repozytorium,
+  żeby dało się porównać.
+
+## ⛔ Czego ten raport NIE obejmuje
+
+Uczciwie, zanim przeczytasz liczby:
+
+- ⛔ **Badanie nie mówi nic o dostępności motywu Twojej strony.** Motywu nie dostarczamy i nie
+  możemy go poprawiać; pokazujemy tylko, co w nim wychodzi, bo i tak zobaczysz to u siebie.
+- ⛔ **Pomiar wykonaliśmy na naszej instalacji**, postawionej od zera z tej paczki — nie na Twojej
+  stronie. Twój motyw, wtyczki i treść mogą dać inny wynik, dlatego narzędzie jest w paczce.
+- ⛔ **`axe-core` nie jest wyrocznią.** Wykrywa naruszenia, które da się rozpoznać maszynowo —
+  brak etykiety, za mały kontrast, powtórzony identyfikator. Nie oceni za to, czy tekst jest
+  zrozumiały ani czy kolejność klawisza Tab ma sens dla człowieka. Zero naruszeń to **brak wykrytych
+  błędów**, nie certyfikat zgodności.
+- ⚠️ **Jeden ekran personelu nadal wychodzi poza okno przy powiększeniu** — piszemy o tym niżej,
+  w rozdziale „Co zostaje otwarte". Reguły `axe` tego nie mierzą, więc mierzymy to osobno.
+- Pomiar szedł po zwykłym HTTP, bo instalacja stała lokalnie. Na wynik reguł WCAG nie ma to wpływu;
+  poprzednie badanie, na środowisku pokazowym, szło po HTTPS.
+
+---
 
 Ten dokument mówi, czy ekrany, które widzi **Twój klient**, dają się obsłużyć osobom
 z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: badanie
@@ -20,16 +57,17 @@ z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: 
 - **Sposób:** badanie na **żywej stronie w prawdziwej przeglądarce**, po HTTPS. Nie na samym
   kodzie: tylko tak da się sprawdzić rzeczy widoczne dopiero po wyrenderowaniu, czyli kontrast
   kolorów i pełne reguły ARIA.
-- **Badaliśmy dwa razy, na dwóch różnych środowiskach** — i podajemy oba wyniki, bo razem mówią
-  więcej niż jeden:
+- **Badaliśmy trzy razy, na trzech różnych środowiskach** — i podajemy wszystkie wyniki, bo razem
+  mówią więcej niż jeden:
 
-  | | Badanie 1 | Badanie 2 |
-  |---|---|---|
-  | Data | 2026-07-29 | **2026-07-31** |
-  | Wersja wtyczek | 1.3.0 | **1.3.6** |
-  | WordPress / PHP / baza | 6.9 / 8.1 / MySQL 8 (deklarowane minimum) | **7.0 / 8.2 / MariaDB 11.8** |
-  | Motyw strony | Twenty Twenty-Five 1.4 | motyw dedykowany strony demonstracyjnej |
-  | Instalacja | czysta, postawiona z paczki | z paczki pobranej z wydania |
+  | | Badanie 1 | Badanie 2 | Badanie 3 |
+  |---|---|---|---|
+  | Data | 2026-07-29 | 2026-07-31 | **2026-08-04** |
+  | Wersja wtyczek | 1.3.0 | 1.3.6 | **1.3.12** |
+  | WordPress / PHP / baza | 6.9 / 8.1 / MySQL 8 | 7.0 / 8.2 / MariaDB 11.8 | **6.9 / 8.1 / MySQL 8 (deklarowane minimum)** |
+  | Motyw strony | Twenty Twenty-Five 1.4 | motyw strony demonstracyjnej | **Twenty Twenty-Five** |
+  | Instalacja | czysta, postawiona z paczki | z paczki pobranej z wydania | **czysta, postawiona z tej paczki** |
+  | Zbadane powierzchnie | 3 ekrany klienta | 3 ekrany klienta | **11: 3 klienta + 8 personelu** |
 - **Co liczymy osobno:** naszą część strony (formularz, panel klienta) i całą stronę
   razem z motywem. Za motyw, którego nie dostarczamy, nie możemy odpowiadać — ale
   pokazujemy, co w nim wychodzi, bo i tak zobaczysz to u siebie.
@@ -39,13 +77,34 @@ z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: 
 
 ## Wynik — nasze ekrany
 
-| Ekran | Reguł zdanych (1.3.0) | Naruszenia | Reguł zdanych (1.3.6) | Naruszenia |
-|---|---|---|---|---|
-| Formularz zgłoszenia (publiczny) | 12 | **0** | 12 | **0** |
-| Panel klienta — przed zalogowaniem | 7 | **0** | 7 | **0** |
-| Panel klienta — po zalogowaniu (dane osobowe, historia sprawy) | 7 | **0** | 9 | **0** |
+**Ekrany, które widzi Twój klient:**
 
-**Zero naruszeń WCAG 2.1 AA na wszystkich ekranach, które dostarczamy — w obu badaniach.**
+| Ekran | 1.3.0 | 1.3.6 | **1.3.12** | Naruszenia |
+|---|---|---|---|---|
+| Formularz zgłoszenia (publiczny) | 12 | 12 | **13** | **0** |
+| Panel klienta — przed zalogowaniem | 7 | 7 | **7** | **0** |
+| Panel klienta — po zalogowaniu (dane osobowe, historia sprawy) | 7 | 9 | **7** | **0** |
+
+**Ekrany personelu — badane po raz pierwszy** (wcześniej narzędzie do nich nie sięgało):
+
+| Ekran | Reguł zdanych (1.3.12) | Naruszenia |
+|---|---|---|
+| Rejestr produktów | 6 | **0** |
+| Wyjątki gwarancyjne | 9 | **0** |
+| Import CSV | 15 | **0** |
+| Sprawy | 11 | **0** |
+| Zgłoszenia niepotwierdzone | 1 | **0** |
+| Ustawienia zgłoszeń | 10 | **0** |
+| Automat | 20 | **0** |
+| Ustawienia automatu | 17 | **0** |
+
+**Zero naruszeń WCAG 2.1 AA na wszystkich jedenastu powierzchniach, które dostarczamy.**
+Przebieg kończy się kodem błędu, jeśli znajdzie choć jedno naruszenie w naszej części — ten
+zakończył się powodzeniem, a jego pełny wydruk leży w repozytorium projektu.
+
+⚠️ **Ekran „Ustawienia zgłoszeń" ma w tabeli 10 zdanych reguł, a w przebiegu sprzed poprawki
+miał 5.** To nie jest poprawa punktacji: brakująca etykieta sprawiała, że część reguł nie miała
+czego badać. Po naprawie mają.
 
 „Reguł zdanych" to liczba sprawdzeń, które na danym ekranie miały co badać i wypadły dobrze.
 Różni się między badaniami, bo zależy od tego, co akurat jest na ekranie (na przykład ile pól
@@ -60,7 +119,12 @@ z badania po tej poprawce.
 ## Wynik — cała strona razem z motywem
 
 Ta część wyniku **zależy od motywu Twojej strony**, nie od naszych wtyczek — dlatego wypadła
-różnie w dwóch badaniach.
+różnie w kolejnych badaniach.
+
+**Badanie 3 (1.3.12, domyślny motyw WordPressa Twenty Twenty-Five):** na trzech stronach klienta
+**po jednym naruszeniu**, za każdym razem **to samo i nie w naszym kodzie** — reguła `list`
+w bloku nawigacji WordPressa (opis niżej). Osiem ekranów personelu: **zero naruszeń** także razem
+z otoczeniem panelu.
 
 **Badanie 2 (1.3.6, motyw strony demonstracyjnej):** całe strony razem z motywem —
 **zero naruszeń** na wszystkich trzech ekranach (odpowiednio 20, 15 i 16 zdanych reguł).
@@ -78,6 +142,32 @@ Co to znaczy dla Ciebie: **problem zobaczysz na każdej podstronie tego motywu**
 tam, gdzie naszych wtyczek nie ma. Jeśli używasz innego motywu albo własnego nagłówka,
 wynik będzie inny — drugie badanie, na innym motywie, dało w tym miejscu zero naruszeń.
 Dlatego polecenie niżej warto uruchomić na **swojej** stronie.
+
+## Co zostaje otwarte — jeden ekran personelu przy powiększeniu
+
+Reguły `axe` nie mierzą jednej rzeczy, która dla osoby powiększającej stronę jest najważniejsza:
+**czy treść mieści się w oknie, czy trzeba przewijać całą stronę w bok** (WCAG 1.4.10). Mierzymy
+to osobno, własnym pomiarem, razem z próbą kontrolną na sąsiednim ekranie — bo tylko wtedy wiadomo,
+czy problem jest w tym ekranie, czy w całym panelu.
+
+**Wynik na wydaniu 1.3.12:**
+
+| Ekran | 1280 px @ 200% | 768 px @ 200% | 390 px @ 100% |
+|---|---|---|---|
+| Zgłoszenia niepotwierdzone | mieści się | mieści się | mieści się |
+| **Panel automatyzacji** | mieści się | 🔴 **wychodzi o 167 px** | 🔴 **wychodzi o 78 px** |
+| Sprawy (próba kontrolna) | mieści się | mieści się | mieści się |
+
+🔴 **Panel automatyzacji przy węższym oknie nadal wychodzi poza ekran** — w obu tych punktach
+próba kontrolna mieści się bez zarzutu, więc to wada tego jednego ekranu, nie całego panelu.
+Poprawka z tego wydania zamknęła szerokość typowego monitora i tyle. **Mówimy o tym wprost,
+zamiast pokazać wyłącznie punkt, który wypadł dobrze.** W praktyce dotyczy to osoby, która
+powiększa panel na wąskim oknie albo pracuje na telefonie.
+
+⚠️ Osobno, i to **nie jest** wada tego ekranu: przy 1024 px z powiększeniem 200% oraz przy 390 px
+z powiększeniem 200% poza okno wychodzą **wszystkie** mierzone ekrany panelu, łącznie z próbą
+kontrolną. To szersza sprawa układu panelu WordPressa przy bardzo dużym powiększeniu i zgłaszamy
+ją jako osobną, otwartą pozycję.
 
 ## Co jest poza naszym zakresem
 
@@ -136,9 +226,11 @@ z tabel wyżej pochodzi sprzed tej zmiany i dotyczy trzech ekranów klienta — 
 
 ---
 
-**Nota o powtórzeniu badania oraz o wersjach od 1.3.7 do 1.3.12** — wydanie po wydaniu, czy wynik
-badania nadal obowiązuje. Tak utrzymujemy ważność tego dokumentu: **nie podmieniając numeru
-w nagłówku**, tylko uzasadniając każdy krok. Tam, gdzie uzasadnić się nie da — piszemy to wprost.
+**Historia tego dokumentu — wydanie po wydaniu.** ⭐ **Wynik w tabelach wyżej pochodzi z pomiaru
+na wersji 1.3.12, więc poniższe jest już tylko zapisem drogi, a nie uzasadnieniem ważności.**
+Zostawiamy je, bo pokazuje zasadę, której się trzymamy: **numeru w nagłówku nigdy nie podmieniamy**.
+Dopóki badania nie było, dokument mówił, na czym je zrobiono i dlaczego wynik nadal obowiązuje;
+gdy przestało dać się to uzasadnić — badanie powtórzyliśmy.
 
 Pierwsze badanie wykonaliśmy 29 lipca na paczce **1.3.0**. Ten dokument długo mówił wprost, że
 **nie było powtarzane** — zamiast podmieniać numer wersji w nagłówku. 31 lipca badanie
@@ -176,38 +268,20 @@ i daje przycisk powrotu do Rejestru. Sprawdzone w historii zmian: to jedyny plik
 w tym wydaniu. **Trzy ekrany objęte tym badaniem nie zostały zmienione ani o jeden element**,
 więc wynik badania obowiązuje dla 1.3.11 bez zastrzeżeń.
 
-🔴 **Wydanie 1.3.12 jest pierwszym od czasu badania, które ZMIENIA badane ekrany — i dlatego
-łańcucha „nic się nie zmieniło" tutaj NIE ciągniemy.** Na powierzchniach klienta zmieniło się:
+⭐ **Wydanie 1.3.12 zmieniło badane ekrany — i dlatego badanie POWTÓRZYLIŚMY** zamiast dopisywać
+kolejne uzasadnienie. Wynik z 4 sierpnia, opisany na początku tego dokumentu, dotyczy właśnie tej
+wersji i obejmuje jedenaście powierzchni zamiast trzech. Tutaj zostaje jedno zdanie, którego wyżej
+nie ma: łańcuch not, który czytasz powyżej, **urwał się** przy tym wydaniu — i to było zgłoszone
+jako wada dokumentu, zanim ktokolwiek zdążył się na niego powołać.
 
-- formularz zgłoszenia ma **nowe, wymagane pole „imię i nazwisko"** (to element, którego w chwili
-  badania na tym ekranie nie było),
-- **komunikat o błędzie prowadzi teraz do konkretnego pola**: podsumowanie błędów jest listą
-  odnośników do pól, a pole z błędem jest oznaczone `aria-invalid`,
-- **przycisk wysyłki ogłasza, że wysyłka trwa** — formularz dostaje `aria-busy`, napis przycisku
-  się zmienia, a powtórne kliknięcie jest blokowane bez wyłączania kontrolki,
-- w panelu klienta zmieniło się to, co wynika z ochrony danych osobowych (konto nie nosi już
-  adresu e-mail w nazwie wyświetlanej).
-
-⛔ **Badania axe-core w przeglądarce na 1.3.12 NIE powtórzyliśmy.** Piszemy to wprost, zamiast
-podmieniać numer wersji w nagłówku.
-
-**Czego przy tym NIE twierdzimy — bo to sprawdziliśmy.** Wszystkie powyższe zmiany **dokładają**
-mechanizmy dostępności, nie odbierają ich; dwie z nich (błąd wskazujący pole, stan „to trwa")
-powstały właśnie z zarzutu o dostępność. **Żaden arkusz stylów strony klienta nie został ruszony** —
-jedyny zmieniony arkusz w tym wydaniu dotyczy panelu administratora — więc **kontrast kolorów**,
-czyli ta część wyniku, której nie da się sprawdzić bez przeglądarki, zmian nie ma. W tym samym
-wydaniu naprawiliśmy dwa ekrany personelu wychodzące poza okno przy powiększeniu 200%
-(WCAG 1.4.10): panel automatu i „Zgłoszenia niepotwierdzone".
-
-**Co za to sprawdzamy przy KAŻDEJ zmianie kodu, także w 1.3.12** — automatyczne kontrole
+**Co sprawdzamy przy KAŻDEJ zmianie kodu, także między badaniami** — automatyczne kontrole
 strukturalne w naszym systemie ciągłej kontroli, na renderach formularza, panelu klienta przed
 i po zalogowaniu oraz ekranów personelu: etykieta spięta z każdym widocznym polem, błędy
 w obszarze `role="alert"`, błąd spięty z polem przez `aria-describedby`, oznaczenie pól
 wymaganych, brak powtórzonych identyfikatorów, opis alternatywny przy każdym obrazie, nazwa
 dostępna przy każdym przycisku. **To warstwa strukturalna i nie zastępuje przebiegu
-w przeglądarce** — kontrastu kolorów ani pełnych reguł ARIA tak sprawdzić się nie da.
-Dlatego: chcesz mieć pomiar na 1.3.12, uruchom narzędzie z rozdziału wyżej u siebie —
-albo poproś nas o powtórzenie badania.
+w przeglądarce** — kontrastu kolorów ani pełnych reguł ARIA tak sprawdzić się nie da. Dlatego
+badanie w prawdziwej przeglądarce robimy osobno i zapisujemy jego datę oraz wersję.
 
 Dla porządku, co działo się z kodem między badaniami: sprzątanie jednej opcji technicznej przy
 odinstalowaniu wtyczki, poprawki w przyjmowaniu plików CSV (kontrola liczby kolumn, rozpoznawanie
