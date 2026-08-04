@@ -122,6 +122,150 @@ final class Sla {
 	private const RESCUE_LIMIT = 500;
 
 	/**
+	 * Kursor sprzatania sierot — do ktorego `case_id` doszlismy w tabeli terminow.
+	 */
+	public const ORPHAN_CURSOR_OPTION = 'mp_automator_orphan_cursor';
+
+	/**
+	 * Alarm: kontrakt sprawdzania spraw nie odpowiada, wiec NIE sprzatamy.
+	 */
+	public const ORPHAN_ALERT_OPTION = 'mp_automator_orphan_alert';
+
+	/**
+	 * Ile wierszy terminow sprawdzamy na jeden przebieg zamiatarki.
+	 */
+	private const ORPHAN_BATCH = 50;
+
+	/**
+	 * Ile „martwych" wierszy w paczce wystarczy, zeby podejrzewac awarie kontraktu.
+	 */
+	private const ORPHAN_SANITY_MIN = 5;
+
+	/**
+	 * Kasuje WIERSZE-SIEROTY w tabeli terminow (audyt 2.20).
+	 *
+	 * CZTERY komentarze w tym module zapowiadaly, ze osierocone wiersze posprzata
+	 * zamiatarka („sweep sprzata osobno", „nie widzi sierot — nic nie robimy"),
+	 * a w calym module nie bylo ANI JEDNEJ instrukcji kasowania poza czyszczeniem
+	 * calej tabeli przy dezaktywacji. Wiersze po usunietych sprawach zostawaly
+	 * w bazie bez konca. Obietnica z komentarza staje sie tu kodem.
+	 *
+	 * ⛔ DWA BEZPIECZNIKI, bo pomylka kasuje dane:
+	 * 1. Brak zaczepu `mp_cases_existing_ids` = modul zgloszen nie odpowiada. Wtedy
+	 *    KAZDY wiersz wygladalby na sierote — wychodzimy, nie ruszajac niczego.
+	 * 2. Gdy w paczce NIC nie zyje, a martwych jest co najmniej kilka, to znacznie
+	 *    bardziej prawdopodobne, ze padl kontrakt, niz ze wszystkie sprawy naraz
+	 *    zniknely. Podnosimy alarm i NIE kasujemy.
+	 *
+	 * Kursor przesuwa sie po tabeli i zawija — inaczej zamiatarka w kolko badalaby
+	 * ten sam poczatek tabeli, a sieroty lezace dalej nigdy nie trafilyby do paczki.
+	 *
+	 * @param int $limit Ile wierszy sprawdzic w tym przebiegu.
+	 * @return int Liczba skasowanych wierszy.
+	 */
+	public static function cleanup_orphans( int $limit = self::ORPHAN_BATCH ): int {
+		global $wpdb;
+
+		// ⛔ Pytamy o ISTNIENIE sprawy, nie o to, czy widzimy jej kontekst. Kontekst
+		// dostaja wylacznie sprawy zweryfikowane, wiec sprawa istniejaca, ale jeszcze
+		// niepotwierdzona, wygladalaby stad jak nieistniejaca — i skasowalibysmy jej
+		// wiersz terminow. Bez tego kontraktu NIE sprzatamy w ogole.
+		if ( ! has_filter( 'mp_cases_existing_ids' ) ) {
+			return 0;
+		}
+
+		$limit  = max( 1, min( 500, $limit ) );
+		$table  = Tables::full( Tables::CASE_SLA );
+		$kursor = (int) get_option( self::ORPHAN_CURSOR_OPTION, 0 );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT case_id FROM {$table} WHERE case_id > %d ORDER BY case_id ASC LIMIT %d",
+				$kursor,
+				$limit
+			)
+		);
+
+		// Koniec tabeli — zawijamy i zaczynamy od poczatku przy nastepnym przebiegu.
+		if ( array() === (array) $ids ) {
+			if ( $kursor > 0 ) {
+				update_option( self::ORPHAN_CURSOR_OPTION, 0, false );
+			}
+
+			return 0;
+		}
+		// phpcs:enable
+
+		// JEDNO pytanie na cala paczke, nie jedno na wiersz. To ta sama klasa kosztu
+		// co pozycja 2.22: zadanie cykliczne chodzace co piec minut nie moze skalowac
+		// liczby zapytan z liczba sprawdzanych wierszy. Pytamy o ISTNIENIE sprawy —
+		// sprawa niepotwierdzona istnieje, choc jej kontekstu stad nie widac.
+		$ids      = array_map( 'intval', (array) $ids );
+		$istnieja = array_flip( array_map( 'intval', (array) apply_filters( 'mp_cases_existing_ids', array(), $ids ) ) );
+		$sieroty  = array();
+		$zywe     = 0;
+
+		foreach ( $ids as $case_id ) {
+			if ( isset( $istnieja[ $case_id ] ) ) {
+				++$zywe;
+
+				continue;
+			}
+
+			$sieroty[] = $case_id;
+		}
+
+		update_option( self::ORPHAN_CURSOR_OPTION, (int) end( $ids ), false );
+
+		if ( array() === $sieroty ) {
+			if ( array() !== (array) get_option( self::ORPHAN_ALERT_OPTION, array() ) ) {
+				delete_option( self::ORPHAN_ALERT_OPTION );
+			}
+
+			return 0;
+		}
+
+		// Bezpiecznik 2: cala paczka martwa => podejrzewamy kontrakt, nie dane.
+		if ( 0 === $zywe && count( $sieroty ) >= self::ORPHAN_SANITY_MIN ) {
+			update_option(
+				self::ORPHAN_ALERT_OPTION,
+				array(
+					'powod' => 'kontrakt_nie_odpowiada',
+					'ile'   => count( $sieroty ),
+					'time'  => gmdate( 'Y-m-d H:i:s' ),
+				),
+				false
+			);
+
+			return 0;
+		}
+
+		$placeholders = implode( ', ', array_fill( 0, count( $sieroty ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; liczba placeholderow ZMIENNA (tyle, ile sierot), wiec sniff nie policzy jej statycznie.
+		$skasowane = (int) $wpdb->query(
+			$wpdb->prepare( "DELETE FROM {$table} WHERE case_id IN ( {$placeholders} )", $sieroty )
+		);
+		// phpcs:enable
+
+		if ( $skasowane > 0 ) {
+			// JEDEN wpis zbiorczy na przebieg, nie jeden na wiersz — rejestry i tak
+			// rosna bez retencji (osobna pozycja audytu), wiec nie dokladamy im halasu.
+			WorkflowEvents::log(
+				WorkflowEvents::SWEEP_RUN,
+				array(
+					'action' => 'cleanup_orphans',
+					'ile'    => $skasowane,
+				),
+				null
+			);
+		}
+
+		return $skasowane;
+	}
+
+	/**
 	 * RESYNC: sprawy zweryfikowane, o ktorych Automator nic nie wie (audyt 27.07).
 	 *
 	 * Reconcile z audytu #1 rozpoznaje sieroty po BRAKU zdarzenia narodzin w C —
