@@ -473,7 +473,7 @@ final class SettingsScreen {
 					<th scope="row"><label for="mp-rule-new-config"><?php esc_html_e( 'Szczegóły akcji', 'mp-workflow-automator' ); ?></label></th>
 					<td>
 						<textarea id="mp-rule-new-config" name="mp_rule_new[action_config_json]" rows="3" class="large-text code" spellcheck="false" placeholder="{&quot;pool&quot;:[12,15]}"></textarea>
-						<p class="description"><?php esc_html_e( 'Zapis techniczny (JSON). Przydział: {"pool":[ID pracowników]}. Zmiana statusu: {"status":"w analizie"}. Priorytet: {"priority":"high"}. Powiadomienie: {"template_key":"...","recipient_ref":"agent"}.', 'mp-workflow-automator' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Zapis techniczny (JSON). Przydział: {"pool":[ID pracowników]}. Zmiana statusu: {"new_status":"w analizie"} (dawny zapis {"status":"..."} nadal działa). Priorytet: {"priority":"high"}. Powiadomienie: {"template_key":"...","recipient_ref":"agent"}.', 'mp-workflow-automator' ); ?></p>
 					</td>
 				</tr>
 				<tr>
