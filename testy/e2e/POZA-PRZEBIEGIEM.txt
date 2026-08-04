@@ -1,0 +1,8 @@
+# Testy nalezace WYLACZNIE do innych zadan CI — maja wlasne srodowisko (swiezy WordPress,
+# instalacja z paczki, starsza wersja schematu), wiec w zadaniu e2e-import nie maja sensu.
+# ⛔ Sprawdzone poleceniem: zadnego z nich NIE MA w KOLEJNOSC.txt. Zanim cokolwiek tu
+# dopiszesz, upewnij sie, ze tego pliku nie uruchamia rowniez e2e-import — inaczej po cichu
+# wytniesz test z przebiegu, a CI dalej bedzie swiecilo na zielono.
+dirty-env.sh
+migration.sh
+release-smoke.sh

@@ -24,6 +24,25 @@ Tę listę ustawia **wyłącznie administrator systemu** — koordynator widzi o
 ale nie może jej zmienić. Kontrolnie: **Narzędzia → Stan witryny** przestanie zgłaszać pustą pulę,
 a w tabeli reguł zamiast ostrzeżenia pojawią się imiona pracowników.
 
+## 1a. Ekrany „Ustawienia" — co ustawisz sam, bez programisty
+
+Każda z trzech wtyczek ma własny ekran **Ustawienia**. Najważniejszy jest ten w Automatorze.
+
+**Automatyzacje MP → Ustawienia** — cztery sekcje, **każdą zapisuje się osobnym przyciskiem**:
+
+| Sekcja | Co ustawiasz |
+|---|---|
+| **Statusy własne** | dokładasz własne statusy obok siedmiu wbudowanych: klucz techniczny, nazwa widoczna, czy aktywny, czy kończy sprawę, termin w godzinach i moment ostrzeżenia. Siedmiu wbudowanych nie da się usunąć |
+| **Godziny terminów** | ile godzin sprawa może stać w danym statusie, zanim minie termin. Priorytet wysoki skraca termin o połowę, niski podwaja. Statusy „odrzucone" i „zamknięte" terminu nie mają |
+| **Reguły przydziału** | warunki, po których automat rozdziela sprawy. ⚠️ Warunki **„kraj" i „język" nie zadziałają** — produkt nigdzie tych danych nie zbiera, więc reguła oparta na nich nie dopasuje żadnej sprawy. Ekran mówi to wprost |
+| **Kasowanie danych przy odinstalowaniu** | czy odinstalowanie wtyczki ma skasować dane. **Domyślnie wyłączone** |
+
+**Rejestr MP → Ustawienia** i **MP: Sprawy → Ustawienia** mają po jednej sekcji: kasowanie danych
+przy odinstalowaniu tej wtyczki (też domyślnie wyłączone).
+
+> ⚠️ Zmiana godzin terminów nie przelicza sama spraw już otwartych — po zapisie użyj akcji
+> **„Przelicz terminy obsługi"** w panelu automatyzacji.
+
 ## 2. Rejestr produktów i gwarancji
 
 **Rejestr MP** — baza produktów, numerów seryjnych, partii i okresów gwarancyjnych; wyszukiwarka
@@ -73,8 +92,10 @@ w historii produktu.
 **Rejestr MP → Rejestr MP**, znajdź produkt i w kolumnie **Akcje** kliknij **„wyjątki"**.
 
 > ℹ️ W menu bocznym jest też pozycja **Wyjątki gwarancyjne**. Wejście przez nią, bez wskazania
-> produktu, pokazuje wyjaśnienie, czym jest wyjątek, oraz przycisk **„Przejdź do Rejestru MP"** —
-> to nie awaria, tylko ekran czekający, aż wskażesz, którego produktu wyjątek ma dotyczyć.
+> produktu, pokazuje **listę wszystkich udzielonych wyjątków** — produkt, zakres, status, do kiedy
+> ważny, kto i kiedy go nadał, powód oraz akcję „cofnij". Filtrem u góry wybierasz: aktywne
+> (domyślnie), przeterminowane, cofnięte albo wszystkie. Nowy wyjątek nadaje się nadal przy
+> konkretnym produkcie — z Rejestru, jak wyżej.
 
 ![Wyjątki gwarancyjne wybranego produktu](zdjecia/admin-06-wyjatki.png)
 
