@@ -1873,6 +1873,34 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Czy sprawa o tym ID W OGOLE ISTNIEJE (audyt 2.20).
+	 *
+	 * ⛔ TO NIE TO SAMO co „modul automatyzacji widzi jej kontekst". Kontekst
+	 * dostaja wylacznie sprawy ZWERYFIKOWANE, wiec sprawa istniejaca, ale jeszcze
+	 * niepotwierdzona, wyglada stamtad jak nieistniejaca. Sprzatanie osieroconych
+	 * wierszy musi rozrozniac te dwie rzeczy, bo w pierwszym przypadku kasowanie
+	 * jest porzadkiem, a w drugim — utrata danych.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return bool
+	 */
+	public static function exists( int $case_id ): bool {
+		global $wpdb;
+
+		if ( $case_id <= 0 ) {
+			return false;
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$cases} WHERE id = %d", $case_id ) );
+		// phpcs:enable
+
+		return null !== $id;
+	}
+
+	/**
 	 * ID spraw ZWERYFIKOWANYCH w ostatnich dniach (funkcja kontraktowa
 	 * `mp_cases_verified_ids`) — do resynchronizacji Automatora (audyt 27.07).
 	 *

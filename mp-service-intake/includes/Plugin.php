@@ -170,6 +170,20 @@ final class Plugin {
 		// osobowych) — Automator porownuje je ze swoim stanem i doszywa sprawy,
 		// ktore przeszly weryfikacje, gdy byl wylaczony (audyt 27.07). Wolane z
 		// crona, wiec BEZ bramki uprawnien — jak `mp_case_get_context`.
+		// Kontrakt D->C: czy sprawa W OGOLE istnieje (audyt 2.20). Osobny od
+		// `mp_case_get_context`, bo tamten odpowiada tylko o sprawach zweryfikowanych
+		// — a sprawa niepotwierdzona ISTNIEJE i jej wiersz terminow nie jest sierota.
+		add_filter(
+			'mp_case_exists',
+			static function ( $result, $case_id = 0 ) {
+				unset( $result );
+
+				return CaseRepo::exists( (int) $case_id );
+			},
+			10,
+			2
+		);
+
 		add_filter(
 			'mp_cases_verified_ids',
 			static function ( $result, $days = 30, $limit = 200 ) {

@@ -152,7 +152,11 @@ final class Sla {
 	public static function cleanup_orphans( int $limit = self::ORPHAN_BATCH ): int {
 		global $wpdb;
 
-		if ( ! has_filter( 'mp_case_get_context' ) ) {
+		// ⛔ Pytamy o ISTNIENIE sprawy, nie o to, czy widzimy jej kontekst. Kontekst
+		// dostaja wylacznie sprawy zweryfikowane, wiec sprawa istniejaca, ale jeszcze
+		// niepotwierdzona, wygladalaby stad jak nieistniejaca — i skasowalibysmy jej
+		// wiersz terminow. Bez tego kontraktu NIE sprzatamy w ogole.
+		if ( ! has_filter( 'mp_case_exists' ) ) {
 			return 0;
 		}
 
@@ -183,10 +187,10 @@ final class Sla {
 		$zywe    = 0;
 
 		foreach ( (array) $ids as $case_id ) {
-			$case_id = (int) $case_id;
-			$ctx     = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
+			$case_id  = (int) $case_id;
+			$istnieje = (bool) apply_filters( 'mp_case_exists', false, $case_id );
 
-			if ( is_array( $ctx ) ) {
+			if ( $istnieje ) {
 				++$zywe;
 
 				continue;

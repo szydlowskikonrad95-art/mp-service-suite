@@ -179,10 +179,6 @@ final class Sweep {
 			// wiec wlasny stan z lista spraw C i doszywamy roznice.
 			Sla::reconcile_untracked();
 
-			// 2.20: wiersze-sieroty po usunietych sprawach. Cztery komentarze w tym
-			// module obiecywaly, ze „sweep sprzata osobno" — i nikt tego nie napisal.
-			$sieroty = Sla::cleanup_orphans();
-
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 
@@ -275,6 +271,13 @@ final class Sweep {
 			} while ( ! $przerwane
 				&& $rounds < self::MAX_ROUNDS
 				&& ( self::BATCH === $last_rem || self::ESCALATION_BATCH === $last_esc ) );
+
+			// 2.20: sprzatanie sierot NA KONIEC przebiegu, nigdy przed nim.
+			// Pierwsza wersja wolala je na poczatku i kasowala wiersze, ZANIM
+			// zamiatarka zdazyla je obsluzyc — licznik eskalacji zszedl ze 120 na 71
+			// (zlapal to istniejacy test „jeden digest na przebieg"). Kolejnosc jest
+			// tu czescia poprawnosci: najpierw robimy robote, potem sprzatamy.
+			Sla::cleanup_orphans();
 
 			WorkflowEvents::log(
 				WorkflowEvents::SWEEP_RUN,

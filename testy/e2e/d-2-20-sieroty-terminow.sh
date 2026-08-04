@@ -71,18 +71,23 @@ K1=$(wp option get "$KURSOR" 2>/dev/null | tr -d '[:space:]')
 	&& ok "kursor przesuniety po przebiegu (=$K1)" \
 	|| bad "kursor nie ruszyl — dalsze wiersze nigdy nie trafia do paczki"
 
+# Zawijanie sprawdzamy WPROST, nie „po kilku przebiegach": ustawiamy kursor za
+# ostatni wiersz i zadamy, zeby nastepny przebieg wrocil na poczatek. Poprzednia
+# wersja tej kontroli zakladala, ze dwa przebiegi wystarcza do konca tabeli —
+# i padala, gdy wczesniejszy test zostawil w niej sto dwadziescia wierszy.
+wp eval "update_option('$KURSOR', 999999999, false);" >/dev/null 2>&1
 sprzataj >/dev/null
 K2=$(wp option get "$KURSOR" 2>/dev/null | tr -d '[:space:]')
 [ "${K2:-1}" = "0" ] \
-	&& ok "kursor ZAWIJA na koniec tabeli (tabela sprawdzana w kolko, nie raz)" \
+	&& ok "kursor ZAWIJA po ostatnim wierszu (tabela sprawdzana w kolko, nie raz)" \
 	|| bad "kursor nie zawinal (=$K2) — dalsza czesc tabeli nigdy nie zostanie sprawdzona"
 
 # ── 4. BEZPIECZNIK: brak kontraktu = NIE kasujemy nic ───────────────────────
 # Gdy modul zgloszen nie odpowiada, KAZDY wiersz wyglada na sierote. To jest
-# moment, w ktorym zla naprawa kasuje calą tabele terminow.
+# moment, w ktorym zla naprawa kasuje cala tabele terminow.
 wp eval "delete_option('$KURSOR');" >/dev/null 2>&1
 BEZ_KONTRAKTU=$(wp eval '
-	remove_all_filters( "mp_case_get_context" );
+	remove_all_filters( "mp_case_exists" );
 	echo (int) MP\Automator\Sla::cleanup_orphans();' 2>/dev/null | tr -d '[:space:]')
 [ "${BEZ_KONTRAKTU:-1}" = "0" ] \
 	&& ok "bez kontraktu sprawdzania spraw NIE kasujemy nic (bezpiecznik 1)" \
@@ -92,6 +97,26 @@ NADAL=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id=$CID")
 [ "$NADAL" = "1" ] \
 	&& ok "wiersz zywej sprawy przetrwal probe z martwym kontraktem" \
 	|| bad "wiersz zywej sprawy zniknal przy martwym kontrakcie"
+
+# ── 4b. SPRAWA ISTNIEJE, ale NIE JEST POTWIERDZONA => wiersz ZOSTAJE ────────
+# To byla glebsza przyczyna regresji zlapanej przez test „jeden digest": pierwsza
+# wersja pytala `mp_case_get_context`, a ten odpowiada TYLKO o sprawach
+# zweryfikowanych — wiec sprawa istniejaca, lecz niepotwierdzona, wygladala jak
+# nieistniejaca i jej wiersz szedl do kasacji. Teraz pytamy WPROST o istnienie.
+wp eval "delete_option('$KURSOR');" >/dev/null 2>&1
+OUT=$(wp mp case-create --kind=reklamacja --email=sierota-pending@example.com --name='T Test' --serial=SIEROTA-3 --document='FV/1' --date='2026-05-01' --desc='x' 2>/dev/null)
+CID_PENDING=$(echo "$OUT" | grep '^case_id=' | cut -d= -f2)   # NIE potwierdzamy
+if [ -n "$CID_PENDING" ]; then
+	wp db query "INSERT INTO wp_mp_case_sla (case_id, status, sla_policy_version) VALUES ($CID_PENDING, 'nowe', 1)" >/dev/null 2>&1
+	sprzataj >/dev/null
+	ZOSTAL_PENDING=$(q "SELECT COUNT(*) FROM wp_mp_case_sla WHERE case_id=$CID_PENDING")
+	[ "$ZOSTAL_PENDING" = "1" ] \
+		&& ok "sprawa niepotwierdzona ISTNIEJE — jej wiersz NIE jest sierota i zostaje" \
+		|| bad "skasowany wiersz istniejacej sprawy tylko dlatego, ze nie jest potwierdzona"
+	wp db query "DELETE FROM wp_mp_service_cases WHERE id=$CID_PENDING; DELETE FROM wp_mp_case_sla WHERE case_id=$CID_PENDING;" >/dev/null 2>&1
+else
+	bad "nie udalo sie utworzyc sprawy niepotwierdzonej — kontrola NIE zostala wykonana"
+fi
 
 # ── 5. BEZPIECZNIK: cala paczka martwa => ALARM zamiast kasowania ───────────
 # Podkladamy piec wierszy bez spraw. Kontrakt ZYJE, ale nic w paczce nie zyje —
