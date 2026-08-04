@@ -1310,7 +1310,35 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w ostatnich 30 dniach.
+	 * Okno wykrywania powtornego zgloszenia tego samego egzemplarza — DOMYSLNIE 30 dni.
+	 *
+	 * PO CO OSOBNA FUNKCJA (audyt 2.39): liczba byla WPISANA NA SZTYWNO, bez filtra
+	 * i bez ustawienia, wiec ten sam sprzet zgloszony po 31 dniach nie dostawal flagi
+	 * w ogole — a sprzet wracajacy do serwisu z ta sama usterka to typowy przebieg
+	 * reklamacyjny, nie przypadek brzegowy. Bliźniacza liczba w tym samym pliku
+	 * (retencja zgloszen niepotwierdzonych) od poczatku byla WARTOSCIA DOMYSLNA
+	 * przestawialna filtrem — czyli w produkcie istnial poprawny wzorzec, tylko
+	 * nie zostal tu uzyty. Rozciagamy go, zamiast wymyslac drugi sposob.
+	 *
+	 * ⛔ Wartosc z filtra jest OGRANICZANA: zero albo liczba ujemna wylaczylyby
+	 * wykrywanie po cichu, a wartosc absurdalnie duza zmienilaby „ostatnio"
+	 * w „kiedykolwiek". Granice sa jawne, a nie zostawione wdrozeniowcowi.
+	 *
+	 * @return int Liczba dni (1..3650).
+	 */
+	public static function serial_reuse_window_days(): int {
+		/**
+		 * Ile dni wstecz szukamy wczesniejszej sprawy tego samego egzemplarza.
+		 *
+		 * @param int $days Domyslnie 30.
+		 */
+		$days = (int) apply_filters( 'mp_intake_serial_reuse_days', 30 );
+
+		return max( 1, min( 3650, $days ) );
+	}
+
+	/**
+	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w oknie wykrywania.
 	 *
 	 * @param int $product_id ID produktu w rejestrze.
 	 * @return bool
@@ -1319,7 +1347,7 @@ final class CaseRepo {
 		global $wpdb;
 
 		$table  = Tables::full( Tables::CASES );
-		$cutoff = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - self::serial_reuse_window_days() * DAY_IN_SECONDS );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 		$count = (int) $wpdb->get_var(
