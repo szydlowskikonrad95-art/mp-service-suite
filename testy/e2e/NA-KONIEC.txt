@@ -18,7 +18,13 @@
 # Stoi PO `import-dod.sh`, zeby niczego mu nie zabrac, i PRZED `uninstall-crony.sh`,
 # ktoremu zostawia dzialajacy produkt z zaplanowanymi cronami.
 # 2.56: odinstalowuje modul zgloszen ZA ZGODA, czyli kasuje tabele — i owszem, sam po
+# powody-odrzucenia: BLIZNIAK 2.56 — ta sama klasa wady w tym samym pliku (opcja-tresc
+# nie kasowana przez uninstall). Robi to samo co 2.56: odinstalowuje modul zgloszen ZA
+# ZGODA (kasuje tabele) i wlacza go z powrotem, wiec tabele wracaja PUSTE. Stoi TUZ ZA
+# 2.56, bo jest jego bliznakiem i niczego nie zabiera testom, ktore juz przez to przeszly;
+# zadnych danych nie potrzebuje — pracuje wylacznie na opcjach.
 c-2-2-zalaczniki-przy-odinstalowaniu.sh
 c-2-56-konfiguracja-pol-formularza.sh
+c-uninstall-powody-odrzucenia.sh
 import-dod.sh
 uninstall-crony.sh
