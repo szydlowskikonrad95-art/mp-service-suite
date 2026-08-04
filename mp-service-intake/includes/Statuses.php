@@ -25,6 +25,18 @@ final class Statuses {
 	public const REOPEN_TARGET = 'w analizie';
 
 	/**
+	 * Status, w ktorym sprawa czeka na RUCH KLIENTA (dosłanie zdjęcia, dokumentu, odpowiedzi).
+	 *
+	 * ⛔ PO CO TO JEST OSOBNA STALA: od wydania, w ktorym licznik terminu zatrzymuje sie na
+	 * czas oczekiwania na klienta, sprawa w tym statusie NIE MA terminu (`deadline_at` = NULL).
+	 * Puste pole terminu ma jednak w produkcie WIECEJ niz jedna przyczyne — sprawa zamknieta,
+	 * modul automatu nieaktywny, brak wiersza terminu — wiec napisu „czeka na klienta" NIE WOLNO
+	 * pokazywac na kazdej pustce. Warunek stoi w JEDNYM miejscu i pyta o TEN status, a nie
+	 * o brak daty.
+	 */
+	public const AWAITING_CUSTOMER = 'do uzupełnienia';
+
+	/**
 	 * Rdzen 7 ze spec: slug => terminal? (SLA-godziny konfiguruje D, nie tu).
 	 *
 	 * @var array<string, bool>
@@ -144,6 +156,29 @@ final class Statuses {
 	 */
 	public static function exists( string $slug ): bool {
 		return isset( self::all()[ $slug ] );
+	}
+
+	/**
+	 * Czy sprawa w tym statusie czeka na RUCH KLIENTA (a nie na serwis).
+	 *
+	 * @param string $slug Status.
+	 * @return bool
+	 */
+	public static function is_awaiting_customer( string $slug ): bool {
+		return self::AWAITING_CUSTOMER === $slug;
+	}
+
+	/**
+	 * Napis pokazywany ZAMIAST terminu, gdy zegar stoi, bo czekamy na klienta.
+	 *
+	 * ⛔ Jedno zrodlo dla obu ekranow (lista spraw i karta sprawy). Puste pole terminu bez slowa
+	 * to CICHA ZMIANA: koordynator nie odrozni „terminu nie ma, bo tak ma byc" od „termin sie
+	 * zepsul". Napis mowi, na CO sie czeka, wiec nie trzeba tego zgadywac ani szukac w instrukcji.
+	 *
+	 * @return string
+	 */
+	public static function awaiting_customer_label(): string {
+		return __( 'czeka na klienta', 'mp-service-intake' );
 	}
 
 	/**

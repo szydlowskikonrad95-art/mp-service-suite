@@ -147,6 +147,13 @@ final class CaseCard {
 		$sla      = apply_filters( 'mp_case_deadline', null, $case_id );
 		$deadline = is_array( $sla ) && ! empty( $sla['deadline_at'] ) ? (string) $sla['deadline_at'] : '';
 
+		// Zegar terminu STOI, gdy czekamy na ruch klienta. Pusty termin bez slowa to cicha
+		// zmiana — czlowiek nie odrozni braku terminu od terminu zepsutego.
+		// ⛔ Warunkiem jest STATUS, nie brak daty: pustka ma tez inne przyczyny (sprawa
+		// zamknieta, modul automatu nieaktywny), a tam ten napis bylby nieprawda.
+		$termin_wstrzymany = '' === $deadline
+			&& Statuses::is_awaiting_customer( (string) ( $ctx['status'] ?? '' ) );
+
 		// phpcs:disable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned -- klucze __() z multibyte ('ę','ó'), docelowa kolumna wyrownania rozni sie miedzy wersjami WPCS (lokalna vs CI); stale pojedyncze spacje = wersjo-odporne.
 		$rows = array(
 			__( 'Status', 'mp-service-intake' ) => Statuses::label( (string) ( $ctx['status'] ?? '' ) ),
@@ -156,7 +163,9 @@ final class CaseCard {
 			__( 'Przydzielony', 'mp-service-intake' ) => $user ? (string) $user->display_name : __( 'nieprzydzielona', 'mp-service-intake' ),
 			__( 'Kraj / język', 'mp-service-intake' ) => trim( (string) ( $ctx['kraj'] ?? '' ) . ' / ' . (string) ( $ctx['jezyk'] ?? '' ), ' /' ),
 			__( 'Potwierdzono', 'mp-service-intake' ) => self::fmt_date( (string) ( $ctx['verified_at'] ?? '' ) ),
-			__( 'Termin SLA', 'mp-service-intake' ) => '' !== $deadline ? self::fmt_date( $deadline ) : '—',
+			__( 'Termin SLA', 'mp-service-intake' ) => '' !== $deadline
+				? self::fmt_date( $deadline )
+				: ( $termin_wstrzymany ? Statuses::awaiting_customer_label() : '—' ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 

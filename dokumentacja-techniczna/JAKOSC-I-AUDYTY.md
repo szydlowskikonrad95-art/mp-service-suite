@@ -42,7 +42,7 @@ przepisywana siłą. Co się uruchamia:
 - **Testy żywych scenariuszy** — kilkadziesiąt przebiegów wykonywanych na prawdziwym
   WordPressie w kontenerze: zgłoszenie przez formularz, załączniki zależne od kategorii,
   zmiana statusu, terminy, eskalacje, import i eksport, uprawnienia ról.
-- **Bramka zgodności dokumentów z kodem** — 33 kontrole pilnujące, że dokumentacja i instrukcje
+- **Bramka zgodności dokumentów z kodem** — 56 kontroli pilnujących, że dokumentacja i instrukcje
   nie obiecują niczego, czego kod nie robi (nazwy ról, nazwy statusów, liczby, formaty).
   Powstała, bo dokument rozjeżdżający się z kodem jest groźniejszy niż brak dokumentu.
 - **Kontrola plików procesu budowy** — same pliki definiujące automatyzację też są sprawdzane,

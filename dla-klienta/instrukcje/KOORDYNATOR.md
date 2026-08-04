@@ -106,6 +106,11 @@ i dotyczyć sprawy, a nie zawierać ocen, których nie da się obronić w oczy.
   od każdej sprawy — np. po dłuższej przerwie w pracy serwera. Lista spraw jest w treści.
 - Wznowienie **zamkniętej** sprawy to wyłącznie Twoja decyzja (Ty albo administrator; zawsze
   do statusu „w analizie", z czystym terminem).
+- ⏸️ **Sprawa w statusie „do uzupełnienia" nie ma terminu — i tak ma być.** Zegar zatrzymuje się
+  na czas, gdy czekamy na ruch klienta (dosłanie zdjęcia, dokumentu, odpowiedzi), więc serwis nie
+  dostaje przekroczenia za cudzą zwłokę i **nie idzie z tego eskalacja**. W kolumnie terminu
+  i na karcie sprawy zobaczysz wtedy napis **„czeka na klienta"** zamiast daty — puste pole
+  znaczyłoby co innego. Zegar rusza od nowa, gdy przestawisz sprawę na kolejny status.
 
 ## 5. Kondycja systemu
 

@@ -280,6 +280,16 @@ final class CasesListTable extends \WP_List_Table {
 		}
 
 		if ( ! is_array( $sla ) || empty( $sla['deadline_at'] ) ) {
+			// Zegar terminu STOI, gdy czekamy na ruch klienta — i to musi byc WIDOCZNE.
+			// Sama pustka nie odroznia „terminu nie ma, bo tak ma byc" od „termin sie zepsul",
+			// a koordynator patrzy na te kolumne, zeby wiedziec, gdzie ma zajrzec.
+			// ⛔ Pytamy o STATUS, nie o brak daty: pusty termin ma tez inne przyczyny
+			// (sprawa zamknieta, modul automatu nieaktywny) i tam ten napis bylby klamstwem.
+			if ( Statuses::is_awaiting_customer( (string) ( $item['status'] ?? '' ) ) ) {
+				return '<span style="color:#a16207" title="' . esc_attr__( 'Termin nie biegnie, dopóki sprawa czeka na odpowiedź klienta', 'mp-service-intake' ) . '">'
+					. esc_html( Statuses::awaiting_customer_label() ) . '</span>';
+			}
+
 			return '—';
 		}
 
