@@ -54,10 +54,77 @@ sprzataj() {
 # Czysty stan na wejsciu — test idempotentny (moze isc kilka razy pod rzad).
 sprzataj
 
-ADM=$(wp user create hist_adm hist_adm@example.com --role=mp_system_admin --porcelain 2>/dev/null)
-[ -z "$ADM" ] && ADM=$(wp user get hist_adm --field=ID 2>/dev/null | tr -d '[:space:]')
-AGT=$(wp user create hist_agent hist_agent@example.com --role=mp_agent --porcelain 2>/dev/null)
-[ -z "$AGT" ] && AGT=$(wp user get hist_agent --field=ID 2>/dev/null | tr -d '[:space:]')
+# ⛔ LEKCJA Z CI (4.08). Poprzednia wersja robila:
+#     ADM=$(wp user create ... --role=mp_system_admin --porcelain 2>/dev/null)
+# i przy bledzie zostawala z PUSTA wartoscia, bo blad szedl do /dev/null. W CI test
+# idzie jako jeden z ostatnich, a chwile wczesniej `uninstall-crony.sh` ODINSTALOWUJE
+# trzy wtyczki — `Uninstall::remove_roles()` KASUJE wtedy role `mp_system_admin`
+# i `mp_agent`. `wp user create --role=<nieistniejaca>` konczy sie wtedy bledem
+# „Role doesn't exist", konto NIE powstaje, a test melduje puste ID bez powodu.
+#
+# Dlatego: (1) czytamy kod wyjscia i POKAZUJEMY blad, (2) uzywamy istniejacego konta,
+# (3) gdy roli nie ma — nadajemy samo UPRAWNIENIE, bo tego wlasnie potrzebuje ekran
+# (`current_user_can`), a nie nazwy roli, (4) na koncu kasujemy to, co zalozylismy.
+#
+# ⚠️ `konto` NIE oddaje wyniku przez `$( )` — ustawia zmienna KONTO_ID. Podstawienie
+# polecenia odpala PODPOWLOKE, wiec dopisanie do listy zalozonych kont ginelo razem
+# z nia i sprzatanie nie kasowalo NICZEGO. Zlapane proba: po dwoch przebiegach konto
+# `hist_adm` dalej siedzialo w bazie.
+ZALOZONE_KONTA=''
+KONTO_ID=''
+
+konto() {
+	LOGIN="$1"
+	UPRAWNIENIE="$2"
+	KONTO_ID=''
+	# Wlasna domena pocztowa testu: kolizja adresu moze przyjsc tylko z tego testu,
+	# wiec nigdy nie tkniemy cudzego konta.
+	MAIL="$LOGIN@b-historia-egzemplarza.test"
+
+	ID=$(wp user get "$LOGIN" --field=ID 2>/dev/null | tr -d '[:space:]')
+
+	if [ -z "$ID" ]; then
+		WYNIK=$(wp user create "$LOGIN" "$MAIL" --porcelain 2>&1)
+		KOD=$?
+		ID=$(printf '%s' "$WYNIK" | tr -d '[:space:]' | grep -Eo '^[0-9]+$')
+
+		if [ -z "$ID" ]; then
+			bad "nie udalo sie zalozyc konta '$LOGIN' (kod $KOD): $WYNIK"
+			return 1
+		fi
+
+		ZALOZONE_KONTA="$ZALOZONE_KONTA $ID"
+	else
+		# Konto zostalo po wczesniejszym przebiegu TEGO testu (nazwy sa jego wlasne).
+		# Uzywamy go i kasujemy na koncu — inaczej smiec zostaje na wspolnej bazie.
+		echo "  --   konto '$LOGIN' juz istnieje (id=$ID) — uzywam istniejacego"
+		ZALOZONE_KONTA="$ZALOZONE_KONTA $ID"
+	fi
+
+	if wp role exists "$UPRAWNIENIE" >/dev/null 2>&1; then
+		wp user set-role "$ID" "$UPRAWNIENIE" >/dev/null 2>&1
+	else
+		echo "  --   rola '$UPRAWNIENIE' nie istnieje w tej bazie (poprzedni test ja usunal?) — nadaje samo uprawnienie"
+		wp user add-cap "$ID" "$UPRAWNIENIE" >/dev/null 2>&1
+	fi
+
+	KONTO_ID="$ID"
+}
+
+konto hist_adm mp_system_admin
+ADM="$KONTO_ID"
+konto hist_agent mp_agent
+AGT="$KONTO_ID"
+
+# Bramka: konto ma NAPRAWDE dzialac na ekranie. Bez tego render odbilby sie
+# o `current_user_can()` i test opowiadalby o pustej stronie zamiast o wadzie.
+for PARA in "$ADM|mp_system_admin" "$AGT|mp_agent"; do
+	KID="${PARA%%|*}"; KCAP="${PARA##*|}"
+	if [ -n "$KID" ]; then
+		MOZE=$(wp eval "wp_set_current_user( $KID ); echo current_user_can( '$KCAP' ) ? 'tak' : 'nie';" 2>/dev/null | tr -d '[:space:]')
+		[ "$MOZE" = "tak" ] || bad "konto $KID nie ma uprawnienia '$KCAP' (dostalo: '$MOZE') — stanowisko nie nadaje sie do proby"
+	fi
+done
 
 wp db query "INSERT INTO wp_mp_product_registry
 	(serial_display, serial_normalized, model, batch, category, purchase_document, purchase_date, warranty_until, source, archived, created_at, updated_at)
@@ -69,9 +136,10 @@ wp db query "INSERT INTO wp_mp_product_registry
 PID=$(q "SELECT id FROM wp_mp_product_registry WHERE serial_normalized='$NORM';")
 PID2=$(q "SELECT id FROM wp_mp_product_registry WHERE serial_normalized='$NORM2';")
 
-if [ -z "$PID" ] || [ -z "$PID2" ] || [ -z "$ADM" ] || [ -z "$AGT" ]; then
-	bad "nie udalo sie przygotowac stanowiska (PID=$PID PID2=$PID2 ADM=$ADM AGT=$AGT)"
+if [ -z "$PID" ] || [ -z "$PID2" ] || [ -z "$ADM" ] || [ -z "$AGT" ] || [ "$FAIL" -gt 0 ]; then
+	bad "nie udalo sie przygotowac stanowiska (PID=$PID PID2=$PID2 ADM=$ADM AGT=$AGT) — powod wyzej"
 	sprzataj
+	for U in $ZALOZONE_KONTA; do wp user delete "$U" --yes >/dev/null 2>&1; done
 	echo "WYNIK: $PASS ok, $FAIL fail"
 	exit 1
 fi
@@ -155,8 +223,8 @@ echo "$HTML2" | grep -q 'nie ma jeszcze żadnego wpisu' && ok "pusta historia op
 
 # Sprzatanie po sobie — wspolna baza w CI, smiec wywala cudzy test kilka pozycji dalej.
 sprzataj
-wp user delete "$ADM" --yes >/dev/null 2>&1
-wp user delete "$AGT" --yes >/dev/null 2>&1
+# Kasujemy WYLACZNIE konta zalozone przez ten przebieg (wspolna baza w CI).
+for U in $ZALOZONE_KONTA; do wp user delete "$U" --yes >/dev/null 2>&1; done
 
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
