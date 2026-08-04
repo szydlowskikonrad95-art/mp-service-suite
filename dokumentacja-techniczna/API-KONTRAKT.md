@@ -210,11 +210,25 @@ array( 'ekspertyza_zew' => array( 'label' => 'Ekspertyza zewnętrzna', 'terminal
 > *(Audyt #15: wcześniej opisany tu `mp_case_card_sections` NIE istniał w kodzie — hook-widmo;
 > ktoś budujący 4. wtyczkę podpiąłby się i nic by się nie stało. Poniżej realny mechanizm.)*
 
-**`mp_case_deadline( $result, $case_id )`** — karta i lista C pytają o terminy SLA sprawy.
-Zwrotka `{deadline_at, warning_at, status}` (wiersz `wp_mp_case_sla`) albo `null` gdy brak SLA/D.
+**`mp_case_deadline( $result, $case_id )`** — POJEDYNCZA sprawa: karta C pyta o terminy SLA jednej sprawy.
+Zwrotka `{schema_version, deadline_at, warning_at, status}` (wiersz `wp_mp_case_sla`) albo `null` gdy brak SLA/D.
 ```php
 $sla = apply_filters( 'mp_case_deadline', null, 123 );
 ```
+
+**`mp_case_deadlines( $result, $case_ids )`** — **WARIANT HURTOWY, obowiązkowy dla LIST.**
+Terminy WIELU spraw **jednym zapytaniem**. Zwrotka: mapa `id sprawy => {schema_version, deadline_at, warning_at, status}`,
+**tylko dla spraw mających wiersz SLA** (brak klucza = brak terminu, nie błąd); `array()` gdy lista ID pusta.
+```php
+$mapa = apply_filters( 'mp_case_deadlines', null, array( 123, 124, 125 ) );
+```
+⛔ **Kto pisze moduł D, implementuje OBA warianty.** Lista spraw C woła wyłącznie hurtowy
+(`Admin/CasesListTable.php:121`) — wariant pojedynczy w pętli po wierszach to **20 zapytań na stronę**
+(wada wycięta audytem wydajności 30.07). Implementacja odniesienia: `mp-workflow-automator/includes/CaseCardApi.php:188`,
+rejestracja obu w `:57-58`.
+📌 **`null` jest znaczące**: oznacza „hurtowego nikt nie obsługuje" (starszy moduł D) i C **spada wtedy na wariant
+pojedynczy** (`CasesListTable.php:124`). Dlatego wariant pojedynczy zostaje w kontrakcie jako **zapas**, a nie
+jako główna droga — i dlatego hurtowy przy zerowym wyniku zwraca **pustą mapę**, nie `null`.
 
 **`mp_case_checklist_state( $result, $case_id )`** — karta C pyta o checklistę sprawy.
 Zwrotka: PEŁNA lista kroków rodzaju z nałożonym stanem odhaczeń —
@@ -223,7 +237,31 @@ Zwrotka: PEŁNA lista kroków rodzaju z nałożonym stanem odhaczeń —
 $steps = apply_filters( 'mp_case_checklist_state', null, 123 );
 ```
 
-### `mp_intake_captcha_html( $html )` — pusty slot C (captcha nie od startu).
+### `mp_all_statuses( $result )` — pyta D, odpowiada C
+**Pełna** lista statusów: rdzeń 7 (nieusuwalny) + własne zarejestrowane przez `mp_registered_statuses`.
+C jest **kanonicznym źródłem** (`Statuses::all`), D konsumuje wyłącznie przez ten filtr — bez sięgania w klasę C
+(`mp-service-intake/includes/Plugin.php:144`; konsument: `mp-workflow-automator/includes/Admin/PanelScreen.php:717`).
+📌 **Brak modułu C rozpoznaje się po `has_filter( 'mp_all_statuses' )`**, nie po pustej zwrotce — panel D wchodzi
+wtedy w tryb ograniczony (`PanelScreen.php:713`), zamiast pokazać „zero statusów" jak fakt.
+
+### `mp_product_details( $default, $product_registry_id )` — pyta C, odpowiada B
+Dane produktu z rejestru na kartę sprawy: `{id, serial, model, batch, purchase_document, purchase_date,
+warranty_until, warranty_status, archived, schema_version}`. Brak wtyczki B / nieznane ID → **wartość domyślna
+przekazana przez pytającego** (nie `null` na sztywno) — `mp-warranty-registry/includes/Repo.php:285`,
+rejestracja `Plugin.php:58`; konsument `mp-service-intake/includes/Admin/CaseCard.php:367`.
+
+### ⛔ Punkt WYCOFANY z kontraktu: captcha (dawny `mp_intake_captcha_html`)
+> *(Audyt 1.3.12, pozycja 2.48: filtr captchy był tu wymieniony jako „pusty slot C", ale **nigdy nie istniał
+> w kodzie** — zero wywołań w całym produkcie. Stał **szesnaście linii pod naszą własną notą o `mp_case_card_sections`**
+> wyżej: tę samą klasę błędu opisaliśmy, naprawiliśmy egzemplarz i nie przeczesaliśmy dokumentu, w którym stała.
+> Kto by się pod niego podpiął, nie zmieniłby nic i nie dostał żadnego sygnału. **Captcha nie jest w zakresie 1.3.x** —
+> gdy wejdzie, punkt kontraktu wraca tu razem z wywołaniem w kodzie, nie przed nim.)*
+
+⛔ **Zasada, żeby to się nie powtórzyło:** każdy punkt tego dokumentu ma mieć **wywołanie w kodzie** — kontrola robi się
+**w obie strony** (`testy/dokumenty/kontrakt-i-bezpieczenstwo-zgodne-z-kodem.sh`); samo „z kodu do dokumentu"
+przepuściło oba widma. Filtry **konfiguracyjne wewnątrz jednej wtyczki** nie są punktami kontraktu i tu nie wchodzą —
+np. słownik kategorii produktu (`mp-warranty-registry/includes/Categories.php:41`) wolno wdrożeniowcowi podmienić
+filtrem, ale **nie woła go żaden inny moduł**.
 
 ## C. Funkcje kontraktowe C (operacje na sprawach — jedyna droga zapisu dla D)
 
@@ -252,4 +290,7 @@ transakcji, akcje PO commit. `mp_cases_query` respektuje ROLĘ wołającego (mp_
 | mp_customer_find_products · mp_product_active_cases_count · mp_case_count_by_product | C | B |
 | mp_privacy_redact_for_customer | B (listener) | C (eraser) |
 | mp_rejection_reasons · mp_registered_statuses · sekcje karty | D | C |
+| mp_case_deadline (pojedynczy, zapas) · **mp_case_deadlines (hurtowy — lista)** | D | C |
+| mp_all_statuses | C | D |
+| mp_product_details | B | C |
 | funkcje kontraktowe spraw (§C) | C | D |

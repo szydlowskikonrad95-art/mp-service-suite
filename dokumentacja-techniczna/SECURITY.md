@@ -84,7 +84,13 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
   mimo to **zgłasza to jako ostrzeżenie** (nie honoruje `phpcs:disable`) — **znany false-positive, zero ryzyka SQL**.
   Opcjonalna modernizacja gdyby wymagany był czysty plugin-check: placeholder `%i` na identyfikatory (`$wpdb->prepare`, WP 6.2+).
 - Wejścia: `sanitize_*` / `absint` przy każdym `$_POST/$_GET`. Wyjścia: `esc_html/esc_attr/esc_url` przy każdym echo (WPCS w CI).
-- Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem wymogu anty-spamowego).
+- **Rate-limit zgłoszeń liczy WŁASNA TABELA** `wp_mp_rate_counters` (`Tables::RATE_COUNTERS`) — wszystkie liczniki,
+  rezerwacje dedup i ich sprzątanie idą przez nią (`RateLimit.php`: `:181`, `:265`, `:395`, `:415`, `:620`, `:658`).
+  **Wynik nie zależy od object-cache**, bo nic tu nie przechodzi przez transienty ani `wp_options` — progi kalibruje się
+  na tej tabeli i na demo, i pod persistent object-cache, i dostaje się ten sam wynik.
+  ⚠️ **Wersja transientowa to PRZESZŁOŚĆ, nie plan**: została zastąpiona właśnie dlatego, że pod object-cache omijała bazę —
+  „dawny transientowy read-modify-write przepuszczał N żądań" (`RateLimit.php:16`), „dawny transientowy check-then-set"
+  (`:20`), „rezerwacja w tabeli (nie transient…)" (`:119`). Atomową bramką przed utworzeniem sprawy jest `claim_submission`.
 
 ## 6b. Nagłówki bezpieczeństwa stron wtyczki
 
