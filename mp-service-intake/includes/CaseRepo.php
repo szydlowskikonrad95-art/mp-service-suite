@@ -1577,7 +1577,19 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Redaguje wartosci pol pii_sensitive w form_data spraw (RODO).
+	 * Redaguje dane osobowe sprawy (RODO) — w OBU kopiach, ktore je niosa.
+	 *
+	 * ⛔ DRUGA KOPIA (poz. 2.60): oprocz `form_data` sprawa trzyma MIGAWKE GWARANCJI
+	 * (`warranty_snapshot`) zamrozona w chwili zgloszenia, a w niej `override_reason`
+	 * — powod wyjatku gwarancyjnego wpisany recznie przez administratora. Rejestr sam
+	 * uznaje ten tekst za wymagajacy usuniecia i redaguje swoja kopie
+	 * (`WarrantyExceptions::privacy_redact`), tylko ze migawka lezy w NASZEJ tabeli,
+	 * wiec rejestrowi nie wolno jej tknac (cudza tabela — pilnuje tego
+	 * `build/lint-cudze-tabele.php`). Do 1.3.12 nie ruszal jej nikt: tekst uznany przez
+	 * produkt za wymagajacy redakcji zostawal w bazie mimo WYKONANEGO zadania.
+	 *
+	 * Reszty migawki nie tykamy — to dane techniczne produktu (numer seryjny partii,
+	 * status gwarancji, daty), nie dane osobowe klienta.
 	 *
 	 * @param array<int> $case_ids Sprawy.
 	 * @return int Liczba zredagowanych spraw.
@@ -1590,29 +1602,64 @@ final class CaseRepo {
 
 		foreach ( $case_ids as $case_id ) {
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
-			$raw = $wpdb->get_var( $wpdb->prepare( "SELECT form_data FROM {$table} WHERE id = %d", (int) $case_id ) );
-			// phpcs:enable
-
-			$data = json_decode( (string) $raw, true );
-
-			if ( ! is_array( $data ) ) {
-				continue;
-			}
-
-			$data = self::redact_pii_fields( $data );
-
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
-			$wpdb->query(
-				$wpdb->prepare(
-					"UPDATE {$table} SET form_data = %s, updated_at = %s WHERE id = %d",
-					(string) wp_json_encode( $data ),
-					gmdate( 'Y-m-d H:i:s' ),
-					(int) $case_id
-				)
+			$wiersz = $wpdb->get_row(
+				$wpdb->prepare( "SELECT form_data, warranty_snapshot FROM {$table} WHERE id = %d", (int) $case_id ),
+				ARRAY_A
 			);
 			// phpcs:enable
 
-			++$changed;
+			if ( ! is_array( $wiersz ) ) {
+				continue;
+			}
+
+			$data      = json_decode( (string) ( $wiersz['form_data'] ?? '' ), true );
+			$zmienione = false;
+
+			if ( is_array( $data ) ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$table} SET form_data = %s, updated_at = %s WHERE id = %d",
+						(string) wp_json_encode( self::redact_pii_fields( $data ) ),
+						gmdate( 'Y-m-d H:i:s' ),
+						(int) $case_id
+					)
+				);
+				// phpcs:enable
+
+				$zmienione = true;
+			}
+
+			// MIGAWKA — osobno i NIEZALEZNIE od form_data. Gdyby szla w tym samym
+			// `if`, sprawa z uszkodzonym form_data unosilaby powod wyjatku dalej,
+			// mimo wykonanego zadania usuniecia danych.
+			$migawka = json_decode( (string) ( $wiersz['warranty_snapshot'] ?? '' ), true );
+
+			if ( is_array( $migawka )
+				&& isset( $migawka['override_reason'] )
+				&& is_string( $migawka['override_reason'] )
+				&& '' !== $migawka['override_reason']
+				&& Messages::REDACTED !== $migawka['override_reason'] ) {
+
+				$migawka['override_reason'] = Messages::REDACTED;
+
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$table} SET warranty_snapshot = %s, updated_at = %s WHERE id = %d",
+						(string) wp_json_encode( $migawka ),
+						gmdate( 'Y-m-d H:i:s' ),
+						(int) $case_id
+					)
+				);
+				// phpcs:enable
+
+				$zmienione = true;
+			}
+
+			if ( $zmienione ) {
+				++$changed;
+			}
 		}
 
 		return $changed;
