@@ -58,6 +58,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   ze strona autora nie zdradza ani adresu, ani nazwiska.
 - Testy jednostkowe `TozsamoscKlientaTest` (granica dlugosci liczona w znakach, nie bajtach).
 
+### Naprawione — dostępność (WCAG 2.1 AA)
+- **Błąd formularza prowadzi do konkretnego pola.** Podsumowanie błędów jest listą odnośników,
+  a pole z błędem dostaje `aria-invalid`; komunikat i pole są spięte `aria-describedby`. Dotąd
+  osoba z czytnikiem ekranu słyszała, że coś jest nie tak, ale nie dowiadywała się, **co**.
+- **Wysyłka zgłoszenia ogłasza, że trwa** — formularz dostaje `aria-busy`, przycisk zmienia napis
+  i blokuje powtórne kliknięcie. ⛔ Kontrolki **nie wyłączamy** przez `disabled`: wyłączona wypada
+  z przesyłanych danych, a część przeglądarek przerywa przez to samą wysyłkę.
+- **Ekran importu CSV ogłasza postęp, zakończenie i błąd także czytnikowi ekranu** (`role="status"`
+  dla postępu, komunikat błędu asertywnie). Dotąd pasek postępu zmieniał się w ciszy.
+- **Dwa ekrany personelu mieszczą się w oknie przy powiększeniu 200%** na szerokości typowego
+  monitora: panel automatyzacji i „Zgłoszenia niepotwierdzone" (dotąd wychodziły poza okno o 184
+  i 165 pikseli przy 1280 px). ⚠️ **Część zarzutu zostaje otwarta** — patrz pomiar niżej.
+- **Narzędzie badające dostępność sięga ekranów personelu i drukuje zakres badania.** Zawężenie
+  siedziało w samym przyrządzie: badał wyłącznie trzy powierzchnie klienta, więc każde wydanie
+  wychodziło „zielone", opisując część systemu i nie mówiąc, że to część.
+
+### Dowody — dostępność
+- **Badanie axe-core powtórzone na wydaniu 1.3.12**, na czystej instalacji postawionej z paczki dla
+  klienta (WordPress 6.9 / PHP 8.1 / MySQL 8), po HTTPS-owej ścieżce klienta z odczytem poczty.
+  Zbadane **11 powierzchni, zero pominiętych**: trzy ekrany klienta i osiem ekranów personelu.
+  - **Trzy ekrany klienta: zero naruszeń** (13, 7 i 7 zdanych reguł). Poprzednie badanie
+    (1.3.6) też dawało zero, ale nie obejmowało zmian z tego wydania.
+  - **Siedem z ośmiu ekranów personelu: zero naruszeń.**
+  - 🔴 **Jedno naruszenie otwarte:** reguła `label` (waga krytyczna) na ekranie „Ustawienia
+    zgłoszeń" — pole tekstowe listy powodów odrzucenia nie ma etykiety spiętej z kontrolką
+    (`mp-service-intake/includes/Admin/SettingsScreen.php`). Znalezione **dopiero** dzięki
+    rozszerzeniu narzędzia na ekrany personelu.
+  - Naruszenie w bloku nawigacji motywu WordPressa występuje na stronach publicznych i **nie
+    pochodzi z naszego kodu** — tak samo jak w poprzednim badaniu.
+- **Pomiar mieszczenia się w oknie przy powiększeniu** (`testy/a11y/zoom200-panel.py`, z próbą
+  kontrolną na sąsiednim ekranie): panel automatyzacji przy 1280 px i 200% — zero nadmiaru.
+  🔴 **Otwarte:** przy 768 px z powiększeniem 200% nadmiar **167 px**, przy 390 px bez powiększenia
+  **78 px** — w obu punktach próba kontrolna ma zero, więc to wada tego ekranu, nie stanowiska.
+  Osobno: przy 1024 px i 200% poza okno wychodzą **oba** ekrany (176 i 185 px), czyli to szersza
+  sprawa produktu.
+- Surowe wydruki obu przebiegów leżą w repozytorium: `audyt/pomiary-a11y-1312/` (katalog `audyt/`
+  nie wchodzi do paczki dla klienta — jest dla osoby, która chce zweryfikować te liczby).
+
 ## [1.3.11] - 2026-08-01
 
 > Zgloszone przez zamawiajacego przy klikaniu po panelu — **nie znalazla tego zadna kontrola

@@ -26,6 +26,50 @@ Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
 
 == Changelog ==
 
+= 1.3.12 =
+Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
+
+Powiadomienia i terminy:
+* **Powiadomienia z reguł mają ponowienie i alarm** — tak samo jak przypomnienia o terminach obok.
+  Dotąd nieudana wysyłka z reguły cichła bez śladu.
+* **Ochrona przed podwójnym mailem działa tak samo, jak ochrona przed podwójnym zgłoszeniem** —
+  jeden mechanizm rezerwacji zamiast dwóch różnych.
+* **Wiersze-sieroty w tabeli terminów są naprawdę sprzątane.** Dotąd obiecywały to cztery komentarze
+  w kodzie, a nie robił tego nikt.
+* **Wykrywanie sprawy krążącej między statusami** — sprawa, która bez końca wraca do tego samego
+  stanu, przestaje być niewidoczna. ⚠️ Terminy obsługi (SLA) nadal liczą się od ostatniej zmiany
+  statusu; krążenie wykrywamy nową, osobną miarą wieku sprawy, a nie zmianą podstawy terminów.
+* **Powiadomienie o przekroczonym terminie ma pierwszeństwo przed przypomnieniem.** Cykliczny
+  przegląd liczy teraz, ile wiadomości będzie kosztować eskalacja, ZANIM wyda budżet wysyłki na
+  przypomnienia — dotąd pilniejsza wiadomość (termin już minął) mogła zostać bez pokrycia.
+* Mechanizm ratunkowy przydziału sięga spraw czekających najdłużej, a nie najnowszych.
+
+Dostępność (WCAG 2.1 AA):
+* **Panel automatyzacji mieści się w oknie przy powiększeniu 200%** na szerokości typowego
+  monitora. ⚠️ **Zamknięta jest część zarzutu:** przy węższym oknie ekran nadal wychodzi poza nie
+  (zmierzone: 167 pikseli przy szerokości 768 z powiększeniem 200%, 78 pikseli przy szerokości 390
+  bez powiększenia). To zostaje otwarte i mówimy o tym wprost.
+
+Ekrany i ustawienia:
+* **Administrator ustawia statusy, terminy i reguły bez programisty** — nowa warstwa ustawień.
+  Identyfikator statusu własnego powstaje z tego, co wpisał człowiek, a nie z kolejnego numeru.
+* **Ekran puli pokazuje pracowników także wtedy, gdy kont klientów przybywa** — dotąd przy dużej
+  liczbie kont lista personelu potrafiła zniknąć.
+* Ekran ustawień odsyła do przycisku, który naprawdę tak się nazywa.
+* Pole „priorytet" ma wreszcie jedną, zdefiniowaną nazwę — ta sama stoi w nagłówku kolumny
+  i w regułach; dotąd produkt nie nazywał go nigdzie wprost.
+
+Rzetelność liczb i zapisu:
+* **„Liczba spraw zamkniętych" w eksporcie liczy sprawy zamknięte** — wcześniej liczyła co innego.
+* **„Czas obsługi" znaczy to samo w eksporcie i w tym, co widzi klient**, a wiek sprawy jest liczony
+  osobno, od złożenia.
+* **Rejestr zdarzeń przestaje puchnąć od własnego ruchu produktu** — wpisy techniczne z cyklicznego
+  przeglądu nie przykrywają już zdarzeń biznesowych.
+* **Nieudany zapis do dziennika zatrzymuje operację** zamiast przepuścić ją dalej.
+* Zapis „wstaw albo zaktualizuj" nie używa już funkcji bazy wycofanej w nowszych wersjach MySQL.
+* Kontrola w Stanie witryny **nazywa** fabryczne treści WordPressa („Hello world!", „Przykładowa
+  strona") widoczne bez logowania — i świadomie ich **nie kasuje**, bo to cudza treść.
+
 = 1.3.11 =
 * Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
   Jedyna poprawka tego wydania dotyczy ekranu „Wyjątki gwarancyjne" w module Rejestr MP.

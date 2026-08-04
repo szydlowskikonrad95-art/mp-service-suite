@@ -40,6 +40,38 @@ No. The import ADDS products. A serial number already present in the registry is
 
 == Changelog ==
 
+= 1.3.12 =
+Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
+
+Bezpieczeństwo danych:
+* **Raport błędów importu nie wypuszcza już formuły do arkusza kalkulacyjnego.** Wartość z pliku
+  zaczynająca się od znaku formuły trafiała do raportu tak, jak stała — a arkusz wykonuje ją przy
+  otwarciu. Waga: krytyczna.
+* **Nieudany zapis do dziennika rejestru zatrzymuje operację** zamiast przepuścić ją dalej.
+  Wcześniej zmiana danych mogła zostać zatwierdzona bez wpisu, który ma być jej dowodem.
+
+Dostępność (WCAG 2.1 AA):
+* **Ekran importu ogłasza postęp, zakończenie i błąd także czytnikowi ekranu.** Dotąd pasek postępu
+  zmieniał się w ciszy — osoba niewidoma nie wiedziała, czy import jeszcze trwa.
+
+Ekrany i praca administratora:
+* **Administrator widzi wszystkie udzielone wyjątki gwarancyjne** na jednym ekranie, a nie tylko
+  wyjątek produktu, który akurat otworzył.
+* **Historia egzemplarza jest widoczna, a nie tylko zapisywana** — nowy ekran pokazuje, co się
+  z danym produktem działo, kto i kiedy zmienił dane. ⚠️ Domknięta jest strona rejestru: **lista
+  spraw danego egzemplarza i wskazanie, z którą sprawą coś jest duplikatem, nadal nie istnieją**
+  — kontrakt między wtyczkami oddaje w tym miejscu wyłącznie liczbę.
+* **Koordynator serwisu ma dostęp do Rejestru produktów** (wcześniej ekran wpuszczał pracownika,
+  a odbijał jego przełożonego).
+* **Import mówi, które pole jest za długie i jaki jest limit**, zamiast odrzucać wiersz bez powodu.
+  ⚠️ To jest część zarzutu: komunikaty przy pozostałych regułach importu zostają bez zmian.
+* Wpis w dzienniku rejestru i odpowiedzi kontraktowe **niosą wersję swojego kształtu** — moduł,
+  który je czyta, wie, z jaką wersją danych rozmawia.
+* Poprawka stylu albo skryptu dociera do przeglądarek, zamiast zostać w pamięci podręcznej.
+* Nagłówki przy blokach ekranu, wersja schematu i zbędna praca przy wczytywaniu — porządki.
+* Wspólna dla pakietu warstwa ustawień: administrator ustawia statusy, terminy i reguły bez
+  programisty.
+
 = 1.3.11 =
 * Ekran „Wyjatki gwarancyjne" otwarty z menu (bez wybranego produktu) mowil tylko „wybierz produkt
   z listy Rejestru" i zostawial uzytkownika bez wyjscia. Teraz tlumaczy, czym jest wyjatek
