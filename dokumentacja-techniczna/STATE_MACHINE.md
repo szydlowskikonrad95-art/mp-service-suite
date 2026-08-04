@@ -38,8 +38,10 @@ status 'nowe' + event CASE_CREATED + akcja mp_case_created + konto klienta + 2. 
 | odrzucone | **TAK** | bez SLA (deadline NULL) |
 | zamknięte | **TAK** | bez SLA (deadline NULL) |
 
-Czasy = KLEPNIĘTE defaulty konfiguracji (godziny kalendarzowe 24/7/365 × modyfikator priorytetu:
-wysoki ×0,5 / normalny ×1 / niski ×2 — SEMANTYKA‑CZASU.md); wszystko konfigurowalne w adminie.
+Czasy = godziny kalendarzowe 24/7/365 × modyfikator priorytetu (wysoki ×0,5 / normalny ×1 /
+niski ×2 — SEMANTYKA‑CZASU.md). **Godziny terminów każdego statusu ustawia administrator**
+w panelu (Automatyzacje MP → Ustawienia, sekcja „Godziny terminów"). ⚠️ **Modyfikator priorytetu
+konfigurowalny NIE jest** — siedzi w kodzie jako stała `SlaConfig::PRIORITY_MODIFIER`.
 
 ## 2. Dozwolone przejścia
 
@@ -60,8 +62,12 @@ wysoki ×0,5 / normalny ×1 / niski ×2 — SEMANTYKA‑CZASU.md); wszystko konf
 
 ## 3. Statusy własne (P3.2 „konfigurowalne")
 
-- Definiuje D (zakładka „Statusy": nazwa / aktywny / czy‑końcowy / SLA‑godziny / warning_hours);
-  rdzeń 7 NIEUSUWALNY; definicje = opcja‑treść (warstwa ii uninstalla).
+- Definiuje D — **podstrona w menu: Automatyzacje MP → Ustawienia, sekcja „Statusy własne"**
+  (kolumny na ekranie: klucz techniczny / nazwa widoczna / aktywny / kończy sprawę / termin
+  w godzinach / ostrzeż na — czyli `warning_hours`); rdzeń 7 NIEUSUWALNY; definicje =
+  opcja‑treść (warstwa ii uninstalla).
+  ⚠️ To NIE jest zakładka wewnątrz panelu — to osobna pozycja w menu bocznym. Nazwa w dokumencie
+  ma się zgadzać z tym, co człowiek widzi na ekranie.
 - C waliduje przejścia dla rdzenia 7 + statusów z filtra `mp_registered_statuses`; własne statusy:
   przejścia liberalne między nieterminalnymi. Bez D → C zna TYLKO rdzeń 7 (degraded).
 - Terminalność wg FLAGI `czy-końcowy` (nie nazwy na sztywno) — sweep SLA pomija terminalne
