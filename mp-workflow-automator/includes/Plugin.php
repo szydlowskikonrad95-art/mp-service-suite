@@ -95,6 +95,16 @@ final class Plugin {
 		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
 		Admin\PanelScreen::register();
 
+		// Warstwa ustawien (1.3.12): statusy wlasne, godziny terminow, reguly przydzialu
+		// i przelacznik kasowania danych. Do 1.3.11 kazdy z tych mechanizmow ISTNIAL,
+		// ale nie mial ani jednego wywolania z panelu — zamowienie zada „konfigurowalnych",
+		// a konfigurowal je programista. Handlery zapisu MUSZA byc zarejestrowane
+		// tu, obok ekranu, inaczej formularz POST-uje w prozne admin-post.php.
+		StatusDefs::register();
+		SlaConfig::register();
+		Rules::register();
+		Admin\SettingsScreen::register();
+
 		// Diagnostyka wdrozenia (Narzedzia -> Stan witryny). NAJWAZNIEJSZY test
 		// pakietu: bez WP-Crona terminy SLA, przypomnienia i eskalacje po prostu
 		// nie chodza, a system wyglada na sprawny — awaria cicha.

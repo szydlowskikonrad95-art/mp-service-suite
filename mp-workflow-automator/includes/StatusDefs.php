@@ -28,6 +28,14 @@ final class StatusDefs {
 	public const OPTION = 'mp_automator_status_defs';
 
 	/**
+	 * Akcja admin-post ekranu ustawien (= akcja nonce). Do 1.3.12 mechanizm
+	 * statusow wlasnych NIE MIAL zadnego wywolania w produkcie: upsert()/delete()
+	 * wolal wylacznie test. Zamowienie zada statusow KONFIGUROWALNYCH, wiec droga
+	 * dla czlowieka musi istniec w panelu, nie tylko w kodzie.
+	 */
+	public const ACTION_CONFIG = 'mp_automator_status_config';
+
+	/**
 	 * Gorny limit dlugosci etykiety (spojnie z VARCHAR(190) statusow C-side).
 	 */
 	private const LABEL_MAX = 190;
@@ -162,6 +170,146 @@ final class StatusDefs {
 			null,
 			self::current_actor()
 		);
+	}
+
+	/**
+	 * Rejestruje handler zapisu z ekranu ustawien. `nopriv` swiadomie TEZ —
+	 * zeby niezalogowany dostal jawne 403 z bramki capability, a nie ciche „0"
+	 * z admin-post.php (ten sam uklad co ResponseTemplates).
+	 *
+	 * @return void
+	 */
+	public static function register(): void {
+		add_action( 'admin_post_' . self::ACTION_CONFIG, array( self::class, 'handle_config' ) );
+		add_action( 'admin_post_nopriv_' . self::ACTION_CONFIG, array( self::class, 'handle_config' ) );
+	}
+
+	/**
+	 * Odcisk biezacej konfiguracji (blokada optymistyczna formularza — audyt #9).
+	 *
+	 * @return string
+	 */
+	public static function config_rev(): string {
+		return md5( (string) wp_json_encode( self::all() ) );
+	}
+
+	/**
+	 * Handler ekranu ustawien: capability PIERWSZA => 403; nonce; blokada
+	 * optymistyczna; potem wiersze formularza => upsert/delete.
+	 *
+	 * Wiersz niesie `orig` (slug z chwili otwarcia). Zmiana sluga = delete starego
+	 * + upsert nowego, bo slug jest KLUCZEM definicji, nie jej polem.
+	 *
+	 * Slug odrzucony przez upsert() (pusty albo dluzszy niz kolumna statusu C)
+	 * NIE ginie po cichu — wraca do czlowieka nazwany po imieniu. Cicha odmowa
+	 * zapisu jest gorsza niz brak ekranu: admin widzi „zapisano" i pusta liste.
+	 *
+	 * @return void
+	 */
+	public static function handle_config(): void {
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			wp_die(
+				esc_html__( 'Brak uprawnień do konfiguracji statusów.', 'mp-workflow-automator' ),
+				'',
+				array( 'response' => 403 )
+			);
+		}
+
+		check_admin_referer( self::ACTION_CONFIG );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$rev = isset( $_POST['mp_config_rev'] ) ? sanitize_text_field( wp_unslash( $_POST['mp_config_rev'] ) ) : '';
+
+		if ( self::config_rev() !== $rev ) {
+			self::back( 'konflikt-statusy' );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$rows = isset( $_POST['mp_status'] ) && is_array( $_POST['mp_status'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- kazde pole sanityzowane pojedynczo nizej.
+			? (array) wp_unslash( $_POST['mp_status'] )
+			: array();
+
+		$odrzucone = array();
+
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$orig = isset( $row['orig'] ) ? sanitize_key( (string) $row['orig'] ) : '';
+			$slug = isset( $row['slug'] ) ? sanitize_key( (string) $row['slug'] ) : '';
+
+			// Wiersz zaznaczony do usuniecia albo wyczyszczony do zera = kasujemy
+			// (o ile w ogole istnial). Nowy pusty wiersz po prostu pomijamy.
+			if ( ! empty( $row['delete'] ) || '' === $slug ) {
+				if ( '' !== $orig ) {
+					self::delete( $orig );
+					continue;
+				}
+
+				if ( '' === $slug && '' !== trim( (string) ( $row['label'] ?? '' ) ) ) {
+					// Etykieta wpisana, slug pusty — czlowiek chcial dodac status
+					// i nie dowiedzialby sie, czemu go nie ma.
+					$odrzucone[] = sanitize_text_field( (string) $row['label'] );
+				}
+
+				continue;
+			}
+
+			$zapisany = self::upsert(
+				$slug,
+				array(
+					'label'         => (string) ( $row['label'] ?? '' ),
+					'active'        => ! empty( $row['active'] ),
+					'terminal'      => ! empty( $row['terminal'] ),
+					'sla_hours'     => (int) ( $row['sla_hours'] ?? 0 ),
+					'warning_hours' => (int) ( $row['warning_hours'] ?? 0 ),
+				)
+			);
+
+			if ( '' === $zapisany ) {
+				$odrzucone[] = $slug;
+				continue;
+			}
+
+			// Slug zmieniony => stara definicja przestaje istniec.
+			if ( '' !== $orig && $orig !== $zapisany ) {
+				self::delete( $orig );
+			}
+		}
+
+		if ( array() !== $odrzucone ) {
+			self::back( 'statusy-odrzucone', implode( ', ', array_slice( $odrzucone, 0, 5 ) ) );
+		}
+
+		self::back( '' );
+	}
+
+	/**
+	 * Powrot na ekran ustawien z ewentualnym kodem bledu. Zawsze konczy zadanie.
+	 *
+	 * @param string $kod   Kod bledu ('' = sukces).
+	 * @param string $detal Doprecyzowanie dla czlowieka (np. odrzucone slugi).
+	 * @return void
+	 */
+	private static function back( string $kod, string $detal = '' ): void {
+		$ref  = wp_get_referer();
+		$cel  = false !== $ref ? $ref : admin_url();
+		$args = array();
+
+		if ( '' !== $kod ) {
+			$args['mp_settings_error'] = $kod;
+		} else {
+			$args['mp_settings_ok'] = 'statusy';
+		}
+
+		if ( '' !== $detal ) {
+			$args['mp_settings_detal'] = rawurlencode( $detal );
+		}
+
+		wp_safe_redirect( add_query_arg( $args, $cel ) );
+		exit;
 	}
 
 	/**

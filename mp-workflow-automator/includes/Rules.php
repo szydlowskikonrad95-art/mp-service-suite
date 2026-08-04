@@ -218,6 +218,330 @@ final class Rules {
 	}
 
 	/**
+	 * Akcja admin-post ekranu ustawien (= akcja nonce). Do 1.3.12 `insert()` nie bylo
+	 * wolane NIGDZIE w produkcie (jedyne wywolanie: test przez `wp eval`), a panel
+	 * dawal wylacznie podglad do odczytu — regule przydzialu zakladal programista.
+	 */
+	public const ACTION_CONFIG = 'mp_automator_rules_config';
+
+	/**
+	 * Klucze warunku, ktore silnik NAPRAWDE widzi w kontekscie sprawy
+	 * (`CaseRepo::context()`). Lista jest zamknieta celowo: klucz spoza kontekstu
+	 * daje regule, ktora nigdy nie pasuje — i nikt sie o tym nie dowiaduje.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CONDITION_KEYS = array( 'kategoria', 'kraj', 'jezyk', 'priority', 'rodzaj', 'status' );
+
+	/**
+	 * Wyzwalacze dozwolone na ekranie (= stale TRIGGER_* tej klasy). Lista zamknieta:
+	 * wyzwalacz spoza niej daje regule, ktorej silnik nigdy nie odpyta.
+	 *
+	 * @var array<int, string>
+	 */
+	public const TRIGGERS = array(
+		self::TRIGGER_CASE_CREATED,
+		self::TRIGGER_STATUS_CHANGED,
+		self::TRIGGER_MESSAGE_ADDED,
+	);
+
+	/**
+	 * Typy akcji dozwolone na ekranie (= stale ACTION_* tej klasy).
+	 *
+	 * @var array<int, string>
+	 */
+	public const ACTIONS = array(
+		self::ACTION_ASSIGN,
+		self::ACTION_CHANGE_STATUS,
+		self::ACTION_NOTIFY,
+		self::ACTION_SET_PRIORITY,
+	);
+
+	/**
+	 * Klucze warunku, ktorych NIC W PRODUKCIE NIE WYPELNIA (zawsze puste): ani
+	 * formularz klienta, ani wiersz polecen. Regula na nich nie zadziala nigdy —
+	 * ekran musi to powiedziec czlowiekowi ZANIM ja zapisze.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CONDITION_KEYS_MARTWE = array( 'kraj', 'jezyk' );
+
+	/**
+	 * Rejestruje handler zapisu z ekranu ustawien.
+	 *
+	 * @return void
+	 */
+	public static function register(): void {
+		add_action( 'admin_post_' . self::ACTION_CONFIG, array( self::class, 'handle_config' ) );
+		add_action( 'admin_post_nopriv_' . self::ACTION_CONFIG, array( self::class, 'handle_config' ) );
+	}
+
+	/**
+	 * Wszystkie reguly do ekranu ustawien (rowniez wylaczone).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function all(): array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::WORKFLOW_RULES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, bez parametrow.
+		$rows = $wpdb->get_results(
+			"SELECT id, trigger_type, condition_key, condition_operator, condition_value,
+				action_type, action_config_json, priority, enabled, source, system_key
+			FROM {$table} ORDER BY priority ASC, id ASC",
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Aktualizuje regule. Reguly SYSTEMOWE (source=system) zostaja pod swoim
+	 * `system_key` i nie zmieniaja typu akcji — inaczej ekran po cichu rozbrajalby
+	 * powiadomienia, ktore produkt sieje przy instalacji.
+	 *
+	 * @param int                  $id   ID reguly.
+	 * @param array<string, mixed> $data Pola do zapisu.
+	 * @return bool Czy wiersz zostal zmieniony.
+	 */
+	public static function update( int $id, array $data ): bool {
+		global $wpdb;
+
+		if ( $id < 1 ) {
+			return false;
+		}
+
+		$biezaca = self::by_id( $id );
+
+		if ( null === $biezaca ) {
+			return false;
+		}
+
+		$systemowa = 'system' === (string) $biezaca['source'];
+
+		$row = array(
+			'condition_key'      => in_array( (string) ( $data['condition_key'] ?? '' ), self::CONDITION_KEYS, true )
+				? (string) $data['condition_key']
+				: '',
+			'condition_operator' => in_array( (string) ( $data['condition_operator'] ?? '' ), self::OPERATORS, true )
+				? (string) $data['condition_operator']
+				: 'equals',
+			'condition_value'    => sanitize_text_field( (string) ( $data['condition_value'] ?? '' ) ),
+			'priority'           => max( 0, (int) ( $data['priority'] ?? 10 ) ),
+			'enabled'            => ! empty( $data['enabled'] ) ? 1 : 0,
+			'updated_at'         => gmdate( 'Y-m-d H:i:s' ),
+		);
+
+		if ( ! $systemowa ) {
+			$trigger = (string) ( $data['trigger_type'] ?? '' );
+			$action  = (string) ( $data['action_type'] ?? '' );
+
+			if ( in_array( $trigger, self::TRIGGERS, true ) ) {
+				$row['trigger_type'] = $trigger;
+			}
+
+			if ( in_array( $action, self::ACTIONS, true ) ) {
+				$row['action_type'] = $action;
+			}
+		}
+
+		if ( isset( $data['action_config'] ) && is_array( $data['action_config'] ) ) {
+			$row['action_config_json'] = (string) wp_json_encode( $data['action_config'] );
+		}
+
+		$table = Tables::full( Tables::WORKFLOW_RULES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna.
+		$zmienione = $wpdb->update( $table, $row, array( 'id' => $id ) );
+		// phpcs:enable
+
+		return false !== $zmienione;
+	}
+
+	/**
+	 * Kasuje regule WLASNA. Reguly systemowej nie kasujemy z ekranu — od wylaczenia
+	 * jest przelacznik `enabled`, a skasowana wrocilaby dopiero przy reinstalacji
+	 * (bramka SEED_VERSION jest jednorazowa).
+	 *
+	 * @param int $id ID reguly.
+	 * @return bool
+	 */
+	public static function delete( int $id ): bool {
+		global $wpdb;
+
+		$regula = self::by_id( $id );
+
+		if ( null === $regula || 'system' === (string) $regula['source'] ) {
+			return false;
+		}
+
+		$table = Tables::full( Tables::WORKFLOW_RULES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- tabela wlasna.
+		$usuniete = $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+		// phpcs:enable
+
+		return (bool) $usuniete;
+	}
+
+	/**
+	 * Jedna regula po ID (albo null).
+	 *
+	 * @param int $id ID reguly.
+	 * @return array<string, mixed>|null
+	 */
+	public static function by_id( int $id ): ?array {
+		global $wpdb;
+
+		$table = Tables::full( Tables::WORKFLOW_RULES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return is_array( $row ) ? $row : null;
+	}
+
+	/**
+	 * Handler ekranu ustawien: capability => nonce => wiersze formularza.
+	 * Wiersze istniejace ida przez update()/delete(), wiersz „nowa regula" przez insert().
+	 *
+	 * @return void
+	 */
+	public static function handle_config(): void {
+		if ( ! current_user_can( 'mp_system_admin' ) ) {
+			wp_die(
+				esc_html__( 'Brak uprawnień do konfiguracji reguł przydziału.', 'mp-workflow-automator' ),
+				'',
+				array( 'response' => 403 )
+			);
+		}
+
+		check_admin_referer( self::ACTION_CONFIG );
+
+		$ref = wp_get_referer();
+		$cel = false !== $ref ? $ref : admin_url();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$rows = isset( $_POST['mp_rule'] ) && is_array( $_POST['mp_rule'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- kazde pole sanityzowane w update().
+			? (array) wp_unslash( $_POST['mp_rule'] )
+			: array();
+
+		$zmienione = 0;
+
+		foreach ( $rows as $id => $row ) {
+			$id = (int) $id;
+
+			if ( $id < 1 || ! is_array( $row ) ) {
+				continue;
+			}
+
+			if ( ! empty( $row['delete'] ) ) {
+				if ( self::delete( $id ) ) {
+					++$zmienione;
+					self::log_config( 'delete', $id );
+				}
+
+				continue;
+			}
+
+			if ( self::update( $id, $row ) ) {
+				++$zmienione;
+				self::log_config( 'update', $id );
+			}
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$nowa = isset( $_POST['mp_rule_new'] ) && is_array( $_POST['mp_rule_new'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- pola sprawdzane nizej wobec list zamknietych.
+			? (array) wp_unslash( $_POST['mp_rule_new'] )
+			: array();
+
+		$trigger = (string) ( $nowa['trigger_type'] ?? '' );
+		$action  = (string) ( $nowa['action_type'] ?? '' );
+
+		if ( in_array( $trigger, self::TRIGGERS, true ) && in_array( $action, self::ACTIONS, true ) ) {
+			$klucz = (string) ( $nowa['condition_key'] ?? '' );
+
+			$id = self::insert(
+				array(
+					'trigger_type'       => $trigger,
+					'condition_key'      => in_array( $klucz, self::CONDITION_KEYS, true ) ? $klucz : '',
+					'condition_operator' => in_array( (string) ( $nowa['condition_operator'] ?? '' ), self::OPERATORS, true )
+						? (string) $nowa['condition_operator']
+						: 'equals',
+					'condition_value'    => sanitize_text_field( (string) ( $nowa['condition_value'] ?? '' ) ),
+					'action_type'        => $action,
+					'action_config'      => self::parse_config( (string) ( $nowa['action_config_json'] ?? '' ) ),
+					'priority'           => max( 0, (int) ( $nowa['priority'] ?? 10 ) ),
+					'enabled'            => ! empty( $nowa['enabled'] ),
+					'source'             => 'user',
+				)
+			);
+
+			if ( $id > 0 ) {
+				++$zmienione;
+				self::log_config( 'insert', $id );
+			}
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'mp_settings_ok'    => 'reguly',
+					'mp_settings_detal' => (string) $zmienione,
+				),
+				$cel
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Konfiguracja akcji z pola tekstowego (JSON). Niepoprawny JSON => pusta
+	 * konfiguracja, NIE polowiczna — regula z polamana konfiguracja gorsza niz bez.
+	 *
+	 * @param string $json Surowa tresc pola.
+	 * @return array<string, mixed>
+	 */
+	private static function parse_config( string $json ): array {
+		if ( '' === trim( $json ) ) {
+			return array();
+		}
+
+		$decoded = json_decode( $json, true );
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Wpis do rejestru zdarzen o zmianie konfiguracji reguly (kto/kiedy/co).
+	 *
+	 * @param string $co Rodzaj zmiany (insert/update/delete).
+	 * @param int    $id ID reguly.
+	 * @return void
+	 */
+	private static function log_config( string $co, int $id ): void {
+		WorkflowEvents::log(
+			WorkflowEvents::CONFIG_CHANGED,
+			array(
+				'object' => 'rule',
+				'id'     => $id,
+				'action' => $co,
+			),
+			null,
+			get_current_user_id()
+		);
+	}
+
+	/**
 	 * Sieje reguly domyslne — TYLKO gdy jeszcze nie zasiane (bramka SEED_VERSION).
 	 *
 	 * Idempotentne i JEDNORAZOWE per instalacja: skasowana regula NIE wraca przy
