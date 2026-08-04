@@ -1530,10 +1530,12 @@ final class CaseRepo {
 		// phpcs:enable
 
 		return array(
-			'total'    => (int) ( $row['total'] ?? 0 ),
-			'active'   => (int) ( $row['active'] ?? 0 ),
-			'closed'   => (int) ( $row['closed'] ?? 0 ),
-			'rejected' => (int) ( $row['rejected'] ?? 0 ),
+			// Kontrakt: KAZDA zwrotka niesie wersje ksztaltu (API-KONTRAKT.md, zasady twarde).
+			'schema_version' => self::SCHEMA_VERSION,
+			'total'          => (int) ( $row['total'] ?? 0 ),
+			'active'         => (int) ( $row['active'] ?? 0 ),
+			'closed'         => (int) ( $row['closed'] ?? 0 ),
+			'rejected'       => (int) ( $row['rejected'] ?? 0 ),
 		);
 	}
 
@@ -1554,9 +1556,13 @@ final class CaseRepo {
 
 		if ( '' === $query ) {
 			return array(
-				'ids'       => array(),
-				'truncated' => false,
-				'limit'     => $limit,
+				// ⛔ PUSTA ZWROTKA TEZ JEST ZWROTKA: odbiorca musi wiedziec, jaki ma ksztalt,
+				// zanim zajrzy do pol. Wersja stoi w OBU galeziach tej funkcji, nie tylko
+				// w tej z wynikiem — ta sama klasa bledu co poz. 2.27.
+				'schema_version' => self::SCHEMA_VERSION,
+				'ids'            => array(),
+				'truncated'      => false,
+				'limit'          => $limit,
 			);
 		}
 
@@ -1590,9 +1596,10 @@ final class CaseRepo {
 		}
 
 		return array(
-			'ids'       => $ids,
-			'truncated' => $truncated,
-			'limit'     => $limit,
+			'schema_version' => self::SCHEMA_VERSION,
+			'ids'            => $ids,
+			'truncated'      => $truncated,
+			'limit'          => $limit,
 		);
 	}
 
