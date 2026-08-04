@@ -173,6 +173,20 @@ final class Plugin {
 		// Kontrakt D->C: czy sprawa W OGOLE istnieje (audyt 2.20). Osobny od
 		// `mp_case_get_context`, bo tamten odpowiada tylko o sprawach zweryfikowanych
 		// — a sprawa niepotwierdzona ISTNIEJE i jej wiersz terminow nie jest sierota.
+		// Kontrakt D->C w wersji ZBIORCZEJ: ktore z podanych spraw istnieja (2.22).
+		// Sprzatanie sierot chodzi w zadaniu cyklicznym, wiec pytanie po jednej
+		// sprawie znaczyloby tyle zapytan, ile sprawdzanych wierszy.
+		add_filter(
+			'mp_cases_existing_ids',
+			static function ( $result, $case_ids = array() ) {
+				unset( $result );
+
+				return CaseRepo::existing_ids( (array) $case_ids );
+			},
+			10,
+			2
+		);
+
 		add_filter(
 			'mp_case_exists',
 			static function ( $result, $case_id = 0 ) {

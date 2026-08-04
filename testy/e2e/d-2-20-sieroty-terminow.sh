@@ -87,7 +87,7 @@ K2=$(wp option get "$KURSOR" 2>/dev/null | tr -d '[:space:]')
 # moment, w ktorym zla naprawa kasuje cala tabele terminow.
 wp eval "delete_option('$KURSOR');" >/dev/null 2>&1
 BEZ_KONTRAKTU=$(wp eval '
-	remove_all_filters( "mp_case_exists" );
+	remove_all_filters( "mp_cases_existing_ids" );
 	echo (int) MP\Automator\Sla::cleanup_orphans();' 2>/dev/null | tr -d '[:space:]')
 [ "${BEZ_KONTRAKTU:-1}" = "0" ] \
 	&& ok "bez kontraktu sprawdzania spraw NIE kasujemy nic (bezpiecznik 1)" \
@@ -138,6 +138,41 @@ AL=$(wp option get "$ALARM" --format=json 2>/dev/null)
 { [ -n "$AL" ] && [ "$AL" != "false" ]; } \
 	&& ok "podniesiony alarm zamiast cichego kasowania" \
 	|| bad "brak alarmu — nikt sie nie dowie, ze sprzatanie stoi"
+
+# ── 5b. KOSZT: sprzatanie NIE SKALUJE zapytan z liczba wierszy ─────────────
+# Sprzatanie chodzi w zadaniu cyklicznym co piec minut, wiec liczba zapytan nie
+# moze rosnac z liczba sprawdzanych wierszy — to ta sama klasa kosztu co 2.22.
+# ⛔ Mierzymy PRZYROST przy wiekszej paczce, nie prog z sufitu: staly narzut
+# przebiegu (pobranie paczki, kursor, kasowanie, wpis zbiorczy) jest nieistotny,
+# istotne jest, czy koszt ROSNIE z liczba wierszy. Pierwsza wersja tej kontroli
+# miala wpisana granice „szesc" i padla na siedmiu — mierzyla narzut, nie wzorzec.
+koszt_sprzatania() {
+	wp eval "delete_option('$KURSOR');" >/dev/null 2>&1
+	wp eval '
+		global $wpdb;
+		$przed = $wpdb->num_queries;
+		MP\Automator\Sla::cleanup_orphans( 100 );
+		echo (int) ( $wpdb->num_queries - $przed );' 2>/dev/null | tr -d '[:space:]'
+}
+
+wp db query "DELETE FROM wp_mp_case_sla WHERE case_id >= 910001" >/dev/null 2>&1
+for N in 910001 910002 910003 910004; do
+	wp db query "INSERT INTO wp_mp_case_sla (case_id, status, sla_policy_version) VALUES ($N, 'nowe', 1)" >/dev/null 2>&1
+done
+KOSZT_4=$(koszt_sprzatania)
+
+wp db query "DELETE FROM wp_mp_case_sla WHERE case_id >= 910001" >/dev/null 2>&1
+for N in 910001 910002 910003 910004 910005 910006 910007 910008 910009 910010 910011 910012; do
+	wp db query "INSERT INTO wp_mp_case_sla (case_id, status, sla_policy_version) VALUES ($N, 'nowe', 1)" >/dev/null 2>&1
+done
+KOSZT_12=$(koszt_sprzatania)
+
+# Osiem wierszy wiecej: pytanie po jednym dolozyloby OSIEM zapytan.
+[ -n "$KOSZT_4" ] && [ -n "$KOSZT_12" ] && [ "$KOSZT_12" -le "$(( KOSZT_4 + 2 ))" ] 2>/dev/null \
+	&& ok "koszt nie rosnie z liczba wierszy ($KOSZT_4 przy 4, $KOSZT_12 przy 12 — pytanie zbiorcze)" \
+	|| bad "koszt urosl z $KOSZT_4 na $KOSZT_12 przy osmiu wierszach wiecej — pytanie po jednym wrocilo"
+
+wp db query "DELETE FROM wp_mp_case_sla WHERE case_id >= 910001" >/dev/null 2>&1
 
 # ── 6. SPRZATANIE ZE SPRAWDZENIEM ──────────────────────────────────────────
 wp db query "DELETE FROM wp_mp_case_sla WHERE case_id >= 900001" >/dev/null 2>&1

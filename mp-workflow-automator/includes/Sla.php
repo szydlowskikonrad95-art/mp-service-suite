@@ -151,7 +151,7 @@ final class Sla {
 	 * w bazie bez konca. Obietnica z komentarza staje sie tu kodem.
 	 *
 	 * ⛔ DWA BEZPIECZNIKI, bo pomylka kasuje dane:
-	 * 1. Brak zaczepu `mp_case_get_context` = modul zgloszen nie odpowiada. Wtedy
+	 * 1. Brak zaczepu `mp_cases_existing_ids` = modul zgloszen nie odpowiada. Wtedy
 	 *    KAZDY wiersz wygladalby na sierote — wychodzimy, nie ruszajac niczego.
 	 * 2. Gdy w paczce NIC nie zyje, a martwych jest co najmniej kilka, to znacznie
 	 *    bardziej prawdopodobne, ze padl kontrakt, niz ze wszystkie sprawy naraz
@@ -170,7 +170,7 @@ final class Sla {
 		// dostaja wylacznie sprawy zweryfikowane, wiec sprawa istniejaca, ale jeszcze
 		// niepotwierdzona, wygladalaby stad jak nieistniejaca — i skasowalibysmy jej
 		// wiersz terminow. Bez tego kontraktu NIE sprzatamy w ogole.
-		if ( ! has_filter( 'mp_case_exists' ) ) {
+		if ( ! has_filter( 'mp_cases_existing_ids' ) ) {
 			return 0;
 		}
 
@@ -197,14 +197,17 @@ final class Sla {
 		}
 		// phpcs:enable
 
-		$sieroty = array();
-		$zywe    = 0;
+		// JEDNO pytanie na cala paczke, nie jedno na wiersz. To ta sama klasa kosztu
+		// co pozycja 2.22: zadanie cykliczne chodzace co piec minut nie moze skalowac
+		// liczby zapytan z liczba sprawdzanych wierszy. Pytamy o ISTNIENIE sprawy —
+		// sprawa niepotwierdzona istnieje, choc jej kontekstu stad nie widac.
+		$ids      = array_map( 'intval', (array) $ids );
+		$istnieja = array_flip( array_map( 'intval', (array) apply_filters( 'mp_cases_existing_ids', array(), $ids ) ) );
+		$sieroty  = array();
+		$zywe     = 0;
 
-		foreach ( (array) $ids as $case_id ) {
-			$case_id  = (int) $case_id;
-			$istnieje = (bool) apply_filters( 'mp_case_exists', false, $case_id );
-
-			if ( $istnieje ) {
+		foreach ( $ids as $case_id ) {
+			if ( isset( $istnieja[ $case_id ] ) ) {
 				++$zywe;
 
 				continue;
