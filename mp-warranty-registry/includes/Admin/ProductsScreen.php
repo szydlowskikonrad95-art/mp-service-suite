@@ -15,6 +15,7 @@ use MP\Registry\Common\Roles;
 
 use MP\Registry\Archive;
 use MP\Registry\Categories;
+use MP\Registry\ProductEvents;
 use MP\Registry\Repo;
 
 /**
@@ -117,6 +118,18 @@ final class ProductsScreen {
 
 		if ( $edit_id > 0 ) {
 			self::render_edit( $edit_id );
+			return;
+		}
+
+		// Historia egzemplarza (`?page=mp-registry&historia=ID`) — ten sam wzorzec
+		// „widok pod adresem menu" co poprawianie danych. Dostepna dla personelu,
+		// nie tylko dla administratora: pracownik prowadzacy sprawe musi widziec,
+		// czy dane produktu zmieniano i czy zapadala decyzja gwarancyjna.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- wybor widoku z GET; widok tylko czyta.
+		$history_id = isset( $_GET['historia'] ) ? absint( $_GET['historia'] ) : 0;
+
+		if ( $history_id > 0 ) {
+			self::render_history( $history_id );
 			return;
 		}
 
@@ -333,10 +346,301 @@ final class ProductsScreen {
 				</table>
 
 				<?php submit_button( __( 'Zapisz zmiany', 'mp-warranty-registry' ) ); ?>
+				<a href="<?php echo esc_url( self::history_url( $product_id ) ); ?>"><?php esc_html_e( 'Pokaż historię egzemplarza', 'mp-warranty-registry' ); ?></a>
+				&nbsp;·&nbsp;
 				<a href="<?php echo esc_url( $powrot ); ?>"><?php esc_html_e( 'Wróć do rejestru', 'mp-warranty-registry' ); ?></a>
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Adres widoku historii egzemplarza.
+	 *
+	 * @param int $product_id ID produktu.
+	 * @return string
+	 */
+	public static function history_url( int $product_id ): string {
+		return add_query_arg(
+			array(
+				'page'     => self::PAGE_SLUG,
+				'historia' => $product_id,
+			),
+			admin_url( 'admin.php' )
+		);
+	}
+
+	/**
+	 * Widok historii egzemplarza (kartka: „historia zmian danych produktu
+	 * i decyzji gwarancyjnych").
+	 *
+	 * ⛔ Dziennik `wp_mp_product_events` byl do 1.3.12 zapisywany i nieczytany —
+	 * ten widok jest jego pierwszym i jedynym czytelnikiem.
+	 *
+	 * @param int $product_id ID produktu.
+	 * @return void
+	 */
+	private static function render_history( int $product_id ): void {
+		$produkt = Repo::find_by_id( $product_id );
+
+		if ( null === $produkt ) {
+			wp_die( esc_html__( 'Produkt nie istnieje w rejestrze.', 'mp-warranty-registry' ), '', 404 );
+		}
+
+		$limit  = 100;
+		$wpisy  = ProductEvents::history( $product_id, $limit );
+		$ile    = ProductEvents::history_count( $product_id );
+		$powrot = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+		?>
+		<div class="wrap mp-registry">
+			<h1><?php esc_html_e( 'Historia egzemplarza', 'mp-warranty-registry' ); ?></h1>
+
+			<p>
+				<code><?php echo esc_html( (string) $produkt['serial_display'] ); ?></code>
+				<?php if ( '' !== (string) $produkt['model'] ) : ?>
+					· <?php echo esc_html( (string) $produkt['model'] ); ?>
+				<?php endif; ?>
+			</p>
+
+			<?php if ( array() === $wpisy ) : ?>
+				<p class="description">
+					<?php esc_html_e( 'Ten egzemplarz nie ma jeszcze żadnego wpisu w historii. Wpis powstaje przy poprawce danych produktu, przy archiwizacji i przy każdej decyzji gwarancyjnej.', 'mp-warranty-registry' ); ?>
+				</p>
+			<?php else : ?>
+				<?php if ( $ile > count( $wpisy ) ) : ?>
+					<p class="description">
+						<?php
+						printf(
+							/* translators: 1: ile wpisow pokazano, 2: ile wpisow ma historia. */
+							esc_html__( 'Pokazujemy %1$d najnowszych wpisów z %2$d.', 'mp-warranty-registry' ),
+							(int) count( $wpisy ),
+							(int) $ile
+						);
+						?>
+					</p>
+				<?php endif; ?>
+
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th scope="col"><?php esc_html_e( 'Kiedy', 'mp-warranty-registry' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Co się stało', 'mp-warranty-registry' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Kto', 'mp-warranty-registry' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Szczegóły', 'mp-warranty-registry' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $wpisy as $wpis ) : ?>
+							<?php $opis = self::describe_event( $wpis ); ?>
+							<tr>
+								<td><?php echo esc_html( get_date_from_gmt( (string) $wpis['created_at'], 'Y-m-d H:i' ) ); ?></td>
+								<td><?php echo esc_html( (string) $opis['label'] ); ?></td>
+								<td><?php echo esc_html( self::actor_name( $wpis['actor_id'] ) ); ?></td>
+								<td>
+									<?php if ( array() === $opis['details'] ) : ?>
+										—
+									<?php else : ?>
+										<?php echo esc_html( implode( ' ', $opis['details'] ) ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+
+			<p>
+				<?php if ( current_user_can( 'mp_system_admin' ) && empty( $produkt['archived'] ) ) : ?>
+					<?php
+					$edit_url = add_query_arg(
+						array(
+							'page' => self::PAGE_SLUG,
+							'edit' => $product_id,
+						),
+						admin_url( 'admin.php' )
+					);
+					?>
+					<a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Popraw dane produktu', 'mp-warranty-registry' ); ?></a>
+					&nbsp;·&nbsp;
+				<?php endif; ?>
+				<a href="<?php echo esc_url( $powrot ); ?>"><?php esc_html_e( 'Wróć do rejestru', 'mp-warranty-registry' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Zamienia wpis dziennika na zdanie po polsku.
+	 *
+	 * Funkcja czysta (bez bazy i bez stanu) — dzieki temu da sie ja sprawdzic
+	 * osobno, bez klikania po ekranie.
+	 *
+	 * @param array<string, mixed> $row Wpis z ProductEvents::history().
+	 * @return array{label: string, details: array<int, string>}
+	 */
+	public static function describe_event( array $row ): array {
+		$type    = (string) ( $row['event_type'] ?? '' );
+		$payload = isset( $row['payload'] ) && is_array( $row['payload'] ) ? $row['payload'] : array();
+
+		if ( ProductEvents::EXCEPTION_CREATED === $type || ProductEvents::EXCEPTION_REVOKED === $type ) {
+			$label = ProductEvents::EXCEPTION_CREATED === $type
+				? __( 'Nadano wyjątek gwarancyjny', 'mp-warranty-registry' )
+				: __( 'Cofnięto wyjątek gwarancyjny', 'mp-warranty-registry' );
+
+			$details = array();
+
+			if ( isset( $payload['typ'] ) ) {
+				$details[] = 'per-sprawa' === (string) $payload['typ']
+					? __( 'Zakres: jedna sprawa.', 'mp-warranty-registry' )
+					: __( 'Zakres: cały egzemplarz.', 'mp-warranty-registry' );
+			}
+
+			if ( ! empty( $payload['exception_id'] ) ) {
+				$details[] = sprintf(
+					/* translators: %d: numer wpisu wyjatku gwarancyjnego. */
+					__( 'Wyjątek nr %d.', 'mp-warranty-registry' ),
+					(int) $payload['exception_id']
+				);
+			}
+
+			$details[] = __( 'Uzasadnienia nie zapisujemy w historii — jest przy samym wyjątku.', 'mp-warranty-registry' );
+
+			return array(
+				'label'   => $label,
+				'details' => $details,
+			);
+		}
+
+		if ( 'PRODUCT_UPDATED' === $type ) {
+			// Archiwizacja jedzie tym samym typem zdarzenia co poprawka danych
+			// (`Archive` i `Repo::update()` — swiadomie jeden ksztalt payloadu).
+			// Dla czlowieka to jednak dwie rozne rzeczy, wiec je rozdzielamy.
+			if ( array( 'archived' ) === array_keys( $payload ) ) {
+				$do_archiwum = 1 === (int) ( $payload['archived']['after'] ?? 0 );
+
+				return array(
+					'label'   => $do_archiwum
+						? __( 'Przeniesiono do archiwum', 'mp-warranty-registry' )
+						: __( 'Przywrócono z archiwum', 'mp-warranty-registry' ),
+					'details' => array(),
+				);
+			}
+
+			$details = array();
+
+			foreach ( $payload as $field => $zmiana ) {
+				$details[] = self::describe_change( (string) $field, $zmiana );
+			}
+
+			return array(
+				'label'   => __( 'Poprawiono dane produktu', 'mp-warranty-registry' ),
+				'details' => $details,
+			);
+		}
+
+		return array(
+			'label'   => $type,
+			'details' => array(),
+		);
+	}
+
+	/**
+	 * Jedna zmiana pola jako zdanie („Model: «A» → «B».").
+	 *
+	 * @param string $field  Nazwa pola.
+	 * @param mixed  $zmiana Wpis diffu: {before, after} albo {field, changed} dla PII.
+	 * @return string
+	 */
+	private static function describe_change( string $field, $zmiana ): string {
+		$etykieta = self::field_label( $field );
+
+		// Pola wrazliwe maja w dzienniku SAM FAKT zmiany, bez wartosci
+		// (`ProductEvents::sanitize_payload()`) — i tak ma zostac na ekranie.
+		if ( is_array( $zmiana ) && ! empty( $zmiana['changed'] ) && ! array_key_exists( 'after', $zmiana ) ) {
+			return sprintf(
+				/* translators: %s: nazwa pola. */
+				__( '%s: zmieniony (wartości nie zapisujemy — dane wrażliwe).', 'mp-warranty-registry' ),
+				$etykieta
+			);
+		}
+
+		if ( ! is_array( $zmiana ) ) {
+			return sprintf(
+				/* translators: %s: nazwa pola. */
+				__( '%s: zmieniony.', 'mp-warranty-registry' ),
+				$etykieta
+			);
+		}
+
+		return sprintf(
+			/* translators: 1: nazwa pola, 2: wartosc przed zmiana, 3: wartosc po zmianie. */
+			__( '%1$s: „%2$s" → „%3$s".', 'mp-warranty-registry' ),
+			$etykieta,
+			self::format_value( $zmiana['before'] ?? null ),
+			self::format_value( $zmiana['after'] ?? null )
+		);
+	}
+
+	/**
+	 * Wartosc pola do pokazania (puste = jawne „puste", nie pusty napis).
+	 *
+	 * @param mixed $value Wartosc.
+	 * @return string
+	 */
+	private static function format_value( $value ): string {
+		if ( null === $value || '' === $value ) {
+			return __( '(puste)', 'mp-warranty-registry' );
+		}
+
+		if ( is_array( $value ) ) {
+			return __( '(zmieniono)', 'mp-warranty-registry' );
+		}
+
+		return (string) $value;
+	}
+
+	/**
+	 * Nazwa pola po polsku (klucze kolumn nic nie mowia pracownikowi).
+	 *
+	 * @param string $field Klucz pola.
+	 * @return string
+	 */
+	private static function field_label( string $field ): string {
+		$mapa = array(
+			'model'             => __( 'Model', 'mp-warranty-registry' ),
+			'batch'             => __( 'Partia produkcyjna', 'mp-warranty-registry' ),
+			'category'          => __( 'Kategoria', 'mp-warranty-registry' ),
+			'purchase_document' => __( 'Dokument zakupu', 'mp-warranty-registry' ),
+			'purchase_date'     => __( 'Data zakupu', 'mp-warranty-registry' ),
+			'warranty_until'    => __( 'Gwarancja do', 'mp-warranty-registry' ),
+			'archived'          => __( 'Archiwum', 'mp-warranty-registry' ),
+		);
+
+		return $mapa[ $field ] ?? $field;
+	}
+
+	/**
+	 * Kto stoi za wpisem — nazwa konta, a nie samo ID.
+	 *
+	 * @param int|null $actor_id ID uzytkownika albo null (system).
+	 * @return string
+	 */
+	private static function actor_name( ?int $actor_id ): string {
+		if ( null === $actor_id || $actor_id <= 0 ) {
+			return __( 'system', 'mp-warranty-registry' );
+		}
+
+		$user = get_userdata( $actor_id );
+
+		if ( false === $user ) {
+			return sprintf(
+				/* translators: %d: ID usunietego konta. */
+				__( 'konto usunięte (#%d)', 'mp-warranty-registry' ),
+				$actor_id
+			);
+		}
+
+		return (string) $user->display_name;
 	}
 
 	/**
