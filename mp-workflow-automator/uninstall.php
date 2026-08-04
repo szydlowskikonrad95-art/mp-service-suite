@@ -62,6 +62,13 @@ MP\Automator\Common\Uninstall::run(
 	'mp_module_automator',
 	// Patrz komentarz w module zgloszen: wersja schematu zyje i umiera RAZEM
 	// z tabelami, wiec nie kasujemy jej w warstwie technicznej.
-	array( 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
+	array(
+		'mp_automator_delete_data',
+		MP\Automator\Sla::ALERT_OPTION,
+		// 2.21: bicie serca zamiatarki — stan ROBOCZY modulu, nie dane klienta,
+		// wiec znika zawsze. Test „zero sladu po odinstalowaniu" liczy kazda
+		// zostawiona opcje i ma racje: nowa opcja bez wpisu tutaj to nowy slad.
+		MP\Automator\Sweep::HEARTBEAT_OPTION,
+	),
 	MP\Automator\Lifecycle::CRON_HOOKS
 );
