@@ -104,32 +104,54 @@ for i in 1 2 3 4 5 6; do
 	wp eval "
 		\$s = $START;
 		while ( time() < \$s ) { usleep( 2000 ); }
-		\$out = array();
+		// Wynik kazdej proby leci NA BIEZACO — gdyby proces mial padnac w polowie,
+		// jego dotychczasowe zgody sa juz policzone. Inaczej test mylilby zgubiona
+		// rezerwacje z procesem, ktory umarl i zabral swoj wynik.
 		for ( \$n = 1; \$n <= 30; \$n++ ) {
-			if ( MP\\Automator\\MailDedup::claim( 'wyscig@example.com', 'mail $START nr ' . \$n, 60 ) ) { \$out[] = \$n; }
+			if ( MP\\Automator\\MailDedup::claim( 'wyscig@example.com', 'mail $START nr ' . \$n, 60 ) ) {
+				echo \$n . \"\\n\";
+				flush();
+			}
 		}
-		echo implode( \"\n\", \$out );
 	" >"$TMPD/$i" 2>/dev/null &
 done
 wait
 ZGODY=$(cat "$TMPD"/* 2>/dev/null | grep -c '[0-9]')
 KOLIZJE=$(cat "$TMPD"/* 2>/dev/null | grep '[0-9]' | sort | uniq -d | grep -c '[0-9]')
 rm -rf "$TMPD"
-# Mierzymy WLASCIWA wlasnosc: zaden mail nie wychodzi DWA RAZY. Liczba zgod nie
-# musi byc rowna 30 — przy szesciu procesach walczacych o ten sam wiersz baza
-# potrafi odrzucic zapis pod blokada i wtedy rezerwacja po prostu przepada (mail
-# nie idzie wcale). Kierunek bledu jest bezpieczny i taki sam, jak w module C,
-# ktory tego samego mechanizmu uzywa do zgloszen. Na kodzie sprzed naprawy bylo
-# 124 zgody i 29 maili wyslanych wielokrotnie — obie kontrole padaly.
-{ [ "$KOLIZJE" = "0" ] && [ "$ZGODY" -le 30 ] && [ "$ZGODY" -ge 1 ]; } \
-	&& ok "SEDNO 2.23: 6 procesow x 30 maili rownolegle => zaden mail nie wyszedl dwa razy ($ZGODY zgod, 0 kolizji)" \
-	|| bad "wyscig: $ZGODY zgod na 30 maili, $KOLIZJE maili przepuszczonych wiecej niz raz — klient dostaje dublet"
+# Dowod ma pokazac TRZY rzeczy, w tej kolejnosci:
+#  1. ZADNA rezerwacja nie ginie — tyle maili wychodzi, ile powinno (30 z 30).
+#     Zgubiona rezerwacja znaczy, ze mail nie poszedl do NIKOGO, a nikt sie o tym
+#     nie dowiedzial. Na kodzie sprzed naprawy ginelo 1-4 na kazde 30.
+#  2. Dalej NIE MA dubla — po to ten mechanizm w ogole istnieje. Przed naprawa
+#     dubel wychodzil realnie, ok. raz na 90-180 kluczy.
+#  3. Bez nacisku nic sie nie zmienilo (nizej, punkt c).
+{ [ "$ZGODY" = "30" ] && [ "$KOLIZJE" = "0" ]; } \
+	&& ok "SEDNO 2.23: 6 procesow x 30 maili rownolegle => KAZDY mail wyszedl DOKLADNIE raz (30 zgod, 0 kolizji)" \
+	|| bad "wyscig: $ZGODY zgod na 30 maili, $KOLIZJE przepuszczonych wiecej niz raz — zgubiona rezerwacja to mail, ktory nie poszedl do nikogo"
+[ "$KOLIZJE" = "0" ] \
+	&& ok "zaden mail nie wyszedl dwa razy (to jest jedyny powod, dla ktorego ta rezerwacja istnieje)" \
+	|| bad "$KOLIZJE maili wyszlo wiecej niz raz — klient dostaje dublet"
 
 # (c) Semantyka bez zmian: inna tresc w tym samym oknie przechodzi.
 INNA=$(wp eval "echo MP\\Automator\\MailDedup::claim( 'wyscig@example.com', 'INNA tresc $START', 60 ) ? '1' : '0';" 2>/dev/null)
 [ "$INNA" = "1" ] \
 	&& ok "inna tresc w tym samym oknie dalej przechodzi (dedup lapie duplikaty, nie rozne informacje)" \
 	|| bad "inna tresc zablokowana — dedup lapie za szeroko ($INNA)"
+
+# BEZ NACISKU nic sie nie zmienilo: jeden proces, ten sam klucz trzy razy pod rzad
+# => pierwszy przechodzi, dwa kolejne odbijaja sie; inny klucz przechodzi.
+BEZ_NACISKU=$(wp eval "
+	\$k = 'spokojny $START';
+	\$a = MP\\Automator\\MailDedup::claim( 'spokoj@example.com', \$k, 60 ) ? '1' : '0';
+	\$b = MP\\Automator\\MailDedup::claim( 'spokoj@example.com', \$k, 60 ) ? '1' : '0';
+	\$c = MP\\Automator\\MailDedup::claim( 'spokoj@example.com', \$k, 60 ) ? '1' : '0';
+	\$d = MP\\Automator\\MailDedup::claim( 'spokoj@example.com', \$k . ' inny', 60 ) ? '1' : '0';
+	echo \$a . \$b . \$c . \$d;
+" 2>/dev/null | tr -d '[:space:]')
+[ "$BEZ_NACISKU" = "1001" ] \
+	&& ok "bez nacisku zachowanie bez zmian: 1. przechodzi, 2. i 3. odbite, inna tresc przechodzi" \
+	|| bad "zachowanie bez nacisku sie zmienilo ($BEZ_NACISKU, oczekiwane 1001)"
 
 sprzatnij_dedup
 POZOSTALO=$(q "SELECT COUNT(*) FROM wp_mp_rate_counters WHERE rl_key LIKE 'mp_adedup_%'")
