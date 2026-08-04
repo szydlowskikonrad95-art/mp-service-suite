@@ -182,7 +182,7 @@ final class SettingsScreen {
 		if ( '' !== $ok ) {
 			$potwierdzenia = array(
 				'statusy'    => __( 'Statusy zapisane.', 'mp-workflow-automator' ),
-				'terminy'    => __( 'Godziny terminów zapisane. Sprawy już otwarte mają nadal STARE terminy — przelicz je przyciskiem „Przelicz SLA" w panelu automatyzacji.', 'mp-workflow-automator' ),
+				'terminy'    => __( 'Godziny terminów zapisane. Sprawy już otwarte mają nadal STARE terminy — przelicz je przyciskiem „Przelicz terminy obsługi" w panelu automatyzacji.', 'mp-workflow-automator' ),
 				'reguly'     => __( 'Reguły przydziału zapisane.', 'mp-workflow-automator' ),
 				'odinstaluj' => __( 'Ustawienie kasowania danych zapisane.', 'mp-workflow-automator' ),
 			);
@@ -323,7 +323,7 @@ final class SettingsScreen {
 				</tbody>
 			</table>
 			<p class="description">
-				<?php esc_html_e( 'UWAGA: zmiana godzin dotyczy terminów liczonych OD TERAZ. Sprawy już otwarte zachowują stare terminy do czasu użycia przycisku „Przelicz SLA" w panelu automatyzacji.', 'mp-workflow-automator' ); ?>
+				<?php esc_html_e( 'UWAGA: zmiana godzin dotyczy terminów liczonych OD TERAZ. Sprawy już otwarte zachowują stare terminy do czasu użycia przycisku „Przelicz terminy obsługi" w panelu automatyzacji.', 'mp-workflow-automator' ); ?>
 			</p>
 			<?php submit_button( __( 'Zapisz godziny terminów', 'mp-workflow-automator' ), 'primary', 'mp-zapisz-terminy', false ); ?>
 		</form>
