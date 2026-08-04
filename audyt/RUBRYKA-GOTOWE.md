@@ -29,7 +29,7 @@ znalezisko dokładało kryterium, żeby ta sama klasa błędu nie wróciła.
 |---|---|
 | **Instalacja od zera z paczki** na deklarowanym minimum (WordPress 6.9 / PHP 8.1 / MySQL 8) | ścieżka klienta **20/0**, wgranie przez panel **6/0** |
 | **Aktualizacja ze starszej wersji na żywych danych** — nie tylko instalacja od zera | środowisko testowe z istniejącymi sprawami, produktami i załącznikami: liczby rekordów **bez zmian**, wersje schematu bez zmian, dziennik błędów **pusty** |
-| Przeglądarki z zamówienia (Chrome, Edge, Firefox) + widok na telefonie | dwa silniki przeglądarek + szerokość 390 px → **26/26**, zero błędów konsoli |
+| ⚠️ **CZĘŚCIOWO** — przeglądarki z zamówienia (Chrome, Edge, Firefox) + widok na telefonie | **dwa silniki**: Chromium (obsługuje Chrome i Edge) oraz Gecko (Firefox), szerokość 390 px → **26/26**, zero błędów konsoli. ⛔ **Edge nie był uruchomiony osobno** — kryterium wymienia trzy przeglądarki z nazwy, więc przy zasadzie „albo dowód, albo niespełnione" **nie wolno go liczyć jako spełnione w całości**. Ta sama rubryka przyznawała to osiem wierszy niżej i mimo to stawiała zaliczenie |
 | Współistnienie z obcymi wtyczkami | edytor klasyczny + wtyczka poczty + wtyczka pamięci podręcznej: zadania cykliczne i testy diagnostyczne nadal działają |
 
 ## Bezpieczeństwo
@@ -45,7 +45,7 @@ znalezisko dokładało kryterium, żeby ta sama klasa błędu nie wróciła.
 
 | Kryterium | Dowód |
 |---|---|
-| Przejście zamówienia **punkt po punkcie**, na podstawie oryginalnego dokumentu, **bez naszych opracowań** | 35 z 39 punktów spełnionych z dowodem w postaci pliku i linii |
+| ⚠️ **CZĘŚCIOWO** — przejście zamówienia **punkt po punkcie**, na podstawie oryginalnego dokumentu, **bez naszych opracowań** | **35 z 39** punktów spełnionych z dowodem w postaci pliku i linii. ⛔ **Pozostałe CZTERY nie są tu wymienione z nazwy**, a dla odbiorcy to jedyna informacja, która się liczy — dopóki nie zostaną nazwane, **to kryterium jest wg naszej własnej zasady NIESPEŁNIONE**. ⚠️ Osobno: mianownik **39 nie zgadza się** z odczytem zamówienia przez audyt zewnętrzny, który dał **61 pozycji** — „punkt po punkcie" znaczy co innego po obu stronach, więc **odsetków z tego dokumentu nie da się z niczym porównać** |
 | Jeden punkt zgłoszony przez audytora jako brak | **obalony na żywym systemie** — funkcja istniała i działała, audytor patrzył w złe miejsce |
 
 ## Kalibracja kontroli — czy audyt w ogóle widzi
@@ -59,11 +59,24 @@ Jedna z podłożonych usterek została **przeoczona** przez audytora. Klasę teg
 osobno, kontrolą maszynową obejmującą wszystkie miejsca tego rodzaju w kodzie — zero trafień.
 Zapisujemy to, bo audyt, który zawsze wypada idealnie, znaczy zwykle tyle, że nikt go nie sprawdził.
 
+⛔ **Trzy zdania tej rubryki łamały jej własną zasadę** („albo dowód, albo niespełnione") —
+dwa stawiały zaliczenie na dowodzie, o którym ten sam dokument mówił, że go nie obejmuje,
+a jedno zdejmowało wymóg z zamówienia na podstawie nieprawdy o produkcie. Wszystkie trzy są
+wyżej poprawione i **oznaczone**, a nie po cichu przepisane: rubryka, która sama siebie
+poprawia bez śladu, jest warta tyle, co „wygląda dobrze".
+
 ## Otwarte decyzje zakresu — nie wady wykonania
 
-- **Danych produktu nie da się edytować po zaimportowaniu** (ponowny import odrzuca duplikat),
-  więc wymagana w zamówieniu „historia zmian danych produktu" nie ma czego zapisywać.
-  Decyzje gwarancyjne są zapisywane. Świadome, zgłoszone, nie ukryte.
+- ⛔ **WYCOFANE — to zdanie było nieprawdą i zdejmowało z nas wymóg z zamówienia.** Stało tu:
+  *„Danych produktu nie da się edytować po zaimportowaniu, więc wymagana w zamówieniu «historia
+  zmian danych produktu» nie ma czego zapisywać"*. **Danych produktu DA SIĘ edytować**: lista pól
+  edytowalnych z panelu stoi w `mp-warranty-registry/includes/Repo.php:335`
+  (`EDITABLE_FIELDS`: model, partia, kategoria, dokument zakupu, data zakupu, koniec gwarancji),
+  a `Repo::update()` zapisuje wpis do historii z różnicą wartości
+  (`ProductEvents::log( …, 'PRODUCT_UPDATED', $diff, … )`, `Repo.php:471`). Ekran „popraw dane"
+  opisują też `dla-klienta/instrukcje/ADMIN.md` i **zamrożony** `dokumentacja-techniczna/EVENT_MODEL.md`.
+  **Wymóg jest wykonany, nie odłożony** — rubryka zamarzła na stanie sprzed zbudowania ekranu.
+  Widoczna ścieżka do tej historii (ekran historii egzemplarza) doszła w wydaniu **1.3.12**.
 - **Kopia zapasowa i cofnięcie migracji** dostarczone jako **procedura** w dokumentacji
   technicznej, nie jako funkcja w kodzie.
 - Wcześniejsza wersja skryptu testowego zawierała hasło testowe w historii repozytorium.

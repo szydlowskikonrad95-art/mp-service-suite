@@ -380,13 +380,54 @@ else
 	fi
 fi
 
+# ── dokumenty audytu nie moga obiecywac wiecej, niz sprawdzono (poz. 2.43, 2.44) ──
+# Poz. 2.43: `ZAKRES-SPRAWDZONY.md` deklarowal „wykonanie na dzialajacym systemie" przy
+# pozycjach, ktorych czlowiek w interfejsie zrobic NIE MOGL (odrzucenie z powodem, historia
+# produktu) — sprawdzono warstwe danych, a wada siedziala na styku czlowieka z ekranem.
+# Do tego w czesci o bezpieczenstwie nie byla NAZWANA kategoria „personel wobec personelu",
+# wiec nikt nie mogl zauwazyc, ze jej brakuje.
+ZAKRES=audyt/ZAKRES-SPRAWDZONY.md
+if grep -q "MIEDZY ROLAMI PERSONELU\|MIĘDZY ROLAMI PERSONELU" "$ZAKRES" 2>/dev/null; then
+	ok "ZAKRES-SPRAWDZONY: kategoria personel-wobec-personelu nazwana wprost"
+else
+	bad "ZAKRES-SPRAWDZONY: brak kategorii personel-wobec-personelu — luka, ktora ukryla poz. 2.24"
+fi
+if grep -q "WYLACZNIE od strony zaplecza\|WYŁĄCZNIE od strony zaplecza" "$ZAKRES" 2>/dev/null; then
+	ok "ZAKRES-SPRAWDZONY: pozycje sprawdzone tylko od zaplecza sa OZNACZONE"
+else
+	bad "ZAKRES-SPRAWDZONY: nie widac oznaczenia pozycji sprawdzonych wylacznie od zaplecza (poz. 2.43)"
+fi
+
+# Poz. 2.44: rubryka „gotowe" ma kryteria BINARNE, a trzy jej zdania tego nie spelnialy.
+RUBRYKA=audyt/RUBRYKA-GOTOWE.md
+# (a) Dokument twierdzil, ze danych produktu NIE DA SIE edytowac — a kod ma liste pol
+#     edytowalnych. Sprawdzamy DOKUMENT WZGLEDEM KODU, nie samego siebie.
+if grep -q "EDITABLE_FIELDS" mp-warranty-registry/includes/Repo.php 2>/dev/null; then
+	if grep -q "DA SIE edytowac\|DA SIĘ edytować" "$RUBRYKA" 2>/dev/null; then
+		ok "RUBRYKA-GOTOWE: zgodna z kodem — dane produktu sa edytowalne i tak to opisuje"
+	else
+		bad "RUBRYKA-GOTOWE: kod ma EDITABLE_FIELDS, a rubryka nie mowi, ze dane produktu DA SIE edytowac (poz. 2.44a)"
+	fi
+fi
+# (b) i (c): kryteria stojace na niepelnym dowodzie musza byc oznaczone, nie zaliczone.
+if grep -q "Chrome, Edge, Firefox" "$RUBRYKA" 2>/dev/null; then
+	grep "Chrome, Edge, Firefox" "$RUBRYKA" | grep -q "CZESCIOWO\|CZĘŚCIOWO" \
+		&& ok "RUBRYKA-GOTOWE: kryterium przegladarek oznaczone jako czesciowe (Edge nie osobno)" \
+		|| bad "RUBRYKA-GOTOWE: kryterium wymienia trzy przegladarki i stoi jako spelnione, choc Edge nie byl osobno (poz. 2.44b)"
+fi
+if grep -q "35 z 39" "$RUBRYKA" 2>/dev/null; then
+	grep "35 z 39" "$RUBRYKA" | grep -q "NIESPELNIONE\|NIESPEŁNIONE" \
+		&& ok "RUBRYKA-GOTOWE: cztery niespelnione punkty zamowienia nazwane wprost jako brak dowodu" \
+		|| bad "RUBRYKA-GOTOWE: wynik 35 z 39 bez powiedzenia, ze pozostale cztery sa NIESPELNIONE (poz. 2.44c)"
+fi
+
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=40
+MIN_KONTROLI=44
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
