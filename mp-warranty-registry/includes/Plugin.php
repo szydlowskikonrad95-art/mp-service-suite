@@ -73,6 +73,9 @@ final class Plugin {
 			Admin\ImportScreen::register();
 			Admin\ImportEndpoints::register();
 			Admin\ExceptionsScreen::register();
+			// Ustawienia modulu (1.3.12): przelacznik kasowania danych przy
+			// odinstalowaniu — opcja czytana przez uninstall.php, dotad nieustawialna.
+			Admin\SettingsScreen::register();
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
