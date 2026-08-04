@@ -478,6 +478,36 @@ final class PanelScreen {
 	}
 
 	/**
+	 * Etykiety pol warunku: klucz TECHNICZNY => nazwa po ludzku.
+	 *
+	 * ⛔ KLUCZE MUSZA BYC TE, KTORE NAPRAWDE NIESIE KONTEKST — `Rules::CONDITION_KEYS`
+	 * (z `CaseRepo::context()`) plus `author_type` z wyzwalacza wiadomosci
+	 * (`RuleEngine::421`). Klucz spoza tej listy to awaria CICHA: `$pola[$klucz] ?? $klucz`
+	 * po prostu wypisze klucz techniczny i nic nie krzyknie. Do 1.3.12 stalo tu
+	 * `priorytet` (poz. 2.14) — nazwa, ktorej produkt nie definiuje NIGDZIE, wiec
+	 * etykieta nie mogla zadzialac ani razu. Ekran ustawien ma pod ta sama nazwa
+	 * poprawny klucz `priority` (`SettingsScreen::etykieta_warunku`, :537) i to on
+	 * jest wzorcem: slownik panelu pokrywa TE SAME klucze tymi SAMYMI nazwami
+	 * (stad `rodzaj` i `status`, ktore panel dotad wypisywal technicznie).
+	 *
+	 * Wydzielone z `opis_warunku()` po to, zeby dalo sie to SPRAWDZIC kontrola
+	 * (`testy/phpunit/EtykietyWarunkowPaneluTest.php`), a nie tylko przeczytac.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function pola_warunku(): array {
+		return array(
+			'author_type' => __( 'autor wiadomości', 'mp-workflow-automator' ),
+			'kategoria'   => __( 'kategoria produktu', 'mp-workflow-automator' ),
+			'kraj'        => __( 'kraj', 'mp-workflow-automator' ),
+			'jezyk'       => __( 'język', 'mp-workflow-automator' ),
+			'priority'    => __( 'priorytet', 'mp-workflow-automator' ),
+			'rodzaj'      => __( 'rodzaj sprawy', 'mp-workflow-automator' ),
+			'status'      => __( 'status', 'mp-workflow-automator' ),
+		);
+	}
+
+	/**
 	 * Warunek po ludzku; brak warunku = „zawsze", a nie osierocone „equals".
 	 *
 	 * @param string $klucz    Pole warunku.
@@ -490,13 +520,7 @@ final class PanelScreen {
 			return __( 'zawsze', 'mp-workflow-automator' );
 		}
 
-		$pola = array(
-			'author_type' => __( 'autor wiadomości', 'mp-workflow-automator' ),
-			'kategoria'   => __( 'kategoria produktu', 'mp-workflow-automator' ),
-			'kraj'        => __( 'kraj', 'mp-workflow-automator' ),
-			'jezyk'       => __( 'język', 'mp-workflow-automator' ),
-			'priorytet'   => __( 'priorytet', 'mp-workflow-automator' ),
-		);
+		$pola = self::pola_warunku();
 
 		$wartosci = array(
 			'client' => __( 'klient', 'mp-workflow-automator' ),
