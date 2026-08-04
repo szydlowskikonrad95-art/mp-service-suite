@@ -314,16 +314,16 @@ final class SubmissionHandler {
 				);
 			}
 
-			// Numer sprawy pokazujemy NA EKRANIE tylko w tej galezi: klient wlasnie
-			// otworzyl jednorazowy link ze swojej skrzynki, wiec udowodnil, ze jest
-			// jej wlascicielem — to nie jest enumeracja. Bez tego zostalby bez numeru.
+			// ⛔ NUMERU SPRAWY TU NIE POKAZUJEMY, choc klient wlasnie udowodnil, ze ma
+			// dostep do skrzynki. Reguła produktu jest starsza i szersza: SRV wychodzi
+			// WYLACZNIE mailem albo panelem (naglowek tego pliku, krok 6 kartki), a
+			// pilnuje jej test C3 („strona POST nie zdradza numeru SRV"). Pierwsza
+			// wersja tej poprawki numer pokazywala i C3 od razu ja zlapal — zmiana
+			// tamtej reguly to decyzja wlasciciela produktu, nie skutek uboczny
+			// naprawy komunikatu. Klient dostaje prawde i droge dalej, nie numer.
 			self::render_landing(
-				__( 'Zgłoszenie potwierdzone — mail nie wyszedł', 'mp-service-intake' ),
-				sprintf(
-					/* translators: %s: numer sprawy SRV. */
-					__( 'Twoje zgłoszenie zostało potwierdzone i przyjęte do obsługi. Nie udało się jednak wysłać wiadomości z potwierdzeniem — nasza poczta odmówiła jej przyjęcia. Numer sprawy: %s. Zapisz go i podawaj w kontakcie z serwisem.', 'mp-service-intake' ),
-					(string) $result['case_number']
-				),
+				__( 'Zgłoszenie potwierdzone — wiadomość nie wyszła', 'mp-service-intake' ),
+				__( 'Twoje zgłoszenie zostało potwierdzone i przyjęte do obsługi — obsługa już je widzi. Nie udało się jednak wysłać wiadomości z potwierdzeniem, bo nasza poczta odmówiła jej przyjęcia. Skontaktuj się z serwisem po numer sprawy.', 'mp-service-intake' ),
 				200,
 				true
 			);

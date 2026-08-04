@@ -187,6 +187,37 @@ printf '%s' "$R_FAIL" | grep -q "Link weryfikacyjny" \
 	&& ok "udana ponowna wysylka GASI oznaczenie (nie wisi wiecznie)" \
 	|| bad "oznaczenie zostalo mimo udanej ponownej wysylki"
 
+# ── 4b. POTWIERDZENIE przy padnietej poczcie: prawda BEZ numeru sprawy ──────
+# Numer SRV wychodzi wylacznie mailem albo panelem (krok 6 kartki, pilnuje C3).
+# Pierwsza wersja tej poprawki pokazywala numer na ekranie „skoro mail nie
+# wyszedl" — i C3 od razu ja zlapal. Zmiana tamtej reguly to decyzja wlasciciela
+# produktu, nie skutek uboczny naprawy komunikatu. Ta kontrola pilnuje obu rzeczy
+# naraz: komunikat ma byc PRAWDZIWY, ale numer ma NIE wyciec.
+JAR=$(mktemp)
+TOKEN=$(wp eval "echo (string) MP\\Intake\\CaseRepo::regenerate_token( $CID_OK );" 2>/dev/null | tr -d '[:space:]')
+curl -s -c "$JAR" -o /tmp/mp-2-1b-verify.html "$MP_BASE/wp-admin/admin-post.php?action=mp_intake_verify&token=$TOKEN"
+VNONCE=$(grep -o 'name="_mp_nonce" value="[^"]*"' /tmp/mp-2-1b-verify.html | head -1 | sed 's/.*value="//;s/"//')
+curl -s -c "$JAR" -b "$JAR" -H "X-MP-Test-Mail: fail" -o /tmp/mp-2-1b-confirm.html \
+	--data-urlencode "action=mp_intake_verify_confirm" --data-urlencode "_mp_nonce=$VNONCE" \
+	--data-urlencode "token=$TOKEN" \
+	"$MP_BASE/wp-admin/admin-post.php"
+rm -f "$JAR"
+
+grep -q "nie wysz" /tmp/mp-2-1b-confirm.html \
+	&& ok "potwierdzenie przy awarii poczty: klient slyszy, ze wiadomosc nie wyszla" \
+	|| bad "potwierdzenie udaje, ze mail poszedl (to jest wada 2.1b)"
+
+grep -q "SRV/" /tmp/mp-2-1b-confirm.html \
+	&& bad "strona potwierdzenia ZDRADZA numer SRV (regula: numer tylko mailem/panelem)" \
+	|| ok "numer sprawy NIE wyciekl na strone mimo awarii poczty"
+
+VER=$(q "SELECT identity_status FROM wp_mp_service_cases WHERE id=$CID_OK")
+[ "$VER" = "verified" ] \
+	&& ok "sprawa potwierdzona mimo padnietej poczty (regresja zero)" \
+	|| bad "awaria poczty zablokowala potwierdzenie sprawy (=$VER)"
+
+rm -f /tmp/mp-2-1b-verify.html /tmp/mp-2-1b-confirm.html
+
 # ── 5. BRAMKA: logowanie do panelu ma JEDEN komunikat, zaleznie od wyniku poczty ─
 # To jedyna kontrola nie-behawioralna w tym tescie i tak jest zamierzona: chodzi
 # o to, ZEBY KTOS TEGO NIE „NAPRAWIL" tak samo jak reszty. Osobny komunikat przy
