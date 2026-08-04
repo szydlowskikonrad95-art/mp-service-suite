@@ -12,6 +12,7 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Repo;
 use MP\Registry\Tables;
 use MP\Registry\WarrantyExceptions;
 
@@ -29,6 +30,11 @@ final class ExceptionsScreen {
 	 * Prefiks transientu komunikatu (per user).
 	 */
 	public const NOTICE_TRANSIENT = 'mp_exceptions_notice_';
+
+	/**
+	 * Ile wyjatkow na stronie w widoku wszystkich wyjatkow.
+	 */
+	public const PER_PAGE = 20;
 
 	/**
 	 * Rejestruje hooki admina.
@@ -97,23 +103,12 @@ final class ExceptionsScreen {
 		$now = gmdate( 'Y-m-d H:i:s' );
 
 		if ( null === $product ) {
-			// Ekran otwarty z menu, bez wybranego produktu. Wyjatek nadaje sie ZAWSZE dla
-			// konkretnego produktu, wiec nie ma tu czego pokazac — ale samo zdanie „wybierz
-			// produkt" zostawialo slepy zaulek: uzytkownik wie, ze ma isc gdzie indziej, i musi
-			// szukac tego miejsca w menu (zgloszone przy przegladzie panelu 1.08).
-			$rejestr_url = add_query_arg( 'page', ProductsScreen::PAGE_SLUG, admin_url( 'admin.php' ) );
-			?>
-			<div class="wrap mp-exceptions">
-				<h1><?php esc_html_e( 'Wyjątki gwarancyjne', 'mp-warranty-registry' ); ?></h1>
-				<p><?php esc_html_e( 'Wyjątek gwarancyjny to zgoda administratora na obsługę zgłoszenia mimo wygasłej gwarancji lub braku danych. Nadaje się go zawsze dla konkretnego produktu, dlatego ten ekran otwiera się z Rejestru.', 'mp-warranty-registry' ); ?></p>
-				<p><?php esc_html_e( 'Znajdź produkt w Rejestrze MP i kliknij „wyjątki" w kolumnie Akcje.', 'mp-warranty-registry' ); ?></p>
-				<p>
-					<a class="button button-primary" href="<?php echo esc_url( $rejestr_url ); ?>">
-						<?php esc_html_e( 'Przejdź do Rejestru MP', 'mp-warranty-registry' ); ?>
-					</a>
-				</p>
-			</div>
-			<?php
+			// Ekran otwarty z menu, bez wybranego produktu. Do 1.3.12 stalo tu wylacznie
+			// wyjasnienie i przycisk „Przejdz do Rejestru MP" — pozycja w menu, ktora nigdy
+			// nie pokazywala danych. Pod spodem siedzial prawdziwy brak: KAZDE zapytanie
+			// do tabeli wyjatkow filtrowalo po konkretnym produkcie, wiec administrator,
+			// ktory przyznal ich dwadziescia, nie mial jak ich przejrzec.
+			self::render_all( is_array( $notice ) ? $notice : null );
 			return;
 		}
 		?>
@@ -151,10 +146,7 @@ final class ExceptionsScreen {
 						<tr><td colspan="6"><?php esc_html_e( 'Brak wyjątków dla tego produktu.', 'mp-warranty-registry' ); ?></td></tr>
 					<?php endif; ?>
 					<?php foreach ( (array) $rows as $row ) : ?>
-						<?php
-						$is_active  = 'active' === (string) $row['status'];
-						$is_expired = $is_active && null !== $row['valid_until'] && (string) $row['valid_until'] < $now;
-						?>
+						<?php $is_active = 'active' === (string) $row['status']; ?>
 						<tr>
 							<td>#<?php echo esc_html( (string) (int) $row['id'] ); ?></td>
 							<td>
@@ -164,17 +156,7 @@ final class ExceptionsScreen {
 									: esc_html( sprintf( /* translators: %d: numer sprawy. */ __( 'sprawa #%d', 'mp-warranty-registry' ), (int) $row['case_id'] ) );
 								?>
 							</td>
-							<td>
-								<?php
-								if ( $is_expired ) {
-									esc_html_e( 'przeterminowany (wyliczone z daty)', 'mp-warranty-registry' );
-								} elseif ( $is_active ) {
-									esc_html_e( 'aktywny', 'mp-warranty-registry' );
-								} else {
-									esc_html_e( 'cofnięty', 'mp-warranty-registry' );
-								}
-								?>
-							</td>
+							<td><?php echo esc_html( self::status_label( $row, $now ) ); ?></td>
 							<td><?php echo esc_html( (string) ( $row['valid_until'] ?? __( 'bezterminowo', 'mp-warranty-registry' ) ) ); ?></td>
 							<td><?php echo esc_html( (string) $row['reason'] ); ?></td>
 							<td>
@@ -223,6 +205,223 @@ final class ExceptionsScreen {
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Widok WSZYSTKICH udzielonych wyjatkow — ekran otwarty z menu, bez produktu.
+	 *
+	 * Zamienia dawny slepy zaulek („wybierz produkt" + przycisk) w to, czego
+	 * naprawde brakowalo: przeglad decyzji gwarancyjnych w calym serwisie.
+	 * Droga „Rejestr MP → kolumna Akcje → wyjątki" zostaje bez zmian — jest
+	 * opisana w instrukcji i nadal jest jedyna droga do NADANIA wyjatku.
+	 *
+	 * @param array<string, string>|null $notice Komunikat po akcji (albo null).
+	 * @return void
+	 */
+	private static function render_all( ?array $notice ): void {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- filtr i strona z GET; widok tylko czyta.
+		$filter = isset( $_GET['f_status'] ) ? sanitize_key( wp_unslash( (string) $_GET['f_status'] ) ) : 'active';
+		$paged  = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+		// phpcs:enable
+
+		if ( ! in_array( $filter, Repo::EXCEPTION_FILTERS, true ) ) {
+			$filter = 'active';
+		}
+
+		$wynik       = Repo::all_exceptions( $filter, $paged, self::PER_PAGE );
+		$now         = gmdate( 'Y-m-d H:i:s' );
+		$rejestr_url = add_query_arg( 'page', ProductsScreen::PAGE_SLUG, admin_url( 'admin.php' ) );
+		$strony      = (int) ceil( $wynik['total'] / self::PER_PAGE );
+
+		$etykiety = array(
+			'active'  => __( 'aktywne', 'mp-warranty-registry' ),
+			'expired' => __( 'przeterminowane', 'mp-warranty-registry' ),
+			'revoked' => __( 'cofnięte', 'mp-warranty-registry' ),
+			'all'     => __( 'wszystkie', 'mp-warranty-registry' ),
+		);
+		?>
+		<div class="wrap mp-exceptions">
+			<h1><?php esc_html_e( 'Wyjątki gwarancyjne', 'mp-warranty-registry' ); ?></h1>
+
+			<?php if ( null !== $notice ) : ?>
+				<div class="notice notice-<?php echo esc_attr( (string) $notice['type'] ); ?>"><p><?php echo esc_html( (string) $notice['text'] ); ?></p></div>
+			<?php endif; ?>
+
+			<p class="description">
+				<?php esc_html_e( 'Wyjątek gwarancyjny to zgoda administratora na obsługę zgłoszenia mimo wygasłej gwarancji lub braku danych. Poniżej są wszystkie udzielone wyjątki. Nowy nadaje się zawsze przy konkretnym produkcie: Rejestr MP → kolumna Akcje → „wyjątki".', 'mp-warranty-registry' ); ?>
+			</p>
+
+			<form method="get">
+				<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
+				<p>
+					<label for="mp-exc-filter"><?php esc_html_e( 'Pokaż:', 'mp-warranty-registry' ); ?></label>
+					<select id="mp-exc-filter" name="f_status">
+						<?php foreach ( $etykiety as $klucz => $etykieta ) : ?>
+							<option value="<?php echo esc_attr( (string) $klucz ); ?>" <?php selected( $filter, $klucz ); ?>>
+								<?php echo esc_html( (string) $etykieta ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<?php submit_button( __( 'Pokaż', 'mp-warranty-registry' ), 'secondary', 'submit', false ); ?>
+				</p>
+			</form>
+
+			<p class="description">
+				<?php
+				printf(
+					/* translators: 1: liczba wyjatkow, 2: nazwa filtru (aktywne/cofniete/...). */
+					esc_html__( 'Wyjątków w tym widoku: %1$d (%2$s).', 'mp-warranty-registry' ),
+					(int) $wynik['total'],
+					esc_html( (string) $etykiety[ $filter ] )
+				);
+				?>
+			</p>
+
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th scope="col">ID</th>
+						<th scope="col"><?php esc_html_e( 'Produkt', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Zakres', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Ważny do', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Nadany', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Powód', 'mp-warranty-registry' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Akcja', 'mp-warranty-registry' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( array() === $wynik['rows'] ) : ?>
+						<tr><td colspan="8"><?php esc_html_e( 'W tym widoku nie ma żadnego wyjątku.', 'mp-warranty-registry' ); ?></td></tr>
+					<?php endif; ?>
+					<?php foreach ( $wynik['rows'] as $row ) : ?>
+						<?php
+						$pid       = (int) $row['product_registry_id'];
+						$produkt   = add_query_arg(
+							array(
+								'page'    => self::PAGE_SLUG,
+								'product' => $pid,
+							),
+							admin_url( 'admin.php' )
+						);
+						$is_active = 'active' === (string) $row['status'];
+						?>
+						<tr>
+							<td>#<?php echo esc_html( (string) (int) $row['id'] ); ?></td>
+							<td>
+								<?php if ( null === $row['serial_display'] ) : ?>
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: %d: ID produktu, ktorego nie ma juz w rejestrze. */
+											__( 'produkt spoza rejestru (#%d)', 'mp-warranty-registry' ),
+											$pid
+										)
+									);
+									?>
+								<?php else : ?>
+									<a href="<?php echo esc_url( $produkt ); ?>"><code><?php echo esc_html( (string) $row['serial_display'] ); ?></code></a>
+									<?php if ( '' !== (string) $row['model'] ) : ?>
+										<br /><span class="description"><?php echo esc_html( (string) $row['model'] ); ?></span>
+									<?php endif; ?>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php
+								echo null === $row['case_id']
+									? esc_html__( 'globalny', 'mp-warranty-registry' )
+									: esc_html( sprintf( /* translators: %d: numer sprawy. */ __( 'sprawa #%d', 'mp-warranty-registry' ), (int) $row['case_id'] ) );
+								?>
+							</td>
+							<td><?php echo esc_html( self::status_label( $row, $now ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['valid_until'] ?? __( 'bezterminowo', 'mp-warranty-registry' ) ) ); ?></td>
+							<td>
+								<?php echo esc_html( get_date_from_gmt( (string) $row['created_at'], 'Y-m-d H:i' ) ); ?>
+								<br /><span class="description"><?php echo esc_html( self::autor( (int) $row['created_by'] ) ); ?></span>
+							</td>
+							<td><?php echo esc_html( (string) $row['reason'] ); ?></td>
+							<td>
+								<?php if ( $is_active ) : ?>
+									<a href="<?php echo esc_url( self::revoke_url( (int) $row['id'], 0 ) ); ?>">
+										<?php esc_html_e( 'cofnij', 'mp-warranty-registry' ); ?>
+									</a>
+								<?php else : ?>
+									&mdash;
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<?php if ( $strony > 1 ) : ?>
+				<p>
+					<?php
+					echo wp_kses_post(
+						(string) paginate_links(
+							array(
+								'base'      => add_query_arg( 'paged', '%#%' ),
+								'format'    => '',
+								'total'     => $strony,
+								'current'   => $paged,
+								'add_args'  => array( 'f_status' => $filter ),
+								'prev_text' => __( '« poprzednie', 'mp-warranty-registry' ),
+								'next_text' => __( 'następne »', 'mp-warranty-registry' ),
+							)
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<p>
+				<a class="button" href="<?php echo esc_url( $rejestr_url ); ?>">
+					<?php esc_html_e( 'Przejdź do Rejestru MP', 'mp-warranty-registry' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Etykieta stanu wyjatku.
+	 *
+	 * „Przeterminowany" NIE jest stanem w bazie — status zna tylko active/revoked
+	 * — wiec liczy sie go z daty. Jedna funkcja dla obu widokow, zeby lista
+	 * wszystkich wyjatkow i ekran produktu nie nazywaly tego samego inaczej.
+	 *
+	 * @param array<string, mixed> $row Wiersz wyjatku.
+	 * @param string               $now Teraz w 'Y-m-d H:i:s' (UTC).
+	 * @return string
+	 */
+	public static function status_label( array $row, string $now ): string {
+		$is_active = 'active' === (string) ( $row['status'] ?? '' );
+
+		if ( $is_active && null !== ( $row['valid_until'] ?? null ) && (string) $row['valid_until'] < $now ) {
+			return __( 'przeterminowany (wyliczone z daty)', 'mp-warranty-registry' );
+		}
+
+		return $is_active
+			? __( 'aktywny', 'mp-warranty-registry' )
+			: __( 'cofnięty', 'mp-warranty-registry' );
+	}
+
+	/**
+	 * Kto nadal wyjatek — nazwa konta zamiast samego ID.
+	 *
+	 * @param int $user_id ID konta.
+	 * @return string
+	 */
+	private static function autor( int $user_id ): string {
+		if ( $user_id <= 0 ) {
+			return __( 'system', 'mp-warranty-registry' );
+		}
+
+		$user = get_userdata( $user_id );
+
+		return false === $user
+			? sprintf( /* translators: %d: ID usunietego konta. */ __( 'konto usunięte (#%d)', 'mp-warranty-registry' ), $user_id )
+			: (string) $user->display_name;
 	}
 
 	/**
