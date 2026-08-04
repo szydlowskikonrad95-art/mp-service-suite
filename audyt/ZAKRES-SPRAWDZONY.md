@@ -4,6 +4,14 @@ Ten dokument istnieje po to, żeby **nie sprawdzać dwa razy tego samego** i że
 gdzie przebiega granica. Każda pozycja niżej ma za sobą wykonanie na działającym systemie,
 nie przeczytanie kodu.
 
+⛔ **Co „wykonanie na działającym systemie" znaczy, a czego NIE znaczy — bo to nas kosztowało.**
+Wykonanie oznacza, że mechanizm został **uruchomiony na żywych danych**. Nie zawsze oznacza, że
+przeszliśmy **drogę, którą przechodzi człowiek w interfejsie** — a to dwie różne warstwy i można
+zdać jedną, oblewając drugą. Tam, gdzie sprawdziliśmy wyłącznie warstwę zaplecza, **jest to
+napisane przy pozycji**. Dwie takie pozycje wyszły dopiero w audycie zewnętrznym i są niżej
+oznaczone. **To jest wyjaśnienie, dlaczego ten dokument mógł mówić prawdę, a mimo to przepuścić
+wady stojące na styku człowieka z ekranem.**
+
 ## Instalacja i aktualizacja
 
 - **Paczka pobrana z opublikowanego wydania**, zainstalowana na czystym WordPressie na
@@ -33,6 +41,13 @@ nie przeczytanie kodu.
   pola z przesłanych danych. Obietnica instrukcji jest właściwością kodu, nie deklaracją
 - **Uprawnienia do wyjątków gwarancyjnych**: pracownik zablokowany, koordynator zablokowany,
   **zero wpisów w bazie** po obu próbach; administrator przechodzi
+- 🔴 **Czego w tej sekcji NIE BYŁO — i dlatego nikt nie zauważył, że tego brakuje: widoczność
+  danych MIĘDZY ROLAMI PERSONELU.** Wszystkie badania wyżej dotyczą obcego albo klienta
+  (brak logowania, konto bez uprawnień, wejście bokiem, izolacja dwóch klientów). Kategoria
+  „personel wobec personelu" **nie została nazwana w ogóle**, a właśnie tam siedział rozjazd:
+  pracownik widział **wszystkie 26 spraw zamiast swoich 17**. Znalazł to audyt zewnętrzny,
+  naprawione w wydaniu 1.3.12. Kategoria zostaje tu **wpisana z nazwy**, żeby przy następnym
+  przeglądzie nie dało się jej pominąć przez przeoczenie
 
 ## RODO
 
@@ -45,10 +60,19 @@ nie przeczytanie kodu.
 
 - Rejestr: import z pliku CSV, normalizacja kategorii i dat, **cztery statusy gwarancji**
 - Automat: przydział po kolei, termin 24 h z przypomnieniem po 75% czasu, **eskalacja do
-  koordynatora**, 7 statusów, odrzucenie wymagające powodu, wznowienie tylko do właściwego stanu
+  koordynatora**, 7 statusów, wznowienie tylko do właściwego stanu
+- ⚠️ **Odrzucenie wymagające powodu — sprawdzone WYŁĄCZNIE od strony zaplecza.** Reguła
+  („odrzucenie bez powodu nie przechodzi") działała i tak ją zbadaliśmy. Ale **drogi człowieka
+  nie było**: operator wybierał „odrzucone", dostawał komunikat o wymaganym powodzie, a **pola
+  na powód na karcie sprawy nie było i status się nie zapisywał**. Pole wyboru powodu oraz
+  edytowalna lista powodów **weszły dopiero w wydaniu 1.3.12**. Poprzednie brzmienie tej pozycji
+  sugerowało, że przeszliśmy tę drogę — nie przeszliśmy jej, bo jej nie było
 - Eksport zestawień: koordynator i administrator tak, pracownik nie — **także przy próbie
   z podkradzionym zabezpieczeniem formularza**
-- **Historia zmian produktu ma komplet**: kto, kiedy, wartość przed i po
+- ⚠️ **Historia zmian produktu ma komplet danych: kto, kiedy, wartość przed i po** — i to jest
+  prawda o **warstwie danych**, sprawdzona zapisem. Natomiast w chwili tego badania **nie było
+  żadnego odnośnika, który prowadziłby człowieka do tej historii** — dane powstawały, a nikt nie
+  miał jak ich zobaczyć. **Ekran historii egzemplarza dołożono w wydaniu 1.3.12**
 - **Migawka starej sprawy pozostaje nietknięta** po poprawieniu danych produktu — sprawa złożona
   przy poprzedniej gwarancji zachowuje swój ówczesny stan, żeby dało się pokazać „dane poprawiono
   po zgłoszeniu"
@@ -89,8 +113,11 @@ Trzy rzeczy, żadna nie wpływa na poprawność działania:
 
 - **Wygląd ekranów oceniony przez projektanta.** Ekrany obejrzano pod kątem błędów i poprawności,
   nie estetyki.
-- **Badanie dostępności na żywej stronie u klienta** — pomiar wykonano na naszym środowisku,
-  na wcześniejszej wersji paczki; od tamtej pory nie zmieniano badanych ekranów.
+- **Badanie dostępności na żywej stronie u klienta** — pomiar wykonano na **naszym** środowisku,
+  na czystej instalacji z paczki. ⚠️ Zdanie „od tamtej pory nie zmieniano badanych ekranów"
+  **przestało być prawdziwe** przy wydaniu 1.3.12, które ekrany klienta zmieniło; dlatego badanie
+  **powtórzono 4.08.2026 na wersji 1.3.12** (11 powierzchni, zero naruszeń) — szczegóły
+  w `dla-klienta/RAPORT-A11Y-WCAG.md`.
 - **Zrozumiałość instrukcji po ostatnich poprawkach na kolejnej żywej osobie.** Ostatnia ocena
   (79/100) pochodzi od czytelnika wcielonego w rolę osoby nietechnicznej.
 - **Wieloletnia praca bez przerwy** przy narastających danych. Wydajność mierzono jednorazowo,
