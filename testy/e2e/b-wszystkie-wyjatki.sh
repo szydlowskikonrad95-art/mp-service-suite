@@ -49,8 +49,60 @@ sprzataj() {
 
 sprzataj
 
-ADM=$(wp user create wyj_adm wyj_adm@example.com --role=mp_system_admin --porcelain 2>/dev/null)
-[ -z "$ADM" ] && ADM=$(wp user get wyj_adm --field=ID 2>/dev/null | tr -d '[:space:]')
+# ⛔ LEKCJA Z CI (4.08) — ten sam ksztalt co w `b-historia-egzemplarza.sh`.
+# W CI testy ida po kolei na JEDNEJ bazie, a `uninstall-crony.sh` odinstalowuje po
+# drodze trzy wtyczki — `Uninstall::remove_roles()` KASUJE wtedy role `mp_system_admin`.
+# `wp user create --role=<nieistniejaca>` konczy sie bledem, konto NIE powstaje, a blad
+# w /dev/null zostawial samo puste ID. Dlatego: czytamy kod wyjscia, pokazujemy blad,
+# uzywamy istniejacego konta, a przy braku roli nadajemy samo UPRAWNIENIE (ekran
+# sprawdza `current_user_can()`, nie nazwe roli).
+#
+# ⚠️ `konto` oddaje wynik ZMIENNA, nie przez `$( )` — podstawienie polecenia odpala
+# podpowloke i lista zalozonych kont ginelaby razem z nia (sprzatanie nie kasowaloby nic).
+ZALOZONE_KONTA=''
+KONTO_ID=''
+
+konto() {
+	LOGIN="$1"
+	UPRAWNIENIE="$2"
+	KONTO_ID=''
+	MAIL="$LOGIN@b-wszystkie-wyjatki.test"
+
+	ID=$(wp user get "$LOGIN" --field=ID 2>/dev/null | tr -d '[:space:]')
+
+	if [ -z "$ID" ]; then
+		WYNIK=$(wp user create "$LOGIN" "$MAIL" --porcelain 2>&1)
+		KOD=$?
+		ID=$(printf '%s' "$WYNIK" | tr -d '[:space:]' | grep -Eo '^[0-9]+$')
+
+		if [ -z "$ID" ]; then
+			bad "nie udalo sie zalozyc konta '$LOGIN' (kod $KOD): $WYNIK"
+			return 1
+		fi
+	else
+		echo "  --   konto '$LOGIN' juz istnieje (id=$ID) — uzywam istniejacego"
+	fi
+
+	ZALOZONE_KONTA="$ZALOZONE_KONTA $ID"
+
+	if wp role exists "$UPRAWNIENIE" >/dev/null 2>&1; then
+		wp user set-role "$ID" "$UPRAWNIENIE" >/dev/null 2>&1
+	else
+		echo "  --   rola '$UPRAWNIENIE' nie istnieje w tej bazie (poprzedni test ja usunal?) — nadaje samo uprawnienie"
+		wp user add-cap "$ID" "$UPRAWNIENIE" >/dev/null 2>&1
+	fi
+
+	KONTO_ID="$ID"
+}
+
+konto wyj_adm mp_system_admin
+ADM="$KONTO_ID"
+
+# Bramka: konto ma NAPRAWDE dzialac na ekranie, inaczej test opowiadalby o pustej stronie.
+if [ -n "$ADM" ]; then
+	MOZE=$(wp eval "wp_set_current_user( $ADM ); echo current_user_can( 'mp_system_admin' ) ? 'tak' : 'nie';" 2>/dev/null | tr -d '[:space:]')
+	[ "$MOZE" = "tak" ] || bad "konto $ADM nie ma uprawnienia 'mp_system_admin' (dostalo: '$MOZE')"
+fi
 
 for PARA in "$S1|$N1" "$S2|$N2"; do
 	SER="${PARA%%|*}"; NOR="${PARA##*|}"
@@ -62,8 +114,9 @@ done
 PID1=$(q "SELECT id FROM wp_mp_product_registry WHERE serial_normalized='$N1';")
 PID2=$(q "SELECT id FROM wp_mp_product_registry WHERE serial_normalized='$N2';")
 
-if [ -z "$PID1" ] || [ -z "$PID2" ] || [ -z "$ADM" ]; then
-	bad "nie udalo sie przygotowac stanowiska (PID1=$PID1 PID2=$PID2 ADM=$ADM)"
+if [ -z "$PID1" ] || [ -z "$PID2" ] || [ -z "$ADM" ] || [ "$FAIL" -gt 0 ]; then
+	bad "nie udalo sie przygotowac stanowiska (PID1=$PID1 PID2=$PID2 ADM=$ADM) — powod wyzej"
+	for U in $ZALOZONE_KONTA; do wp user delete "$U" --yes >/dev/null 2>&1; done
 	sprzataj
 	echo "WYNIK: $PASS ok, $FAIL fail"
 	exit 1
@@ -156,7 +209,8 @@ echo "$HTML_1" | grep -q 'Przyznaj wyjątek' && ok "formularz nadania wyjatku ni
 
 # Sprzatanie po sobie — wspolna baza w CI.
 sprzataj
-wp user delete "$ADM" --yes >/dev/null 2>&1
+# Kasujemy WYLACZNIE konta z tego przebiegu (wspolna baza w CI).
+for U in $ZALOZONE_KONTA; do wp user delete "$U" --yes >/dev/null 2>&1; done
 
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
