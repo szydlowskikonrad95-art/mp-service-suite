@@ -54,6 +54,11 @@ final class CsvParser {
 	/**
 	 * Nazwy pol po polsku do komunikatu w raporcie bledow — administrator ma
 	 * przeczytac, KTORE pole poprawic, a nie zgadywac z nazwy kolumny w bazie.
+	 *
+	 * ⚠️ Klucze MUSZA byc te same co w LIMITY — komunikat siega tu bez zapasu.
+	 * Zapas `?? $kolumna` byl martwy i analiza statyczna slusznie go odrzucila:
+	 * dopisanie limitu bez etykiety ma byc bledem widocznym od razu, a nie
+	 * ekranem, na ktorym staje techniczna nazwa kolumny.
 	 */
 	private const ETYKIETY = array(
 		'serial'       => 'numer seryjny',
@@ -290,7 +295,7 @@ final class CsvParser {
 					'ok'    => false,
 					'error' => sprintf(
 						'%s ma %d znakow, a limit to %d',
-						self::ETYKIETY[ $kolumna ] ?? $kolumna,
+						self::ETYKIETY[ $kolumna ],
 						mb_strlen( $wartosc ),
 						$limit
 					),
