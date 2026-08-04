@@ -34,6 +34,15 @@ wczytaj_liste() {
 
 mapfile -t KOLEJNE < <(wczytaj_liste "$KATALOG/KOLEJNOSC.txt")
 mapfile -t POMIJANE < <(wczytaj_liste "$KATALOG/POZA-PRZEBIEGIEM.txt")
+# ⛔ TESTY NISZCZACE — odinstalowuja wtyczki, wiec MUSZA byc ostatnie. Bez tego kazdy nowo
+# wykryty plik doklejalby sie ZA nimi i lecial na wykasowanym produkcie (zlapane 4.08).
+mapfile -t NA_KONIEC < <(wczytaj_liste "$KATALOG/NA-KONIEC.txt")
+
+na_koniec() {
+	local p
+	for p in "${NA_KONIEC[@]:-}"; do [ "$p" = "$1" ] && return 0; done
+	return 1
+}
 
 pomijany() {
 	local p
@@ -52,6 +61,7 @@ BRAKUJACE=()
 
 for T in "${KOLEJNE[@]:-}"; do
 	pomijany "$T" && continue
+	na_koniec "$T" && continue
 	if [ ! -f "$KATALOG/$T" ]; then
 		BRAKUJACE+=( "$T" )
 		continue
@@ -65,6 +75,7 @@ for SCIEZKA in "$KATALOG"/*.sh; do
 	[ "$T" = "uruchom-wszystkie.sh" ] && continue
 	na_liscie "$T" && continue
 	pomijany "$T" && continue
+	na_koniec "$T" && continue
 	NOWE+=( "$T" )
 done
 
@@ -72,6 +83,15 @@ if [ "${#NOWE[@]}" -gt 0 ]; then
 	echo "🆕 Wykryte automatycznie (nie ma ich w KOLEJNOSC.txt): ${NOWE[*]}"
 	DO_URUCHOMIENIA+=( "${NOWE[@]}" )
 fi
+
+for T in "${NA_KONIEC[@]:-}"; do
+	pomijany "$T" && continue
+	if [ -f "$KATALOG/$T" ]; then
+		DO_URUCHOMIENIA+=( "$T" )
+	else
+		BRAKUJACE+=( "$T" )
+	fi
+done
 
 if [ "${#BRAKUJACE[@]}" -gt 0 ]; then
 	echo "⚠ W KOLEJNOSC.txt sa nazwy BEZ PLIKU (skasowane albo przemianowane): ${BRAKUJACE[*]}"
