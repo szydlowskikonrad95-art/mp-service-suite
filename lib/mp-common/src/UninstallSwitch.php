@@ -39,9 +39,9 @@ final class UninstallSwitch {
 	 * jako blad uzycia (i slusznie — jezyk nie jest jeszcze ustalony). Funkcje wolamy
 	 * dopiero przy zapisie, czyli long po `init`.
 	 *
-	 * @param string $action  Nazwa akcji admin-post (= akcja nonce).
-	 * @param string $option  Nazwa opcji czytanej przez uninstall.php tej wtyczki.
-	 * @param string $cap     Wymagana capability.
+	 * @param string   $action  Nazwa akcji admin-post (= akcja nonce).
+	 * @param string   $option  Nazwa opcji czytanej przez uninstall.php tej wtyczki.
+	 * @param string   $cap     Wymagana capability.
 	 * @param callable $msg_403 Funkcja zwracajaca komunikat odmowy (wolana przy zapisie).
 	 * @return void
 	 */
