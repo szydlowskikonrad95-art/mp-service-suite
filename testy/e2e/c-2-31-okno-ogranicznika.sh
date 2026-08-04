@@ -38,7 +38,7 @@ IP="203.0.113.$(( ( $$ % 250 ) + 1 ))"
 
 # Klucze licznikow liczymy TA SAMA droga co produkt (hash adresu), zeby test nie
 # zgadywal, gdzie produkt zapisuje.
-KLUCZ_MAIL=$(wp eval "echo 'mp_rl_em_' . md5( strtolower( trim( '$MAIL' ) ) );" 2>/dev/null | tr -d '[:space:]')
+KLUCZ_MAIL=$(wp eval "echo 'mp_rl_em_' . md5( MP\\Intake\\RateLimit::normalize_email_for_key( '$MAIL' ) );" 2>/dev/null | tr -d '[:space:]')
 KLUCZ_IP=$(wp eval "echo 'mp_rl_ip_' . md5( '$IP' );" 2>/dev/null | tr -d '[:space:]')
 
 koniec_okna() { q "SELECT window_expires_at FROM wp_mp_rate_counters WHERE rl_key='$1'"; }
