@@ -13,6 +13,7 @@ namespace MP\Registry\Admin;
 
 use MP\Registry\Common\Roles;
 
+use MP\Registry\Assets;
 use MP\Registry\Archive;
 use MP\Registry\Categories;
 use MP\Registry\ProductEvents;
@@ -76,7 +77,7 @@ final class ProductsScreen {
 			'mp-registry-admin',
 			plugin_dir_url( MP_REGISTRY_FILE ) . 'assets/css/admin-registry.css',
 			array(),
-			MP_REGISTRY_VERSION
+			Assets::ver( 'assets/css/admin-registry.css' )
 		);
 	}
 

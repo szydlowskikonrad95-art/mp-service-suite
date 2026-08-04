@@ -11,6 +11,7 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Assets;
 use MP\Registry\Categories;
 use MP\Registry\CsvParser;
 use MP\Registry\Importer;
@@ -86,14 +87,14 @@ final class ImportScreen {
 			'mp-import-admin',
 			$base . 'assets/css/admin-import.css',
 			array(),
-			MP_REGISTRY_VERSION
+			Assets::ver( 'assets/css/admin-import.css' )
 		);
 
 		wp_enqueue_script(
 			'mp-import-admin',
 			$base . 'assets/js/admin-import.js',
 			array(),
-			MP_REGISTRY_VERSION,
+			Assets::ver( 'assets/js/admin-import.js' ),
 			true
 		);
 
