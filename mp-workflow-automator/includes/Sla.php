@@ -33,12 +33,8 @@ final class Sla {
 
 	/**
 	 * Max prob wysylki zanim marker zostaje ustawiony na sile (+MAIL_FAILED_FINAL).
-	 *
-	 * PUBLICZNA od 2.12: powiadomienia silnika regul ponawiaja sie tyle samo razy
-	 * (`RuleEngine::deliver`). Dwie osobne liczby rozjechalyby sie przy pierwszej
-	 * zmianie, a administrator widzialby dwa rozne zachowania tej samej poczty.
 	 */
-	public const MAX_ATTEMPTS = 3;
+	private const MAX_ATTEMPTS = 3;
 
 	/**
 	 * Prog digestu eskalacji (SLA-3, „bez lawiny"): gdy jeden sweep ma WIECEJ niz

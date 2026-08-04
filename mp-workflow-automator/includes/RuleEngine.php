@@ -25,31 +25,6 @@ final class RuleEngine {
 	private const ACTION_LIMIT = 100;
 
 	/**
-	 * Zaczep ponowienia nieudanej wysylki powiadomienia (audyt 2.12).
-	 *
-	 * Powiadomienia regul (zmiana statusu, nowa wiadomosc, przydzial) szly „raz
-	 * i koniec": `wp_mail()` zwraca falsz przy chwilowej odmowie serwera poczty,
-	 * a klient po prostu nie dostawal wiadomosci — bez ponowienia i bez alarmu.
-	 * Wzorzec poprawny lezal OBOK, w `Sla::notify()`; rozciagamy go tutaj.
-	 *
-	 * INNYM naczyniem, i to jest swiadoma decyzja: SLA ma wlasny wiersz w tabeli
-	 * i zamiatarke, ktora do niego wraca, a powiadomienie reguly jest jednorazowym
-	 * zdarzeniem bez wlasnego stanu. Ponowienie wieszamy wiec na jednorazowym
-	 * zadaniu crona WordPressa. ⛔ Zadnej NOWEJ tabeli — to bylaby migracja
-	 * schematu i zmiana odinstalowania, czyli dwa razy wieksze ryzyko niz wada.
-	 */
-	public const RETRY_HOOK = 'mp_workflow_notify_retry';
-
-	/**
-	 * Odstep miedzy probami w sekundach (5 min, mnozony przez numer proby).
-	 *
-	 * Literal, nie `MINUTE_IN_SECONDS`: stala klasy nie moze zalezec od kolejnosci
-	 * ladowania stalych WordPressa (ta sama zasada co `MAX_FILL_SECONDS` w module
-	 * zgloszen). Liczba prob = `Sla::MAX_ATTEMPTS` — JEDNA liczba na caly modul.
-	 */
-	private const RETRY_DELAY_SECONDS = 300;
-
-	/**
 	 * Glebokosc przetwarzania per case_id (0 = zdarzenie zewnetrzne, >=1 = re-entrant
 	 * z akcji reguły). Strażnik petli: mutacje TYLKO na glebokosci 0.
 	 *
@@ -75,145 +50,6 @@ final class RuleEngine {
 		add_action( 'mp_case_status_changed', array( self::class, 'on_status_changed' ), 10, 4 );
 		add_action( 'mp_case_message_added', array( self::class, 'on_message_added' ), 10, 3 );
 		add_action( 'mp_case_assigned', array( self::class, 'on_case_assigned' ), 10, 4 );
-		// Ponowienie nieudanej wysylki (2.12) — wieszane przez `deliver()`.
-		add_action( self::RETRY_HOOK, array( self::class, 'on_notify_retry' ), 10, 5 );
-	}
-
-	/**
-	 * Ponowna proba wysylki powiadomienia (jednorazowe zadanie crona, 2.12).
-	 *
-	 * Argumenty sa BEZ DANYCH OSOBOWYCH: niesiemy KATEGORIE odbiorcy, nigdy adres
-	 * (zadania crona siedza w opcji, ktora trafia do kopii zapasowej i eksportu).
-	 * Adres rozwiazujemy od nowa z biezacego stanu sprawy — dzieki temu poprawiony
-	 * w miedzyczasie adres klienta dziala, a sprawa skasowana konczy ponawianie.
-	 *
-	 * @param int    $case_id      ID sprawy.
-	 * @param string $template_key Klucz szablonu maila.
-	 * @param string $recipient    Kategoria odbiorcy (client/agent/coordinator).
-	 * @param int    $rule_id      ID reguly (do sladu na osi).
-	 * @param int    $attempt      Numer TEJ proby (2 = pierwsze ponowienie).
-	 * @return void
-	 */
-	public static function on_notify_retry( int $case_id, string $template_key, string $recipient, int $rule_id, int $attempt ): void {
-		$ctx = apply_filters( 'mp_case_get_context', 'not_found', $case_id );
-
-		// Sprawa zniknela (np. usuniecie danych na zadanie RODO) => koniec ponawiania.
-		if ( ! is_array( $ctx ) ) {
-			return;
-		}
-
-		$result = self::deliver( $case_id, $ctx, $template_key, $recipient, $rule_id, $attempt );
-
-		WorkflowEvents::log(
-			WorkflowEvents::RULE_EXECUTED,
-			array(
-				'rule_id'       => $rule_id,
-				'trigger'       => 'retry',
-				'action'        => Rules::ACTION_NOTIFY,
-				'template_key'  => $template_key,
-				'recipient_ref' => $recipient,
-				'result'        => $result,
-				'depth'         => 0,
-			),
-			$case_id
-		);
-	}
-
-	/**
-	 * Wysylka powiadomienia z PONOWIENIEM i ALARMEM (wzorzec z `Sla::notify`, 2.12).
-	 *
-	 * Wspolne gardlo pierwszej proby i ponowien. ⛔ Okno anty-duplikatowe zajmuje
-	 * WYLACZNIE pierwsza proba (w `do_notify`) — gdyby ponowienie probowalo zajac
-	 * je jeszcze raz, odbiloby sie od WLASNEJ rezerwacji i „ponowienie" polegaloby
-	 * na cichym pominieciu maila. To jest pulapka tego wzorca, nie drobiazg.
-	 *
-	 * @param int                  $case_id      ID sprawy.
-	 * @param array<string, mixed> $ctx          Kontekst sprawy.
-	 * @param string               $template_key Klucz szablonu.
-	 * @param string               $recipient    Kategoria odbiorcy.
-	 * @param int                  $rule_id      ID reguly (slad).
-	 * @param int                  $attempt      Numer proby (1 = pierwsza).
-	 * @return string Wynik do sladu na osi sprawy.
-	 */
-	private static function deliver( int $case_id, array $ctx, string $template_key, string $recipient, int $rule_id, int $attempt ): string {
-		$resolved = self::resolve_recipient( $recipient, $ctx );
-		$addr     = $resolved[0];
-		$ref      = $resolved[1];
-
-		if ( '' === $addr ) {
-			WorkflowEvents::log(
-				WorkflowEvents::MAIL_SKIPPED_NO_RECIPIENT,
-				array(
-					'template_key'  => $template_key,
-					'recipient_ref' => $ref,
-				),
-				$case_id
-			);
-
-			return 'skipped_no_recipient';
-		}
-
-		$rendered = MailTemplates::render( $template_key, $ctx );
-
-		// Brak szablonu NIE jest awaria chwilowa — ponowienie niczego nie zmieni
-		// (tak samo rozstrzyga to `Sla::notify`). Konczymy bez kolejnej proby.
-		if ( null === $rendered ) {
-			return 'failed_template_missing';
-		}
-
-		if ( Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ) {
-			// Udana wysylka gasi alarm — inaczej komunikat w Stanie witryny
-			// wisialby wiecznie po jednej chwilowej odmowie serwera.
-			if ( array() !== (array) get_option( Sla::ALERT_OPTION, array() ) ) {
-				delete_option( Sla::ALERT_OPTION );
-			}
-
-			return $attempt > 1 ? 'success_after_retry' : 'success';
-		}
-
-		// Wyczerpane proby: alarm dla administratora + slad koncowy.
-		if ( $attempt >= Sla::MAX_ATTEMPTS ) {
-			update_option(
-				Sla::ALERT_OPTION,
-				array(
-					'kind' => $template_key,
-					'time' => gmdate( 'Y-m-d H:i:s' ),
-				),
-				false
-			);
-			WorkflowEvents::log(
-				WorkflowEvents::MAIL_FAILED_FINAL,
-				array(
-					'template_key' => $template_key,
-					'error_code'   => 'smtp_failed',
-					'attempts'     => $attempt,
-				),
-				$case_id
-			);
-
-			return 'failed_final';
-		}
-
-		// Chwilowa awaria: kolejna proba za RETRY_DELAY_SECONDS * numer proby.
-		// Numer proby jest CZESCIA argumentow, wiec WordPress nie uzna zadania za
-		// duplikat juz zaplanowanego (odrzuca identyczne argumenty w oknie 10 min).
-		wp_schedule_single_event(
-			time() + self::RETRY_DELAY_SECONDS * $attempt,
-			self::RETRY_HOOK,
-			array( $case_id, $template_key, $recipient, $rule_id, $attempt + 1 )
-		);
-
-		WorkflowEvents::log(
-			WorkflowEvents::MAIL_FAILED,
-			array(
-				'template_key' => $template_key,
-				'error_code'   => 'smtp_failed',
-				'attempts'     => $attempt,
-			),
-			$case_id
-		);
-
-		return 'failed_retry_scheduled';
 	}
 
 	/**
@@ -633,8 +469,6 @@ final class RuleEngine {
 		$rendered = MailTemplates::render( $template_key, $ctx );
 
 		// DEDUP-OKNO (best-effort): identyczny mail (adresat+tresc) w oknie => pomin.
-		// ⛔ TYLKO TUTAJ, w pierwszej probie. Ponowienia (2.12) tego nie powtarzaja,
-		// bo odbilyby sie od rezerwacji zalozonej przez wlasna, nieudana wysylke.
 		if ( null !== $rendered
 			&& ! MailDedup::claim( $addr, $rendered['dedup_key'], MailDedup::window_for( $template_key ) )
 		) {
@@ -650,11 +484,11 @@ final class RuleEngine {
 			return;
 		}
 
-		// 2.12: wysylka z ponowieniem i alarmem — wspolne gardlo z ponowieniami.
-		// Wczesniej bylo tu golemu `Mailer::send()` z wynikiem zapisanym na osi
-		// i niczym wiecej: nieudany mail do klienta konczyl sie wpisem, ktorego
-		// nikt nie oglada, bez drugiej proby i bez alarmu w Stanie witryny.
-		$result = self::deliver( $case_id, $ctx, $template_key, $recipient, (int) $rule['id'], 1 );
+		$result = 'failed_template_missing';
+
+		if ( null !== $rendered ) {
+			$result = Mailer::send( $addr, $rendered['subject'], $rendered['body'] ) ? 'success' : 'failed';
+		}
 
 		WorkflowEvents::log(
 			WorkflowEvents::RULE_EXECUTED,
