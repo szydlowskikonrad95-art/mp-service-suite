@@ -253,11 +253,12 @@ final class RateLimit {
 				VALUES (%s, LAST_INSERT_ID(1), %s)
 				ON DUPLICATE KEY UPDATE
 					hits = LAST_INSERT_ID( IF( window_expires_at <= %s, 1, hits + 1 ) ),
-					window_expires_at = IF( window_expires_at <= %s, VALUES(window_expires_at), window_expires_at )",
+					window_expires_at = IF( window_expires_at <= %s, %s, window_expires_at )",
 				$key,
 				$expires,
 				$now,
-				$now
+				$now,
+				$expires
 			)
 		);
 
@@ -310,8 +311,9 @@ final class RateLimit {
 			$wpdb->prepare(
 				"INSERT INTO {$table} (rl_key, hits, window_expires_at)
 				VALUES (%s, 1, %s)
-				ON DUPLICATE KEY UPDATE window_expires_at = VALUES(window_expires_at)",
+				ON DUPLICATE KEY UPDATE window_expires_at = %s",
 				$key,
+				$expires,
 				$expires
 			)
 		);
