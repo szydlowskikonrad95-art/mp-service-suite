@@ -555,8 +555,32 @@ final class RuleEngine {
 	 */
 	private static function do_change_status( int $case_id, array $ctx, array $rule, int $depth, string $trigger ): bool {
 		$config = json_decode( (string) $rule['action_config_json'], true );
-		$new    = is_array( $config ) && isset( $config['new_status'] ) ? (string) $config['new_status'] : '';
-		$code   = is_array( $config ) && isset( $config['rejection_reason_code'] ) ? (string) $config['rejection_reason_code'] : null;
+
+		/*
+		 * DWA DOPUSZCZALNE KLUCZE DOCELOWEGO STATUSU — i to nie jest wygodnictwo.
+		 *
+		 * Silnik czytal WYLACZNIE `new_status`, a NASZ WLASNY ekran ustawien podpowiadal
+		 * adminowi `{"status":"w analizie"}` (SettingsScreen, „Szczegoly akcji"). Regula
+		 * skonfigurowana DOKLADNIE tak, jak uczyl interfejs, nie miala wiec celu: konczyla
+		 * sie cicho jako `failed_no_target` w rejestrze zdarzen, bez slowa na ekranie.
+		 * Zalazki regul nie zawieraly ANI JEDNEJ reguly `change_status`, wiec ta sciezka
+		 * nigdy nie zostala przejechana od konca do konca — i dlatego nikt tego nie widzial.
+		 *
+		 * `new_status` zostaje kluczem kanonicznym (tak nazywa to kontrakt C i tak brzmi
+		 * poprawiona podpowiedz), a `status` jest przyjmowany, bo tak brzmiala podpowiedz
+		 * do 1.3.12 — regul juz zapisanych przez administratorow nie wolno nam zepsuc.
+		 * Gdy sa oba, wygrywa kanoniczny.
+		 */
+		$new = '';
+
+		foreach ( array( 'new_status', 'status' ) as $klucz ) {
+			if ( is_array( $config ) && isset( $config[ $klucz ] ) && '' !== trim( (string) $config[ $klucz ] ) ) {
+				$new = (string) $config[ $klucz ];
+				break;
+			}
+		}
+
+		$code = is_array( $config ) && isset( $config['rejection_reason_code'] ) ? (string) $config['rejection_reason_code'] : null;
 
 		$log = static function ( string $result ) use ( $rule, $case_id, $new, $depth, $trigger ): void {
 			WorkflowEvents::log(

@@ -30,6 +30,25 @@ final class CaseCardApi {
 	 *
 	 * @return void
 	 */
+	/**
+	 * WERSJA KSZTALTU ZWROTEK tej klasy (kontrakt: „zwrotki niosa schema_version").
+	 *
+	 * ⛔ DLACZEGO W KAZDEJ POZYCJI, A NIE NA WIERZCHU listy: odbiorca (karta sprawy
+	 * w module zgloszen) iteruje te zwrotki wprost — `foreach ( $steps as $step )`
+	 * i czyta `$step['step_key']`. Doklejenie `schema_version` jako kolejnego elementu
+	 * listy podsuneloby mu liczbe tam, gdzie spodziewa sie kroku checklisty, czyli
+	 * ZEPSULOBY CUDZY EKRAN. Wersja jedzie wiec w kazdej POZYCJI (odbiorca czyta pola
+	 * po nazwie, nadmiarowy klucz ignoruje), a przy zwrotkach bedacych pojedyncza mapa —
+	 * na wierzchu, bo tam jest to bezpieczne. Kazdy rekord mowi, jakiego jest ksztaltu,
+	 * i zaden odbiorca nie musi sie zmieniac.
+	 */
+	public const SCHEMA_VERSION = 1;
+
+	/**
+	 * Rejestruje filtry kontraktowe (wolane z Plugin::boot).
+	 *
+	 * @return void
+	 */
 	public static function register(): void {
 		add_filter( 'mp_case_checklist_state', array( self::class, 'checklist_state' ), 10, 2 );
 		add_filter( 'mp_response_templates', array( self::class, 'response_templates' ), 10, 2 );
@@ -68,11 +87,12 @@ final class CaseCardApi {
 			$st  = $state[ $key ] ?? null;
 
 			$out[] = array(
-				'step_key'     => $key,
-				'label'        => (string) $step['label'],
-				'completed'    => is_array( $st ) ? (bool) $st['completed'] : false,
-				'completed_by' => is_array( $st ) ? $st['completed_by'] : null,
-				'completed_at' => is_array( $st ) ? $st['completed_at'] : null,
+				'schema_version' => self::SCHEMA_VERSION,
+				'step_key'       => $key,
+				'label'          => (string) $step['label'],
+				'completed'      => is_array( $st ) ? (bool) $st['completed'] : false,
+				'completed_by'   => is_array( $st ) ? $st['completed_by'] : null,
+				'completed_at'   => is_array( $st ) ? $st['completed_at'] : null,
 			);
 		}
 
@@ -89,7 +109,13 @@ final class CaseCardApi {
 	public static function response_templates( $result, $kind ): array {
 		unset( $result );
 
-		return ResponseTemplates::for_kind( (string) $kind );
+		$out = array();
+
+		foreach ( ResponseTemplates::for_kind( (string) $kind ) as $szablon ) {
+			$out[] = array_merge( array( 'schema_version' => self::SCHEMA_VERSION ), (array) $szablon );
+		}
+
+		return $out;
 	}
 
 	/**
@@ -141,7 +167,11 @@ final class CaseCardApi {
 		);
 		// phpcs:enable
 
-		return is_array( $row ) ? $row : null;
+		if ( ! is_array( $row ) ) {
+			return null;
+		}
+
+		return array_merge( array( 'schema_version' => self::SCHEMA_VERSION ), $row );
 	}
 
 	/**
@@ -186,7 +216,7 @@ final class CaseCardApi {
 			$case_id = (int) $row['case_id'];
 			unset( $row['case_id'] );
 
-			$out[ $case_id ] = $row;
+			$out[ $case_id ] = array_merge( array( 'schema_version' => self::SCHEMA_VERSION ), $row );
 		}
 
 		return $out;
