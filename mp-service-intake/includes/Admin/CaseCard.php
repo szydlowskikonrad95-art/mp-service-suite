@@ -489,7 +489,10 @@ final class CaseCard {
 	 * @return void
 	 */
 	private static function section_messages( int $case_id, array $ctx ): void {
-		$messages = Messages::for_case( $case_id );
+		// 2.15: karta personelu prosi o notatki WPROST. Domyslnie odczyt ich nie
+		// zwraca, wiec kazdy inny widok (panel klienta, eksport) jest bezpieczny
+		// bez pamietania o niczym.
+		$messages = Messages::for_case( $case_id, true );
 
 		self::open_box( __( 'Wiadomości', 'mp-service-intake' ) );
 
@@ -497,9 +500,10 @@ final class CaseCard {
 			echo '<p style="color:#666">' . esc_html__( 'Brak wiadomości.', 'mp-service-intake' ) . '</p>';
 		} else {
 			$labels = array(
-				'client' => __( 'Klient', 'mp-service-intake' ),
-				'staff'  => __( 'Serwis', 'mp-service-intake' ),
-				'system' => __( 'System', 'mp-service-intake' ),
+				'client'           => __( 'Klient', 'mp-service-intake' ),
+				'staff'            => __( 'Serwis', 'mp-service-intake' ),
+				'system'           => __( 'System', 'mp-service-intake' ),
+				Messages::INTERNAL => __( 'Notatka wewnętrzna (klient jej NIE widzi)', 'mp-service-intake' ),
 			);
 
 			echo '<ul style="list-style:none;margin:0 0 1rem;padding:0">';
@@ -507,7 +511,14 @@ final class CaseCard {
 				$author = (string) ( $msg['author_type'] ?? 'system' );
 				$label  = $labels[ $author ] ?? $labels['system'];
 				$when   = self::fmt_date( (string) ( $msg['created_at'] ?? '' ) );
-				$bg     = 'staff' === $author ? '#eef6ec' : ( 'client' === $author ? '#eef2f7' : '#f4f4f4' );
+				// Notatka wyroznia sie KOLOREM I SLOWEM — sam kolor nie wystarcza
+				// (audyt dostepnosci 27.07), a pomylka „to widzi klient czy nie"
+				// jest tu kosztowna.
+				$bg = 'staff' === $author ? '#eef6ec' : ( 'client' === $author ? '#eef2f7' : '#f4f4f4' );
+
+				if ( Messages::INTERNAL === $author ) {
+					$bg = '#fff3cd';
+				}
 
 				echo '<li style="margin:.4rem 0;padding:.5rem .7rem;background:' . esc_attr( $bg ) . ';border-radius:4px">';
 				echo '<span style="font-weight:600">' . esc_html( $label ) . '</span> ';
@@ -553,6 +564,20 @@ final class CaseCard {
 		if ( array() !== $templates ) {
 			echo '<script>(function(){var s=document.getElementById(' . wp_json_encode( $tpl_id ) . '),t=document.getElementById(' . wp_json_encode( $body_id ) . ');if(s&&t){s.addEventListener("change",function(){var o=this.options[this.selectedIndex];if(o&&typeof o.dataset.body!=="undefined"){t.value=o.dataset.body;}});}})();</script>';
 		}
+
+		// 2.15: OSOBNY formularz, nie pole wyboru przy odpowiedzi — pomylka przy
+		// odhaczaniu wyslalaby klientowi uwage napisana dla kolegi.
+		echo '<form method="post" action="' . esc_url( $action ) . '" style="border-top:1px solid #eee;margin-top:.8rem;padding-top:.8rem">';
+		echo '<input type="hidden" name="action" value="mp_intake_case_note" />';
+		echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
+		wp_nonce_field( 'mp_intake_case_note' );
+		echo '<p style="margin:.2rem 0"><label for="mp-note-body-' . esc_attr( (string) $case_id ) . '"><strong>'
+			. esc_html__( 'Notatka wewnętrzna', 'mp-service-intake' ) . '</strong> '
+			. esc_html__( '— zostaje w sprawie, klient jej nie zobaczy i nie dostanie o niej maila.', 'mp-service-intake' )
+			. '</label></p>';
+		echo '<p style="margin:.2rem 0"><textarea id="mp-note-body-' . esc_attr( (string) $case_id ) . '" name="body" rows="3" required style="width:100%;box-sizing:border-box"></textarea></p>';
+		submit_button( __( 'Zapisz notatkę (tylko dla personelu)', 'mp-service-intake' ), 'secondary', 'mp_note_submit', false );
+		echo '</form>';
 
 		echo '</div>';
 	}
