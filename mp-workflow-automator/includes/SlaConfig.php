@@ -310,6 +310,21 @@ final class SlaConfig {
 	}
 
 	/**
+	 * NAJWOLNIEJSZY modyfikator priorytetu — czyli ten, ktory rozciaga terminy
+	 * najbardziej (domyslnie `low` = ×2,0).
+	 *
+	 * Potrzebny tam, gdzie liczymy GORNA granice tego, ile sprawa moze legalnie
+	 * trwac: sprawa o niskim priorytecie ma na kazdy status dwa razy wiecej czasu,
+	 * wiec granica policzona bez tego modyfikatora oskarzalaby o krazenie sprawy,
+	 * ktore mieszcza sie w wlasnej konfiguracji produktu (`Sla::stale_threshold_hours`).
+	 *
+	 * @return float
+	 */
+	public static function slowest_priority_modifier(): float {
+		return (float) max( array_values( self::PRIORITY_MODIFIER ) );
+	}
+
+	/**
 	 * Biezaca wersja polityki (stemplowana w wierszu case_sla).
 	 *
 	 * @return int

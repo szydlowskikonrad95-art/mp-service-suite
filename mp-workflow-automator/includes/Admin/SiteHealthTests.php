@@ -31,9 +31,10 @@ final class SiteHealthTests {
 		SiteHealth::register(
 			'mp_automator',
 			array(
-				'cron'   => array( self::class, 'test_cron' ),
-				'pula'   => array( self::class, 'test_pula_przydzialu' ),
-				'poczta' => array( self::class, 'test_poczta_wysylka' ),
+				'cron'     => array( self::class, 'test_cron' ),
+				'krazenie' => array( self::class, 'test_sprawy_krazace' ),
+				'pula'     => array( self::class, 'test_pula_przydzialu' ),
+				'poczta'   => array( self::class, 'test_poczta_wysylka' ),
 			)
 		);
 	}
@@ -152,6 +153,66 @@ final class SiteHealthTests {
 				),
 				$pracownikow
 			)
+		);
+	}
+
+	/**
+	 * SPRAWY KRAZACE: otwarte dluzej, niz pozwala suma ich wlasnych terminow.
+	 *
+	 * Po co osobna kontrola, skoro sa terminy SLA (cz.1 pkt 3): termin liczy sie od
+	 * ZMIANY STATUSU, wiec kazda zmiana restartuje zegar. Sprawa odbijana miedzy
+	 * statusami ma zawsze swiezy, zielony termin — panel pokazuje „wszystko w terminie"
+	 * przy reklamacji sprzed miesiaca. Ta kontrola patrzy na wielkosc, ktora sie NIE
+	 * restartuje, i nie rusza samych terminow.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_sprawy_krazace(): array {
+		$wynik = Sla::stale_cases( 5 );
+		$ile   = count( $wynik['sprawy'] ) + (int) $wynik['pominietych'];
+		$prog  = (int) $wynik['prog_godzin'];
+		$dni   = (int) round( $prog / 24 );
+
+		if ( 0 === $ile ) {
+			return SiteHealth::wynik(
+				'mp_automator_krazenie',
+				'good',
+				__( 'Żadna sprawa nie krąży bez końca', 'mp-workflow-automator' ),
+				sprintf(
+					/* translators: 1: prog w godzinach, 2: prog w dniach */
+					__( 'Nie ma spraw otwartych dłużej niż %1$d godz. (%2$d dni), czyli dłużej, niż wynosi suma terminów wszystkich statusów przy najwolniejszym priorytecie.', 'mp-workflow-automator' ),
+					$prog,
+					$dni
+				)
+			);
+		}
+
+		$numery = array();
+
+		foreach ( $wynik['sprawy'] as $sprawa ) {
+			$numery[] = (string) $sprawa['case_number'];
+		}
+
+		return SiteHealth::wynik(
+			'mp_automator_krazenie',
+			'recommended',
+			sprintf(
+				/* translators: %d: liczba spraw krazacych */
+				_n(
+					'%d sprawa jest otwarta dłużej, niż pozwala suma jej terminów',
+					'%d spraw jest otwartych dłużej, niż pozwala suma ich terminów',
+					$ile,
+					'mp-workflow-automator'
+				),
+				$ile
+			),
+			sprintf(
+				/* translators: 1: prog w dniach, 2: numery spraw */
+				__( 'Termin pojedynczego statusu liczy się od ostatniej zmiany statusu, więc sprawa przestawiana między statusami ma zawsze świeży, zielony termin — i nie zgłasza się sama. Te sprawy są w obsłudze dłużej niż %1$d dni: %2$s.', 'mp-workflow-automator' ),
+				$dni,
+				implode( ', ', $numery )
+			),
+			__( 'Otwórz Automatyzacje MP — sekcja „Sprawy krążące" pokazuje pełną listę z liczbą dni. Sprawdź, czy te sprawy czekają na kogoś u Was, czy na odpowiedź klienta.', 'mp-workflow-automator' )
 		);
 	}
 

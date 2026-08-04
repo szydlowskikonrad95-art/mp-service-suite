@@ -721,6 +721,159 @@ final class Sla {
 	}
 
 	/**
+	 * Ile stron po 500 spraw przegladamy, szukajac spraw krazacych.
+	 *
+	 * Sufit jest SWIADOMY i widoczny: `stale_cases()` oddaje `urwane`, a ekran
+	 * mowi o tym czlowiekowi. Cichy sufit klamalby, ze przejrzano wszystko.
+	 */
+	private const STALE_SCAN_PAGES = 5;
+
+	/**
+	 * PROG KRAZENIA W GODZINACH — wyprowadzony z konfiguracji produktu, nie wymyslony.
+	 *
+	 * SKAD TA LICZBA (cz.1 pkt 3): to SUMA godzin przypisanych wszystkim statusom
+	 * rdzenia (`SlaConfig::core_effective()`, czyli z nadpisaniami administratora)
+	 * pomnozona przez NAJWOLNIEJSZY modyfikator priorytetu
+	 * (`SlaConfig::slowest_priority_modifier()`, domyslnie `low` = ×2,0).
+	 *
+	 * Czyta sie to tak: sprawa, ktora jest w obsludze dluzej, niz wynosi suma
+	 * WSZYSTKICH jej wlasnych terminow przy najwolniejszym priorytecie, przekroczyla
+	 * czas kazdego mozliwego POJEDYNCZEGO przejscia przez maszyne stanow. Skoro
+	 * nadal nie jest zamknieta, to znaczy, ze po tej maszynie KRAZY.
+	 *
+	 * Przy domyslnej konfiguracji: (24+72+48+24+120) × 2,0 = 576 godzin = 24 dni.
+	 * Prog IDZIE ZA konfiguracja — administrator, ktory wydluzy terminy statusow,
+	 * automatycznie przesuwa i te granice. Filtr `mp_sla_stale_hours` pozwala go
+	 * nadpisac, ale domyslna wartosc nie jest niczyim pomyslem, tylko rachunkiem.
+	 *
+	 * @return int Prog w godzinach (>= 1).
+	 */
+	public static function stale_threshold_hours(): int {
+		$suma = 0;
+
+		foreach ( SlaConfig::core_effective() as $konfiguracja ) {
+			$suma += (int) $konfiguracja['sla_hours'];
+		}
+
+		$prog = (int) ceil( $suma * SlaConfig::slowest_priority_modifier() );
+
+		/**
+		 * Prog krazenia w godzinach.
+		 *
+		 * @param int $prog Wyliczony z konfiguracji terminow.
+		 */
+		return max( 1, (int) apply_filters( 'mp_sla_stale_hours', $prog ) );
+	}
+
+	/**
+	 * SPRAWY KRAZACE: otwarte dluzej, niz pozwala suma ich wlasnych terminow.
+	 *
+	 * ⛔ DLACZEGO TO NIE JEST TERMIN SLA I DLACZEGO NIM NIE BEDZIE: termin liczy sie
+	 * od `status_changed_at`, wiec KAZDA zmiana statusu restartuje zegar (i tak ma
+	 * byc — tak zaprojektowano maszyne stanow). Skutek uboczny jest taki, ze sprawa
+	 * odbijana miedzy statusami ma zawsze swiezy, zielony termin, a panel pokazuje
+	 * „wszystko w terminie" przy reklamacji sprzed miesiaca. Dlatego mierzymy TU
+	 * osobna wielkosc, ktora NIGDY sie nie restartuje — i nie ruszamy terminow.
+	 *
+	 * PODSTAWA ZEGARA: `verified_at` (potwierdzenie), ta sama, na ktorej stoi „czas
+	 * obslugi" po cz.1 pkt 3. Prog jest policzony z terminow PRACY serwisu, wiec
+	 * porownywanie go z zegarem zawierajacym czekanie na klienta (do 72 h okna
+	 * potwierdzenia) mieszaloby dwie podstawy — czyli dokladnie ten blad, ktory ta
+	 * pozycja zglasza. Wiek od ZLOZENIA jest w wyniku obok, do pokazania czlowiekowi.
+	 *
+	 * Liczone NA ZADANIE (ekran, Stan witryny), nie w zadaniu cyklicznym: to samo
+	 * pytanie zadane co piec minut byloby przemialem tysiecy spraw bez powodu
+	 * (poz. 2.22), a wpis do rejestru za kazdym razem — jego puchnieciem (poz. 2.21).
+	 *
+	 * @param int $limit Ile spraw najstarszych oddac na ekran.
+	 * @return array{prog_godzin: int, sprawy: array<int, array<string, mixed>>, sprawdzonych: int, urwane: bool, pominietych: int}
+	 */
+	public static function stale_cases( int $limit = 20 ): array {
+		$prog         = self::stale_threshold_hours();
+		$teraz        = time();
+		$znalezione   = array();
+		$sprawdzonych = 0;
+		$urwane       = false;
+
+		for ( $strona = 1; $strona <= self::STALE_SCAN_PAGES; $strona++ ) {
+			$odpowiedz = apply_filters( 'mp_cases_query', null, array(), $strona, 500 );
+			$wiersze   = is_array( $odpowiedz ) && isset( $odpowiedz['rows'] ) && is_array( $odpowiedz['rows'] )
+				? $odpowiedz['rows']
+				: array();
+
+			if ( array() === $wiersze ) {
+				break;
+			}
+
+			foreach ( $wiersze as $sprawa ) {
+				++$sprawdzonych;
+
+				// Sprawa zamknieta/odrzucona juz nie krazy — kontrakt oddaje `closed_at`
+				// wtedy i tylko wtedy, gdy status jest terminalny.
+				if ( '' !== (string) ( $sprawa['closed_at'] ?? '' ) ) {
+					continue;
+				}
+
+				$potwierdzona = (string) ( $sprawa['verified_at'] ?? '' );
+
+				if ( '' === $potwierdzona ) {
+					continue;
+				}
+
+				$od = strtotime( $potwierdzona . ' UTC' );
+
+				if ( false === $od || $od > $teraz ) {
+					continue;
+				}
+
+				$godzin = (int) floor( ( $teraz - $od ) / HOUR_IN_SECONDS );
+
+				if ( $godzin < $prog ) {
+					continue;
+				}
+
+				$zlozona     = (string) ( $sprawa['created_at'] ?? '' );
+				$od_zlozenia = '' !== $zlozona ? strtotime( $zlozona . ' UTC' ) : false;
+
+				$znalezione[] = array(
+					'case_number'        => (string) ( $sprawa['case_number'] ?? '' ),
+					'status'             => (string) ( $sprawa['status'] ?? '' ),
+					'godzin_w_obsludze'  => $godzin,
+					'godzin_od_zlozenia' => false !== $od_zlozenia ? (int) floor( ( $teraz - $od_zlozenia ) / HOUR_IN_SECONDS ) : $godzin,
+					'zlozona'            => $zlozona,
+					'potwierdzona'       => $potwierdzona,
+				);
+			}
+
+			if ( count( $wiersze ) < 500 ) {
+				break;
+			}
+
+			if ( self::STALE_SCAN_PAGES === $strona ) {
+				$urwane = true;
+			}
+		}
+
+		usort(
+			$znalezione,
+			static function ( array $a, array $b ): int {
+				return $b['godzin_w_obsludze'] <=> $a['godzin_w_obsludze'];
+			}
+		);
+
+		$limit       = max( 1, $limit );
+		$pominietych = max( 0, count( $znalezione ) - $limit );
+
+		return array(
+			'prog_godzin'  => $prog,
+			'sprawy'       => array_slice( $znalezione, 0, $limit ),
+			'sprawdzonych' => $sprawdzonych,
+			'urwane'       => $urwane,
+			'pominietych'  => $pominietych,
+		);
+	}
+
+	/**
 	 * ILE MAILI kosztuje eskalacja podanej listy — bez wysylania czegokolwiek.
 	 *
 	 * Powyzej progu (DIGEST_THRESHOLD) cala lista to JEDEN zbiorczy mail, wiec
