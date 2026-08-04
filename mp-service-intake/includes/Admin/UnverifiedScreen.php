@@ -17,6 +17,7 @@ namespace MP\Intake\Admin;
 use MP\Intake\Common\Roles;
 
 use MP\Intake\Audit;
+use MP\Intake\CaseEvents;
 use MP\Intake\CaseRepo;
 use MP\Intake\Front\Mailer;
 
@@ -107,11 +108,37 @@ final class UnverifiedScreen {
 			return;
 		}
 
+		// 2.1b: ktore sprawy maja nieudana wysylke — JEDNO zapytanie na cala liste.
+		$failed = CaseEvents::cases_with_failed_mail(
+			array_map(
+				static function ( array $row ): int {
+					return (int) ( $row['id'] ?? 0 );
+				},
+				$cases
+			)
+		);
+
+		if ( array() !== $failed ) {
+			echo '<div class="notice notice-error"><p><strong>' . esc_html(
+				sprintf(
+					/* translators: %d: liczba spraw, ktorym nie wyszedl link. */
+					_n(
+						'Do %d zgłoszenia nie udało się wysłać linku potwierdzającego — klient na niego czeka, a link wygaśnie.',
+						'Do %d zgłoszeń nie udało się wysłać linku potwierdzającego — klienci na nie czekają, a linki wygasną.',
+						count( $failed ),
+						'mp-service-intake'
+					),
+					count( $failed )
+				)
+			) . '</strong> ' . esc_html__( 'Sprawy oznaczone niżej w kolumnie „Poczta". Sprawdź Narzędzia → Stan witryny, potem wyślij ponownie.', 'mp-service-intake' ) . '</p></div>';
+		}
+
 		echo '<table class="wp-list-table widefat fixed striped"><thead><tr>';
 		echo '<th>' . esc_html__( 'Numer', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Rodzaj', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Utworzono', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Link ważny do', 'mp-service-intake' ) . '</th>';
+		echo '<th>' . esc_html__( 'Poczta', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Popraw e-mail i wyślij ponownie', 'mp-service-intake' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
@@ -126,6 +153,13 @@ final class UnverifiedScreen {
 			echo '<td>' . esc_html( (string) ( $row['kind'] ?? '' ) ) . '</td>';
 			echo '<td>' . esc_html( $created ) . '</td>';
 			echo '<td>' . esc_html( $expires ) . '</td>';
+			// Oznaczenie SLOWEM, nie samym kolorem — audyt dostepnosci 27.07.
+			echo '<td>' . (
+				isset( $failed[ $case_id ] )
+					? '<span class="mp-mail-failed" style="color:#b32d2e;font-weight:600">'
+						. esc_html__( '⚠ Link NIE doszedł', 'mp-service-intake' ) . '</span>'
+					: esc_html__( 'wysłany', 'mp-service-intake' )
+			) . '</td>';
 			echo '<td><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:flex;gap:.4rem;align-items:center">';
 			echo '<input type="hidden" name="action" value="mp_intake_resend" />';
 			echo '<input type="hidden" name="case_id" value="' . esc_attr( (string) $case_id ) . '" />';
@@ -246,8 +280,15 @@ final class UnverifiedScreen {
 		}
 
 		set_transient( $throttle_key, 1, self::THROTTLE_SECONDS );
-		Mailer::send_magic_link( $to, $token, $case_id );
+		$sent = Mailer::send_magic_link( $to, $token, $case_id );
 		Audit::log( 'resend', $case_id, get_current_user_id() );
+
+		// 2.1b: ten sam wzorzec co po stronie klienta — wynik wysylki byl ignorowany,
+		// wiec personel dostawal „wyslany ponownie" takze wtedy, gdy poczta odmowila.
+		// To gorszy przypadek niz u klienta: obsluga odhaczala sprawe jako zalatwiona.
+		if ( ! $sent ) {
+			self::back( __( 'NIE UDAŁO SIĘ wysłać linku — poczta odmówiła przyjęcia wiadomości. Sprawdź Narzędzia → Stan witryny; sprawa nadal czeka na potwierdzenie. Ponowna próba możliwa za 5 minut.', 'mp-service-intake' ) );
+		}
 
 		self::back( __( 'Link weryfikacyjny wysłany ponownie (świeży token).', 'mp-service-intake' ) );
 	}

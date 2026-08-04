@@ -241,12 +241,15 @@ final class SubmissionHandler {
 		// literowka/blad walidacji nie zjada limitu dobowego; retry nie jest duplikatem.
 		RateLimit::record_submission( $email, $serial, $kind );
 
-		Mailer::send_magic_link( $email, (string) $result['token'], (int) $result['case_id'] );
+		$mail_ok = Mailer::send_magic_link( $email, (string) $result['token'], (int) $result['case_id'] );
 
 		// Komunikat NEUTRALNY — zero enumeracji, SRV dopiero w mailu/panelu.
+		// 2.1b: ...ale TYLKO gdy mail naprawde wyszedl. Wynik wysylki byl wczesniej
+		// ignorowany, wiec przy padnietej poczcie klient dostawal zdanie brzmiace
+		// jak potwierdzenie i czekal na link, ktory nie mial prawa przyjsc.
 		// D4: dokladamy info o pominietych plikach (nie zdradza istnienia konta —
 		// dotyczy plikow ktore klient sam wgral, wiec anty-enumeracja zachowana).
-		$notice = self::neutral_message();
+		$notice = $mail_ok ? self::neutral_message() : self::mail_failed_message();
 
 		if ( array() !== $att_errors ) {
 			$notice .= ' ' . __( 'Uwaga: część załączników nie została dołączona do zgłoszenia:', 'mp-service-intake' )
@@ -295,13 +298,32 @@ final class SubmissionHandler {
 		if ( isset( $result['case_id'] ) ) {
 			$email = self::email_for_case( (int) $result['case_id'] );
 
-			if ( '' !== $email ) {
-				Mailer::send_confirmation( $email, (string) $result['case_number'], (int) $result['case_id'] );
+			// 2.1b: ten sam wzorzec co przy zgloszeniu — wynik wysylki byl ignorowany.
+			// Tu bolalo najbardziej: numer sprawy klient poznaje WYLACZNIE z tego maila
+			// (krok 6 kartki), wiec przy padnietej poczcie zostawal z niczym, slyszac,
+			// ze numer zostal wyslany. Brak adresu = mail nie poszedl tak samo.
+			$mail_ok = '' !== $email
+				&& Mailer::send_confirmation( $email, (string) $result['case_number'], (int) $result['case_id'] );
+
+			if ( $mail_ok ) {
+				self::render_landing(
+					__( 'Zgłoszenie potwierdzone', 'mp-service-intake' ),
+					__( 'Dziękujemy. Twoje zgłoszenie zostało potwierdzone — szczegóły i numer sprawy wysłaliśmy na Twój adres e-mail.', 'mp-service-intake' ),
+					200,
+					true
+				);
 			}
 
+			// ⛔ NUMERU SPRAWY TU NIE POKAZUJEMY, choc klient wlasnie udowodnil, ze ma
+			// dostep do skrzynki. Reguła produktu jest starsza i szersza: SRV wychodzi
+			// WYLACZNIE mailem albo panelem (naglowek tego pliku, krok 6 kartki), a
+			// pilnuje jej test C3 („strona POST nie zdradza numeru SRV"). Pierwsza
+			// wersja tej poprawki numer pokazywala i C3 od razu ja zlapal — zmiana
+			// tamtej reguly to decyzja wlasciciela produktu, nie skutek uboczny
+			// naprawy komunikatu. Klient dostaje prawde i droge dalej, nie numer.
 			self::render_landing(
-				__( 'Zgłoszenie potwierdzone', 'mp-service-intake' ),
-				__( 'Dziękujemy. Twoje zgłoszenie zostało potwierdzone — szczegóły i numer sprawy wysłaliśmy na Twój adres e-mail.', 'mp-service-intake' ),
+				__( 'Zgłoszenie potwierdzone — wiadomość nie wyszła', 'mp-service-intake' ),
+				__( 'Twoje zgłoszenie zostało potwierdzone i przyjęte do obsługi — obsługa już je widzi. Nie udało się jednak wysłać wiadomości z potwierdzeniem, bo nasza poczta odmówiła jej przyjęcia. Skontaktuj się z serwisem po numer sprawy.', 'mp-service-intake' ),
 				200,
 				true
 			);
@@ -494,6 +516,25 @@ final class SubmissionHandler {
 	 */
 	private static function neutral_message(): string {
 		return __( 'Jeśli dane są poprawne, wysłaliśmy na podany adres e-mail link potwierdzający zgłoszenie.', 'mp-service-intake' );
+	}
+
+	/**
+	 * Komunikat, gdy WYSYLKA MAILA PADLA (audyt 2.1b).
+	 *
+	 * PO CO: `wp_mail()` zwraca falsz przy odmowie serwera poczty, a klient
+	 * slyszal DOKLADNIE to samo co przy sukcesie — czekal na link, ktory nie mial
+	 * prawa przyjsc, a zgloszenie umieralo jako niepotwierdzone po wygasnieciu tokenu.
+	 *
+	 * ANTY-ENUMERACJA ZACHOWANA: zdanie nie mowi NIC o tym, czy podane dane pasuja
+	 * do czegokolwiek w bazie — mowi wylacznie o awarii serwera poczty, ktora jest
+	 * niezalezna od tresci zgloszenia. Zgloszenie powstaje ZAWSZE, wiec fakt jego
+	 * zapisania nie jest wyciekiem (inaczej niz przy logowaniu, gdzie maila
+	 * wysylamy TYLKO dla istniejacego konta — patrz `Front\Login::handle_request`).
+	 *
+	 * @return string
+	 */
+	private static function mail_failed_message(): string {
+		return __( 'Zgłoszenie zapisaliśmy, ale nie udało się wysłać wiadomości e-mail z linkiem potwierdzającym — to awaria naszej poczty, nie błąd po Twojej stronie. Skontaktuj się z serwisem, żeby dokończyć zgłoszenie; ponowne wysłanie formularza nic nie da.', 'mp-service-intake' );
 	}
 
 	/**
