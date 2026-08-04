@@ -87,7 +87,7 @@ UZYTY=$(ev 'global $wpdb; echo (string) $wpdb->get_var("SELECT verify_token_used
 STATUS=$(ev 'global $wpdb; $r=$wpdb->get_row("SELECT status, identity_status FROM {$wpdb->prefix}mp_service_cases ORDER BY id DESC LIMIT 1"); echo $r->status."/".$r->identity_status;')
 SRV=$(ev 'global $wpdb; echo (string) $wpdb->get_var("SELECT case_number FROM {$wpdb->prefix}mp_service_cases ORDER BY id DESC LIMIT 1");')
 [ -n "$SRV" ] && ok "numer sprawy nadany: $SRV (status: $STATUS)" || bad "brak numeru sprawy po potwierdzeniu"
-echo "$SRV" | grep -qE '^SRV/[0-9]{4}/[0-9]{4}$' && ok "format numeru zgodny z specyfikacja klienta: SRV/RRRR/NNNN" || bad "format numeru NIEZGODNY z specyfikacja: $SRV"
+echo "$SRV" | grep -qE '^SRV/[0-9]{4}/[0-9]{4}$' && ok "format numeru zgodny ze specyfikacją klienta: SRV/RRRR/NNNN" || bad "format numeru NIEZGODNY ze specyfikacją: $SRV"
 
 echo "== 4b. Drugi mail: numer sprawy =="
 sleep 3
