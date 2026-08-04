@@ -79,6 +79,18 @@ final class Sweep {
 	private const MAIL_BUDGET = 120;
 
 	/**
+	 * Bicie serca zamiatarki: czas OSTATNIEGO przebiegu (opcja NADPISYWANA).
+	 *
+	 * PO CO OSOBNA OPCJA, skoro jest rejestr zdarzen (audyt 2.21): odpowiedz na
+	 * pytanie „czy cron w ogole chodzi" wyciagalismy z ostatniego wpisu SWEEP_RUN,
+	 * czyli z tabeli, ktora z ZALOZENIA nigdy nic nie kasuje (dziennik rozliczalnosci,
+	 * wymog z kartki). To dawalo 105 tysiecy wierszy rocznie na instalacji, gdzie
+	 * nikt nie zlozyl ani jednego zgloszenia — RUCH WLASNY PRODUKTU, nie klienta.
+	 * Jedna nadpisywana wartosc odpowiada na to samo pytanie i nie rosnie.
+	 */
+	public const HEARTBEAT_OPTION = 'mp_automator_sweep_heartbeat';
+
+	/**
 	 * Rejestruje interwal + hak crona (wolane z Plugin::boot).
 	 *
 	 * @return void
@@ -277,19 +289,36 @@ final class Sweep {
 			// zamiatarka zdazyla je obsluzyc — licznik eskalacji zszedl ze 120 na 71
 			// (zlapal to istniejacy test „jeden digest na przebieg"). Kolejnosc jest
 			// tu czescia poprawnosci: najpierw robimy robote, potem sprzatamy.
+			//
+			// Sprzatanie ma WLASNY wpis w rejestrze (`action=cleanup_orphans`) i tylko
+			// wtedy, gdy naprawde cos skasowalo — wiec warunek 2.21 ponizej go nie
+			// dotyczy i nic przez to nie ginie.
 			Sla::cleanup_orphans();
 
-			WorkflowEvents::log(
-				WorkflowEvents::SWEEP_RUN,
-				array(
-					'reminders'            => $sum_rem,
-					'reminders_suppressed' => $sum_sup,
-					'escalations'          => $sum_esc,
-					'rounds'               => $rounds,
-					'budzet_maili'         => $budzet_maili,
-					'przerwany_budzetem'   => $przerwane ? 1 : 0,
-				)
-			);
+			// BICIE SERCA: zawsze, jedna nadpisywana wartosc. To ona odpowiada
+			// na pytanie „czy zadanie sie WYKONUJE" (Stan witryny) — nie rejestr.
+			update_option( self::HEARTBEAT_OPTION, gmdate( 'Y-m-d H:i:s' ), false );
+
+			// 2.21: wpis do rejestru TYLKO gdy przebieg naprawde cos zrobil.
+			// Rejestr jest append-only z zalozenia (i slusznie — to dziennik
+			// rozliczalnosci), wiec jedyne, co mozemy zrobic z jego wzrostem, to
+			// przestac go zasypywac wlasnym ruchem. Przebieg, ktory nic nie zrobil,
+			// nie jest zdarzeniem wartym wiersza na zawsze.
+			$cos_zrobiono = ( $sum_rem > 0 || $sum_sup > 0 || $sum_esc > 0 || $przerwane );
+
+			if ( $cos_zrobiono ) {
+				WorkflowEvents::log(
+					WorkflowEvents::SWEEP_RUN,
+					array(
+						'reminders'            => $sum_rem,
+						'reminders_suppressed' => $sum_sup,
+						'escalations'          => $sum_esc,
+						'rounds'               => $rounds,
+						'budzet_maili'         => $budzet_maili,
+						'przerwany_budzetem'   => $przerwane ? 1 : 0,
+					)
+				);
+			}
 		} finally {
 			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', self::LOCK ) );
 		}

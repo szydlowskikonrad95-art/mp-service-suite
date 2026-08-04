@@ -52,11 +52,26 @@ final class AssignmentPool {
 	 * @return array<int, \WP_User>
 	 */
 	public static function agents(): array {
+		/*
+		 * ODSIEW WCHODZI DO ZAPYTANIA, nie do PHP po fakcie (2.51). Dotad bylo:
+		 * pobierz DWIESCIE PIERWSZYCH kont CALEJ witryny wg nazwy, potem odsiej
+		 * po uprawnieniu — a `number` WordPress zamienia na LIMIT, wiec obciecie
+		 * szlo PRZED odsianiem. Konta klientow przybywaja SAME (modul zgloszen
+		 * zaklada je przy potwierdzeniu zgloszenia), wiec przy dwustu klientach
+		 * o nazwach wczesniejszych alfabetycznie ekran wyboru puli przestawal
+		 * pokazywac pracownikow — bez jednego komunikatu, po prostu pusta lista.
+		 *
+		 * `capability` (WordPress 5.9+) obejmuje jedno i drugie zrodlo uprawnienia:
+		 * role, ktore je maja, ORAZ uprawnienie nadane pojedynczemu kontu — wiec
+		 * kryterium zostaje takie samo jak dotad (CAPABILITY, nie nazwa roli)
+		 * i takie samo, jakiego uzywa silnik w runtime.
+		 */
 		$users = get_users(
 			array(
-				'orderby' => 'display_name',
-				'order'   => 'ASC',
-				'number'  => 200,
+				'capability' => 'mp_agent',
+				'orderby'    => 'display_name',
+				'order'      => 'ASC',
+				'number'     => 200,
 			)
 		);
 

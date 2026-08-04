@@ -71,6 +71,9 @@ MP\Automator\Common\Uninstall::run(
 		// slusznie zglasza zostawione opcje — zlapal to CI, nie my.
 		MP\Automator\Sla::ORPHAN_CURSOR_OPTION,
 		MP\Automator\Sla::ORPHAN_ALERT_OPTION,
+		// 2.21: bicie serca zamiatarki — ten sam powod, ta sama zasada. Kazda nowa
+		// opcja robocza bez wpisu tutaj to nowy slad po odinstalowaniu.
+		MP\Automator\Sweep::HEARTBEAT_OPTION,
 	),
 	MP\Automator\Lifecycle::CRON_HOOKS
 );
