@@ -129,7 +129,7 @@ final class RateLimit {
 		}
 
 		// E-mail/serial: TYLKO odczyt biezacej liczby w oknie (bez inkrementu — D5).
-		if ( '' !== $email && self::current_count( 'mp_rl_em_' . md5( $email ) ) >= (int) $limits['email_max'] ) {
+		if ( '' !== $email && self::current_count( self::email_counter_key( $email ) ) >= (int) $limits['email_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
@@ -158,7 +158,7 @@ final class RateLimit {
 		// pismie „3 zgloszenia na dobe" — przy oknie przesuwanym kazde udane
 		// zgloszenie odsuwalo koniec doby i limit dzialal jak „trzy pod rzad".
 		if ( '' !== $email ) {
-			self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'], false );
+			self::hit( self::email_counter_key( $email ), (int) $limits['email_window'], false );
 		}
 
 		if ( '' !== $serial ) {
@@ -447,7 +447,79 @@ final class RateLimit {
 		// NORMALIZUJEMY TUTAJ, w jednym gardle — cztery miejsca wolajace ten klucz
 		// (odczyt, rezerwacja, zwolnienie, marker sukcesu) musza liczyc go IDENTYCZNIE,
 		// inaczej rezerwacji nie da sie zwolnic tym samym kluczem, ktorym powstala.
-		return 'mp_rl_dd_' . md5( Common\Str::normalize_serial( $serial ) . '|' . $email . '|' . $kind );
+		// Adres wchodzi tu tak samo znormalizowany jak do licznika (plus-adresowanie):
+		// inaczej „jan+1@" i „jan+2@" z tym samym numerem i rodzajem to DWA klucze,
+		// czyli ochrona przed duplikatem konczy sie na jednym plusie — dokladnie ta
+		// sama dziura, ktora przy numerze seryjnym zamknelismy w 2.1(a).
+		return 'mp_rl_dd_' . md5( Common\Str::normalize_serial( $serial ) . '|' . self::normalize_email_for_key( $email ) . '|' . $kind );
+	}
+
+	/**
+	 * Adres SPROWADZONY DO POSTACI KLUCZA — wylacznie do liczenia limitow i dedupu.
+	 *
+	 * ⛔ TEGO ADRESU NIGDZIE NIE ZAPISUJEMY I NIGDZIE NIE WYSYLAMY. W bazie i w poczcie
+	 * stoi adres DOKLADNIE taki, jaki podal czlowiek — podmiana zepsulaby dostarczanie
+	 * (skrzynki, ktore czlonu po plusie uzywaja do filtrowania, przestalyby dostawac
+	 * wiadomosci tam, gdzie klient je sobie skierowal).
+	 *
+	 * PO CO TO JEST: klient dostal NA PISMIE limit „3 zgloszenia na dobe", a licznik
+	 * liczyl klucz z adresu po samym `strtolower`+`trim`. Wystarczylo wiec wyslac
+	 * zgloszenia jako `jan+1@`, `jan+2@`, `jan+3@` — to sa TRZY osobne liczniki, kazdy
+	 * z wlasnym limitem, a poczta i tak trafia do jednej skrzynki, bo Gmail i wiekszosc
+	 * dostawcow czlon po plusie ignoruje. Numer seryjny tego nie ratowal: walidator
+	 * sprawdza KSZTALT numeru, nie jego istnienie w rejestrze. Zostawal limit po adresie
+	 * sieciowym, ale to okno PRZESUWANE przeciw zalewowi, nie sufit dobowy.
+	 *
+	 * REGULA: male litery + obciecie czlonu po pierwszym plusie w CZESCI LOKALNEJ.
+	 * ⛔ Kropek w czesci lokalnej NIE ruszamy: „j.a.n@" i „jan@" to ten sam adres
+	 * WYLACZNIE u czesci dostawcow (Gmail), a u pozostalych to dwie rozne skrzynki —
+	 * sklejenie ich odebraloby limit ludziom, ktorzy nic nie obchodza.
+	 *
+	 * @param string $email Adres surowy, tak jak podal go czlowiek.
+	 * @return string Postac uzywana WYLACZNIE jako material na klucz licznika.
+	 */
+	public static function normalize_email_for_key( string $email ): string {
+		$email = strtolower( trim( $email ) );
+
+		// Bierzemy OSTATNI '@' — czesc lokalna w cudzyslowie moze go zawierac.
+		$malpa = strrpos( $email, '@' );
+		if ( false === $malpa ) {
+			return $email; // To nie wyglada na adres — nie zgadujemy, zwracamy jak jest.
+		}
+
+		$lokalna = substr( $email, 0, $malpa );
+		$domena  = substr( $email, $malpa ); // Razem ze znakiem '@'.
+		$plus    = strpos( $lokalna, '+' );
+
+		if ( false === $plus ) {
+			return $email;
+		}
+
+		$lokalna = substr( $lokalna, 0, $plus );
+
+		// „+tag@domena" — czesc lokalna zaczyna sie plusem. Obciecie daloby PUSTA
+		// czesc lokalna, czyli JEDEN wspolny klucz dla wszystkich takich adresow
+		// w calej domenie. To odebraloby limit obcym ludziom, wiec zostawiamy jak bylo.
+		if ( '' === $lokalna ) {
+			return $email;
+		}
+
+		return $lokalna . $domena;
+	}
+
+	/**
+	 * Klucz licznika dobowego dla adresu e-mail.
+	 *
+	 * Jedno gardlo dla WSZYSTKICH miejsc liczacych ten limit (odczyt w `check()`
+	 * i inkrement w `record_submission()`) — dokladnie tak, jak `serial_counter_key()`
+	 * dla numeru seryjnego. Gdyby kazde miejsce liczylo klucz samo, wystarczyloby
+	 * poprawic jedno i limit dalej dalby sie obejsc.
+	 *
+	 * @param string $email Adres surowy.
+	 * @return string
+	 */
+	private static function email_counter_key( string $email ): string {
+		return 'mp_rl_em_' . md5( self::normalize_email_for_key( $email ) );
 	}
 
 	/**
@@ -504,7 +576,9 @@ final class RateLimit {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $email && self::hit( 'mp_rl_login_em_' . md5( $email ), (int) $limits['email_window'] ) > (int) $limits['email_max'] ) {
+		// Ten sam material na klucz co przy zgloszeniach: bez tego limit prob logowania
+		// obchodzi sie plusem tak samo jak limit dobowy (jedna skrzynka, N budzetow prob).
+		if ( '' !== $email && self::hit( 'mp_rl_login_em_' . md5( self::normalize_email_for_key( $email ) ), (int) $limits['email_window'] ) > (int) $limits['email_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
