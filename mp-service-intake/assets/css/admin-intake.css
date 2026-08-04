@@ -1,0 +1,29 @@
+/*
+ * Panel modulu zgloszen — style ekranow administratora.
+ *
+ * Powstal dla poz. 2.6: ekran „Zgloszenia niepotwierdzone" wychodzil poza okno
+ * przegladarki (zmierzone: 165 px nadmiaru przy szerokosci 1280, 216 przy 1024,
+ * 243 przy 768, 318 przy 390). Tabela `fixed` z kilkoma kolumnami nie miescila
+ * sie i wypychala cala strone w poziomie — czlowiek musial przewijac WSZYSTKO,
+ * zeby zobaczyc ostatnia kolumne.
+ *
+ * ⛔ Wzorzec CELOWO TEN SAM co w blizniaczym ekranie automatora
+ * (`mp-automator-table-scroll`): przewijanie zamkniete W TABELI, a nie na
+ * stronie. Dwa rozne sposoby na ten sam problem w jednym produkcie znaczylyby,
+ * ze kazdy nastepny ekran trzeba naprawiac od nowa.
+ */
+
+.mp-intake-table-scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/*
+ * Obszar przewijany dostaje fokus (tabindex=0), zeby dalo sie go przewinac
+ * SAMA KLAWIATURA. Bez widocznej obwodki osoba pracujaca klawiatura nie wie,
+ * gdzie jest — dlatego obwodka jest tu wymogiem, nie ozdoba.
+ */
+.mp-intake-table-scroll:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}

@@ -42,6 +42,13 @@ final class UnverifiedScreen {
 	public const CAP = 'mp_agent';
 
 	/**
+	 * Identyfikator ekranu zwrocony przez `add_menu_page` (do wpiecia arkusza).
+	 *
+	 * @var string
+	 */
+	private static string $hook_suffix = '';
+
+	/**
 	 * Okno throttle resendu w sekundach (1/5min per sprawa).
 	 */
 	private const THROTTLE_SECONDS = 300;
@@ -58,6 +65,7 @@ final class UnverifiedScreen {
 	 */
 	public static function register(): void {
 		add_action( 'admin_menu', array( self::class, 'add_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 		// Priv I nopriv -> ten sam handler: capability sprawdzana PIERWSZA, wiec
 		// personel przechodzi, a subscriber/anon dostaja JAWNE 403 (nie 400 z braku handlera).
 		add_action( 'admin_post_mp_intake_resend', array( self::class, 'handle_resend' ) );
@@ -70,7 +78,7 @@ final class UnverifiedScreen {
 	 * @return void
 	 */
 	public static function add_menu(): void {
-		add_menu_page(
+		self::$hook_suffix = (string) add_menu_page(
 			__( 'Zgłoszenia niepotwierdzone', 'mp-service-intake' ),
 			__( 'MP: Niepotwierdzone', 'mp-service-intake' ),
 			Roles::menu_cap_for_current_user(),
@@ -78,6 +86,28 @@ final class UnverifiedScreen {
 			array( self::class, 'render_page' ),
 			'dashicons-email-alt',
 			58
+		);
+	}
+
+	/**
+	 * Arkusz stylu panelu — TYLKO na tym ekranie (2.6).
+	 *
+	 * Wpinany po `hook_suffix`, a nie globalnie: styl jednego ekranu nie ma prawa
+	 * ladowac sie na kazdej stronie panelu WordPressa.
+	 *
+	 * @param string $hook Identyfikator biezacego ekranu panelu.
+	 * @return void
+	 */
+	public static function enqueue( string $hook ): void {
+		if ( '' === self::$hook_suffix || $hook !== self::$hook_suffix ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'mp-intake-admin',
+			plugin_dir_url( MP_INTAKE_FILE ) . 'assets/css/admin-intake.css',
+			array(),
+			MP_INTAKE_VERSION
 		);
 	}
 
@@ -133,6 +163,13 @@ final class UnverifiedScreen {
 			) . '</strong> ' . esc_html__( 'Sprawy oznaczone niżej w kolumnie „Poczta". Sprawdź Narzędzia → Stan witryny, potem wyślij ponownie.', 'mp-service-intake' ) . '</p></div>';
 		}
 
+		// 2.6: tabela zamknieta we WLASNYM obszarze przewijanym — inaczej wypychala
+		// cala strone w poziomie (zmierzony nadmiar: 165 px przy 1280, 216 przy 1024,
+		// 243 przy 768, 318 przy 390). `tabindex="0"` daje sie przewinac SAMA
+		// KLAWIATURA, `role="region"` + etykieta mowia czytnikowi ekranu, co to za
+		// obszar. ⛔ Wzorzec ten sam co w blizniaczym ekranie automatora.
+		echo '<div class="mp-intake-table-scroll" role="region" tabindex="0" aria-label="'
+			. esc_attr__( 'Lista zgłoszeń niepotwierdzonych', 'mp-service-intake' ) . '">';
 		echo '<table class="wp-list-table widefat fixed striped"><thead><tr>';
 		echo '<th>' . esc_html__( 'Numer', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Rodzaj', 'mp-service-intake' ) . '</th>';
@@ -184,6 +221,7 @@ final class UnverifiedScreen {
 		}
 
 		echo '</tbody></table>';
+		echo '</div>';
 
 		self::render_audit();
 
@@ -213,6 +251,13 @@ final class UnverifiedScreen {
 
 		$wpisy = array_slice( array_reverse( $wpisy ), 0, 20 );
 
+		// 2.6: tabela zamknieta we WLASNYM obszarze przewijanym — inaczej wypychala
+		// cala strone w poziomie (zmierzony nadmiar: 165 px przy 1280, 216 przy 1024,
+		// 243 przy 768, 318 przy 390). `tabindex="0"` daje sie przewinac SAMA
+		// KLAWIATURA, `role="region"` + etykieta mowia czytnikowi ekranu, co to za
+		// obszar. ⛔ Wzorzec ten sam co w blizniaczym ekranie automatora.
+		echo '<div class="mp-intake-table-scroll" role="region" tabindex="0" aria-label="'
+			. esc_attr__( 'Ostatnie ponowne wysyłki linku', 'mp-service-intake' ) . '">';
 		echo '<table class="wp-list-table widefat fixed striped"><thead><tr>';
 		echo '<th>' . esc_html__( 'Kiedy', 'mp-service-intake' ) . '</th>';
 		echo '<th>' . esc_html__( 'Sprawa', 'mp-service-intake' ) . '</th>';
@@ -233,6 +278,7 @@ final class UnverifiedScreen {
 		}
 
 		echo '</tbody></table>';
+		echo '</div>';
 	}
 
 	/**

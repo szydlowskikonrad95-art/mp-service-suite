@@ -24,6 +24,13 @@ RODZAJOW=$(grep -oE "'(reklamacja|naprawa|zapytanie|zwrot)'" mp-service-intake/i
 TESTOW_SH=$(grep -rhcE "=> *array\( *self::class" mp-*/includes/Admin/SiteHealthTests.php | awk '{s+=$1} END {print s+0}')
 RETENCJA=$(grep -oE "mp_intake_pending_retention_days', *[0-9]+" mp-service-intake/includes/CaseRepo.php | grep -oE "[0-9]+$")
 OKNO=$(grep -oE "CONFIRM_WINDOW_HOURS *= *[0-9]+" mp-service-intake/includes/CaseRepo.php | grep -oE "[0-9]+$")
+# 2.34: waznosc LINKU to INNA stala niz okno potwierdzenia — pomylenie ich bylo
+# cala wada tej pozycji. Odczyt stoi TU, razem z pozostalymi, a nie przy samej
+# kontroli: zmienna uzyta przed przypisaniem byla by pusta, a kontrola swiecilaby
+# na zielono, nic nie porownujac.
+TTL=$(grep -oE "TOKEN_TTL_HOURS *= *[0-9]+" mp-service-intake/includes/CaseRepo.php | grep -oE "[0-9]+$")
+
+[ -n "$TTL" ] || { echo "  BLAD BRAMKI: nie odczytalem TOKEN_TTL_HOURS z kodu — wzorzec przestal pasowac."; exit 2; }
 PHP_MIN=$(grep -hoE "Requires PHP: *[0-9.]+" mp-service-intake/mp-service-intake.php | grep -oE "[0-9.]+")
 # Progi ochrony formularza — dokumenty podaja je klientowi liczbowo, wiec musza zgadzac sie
 # z kodem. Zmiana progu bez poprawki instrukcji = obsluga mowi klientowi nieprawde.
@@ -123,7 +130,13 @@ sprawdz "ADMIN.md: liczba testow diagnostyki = $TESTOW_SH" "$TESTOW_SH testów" 
 sprawdz_bez_sprzecznych "README: brak sprzecznej liczby testow diagnostyki" "test(ów|y|ow|u)?" "$TESTOW_SH" README.md
 sprawdz_bez_sprzecznych "ADMIN.md: brak sprzecznej liczby testow diagnostyki" "test(ów|y|ow|u)?" "$TESTOW_SH" dla-klienta/instrukcje/ADMIN.md
 sprawdz "INSTRUKCJA: retencja porzuconych = $RETENCJA dni" "$RETENCJA dniach|$RETENCJA dni" dla-klienta/INSTRUKCJA-KLIENTA.md
-sprawdz "INSTRUKCJA: okno potwierdzenia = $OKNO h" "$OKNO godzin" dla-klienta/INSTRUKCJA-KLIENTA.md
+# ⛔ TA KONTROLA PILNOWALA BLEDU (2.34). Zadala, zeby w instrukcji KLIENTA stalo
+# „72 godzin" — a jedynym miejscem, gdzie ta liczba tam wystepowala, bylo zdanie
+# NIEPRAWDZIWE: „link potwierdzajacy jest wazny 72 godziny". Bramka trzymala wiec
+# blad w miejscu: poprawienie zdania zapalalo ja na czerwono. Okno potwierdzenia
+# jest liczba WEWNETRZNA — klientowi potrzebna jest waznosc LINKU. Kontrola pyta
+# teraz o nia, wiec liczy sie tak samo, ale sprawdza rzecz prawdziwa.
+sprawdz "INSTRUKCJA: waznosc linku = $TTL h" "$TTL godzin" dla-klienta/INSTRUKCJA-KLIENTA.md
 sprawdz "KOORDYNATOR: retencja = $RETENCJA dni" "$RETENCJA dni" dla-klienta/instrukcje/KOORDYNATOR.md
 sprawdz "STATE_MACHINE: retencja = $RETENCJA dni" "$RETENCJA dniach|$RETENCJA dni" dokumentacja-techniczna/STATE_MACHINE.md
 sprawdz "PRZECZYTAJ-MNIE: minimum PHP = $PHP_MIN" "PHP $PHP_MIN" dla-klienta/PRZECZYTAJ-MNIE.txt
@@ -279,6 +292,50 @@ else
 	bad "napis dla uzytkownika zawiera surowa nazwe stalej z kodu:"
 	echo "$STALE_W_UI" | head -3 | sed 's/^/         /'
 fi
+
+# ── 2.34: WAZNOSC LINKU potwierdzajacego ────────────────────────────────────
+# ⛔ KOD BYL POPRAWNY — to dokumenty klamaly. W module sa DWIE rozne stale:
+#   · TOKEN_TTL_HOURS      — ile zyje LINK (ustawia verify_token_expires_at),
+#   · CONFIRM_WINDOW_HOURS — okno, w ktorym sprawa jest jeszcze brana pod uwage.
+# Trzy zdania dla czlowieka podawaly przy „waznosci linku" te DRUGA liczbe, wiec
+# koordynator patrzyl na zgloszenie sprzed trzydziestu godzin i myslal, ze klient
+# ma jeszcze czterdziesci dwie. Link juz nie dzialal. Mail do klienta podawal
+# liczbe poprawna, bo bierze ja ZE STALEJ — sklamaly wylacznie miejsca wpisane
+# recznie. Ta bramka pilnuje, zeby nie wrocily.
+DOK_LINK="dla-klienta/INSTRUKCJA-KLIENTA.md dla-klienta/instrukcje/KOORDYNATOR.md"
+
+# Bierzemy liczby ze zdan, ktore mowia JEDNOCZESNIE o linku i o waznosci —
+# dzieki temu nie lapiemy poprawnych „72 h" opisujacych okno potwierdzenia.
+ZDANIA_LINK=$(grep -ohiE ".*link.*wa[zż]n.*|.*wa[zż]n.*link.*" $DOK_LINK 2>/dev/null)
+
+# ⚠️ PROBA KONTROLNA: zero zdan znaczy „zle szukam", a nie „wszystko dobrze".
+# Bez tego bramka swiecilaby na zielono po samej zmianie brzmienia zdania.
+if [ -z "$ZDANIA_LINK" ]; then
+	bad "waznosc linku: nie znalazlem ANI JEDNEGO zdania o waznosci linku w: $DOK_LINK"
+else
+	ZLE_TTL=""
+	for n in $( printf '%s' "$ZDANIA_LINK" | grep -oE "[0-9]+" | sort -u ); do
+		[ "$n" = "$TTL" ] || ZLE_TTL="$ZLE_TTL $n"
+	done
+
+	if [ -n "$ZLE_TTL" ]; then
+		bad "waznosc linku potwierdzajacego: dokumenty podaja$ZLE_TTL h, a kod mowi $TTL h (TOKEN_TTL_HOURS)"
+	else
+		ok "waznosc linku potwierdzajacego = $TTL h zgodna w dokumentach dla czlowieka"
+	fi
+fi
+
+# Zrodlo pomylki: dokument techniczny podawal obie liczby tak, ze druga czytalo
+# sie jak termin waznosci linku. Poprawienie samych instrukcji NIE wystarczy —
+# to zdanie wyprodukowaloby blad ponownie.
+# ⚠️ Wzorzec URWANY PRZED polskim znakiem („dziala" vs „działa") — wersja z pelnym
+# slowem NIGDY by nie trafila, a kontrola swiecilaby na zielono, nic nie sprawdzajac.
+if grep -qiE "okno POTWIERDZENIA \(po nim link nie dzia" dokumentacja-techniczna/STATE_MACHINE.md 2>/dev/null; then
+	bad "STATE_MACHINE: okno potwierdzenia dalej opisane jako termin waznosci linku (zrodlo pomylki 2.34)"
+else
+	ok "STATE_MACHINE: okno potwierdzenia nie udaje terminu waznosci linku"
+fi
+
 
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"

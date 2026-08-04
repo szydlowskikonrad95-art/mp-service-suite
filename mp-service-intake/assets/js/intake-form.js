@@ -284,4 +284,41 @@
 			komunikat.focus();
 		}
 	}, 120 );
+
+	// 2.57: STAN „TO TRWA". Przy zgloszeniu z zalacznikami (do pieciu plikow)
+	// wysylka potrafi potrwac, a przycisk nie zmienial sie w zaden sposob —
+	// czlowiek nie wiedzial, czy klikniecie w ogole doszlo.
+	// ⚠️ Danych to nie chronilo ani nie psulo: podwojne klikniecie i tak odpada
+	// jako duplikat na atomowej rezerwacji przed utworzeniem sprawy. Naprawiamy
+	// NIEPEWNOSC CZLOWIEKA, nie uszkodzenie danych — i tak ta pozycja brzmi.
+	form.addEventListener( 'submit', function () {
+		var przycisk = form.querySelector( 'button[type="submit"], input[type="submit"]' );
+
+		form.setAttribute( 'aria-busy', 'true' );
+
+		if ( ! przycisk ) {
+			return;
+		}
+
+		// ⛔ Przycisku NIE wylaczamy przez `disabled`: wylaczona kontrolka wypada
+		// z przesylanych danych, a w czesci przegladarek przerywa samo wysylanie.
+		// Blokujemy powtorne klikniecie przez `aria-disabled` + przechwycenie
+		// zdarzenia i zmieniamy napis, zeby czytnik ekranu mial CO ogłosic.
+		przycisk.setAttribute( 'aria-disabled', 'true' );
+		przycisk.textContent = ( window.mpIntakeForm && window.mpIntakeForm.sendingLabel )
+			? window.mpIntakeForm.sendingLabel
+			: 'Wysyłanie…';
+	} );
+
+	form.addEventListener(
+		'click',
+		function ( zdarzenie ) {
+			var cel = zdarzenie.target;
+
+			if ( cel && cel.closest && cel.closest( '[aria-disabled="true"]' ) ) {
+				zdarzenie.preventDefault();
+			}
+		},
+		true
+	);
 }() );

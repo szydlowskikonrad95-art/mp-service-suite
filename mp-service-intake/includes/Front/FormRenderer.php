@@ -50,6 +50,9 @@ final class FormRenderer {
 			}
 		}
 
+		// 2.57: etykiety z JEDNEGO zrodla — podsumowanie bledow odsyla do pol po nazwie.
+		$etykiety = self::field_labels();
+
 		$out  = '<div class="mp-intake">';
 		$out .= '<h2>' . esc_html__( 'Zgłoszenie serwisowe', 'mp-service-intake' ) . '</h2>';
 
@@ -57,11 +60,7 @@ final class FormRenderer {
 			$out .= '<p class="mp-intake-notice" role="status">' . esc_html( $notice ) . '</p>';
 		}
 
-		if ( array() !== $errors ) {
-			$out .= '<p class="mp-intake-error-summary" role="alert">'
-				. esc_html__( 'Formularz zawiera błędy — popraw zaznaczone pola.', 'mp-service-intake' )
-				. '</p>';
-		}
+		$out .= self::error_summary( $errors );
 
 		$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="mp-intake-form" enctype="multipart/form-data" novalidate>';
 		$out .= '<input type="hidden" name="action" value="mp_intake_submit" />';
@@ -77,7 +76,7 @@ final class FormRenderer {
 		// Rodzaj sprawy.
 		$out .= self::field_wrap(
 			'kind',
-			esc_html__( 'Rodzaj zgłoszenia', 'mp-service-intake' ),
+			esc_html( $etykiety['kind'] ),
 			self::kind_select( $kind ),
 			$errors
 		);
@@ -85,7 +84,7 @@ final class FormRenderer {
 		// Kategoria produktu (P1.2 — pola zaleza od wyboru; brak wyboru = pola bazowe).
 		$out .= self::field_wrap(
 			'category',
-			esc_html__( 'Kategoria produktu', 'mp-service-intake' ),
+			esc_html( $etykiety['category'] ),
 			self::category_select( $category ),
 			$errors
 		);
@@ -96,7 +95,7 @@ final class FormRenderer {
 		// mialy TEN SAM korzen: formularz nie pytal o osobe.
 		$out .= self::field_wrap(
 			'customer_name',
-			esc_html__( 'Imię i nazwisko', 'mp-service-intake' ),
+			esc_html( $etykiety['customer_name'] ),
 			'<input type="text" id="mp-f-customer_name" name="customer_name" value="' . esc_attr( (string) ( $values['customer_name'] ?? '' ) ) . '" required maxlength="190" autocomplete="name" aria-describedby="' . self::err_id( 'customer_name' ) . '" />',
 			$errors
 		);
@@ -104,7 +103,7 @@ final class FormRenderer {
 		// E-mail kontaktowy (zawsze).
 		$out .= self::field_wrap(
 			'email',
-			esc_html__( 'Twój e-mail', 'mp-service-intake' ),
+			esc_html( $etykiety['email'] ),
 			'<input type="email" id="mp-f-email" name="email" value="' . esc_attr( (string) ( $values['email'] ?? '' ) ) . '" required aria-describedby="' . self::err_id( 'email' ) . '" />',
 			$errors
 		);
@@ -137,9 +136,17 @@ final class FormRenderer {
 			? '<span class="mp-intake-error" id="' . self::err_id( 'mp_consent' ) . '" role="alert">' . esc_html__( 'Zgoda jest wymagana, aby przyjąć zgłoszenie.', 'mp-service-intake' ) . '</span>'
 			: '';
 		$out        .= '<p class="mp-intake-field mp-intake-consent">';
-		$out        .= '<label for="mp-f-consent"><input type="checkbox" id="mp-f-consent" name="mp_consent" value="1" required aria-describedby="' . self::err_id( 'mp_consent' ) . '" /> '
+		// 2.57: zgoda renderuje sie POZA `field_wrap` (ma inny uklad), wiec
+		// `aria-invalid` trzeba tu dolozyc osobno. To wlasnie ONA jest polem, ktore
+		// przy pustym formularzu zglasza sie jako jedyne — czyli najczestszy blad
+		// tego formularza nie mowil czytnikowi ekranu nic przy samym polu.
+		$consent_invalid = isset( $errors['mp_consent'] ) ? ' aria-invalid="true"' : '';
+		// ⛔ Identyfikator MUSI byc ten sam, ktory wylicza `ctrl_id('mp_consent')` —
+		// inaczej odsylacz z podsumowania prowadzi donikad, a to gorsze niz jego brak.
+		$consent_id = self::ctrl_id( 'mp_consent' );
+		$out       .= '<label for="' . esc_attr( $consent_id ) . '"><input type="checkbox" id="' . esc_attr( $consent_id ) . '" name="mp_consent" value="1" required' . $consent_invalid . ' aria-describedby="' . self::err_id( 'mp_consent' ) . '" /> '
 			. esc_html( \MP\Intake\Consents::processing_text() ) . '</label>' . $consent_err;
-		$out        .= '</p>';
+		$out       .= '</p>';
 
 		$out .= '<p class="mp-intake-hint">' . esc_html__( 'Wskazówka: nie podawaj w opisie danych osobowych innych osób.', 'mp-service-intake' ) . '</p>';
 		$out .= '<button type="submit" class="mp-intake-submit">' . esc_html__( 'Wyślij zgłoszenie', 'mp-service-intake' ) . '</button>';
@@ -195,6 +202,10 @@ final class FormRenderer {
 					},
 					FormConfig::union_fields()
 				),
+				// 2.57: napis stanu „trwa" idzie STAD, nie z kodu skryptu — reszta
+				// tekstow tego modulu przechodzi przez tlumaczenie i ten nie moze byc
+				// wyjatkiem, bo pokazuje sie klientowi.
+				'sendingLabel'       => __( 'Wysyłanie…', 'mp-service-intake' ),
 			)
 		);
 	}
@@ -260,10 +271,13 @@ final class FormRenderer {
 	 * @return string
 	 */
 	private static function field_wrap( string $key, string $label, string $control, array $errors, string $for_id = '' ): string {
-		$for_id = '' === $for_id ? 'mp-f-' . preg_replace( '/[^a-z0-9_]/', '', $key ) : $for_id;
+		$for_id = '' === $for_id ? self::ctrl_id( $key ) : $for_id;
 		$out    = '<p class="mp-intake-field mp-intake-field-' . esc_attr( $key ) . '" data-mp-field="' . esc_attr( $key ) . '">';
 		$out   .= '<label for="' . esc_attr( $for_id ) . '">' . $label . '</label>';
-		$out   .= $control;
+
+		// 2.57: pole z bledem MUSI byc oznaczone dla czytnika ekranu, nie tylko
+		// wizualnie. Jedno miejsce dla wszystkich pol — patrz `mark_invalid`.
+		$out .= isset( $errors[ $key ] ) ? self::mark_invalid( $control ) : $control;
 
 		if ( isset( $errors[ $key ] ) ) {
 			$out .= '<span class="mp-intake-error" id="' . self::err_id( $key ) . '" role="alert">'
@@ -339,6 +353,117 @@ final class FormRenderer {
 	 */
 	private static function err_id( string $key ): string {
 		return 'mp-err-' . preg_replace( '/[^a-z0-9_]/', '', $key );
+	}
+
+	/**
+	 * Identyfikator KONTROLKI pola — ten sam, ktorego uzywa `field_wrap` w `for`.
+	 *
+	 * Osobna metoda, bo do tego samego identyfikatora odsyla teraz takze
+	 * podsumowanie bledow; dwie kopie tego wyrazenia rozjechalyby sie przy
+	 * pierwszej zmianie i odsylacz prowadzilby donikad.
+	 *
+	 * @param string $key Klucz pola.
+	 * @return string
+	 */
+	private static function ctrl_id( string $key ): string {
+		return 'mp-f-' . preg_replace( '/[^a-z0-9_]/', '', $key );
+	}
+
+	/**
+	 * Etykiety pol — JEDNO zrodlo dla formularza i dla podsumowania bledow.
+	 *
+	 * ⛔ Nie powielaj tych napisow w `render()`. Podsumowanie odsyla czlowieka do
+	 * pola PO NAZWIE, wiec gdy nazwa w jednym miejscu sie zmieni, a w drugim nie,
+	 * odsylacz zaczyna klamac — a to gorsze niz brak odsylacza.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function field_labels(): array {
+		$mapa = array(
+			'kind'          => __( 'Rodzaj zgłoszenia', 'mp-service-intake' ),
+			'category'      => __( 'Kategoria produktu', 'mp-service-intake' ),
+			'customer_name' => __( 'Imię i nazwisko', 'mp-service-intake' ),
+			'email'         => __( 'Twój e-mail', 'mp-service-intake' ),
+			'mp_files'      => __( 'Załączniki', 'mp-service-intake' ),
+			'mp_consent'    => __( 'Zgoda na przetwarzanie danych', 'mp-service-intake' ),
+		);
+
+		foreach ( FormConfig::union_fields() as $field ) {
+			$mapa[ (string) $field['key'] ] = (string) $field['label'];
+		}
+
+		return $mapa;
+	}
+
+	/**
+	 * Podsumowanie bledow z ODSYLACZAMI do pol (audyt 2.57).
+	 *
+	 * ⭐ CO PRODUKT ROBIL DOBRZE I ZOSTAJE NIETKNIETE: komunikat ma `role="alert"`,
+	 * jest ogloszony, a skrypt `intake-form.js` PRZENOSI NA NIEGO FOKUS po powrocie
+	 * strony — bo obszar `aria-live` nie oglasza tresci obecnej juz przy wczytaniu.
+	 * Dzial audytu ten zarzut WYCOFAL i nazwal to mocna strona; nie ruszamy tego.
+	 *
+	 * Brakowalo drugiej polowy: podsumowanie bylo zwyklym akapitem BEZ listy
+	 * i bez odsylaczy, wiec czlowiek slyszal „popraw zaznaczone pola" i musial
+	 * sam znalezc, ktore. Teraz kazdy blad to odsylacz prowadzacy WPROST do pola.
+	 *
+	 * @param array<string, string> $errors Bledy: klucz pola => kod bledu.
+	 * @return string
+	 */
+	private static function error_summary( array $errors ): string {
+		if ( array() === $errors ) {
+			return '';
+		}
+
+		$etykiety = self::field_labels();
+
+		$out  = '<div class="mp-intake-error-summary" role="alert">';
+		$out .= '<p>' . esc_html(
+			_n(
+				'Formularz zawiera błąd — popraw pole wskazane poniżej.',
+				'Formularz zawiera błędy — popraw pola wskazane poniżej.',
+				count( $errors ),
+				'mp-service-intake'
+			)
+		) . '</p>';
+		$out .= '<ul>';
+
+		foreach ( $errors as $key => $kod ) {
+			$key       = (string) $key;
+			$etykieta  = $etykiety[ $key ] ?? $key;
+			$komunikat = self::error_text( (string) $kod );
+
+			$out .= '<li><a href="#' . esc_attr( self::ctrl_id( $key ) ) . '">'
+				. esc_html( $etykieta ) . '</a>: ' . esc_html( $komunikat ) . '</li>';
+		}
+
+		$out .= '</ul></div>';
+
+		return $out;
+	}
+
+	/**
+	 * Dokleja `aria-invalid="true"` do kontrolki pola, ktore ma blad (audyt 2.57).
+	 *
+	 * ⛔ `aria-invalid` nie wystepowal w module ANI RAZU — sprawdzone z proba
+	 * kontrolna (inne atrybuty `aria-` w tym pliku sa, wiec szukanie je widzi).
+	 * Skutek: czytnik ekranu oglaszal podsumowanie, ale przy samym polu nie mowil
+	 * nic — osoba przechodzaca tabulatorem musiala zgadywac, ktore poprawic.
+	 *
+	 * Robimy to w JEDNYM miejscu, przez ktore przechodza WSZYSTKIE pola, zamiast
+	 * dopisywac atrybut przy kazdej kontrolce z osobna — inaczej pierwsze nowe
+	 * pole znowu by go nie mialo.
+	 *
+	 * @param string $control Gotowy HTML kontrolki.
+	 * @return string
+	 */
+	private static function mark_invalid( string $control ): string {
+		return (string) preg_replace(
+			'/^(\s*<(?:input|select|textarea)\b)/i',
+			'$1 aria-invalid="true"',
+			$control,
+			1
+		);
 	}
 
 	/**

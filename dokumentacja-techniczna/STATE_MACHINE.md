@@ -23,7 +23,7 @@ status 'nowe' + event CASE_CREATED + akcja mp_case_created + konto klienta + 2. 
   `mp_case_created`. JAWNA SEMANTYKA: status_changed = wyłącznie zmiany PÓŹNIEJSZE.
 - Weryfikacja USTAWIA `status_changed_at` (= `verified_at`, jeden moment) — od tego liczy się
   pierwszy termin SLA (bez tego sprawa nigdy nie dostałaby zegara).
-- 72 h to okno POTWIERDZENIA (po nim link nie działa). Sieroty pending kasuje cron dopiero po
+- 72 h to okno POTWIERDZENIA sprawy; sam LINK wygasa wcześniej, po 24 h (`CaseRepo::TOKEN_TTL_HOURS`). Sieroty pending kasuje cron dopiero po
   **30 dniach** (`mp_intake_pending_retention_days`, czysty DELETE + unlink plików; spraw verified NIGDY nie dotyka).
 
 ## 1. Rdzeń 7 statusów (spec P3.2)
