@@ -95,7 +95,7 @@ final class Validator {
 
 		switch ( $type ) {
 			case 'email':
-				return self::is_email( $value ) ? null : 'INVALID_EMAIL';
+				return self::validate_email( $value );
 			case 'date':
 				return self::validate_purchase_date( $value, $today );
 			case 'serial':
@@ -151,7 +151,8 @@ final class Validator {
 			case 'text':
 				return 500;
 			default:
-				// email/serial/document/date/tel maja wlasne, ciasniejsze reguly.
+				// email/serial/document/date/tel maja wlasne, ciasniejsze reguly
+				// (e-mail: `validate_email` — limit 190 = szerokosc kolumny).
 				return 0;
 		}
 	}
@@ -204,6 +205,30 @@ final class Validator {
 		}
 
 		return Common\Str::len( $value ) > 190 ? 'TOO_LONG' : null;
+	}
+
+	/**
+	 * E-mail: ksztalt ORAZ dlugosc mieszczaca sie w kolumnie (2.4 czesc b).
+	 *
+	 * ⛔ Reguly dlugosci dla adresu NIE BYLO NA ZADNEJ SCIEZCE — ani tutaj, ani
+	 * przy zakladaniu konta, ani przy zmianie adresu — choc kolumny `customers.email`
+	 * i `service_cases.contact_email` to VARCHAR(190), a komentarz obok twierdzil,
+	 * ze e-mail ma „wlasna, ciasniejsza regule". Adres dluzszy niz 190 znakow
+	 * przechodzil walidacje ksztaltu i rozbijal sie dopiero o baze, wiec czlowiek
+	 * dostawal „blad zapisu do bazy" zamiast zdania o tym, co poprawic.
+	 *
+	 * Wzorzec ten sam, co przy dokumencie zakupu i imieniu (`validate_document`,
+	 * `validate_customer_name`): kod pilnuje tego, co uniesie baza.
+	 *
+	 * @param string $email Adres z formularza.
+	 * @return string|null Kod bledu albo null.
+	 */
+	public static function validate_email( string $email ): ?string {
+		if ( Common\Str::len( $email ) > 190 ) {
+			return 'TOO_LONG';
+		}
+
+		return self::is_email( $email ) ? null : 'INVALID_EMAIL';
 	}
 
 	/**

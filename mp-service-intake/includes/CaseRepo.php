@@ -29,6 +29,21 @@ final class CaseRepo {
 	public const CONFIRM_WINDOW_HOURS = 72;
 
 	/**
+	 * Wersja KSZTALTU zwrotek kontraktowych tej klasy (2.27).
+	 *
+	 * Twarda regula kontraktu mowi, ze kazda zwrotka niesie wersje schematu —
+	 * konsument ma poznac PO ZWROTCE, czy rozumie jej ksztalt, zamiast zgadywac
+	 * po obecnosci kluczy. Strona rejestru dostala to wczesniej
+	 * (`Repo::DETAILS_SCHEMA_VERSION`, `WarrantyCheck::SCHEMA_VERSION`), dziennik
+	 * zdarzen tez (`CaseEvents::SCHEMA_VERSION`) — zwrotki modulu zgloszen byly
+	 * ostatnia polowka tej pozycji.
+	 *
+	 * Podnosimy JA, gdy zmienia sie ksztalt (nowe pole = bez zmiany; usuniete albo
+	 * przemianowane pole = +1).
+	 */
+	public const SCHEMA_VERSION = 1;
+
+	/**
 	 * Tworzy sprawe NIEPOTWIERDZONA (status NULL) i zwraca surowy token.
 	 *
 	 * WALIDACJA SYNCHRONICZNA PRZED insertem (P1.4): odmowa = zwrot bledow
@@ -248,10 +263,15 @@ final class CaseRepo {
 	public static function collect_validation_errors( string $kind, string $email, array $values, string $today, string $category = '' ): array {
 		$errors = array();
 
-		if ( '' === trim( $email ) || ! Validator::is_email( trim( $email ) ) ) {
+		// 2.4 (b): ksztalt ORAZ dlugosc. Regula dlugosci nie istniala tu wczesniej,
+		// wiec adres dluzszy niz kolumna (VARCHAR(190)) przechodzil walidacje i
+		// rozbijal sie dopiero o baze — czlowiek dostawal „blad zapisu do bazy".
+		$blad_email = '' === trim( $email ) ? 'INVALID_EMAIL' : Validator::validate_email( trim( $email ) );
+
+		if ( null !== $blad_email ) {
 			$errors[] = array(
 				'field'       => 'email',
-				'reason_code' => 'INVALID_EMAIL',
+				'reason_code' => $blad_email,
 			);
 		}
 
@@ -398,6 +418,7 @@ final class CaseRepo {
 		}
 
 		return array(
+			'schema_version'        => self::SCHEMA_VERSION,
 			'status'                => (string) $row['status'],
 			'warranty_snapshot'     => $snapshot,
 			'rodzaj'                => (string) $row['kind'],
@@ -422,7 +443,6 @@ final class CaseRepo {
 					'name'  => (string) $row['contact_name'],
 					'phone' => (string) $row['contact_phone'],
 				),
-			'schema_version'        => 1,
 		);
 	}
 
@@ -444,8 +464,9 @@ final class CaseRepo {
 
 		if ( ! user_can( $user_id, 'mp_agent' ) ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'INVALID_ASSIGNEE',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'INVALID_ASSIGNEE',
 			);
 		}
 
@@ -467,8 +488,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_NOT_FOUND',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_NOT_FOUND',
 			);
 		}
 
@@ -481,8 +503,9 @@ final class CaseRepo {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_CLOSED',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_CLOSED',
 			);
 		}
 
@@ -496,9 +519,10 @@ final class CaseRepo {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			return array(
-				'success' => true,
-				'from'    => $from,
-				'to'      => $user_id,
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => true,
+				'from'           => $from,
+				'to'             => $user_id,
 			);
 		}
 
@@ -543,9 +567,10 @@ final class CaseRepo {
 		do_action( 'mp_case_assigned', $case_id, $from, $user_id, $actor_id );
 
 		return array(
-			'success'     => true,
-			'assigned_to' => $user_id,
-			'from'        => $from,
+			'schema_version' => self::SCHEMA_VERSION,
+			'success'        => true,
+			'assigned_to'    => $user_id,
+			'from'           => $from,
 		);
 	}
 
@@ -564,8 +589,9 @@ final class CaseRepo {
 
 		if ( ! in_array( $priority, self::PRIORITIES, true ) ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'INVALID_PRIORITY',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'INVALID_PRIORITY',
 			);
 		}
 
@@ -589,8 +615,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_NOT_FOUND',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_NOT_FOUND',
 			);
 		}
 
@@ -600,8 +627,9 @@ final class CaseRepo {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
 
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_CLOSED',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_CLOSED',
 			);
 		}
 
@@ -613,8 +641,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'   => true,
-				'unchanged' => true,
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => true,
+				'unchanged'      => true,
 			);
 		}
 
@@ -643,9 +672,10 @@ final class CaseRepo {
 		// phpcs:enable
 
 		return array(
-			'success' => true,
-			'from'    => $current,
-			'to'      => $priority,
+			'schema_version' => self::SCHEMA_VERSION,
+			'success'        => true,
+			'from'           => $current,
+			'to'             => $priority,
 		);
 	}
 
@@ -673,8 +703,9 @@ final class CaseRepo {
 
 		if ( '' === $step_key ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'INVALID_STEP',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'INVALID_STEP',
 			);
 		}
 
@@ -683,8 +714,9 @@ final class CaseRepo {
 
 		if ( ! $is_coord && ! $is_agent ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'FORBIDDEN',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'FORBIDDEN',
 			);
 		}
 
@@ -702,8 +734,9 @@ final class CaseRepo {
 
 		if ( null === $row ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_NOT_FOUND',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_NOT_FOUND',
 			);
 		}
 
@@ -713,8 +746,9 @@ final class CaseRepo {
 
 			if ( $assigned !== $actor_id ) {
 				return array(
-					'success'    => false,
-					'error_code' => 'NOT_CASE_OWNER',
+					'schema_version' => self::SCHEMA_VERSION,
+					'success'        => false,
+					'error_code'     => 'NOT_CASE_OWNER',
 				);
 			}
 		}
@@ -731,8 +765,9 @@ final class CaseRepo {
 		);
 
 		return array(
-			'success'  => true,
-			'step_key' => $step_key,
+			'schema_version' => self::SCHEMA_VERSION,
+			'success'        => true,
+			'step_key'       => $step_key,
 		);
 	}
 
@@ -759,8 +794,9 @@ final class CaseRepo {
 
 		if ( ! Statuses::exists( $new_status ) ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'INVALID_STATUS',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'INVALID_STATUS',
 			);
 		}
 
@@ -768,8 +804,9 @@ final class CaseRepo {
 
 		if ( $is_rejection && ( null === $rejection_reason_code || '' === trim( $rejection_reason_code ) ) ) {
 			return array(
-				'success'    => false,
-				'error_code' => 'REJECTION_REASON_REQUIRED',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'REJECTION_REASON_REQUIRED',
 			);
 		}
 
@@ -791,8 +828,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'CASE_NOT_FOUND',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'CASE_NOT_FOUND',
 			);
 		}
 
@@ -805,9 +843,10 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'STATUS_CONFLICT',
-				'current'    => $from,
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'STATUS_CONFLICT',
+				'current'        => $from,
 			);
 		}
 
@@ -824,8 +863,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'REOPEN_REQUIRES_COORDINATOR',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'REOPEN_REQUIRES_COORDINATOR',
 			);
 		}
 
@@ -836,8 +876,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'INVALID_TRANSITION',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'INVALID_TRANSITION',
 			);
 		}
 
@@ -866,8 +907,9 @@ final class CaseRepo {
 			// phpcs:enable
 
 			return array(
-				'success'    => false,
-				'error_code' => 'STATUS_CONFLICT',
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'STATUS_CONFLICT',
 			);
 		}
 
@@ -891,9 +933,10 @@ final class CaseRepo {
 		do_action( 'mp_case_status_changed', $case_id, $from, $new_status, $actor_id );
 
 		return array(
-			'success' => true,
-			'from'    => $from,
-			'to'      => $new_status,
+			'schema_version' => self::SCHEMA_VERSION,
+			'success'        => true,
+			'from'           => $from,
+			'to'             => $new_status,
 		);
 	}
 
@@ -1150,10 +1193,11 @@ final class CaseRepo {
 
 		if ( ! $scope_all && ! $scope_own ) {
 			return array(
-				'rows'     => array(),
-				'total'    => 0,
-				'page'     => $page,
-				'per_page' => $per_page,
+				'schema_version' => self::SCHEMA_VERSION,
+				'rows'           => array(),
+				'total'          => 0,
+				'page'           => $page,
+				'per_page'       => $per_page,
 			);
 		}
 
@@ -1283,10 +1327,11 @@ final class CaseRepo {
 		}
 
 		return array(
-			'rows'     => $out,
-			'total'    => $total,
-			'page'     => $page,
-			'per_page' => $per_page,
+			'schema_version' => self::SCHEMA_VERSION,
+			'rows'           => $out,
+			'total'          => $total,
+			'page'           => $page,
+			'per_page'       => $per_page,
 		);
 	}
 
