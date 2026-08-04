@@ -146,6 +146,20 @@ final class Mailer {
 				delete_option( self::ALERT_OPTION );
 			}
 
+			// Alarm globalny gasnie powyzej, ale oznaczenie POJEDYNCZEJ sprawy na
+			// ekranie „Niepotwierdzone" musi zgasnac osobno — inaczej personel
+			// wiecznie widzi „link nie doszedl" przy sprawie, ktorej link wlasnie
+			// doszedl. Wpis dokladamy TYLKO gdy jest co odwolywac, wiec zwykla
+			// wysylka nie puchnie osi sprawy ani o jeden wiersz.
+			if ( null !== $case_id && $case_id > 0 && self::ma_nieudana_wysylke( $case_id ) ) {
+				CaseEvents::log(
+					$case_id,
+					CaseEvents::MAIL_SENT,
+					array( 'kind' => $kind ),
+					null
+				);
+			}
+
 			return true;
 		}
 
@@ -174,6 +188,38 @@ final class Mailer {
 		);
 
 		return false;
+	}
+
+	/**
+	 * Czy sprawa ma na osi nieodwolana nieudana wysylke (2.1b).
+	 *
+	 * Pytamy o OSTATNI wpis pocztowy, nie o „czy kiedykolwiek padlo": po udanej
+	 * ponowce jest juz odwolany i drugiego `MAIL_SENT` dokladac nie ma po co.
+	 * Jedno zapytanie po indeksowanej kolumnie, tylko przy UDANEJ wysylce ze
+	 * znana sprawa — czyli rzadziej niz sama wysylka maila.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return bool
+	 */
+	private static function ma_nieudana_wysylke( int $case_id ): bool {
+		global $wpdb;
+
+		$table = \MP\Intake\Tables::full( \MP\Intake\Tables::CASE_EVENTS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna append-only, zapytanie przygotowane.
+		$ostatni = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT event_type FROM {$table}
+				WHERE case_id = %d AND event_type IN ( %s, %s )
+				ORDER BY id DESC LIMIT 1",
+				$case_id,
+				CaseEvents::MAIL_FAILED,
+				CaseEvents::MAIL_SENT
+			)
+		);
+		// phpcs:enable
+
+		return CaseEvents::MAIL_FAILED === $ostatni;
 	}
 
 	/**
