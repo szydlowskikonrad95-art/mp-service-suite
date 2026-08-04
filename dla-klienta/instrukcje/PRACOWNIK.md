@@ -33,7 +33,10 @@ Kliknij numer sprawy. Na karcie masz wszystko:
 - **Wiadomości** — rozmowa z klientem; możesz użyć gotowego szablonu odpowiedzi (pola typu numer
   sprawy podstawiają się same),
 - **Zmiana statusu** — prowadź sprawę po statusach (nowe → w analizie → … → zamknięte).
-  Odrzucenie zawsze wymaga podania powodu — klient dostaje go w mailu.
+  ⚠️ **Statusu „odrzucone" nie ustawisz w tej wersji z panelu.** Odrzucenie wymaga powodu
+  z listy powodów, a lista nie jest skonfigurowana — pole powodu nie pojawia się przy
+  akcjach, więc próba zapisu kończy się komunikatem o braku powodu. Jeśli sprawa ma zostać
+  odrzucona, ustal dalszy krok z koordynatorem.
 
 ## 3. Terminy (SLA)
 
@@ -49,7 +52,8 @@ przez osobę, która za to odpowiada. Potrzebujesz zestawienia — poproś koord
 
 ## Zasady, które system egzekwuje za Ciebie
 
-- Nie zobaczysz spraw, których nie masz prawa widzieć.
+- Nie zobaczysz spraw, których nie masz prawa widzieć — na liście spraw są **wyłącznie
+  sprawy przydzielone Tobie**. Wszystkie sprawy widzi koordynator i administrator systemu.
 - Zamkniętej sprawy nie wznowisz — to decyzja koordynatora.
 - Wiadomość klienta na zamkniętej sprawie jest dozwolona i trafi do Ciebie mailem — status się
   nie zmienia.
