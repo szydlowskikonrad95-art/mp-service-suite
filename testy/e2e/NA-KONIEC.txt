@@ -1,0 +1,11 @@
+# TESTY NISZCZACE — uruchamiane ZAWSZE NA SAMYM KONCU przebiegu.
+#
+# ⛔ PO CO TO POWSTALO (4.08.2026). Te dwa testy ODINSTALOWUJA wtyczki i kasuja tabele.
+# Gdy reczna lista krokow zostala zastapiona automatycznym wykrywaniem plikow, nowe testy
+# zaczely sie doklejac ALFABETYCZNIE NA KONCU — czyli ZA nimi, na wykasowanym produkcie.
+# Skutek: dziesiec ostatnich testow padlo naraz (18 fail, 17 fail, 9 fail...), a wygladalo
+# to na awarie produktu. Bylo to zepsucie KOLEJNOSCI, nie kodu.
+#
+# Nazwa pliku tutaj = ten test idzie na sam koniec, po wszystkim, co wykryte automatycznie.
+import-dod.sh
+uninstall-crony.sh
