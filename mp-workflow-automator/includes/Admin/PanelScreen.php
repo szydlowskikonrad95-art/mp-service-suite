@@ -327,37 +327,39 @@ final class PanelScreen {
 		// phpcs:enable
 		?>
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Reguły przydziału', 'mp-workflow-automator' ); ?></h2>
-		<table class="widefat striped mp-automator-table">
-			<caption class="screen-reader-text"><?php esc_html_e( 'Lista reguł przydziału automatyzacji', 'mp-workflow-automator' ); ?></caption>
-			<thead>
-				<tr>
-					<th scope="col"><?php esc_html_e( 'ID', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Kiedy działa', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Warunek', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Co robi', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Priorytet', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Aktywna', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Źródło', 'mp-workflow-automator' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if ( empty( $rows ) ) : ?>
-					<tr><td colspan="7"><?php esc_html_e( 'Brak reguł.', 'mp-workflow-automator' ); ?></td></tr>
-				<?php else : ?>
-					<?php foreach ( $rows as $r ) : ?>
-						<tr>
-							<td><?php echo esc_html( (string) $r->id ); ?></td>
-							<td><?php echo esc_html( self::opis_wyzwalacza( (string) $r->trigger_type ) ); ?></td>
-							<td><?php echo esc_html( self::opis_warunku( (string) $r->condition_key, (string) $r->condition_operator, (string) $r->condition_value ) ); ?></td>
-							<td><?php echo esc_html( self::opis_akcji( (string) $r->action_type, (string) $r->action_config_json ) ); ?></td>
-							<td><?php echo esc_html( (string) $r->priority ); ?></td>
-							<td><?php echo (int) $r->enabled ? esc_html__( 'tak', 'mp-workflow-automator' ) : esc_html__( 'nie', 'mp-workflow-automator' ); ?></td>
-							<td><?php echo esc_html( 'system' === $r->source ? __( 'wbudowana', 'mp-workflow-automator' ) : __( 'własna', 'mp-workflow-automator' ) ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</tbody>
-		</table>
+		<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Lista reguł przydziału automatyzacji', 'mp-workflow-automator' ); ?>">
+			<table class="widefat striped mp-automator-table">
+				<caption class="screen-reader-text"><?php esc_html_e( 'Lista reguł przydziału automatyzacji', 'mp-workflow-automator' ); ?></caption>
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'ID', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Kiedy działa', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Warunek', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Co robi', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Priorytet', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Aktywna', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Źródło', 'mp-workflow-automator' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $rows ) ) : ?>
+						<tr><td colspan="7"><?php esc_html_e( 'Brak reguł.', 'mp-workflow-automator' ); ?></td></tr>
+					<?php else : ?>
+						<?php foreach ( $rows as $r ) : ?>
+							<tr>
+								<td><?php echo esc_html( (string) $r->id ); ?></td>
+								<td><?php echo esc_html( self::opis_wyzwalacza( (string) $r->trigger_type ) ); ?></td>
+								<td><?php echo esc_html( self::opis_warunku( (string) $r->condition_key, (string) $r->condition_operator, (string) $r->condition_value ) ); ?></td>
+								<td><?php echo esc_html( self::opis_akcji( (string) $r->action_type, (string) $r->action_config_json ) ); ?></td>
+								<td><?php echo esc_html( (string) $r->priority ); ?></td>
+								<td><?php echo (int) $r->enabled ? esc_html__( 'tak', 'mp-workflow-automator' ) : esc_html__( 'nie', 'mp-workflow-automator' ); ?></td>
+								<td><?php echo esc_html( 'system' === $r->source ? __( 'wbudowana', 'mp-workflow-automator' ) : __( 'własna', 'mp-workflow-automator' ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
 		<?php
 		self::render_pool_form();
 	}
@@ -630,30 +632,32 @@ final class PanelScreen {
 		<?php if ( $degraded ) : ?>
 			<div class="notice notice-warning inline"><p><?php esc_html_e( 'Moduł zgłoszeń (mp-service-intake) jest nieaktywny — pokazuję tylko statusy własne. Rdzeń statusów pojawi się po jego aktywacji.', 'mp-workflow-automator' ); ?></p></div>
 		<?php endif; ?>
-		<table class="widefat striped mp-automator-table">
-			<caption class="screen-reader-text"><?php esc_html_e( 'Lista statusów spraw', 'mp-workflow-automator' ); ?></caption>
-			<thead>
-				<tr>
-					<th scope="col"><?php esc_html_e( 'Status', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Etykieta', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Kończy sprawę', 'mp-workflow-automator' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if ( empty( $statuses ) ) : ?>
-					<tr><td colspan="3"><?php esc_html_e( 'Brak statusów.', 'mp-workflow-automator' ); ?></td></tr>
-				<?php else : ?>
-					<?php foreach ( $statuses as $slug => $def ) : ?>
-						<?php $terminal = is_array( $def ) && ! empty( $def['terminal'] ); ?>
-						<tr>
-							<td><code><?php echo esc_html( (string) $slug ); ?></code></td>
-							<td><?php echo esc_html( is_array( $def ) && isset( $def['label'] ) ? (string) $def['label'] : (string) $slug ); ?></td>
-							<td><?php echo $terminal ? esc_html__( 'tak', 'mp-workflow-automator' ) : esc_html__( 'nie', 'mp-workflow-automator' ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</tbody>
-		</table>
+		<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Lista statusów spraw', 'mp-workflow-automator' ); ?>">
+			<table class="widefat striped mp-automator-table">
+				<caption class="screen-reader-text"><?php esc_html_e( 'Lista statusów spraw', 'mp-workflow-automator' ); ?></caption>
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Status', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Etykieta', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Kończy sprawę', 'mp-workflow-automator' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $statuses ) ) : ?>
+						<tr><td colspan="3"><?php esc_html_e( 'Brak statusów.', 'mp-workflow-automator' ); ?></td></tr>
+					<?php else : ?>
+						<?php foreach ( $statuses as $slug => $def ) : ?>
+							<?php $terminal = is_array( $def ) && ! empty( $def['terminal'] ); ?>
+							<tr>
+								<td><code><?php echo esc_html( (string) $slug ); ?></code></td>
+								<td><?php echo esc_html( is_array( $def ) && isset( $def['label'] ) ? (string) $def['label'] : (string) $slug ); ?></td>
+								<td><?php echo $terminal ? esc_html__( 'tak', 'mp-workflow-automator' ) : esc_html__( 'nie', 'mp-workflow-automator' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
 		<?php
 	}
 
@@ -710,35 +714,37 @@ final class PanelScreen {
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Rejestr zdarzeń', 'mp-workflow-automator' ); ?>
 			<a class="page-title-action" style="margin-left:.5rem" href="<?php echo esc_url( $toggle_url ); ?>"><?php echo esc_html( $toggle_label ); ?></a>
 		</h2>
-		<table class="widefat striped mp-automator-table">
-			<caption class="screen-reader-text"><?php esc_html_e( 'Rejestr zdarzeń automatyzacji (tylko do odczytu)', 'mp-workflow-automator' ); ?></caption>
-			<thead>
-				<tr>
-					<th scope="col"><?php esc_html_e( 'ID', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Zdarzenie', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Sprawa', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Wykonawca', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Kiedy', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Szczegóły', 'mp-workflow-automator' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if ( empty( $rows ) ) : ?>
-					<tr><td colspan="6"><?php esc_html_e( 'Brak zdarzeń.', 'mp-workflow-automator' ); ?></td></tr>
-				<?php else : ?>
-					<?php foreach ( $rows as $e ) : ?>
-						<tr>
-							<td><?php echo esc_html( (string) $e->id ); ?></td>
-							<td><?php echo esc_html( self::etykieta_zdarzenia( (string) $e->event_type ) ); ?></td>
-							<td><?php echo null !== $e->case_id ? esc_html( self::numer_sprawy( (int) $e->case_id ) ) : '—'; ?></td>
-							<td><?php echo esc_html( self::actor_label( $e->actor_id ) ); ?></td>
-							<td><?php echo esc_html( get_date_from_gmt( (string) $e->created_at, 'Y-m-d H:i' ) ); ?></td>
-							<td class="mp-automator-payload"><?php echo esc_html( self::payload_summary( (string) $e->payload ) ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</tbody>
-		</table>
+		<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Rejestr zdarzeń automatyzacji (tylko do odczytu)', 'mp-workflow-automator' ); ?>">
+			<table class="widefat striped mp-automator-table">
+				<caption class="screen-reader-text"><?php esc_html_e( 'Rejestr zdarzeń automatyzacji (tylko do odczytu)', 'mp-workflow-automator' ); ?></caption>
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'ID', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Zdarzenie', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Sprawa', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Wykonawca', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Kiedy', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Szczegóły', 'mp-workflow-automator' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $rows ) ) : ?>
+						<tr><td colspan="6"><?php esc_html_e( 'Brak zdarzeń.', 'mp-workflow-automator' ); ?></td></tr>
+					<?php else : ?>
+						<?php foreach ( $rows as $e ) : ?>
+							<tr>
+								<td><?php echo esc_html( (string) $e->id ); ?></td>
+								<td><?php echo esc_html( self::etykieta_zdarzenia( (string) $e->event_type ) ); ?></td>
+								<td><?php echo null !== $e->case_id ? esc_html( self::numer_sprawy( (int) $e->case_id ) ) : '—'; ?></td>
+								<td><?php echo esc_html( self::actor_label( $e->actor_id ) ); ?></td>
+								<td><?php echo esc_html( get_date_from_gmt( (string) $e->created_at, 'Y-m-d H:i' ) ); ?></td>
+								<td class="mp-automator-payload"><?php echo esc_html( self::payload_summary( (string) $e->payload ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
 		<?php
 		self::render_pagination( $page, $pages, $total, $show_technical );
 	}
@@ -1040,23 +1046,25 @@ final class PanelScreen {
 		?>
 		<h4 class="mp-automator-h4"><?php esc_html_e( 'Dostępne markery szablonów (lista dozwolonych)', 'mp-workflow-automator' ); ?></h4>
 		<p class="description"><?php esc_html_e( 'Tylko poniższe markery są podstawiane w treści szablonu — inne zostają pominięte.', 'mp-workflow-automator' ); ?></p>
-		<table class="widefat striped mp-automator-table">
-			<caption class="screen-reader-text"><?php esc_html_e( 'Lista dostępnych markerów szablonów odpowiedzi', 'mp-workflow-automator' ); ?></caption>
-			<thead>
-				<tr>
-					<th scope="col"><?php esc_html_e( 'Marker', 'mp-workflow-automator' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Znaczenie', 'mp-workflow-automator' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach ( $markers as $marker => $desc ) : ?>
+		<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Lista dostępnych markerów szablonów odpowiedzi', 'mp-workflow-automator' ); ?>">
+			<table class="widefat striped mp-automator-table">
+				<caption class="screen-reader-text"><?php esc_html_e( 'Lista dostępnych markerów szablonów odpowiedzi', 'mp-workflow-automator' ); ?></caption>
+				<thead>
 					<tr>
-						<td><code><?php echo esc_html( (string) $marker ); ?></code></td>
-						<td><?php echo esc_html( (string) $desc ); ?></td>
+						<th scope="col"><?php esc_html_e( 'Marker', 'mp-workflow-automator' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Znaczenie', 'mp-workflow-automator' ); ?></th>
 					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					<?php foreach ( $markers as $marker => $desc ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( (string) $marker ); ?></code></td>
+							<td><?php echo esc_html( (string) $desc ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
 		<?php
 	}
 }

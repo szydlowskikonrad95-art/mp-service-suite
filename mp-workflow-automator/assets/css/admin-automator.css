@@ -24,6 +24,24 @@
 .mp-automator-action .description { max-width: 26em; color: #50575e; }
 .mp-automator-table { margin-top: .6em; max-width: 100%; }
 .mp-automator-table caption { text-align: left; }
+/*
+ * Poz. 2.6 — przy powiekszeniu 200% ten ekran wychodzil 184 px poza okno (zmierzone
+ * na koncie koordynatora; blizniacza lista „Sprawy" ma przy tym samym pomiarze zero).
+ * Winna byla tabela regul: `max-width: 100%` nie zwezi tabeli ponizej jej wlasnej
+ * szerokosci minimalnej, wiec nadmiar szedl na CALA STRONE i w bok przewijal sie
+ * caly panel — z menu i naglowkiem wlacznie.
+ *
+ * Tabela danych ma prawo przewijac sie w poziomie (WCAG 1.4.10 wyjmuje uklady
+ * dwuwymiarowe), ale MUSI robic to WEWNATRZ swojego kawalka strony. Stad region
+ * przewijany. `tabindex="0"` jest tu czescia naprawy, nie ozdoba: w tych tabelach
+ * nie ma nic klikalnego, wiec bez wlasnego zaczepu klawiatury osoba bez myszki
+ * nie miala jak ich przesunac (WCAG 2.1.1).
+ */
+.mp-automator-table-scroll { max-width: 100%; overflow-x: auto; }
+.mp-automator-table-scroll:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}
 .mp-automator-payload { font-size: 12px; color: #1d2327; word-break: break-word; }
 .mp-automator-slot {
 	max-width: 60em;
