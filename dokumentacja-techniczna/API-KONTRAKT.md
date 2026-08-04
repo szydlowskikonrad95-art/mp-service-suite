@@ -164,7 +164,7 @@ produktu / brak kategorii → zwraca `$default` (zwykle `null`), nigdy błąd. Z
 ### `mp_customer_find_products( $result, $query )` — pyta B, odpowiada C
 Wyszukiwarka „po kliencie" w B mechaniką odwróconą (C zna mapping klient→sprawy→produkty).
 ```php
-array( 'ids' => array( 42, 57 ), 'truncated' => false, 'limit' => 200 );
+array( 'schema_version' => 1, 'ids' => array( 42, 57 ), 'truncated' => false, 'limit' => 200 );
 ```
 
 ### `mp_product_active_cases_count( $count, $product_registry_id )` — pyta B, odpowiada C → int
@@ -173,7 +173,7 @@ B odmawia operacji z komunikatem.
 
 ### `mp_case_count_by_product( $result, $product_registry_id )` — pyta B, odpowiada C
 ```php
-array( 'total' => 5, 'active' => 1, 'closed' => 3, 'rejected' => 1 );
+array( 'schema_version' => 1, 'total' => 5, 'active' => 1, 'closed' => 3, 'rejected' => 1 );
 ```
 Sprawy unverified NIE wliczają się (anty‑wektor „spamer blokuje produkty").
 
@@ -192,12 +192,21 @@ w chwili, gdy Automator był WYŁĄCZONY, mają u siebie komplet śladów (C zap
 wyemitował akcję), więc reconcile po braku zdarzenia narodzin ich NIE widzi. Wołane z crona,
 więc **bez bramki uprawnień** — jak `mp_case_get_context`. Okno i limit trzymają koszt zapytania.
 
-### `mp_rejection_reasons( $reasons )` — oddaje D
-Słownik powodów odrzuceń (kod→etykieta; opcja‑treść, edycja w adminie D). Bez D → C używa
-awaryjnego mini‑słownika (DUPLICATE / NO_RESPONSE / OTHER) + ręczny kod ≤64.
+### `mp_rejection_reasons( $reasons )` — **oddaje C** (czytają: karta sprawy C, eksport CSV D)
+Słownik powodów odrzuceń (kod→etykieta; opcja‑treść, edycja w **MP: Sprawy → Ustawienia**, sekcja
+„Powody odrzucenia sprawy"). Jedyny dostawca: `MP\Intake\RejectionReasons` (`RejectionReasons.php:86`).
 ```php
-array( 'gwarancja_wygasla' => 'Gwarancja wygasła', 'duplikat' => 'Zgłoszenie zduplikowane', /* … */ );
+array( 'brak_dowodu' => 'Brak dowodu zakupu', 'poza_gwarancja' => 'Sprzęt poza okresem gwarancji', /* … */ );
 ```
+⛔ **Domyślny słownik jest NIEPUSTY** (6 powodów, `RejectionReasons::defaults()`), a zapis pustej listy
+jest odrzucany. To nie jest kosmetyka: karta pokazuje pole powodu **wyłącznie przy niepustej liście**,
+a `mp_case_change_status` bez powodu odbija `REJECTION_REASON_REQUIRED` — pusty słownik znaczy
+„statusu «odrzucone» nie da się ustawić z panelu".
+📌 **Rdzeń nie waliduje kodu względem słownika** — wymaga jedynie NIEPUSTEGO `rejection_reason_code`
+(`CaseRepo.php:805`). Słownik steruje listą wyboru w UI; moduł wołający funkcję kontraktową może podać
+własny kod. *(Do 1.3.11 ten filtr nie miał ŻADNEGO dostawcy — istniały tylko dwa odczyty. Wcześniejszy
+zapis „oddaje D … bez D → C używa awaryjnego mini‑słownika (DUPLICATE / NO_RESPONSE / OTHER)" opisywał
+zamiar: D go nie rejestrowało, a mini‑słownika w C nigdy nie było.)*
 
 ### `mp_registered_statuses( $statuses )` — oddaje D
 Definicje statusów WŁASNYCH (D = źródło definicji, C = walidator przejść). Bez D → rdzeń 7.
@@ -232,7 +241,11 @@ jako główna droga — i dlatego hurtowy przy zerowym wyniku zwraca **pustą ma
 
 **`mp_case_checklist_state( $result, $case_id )`** — karta C pyta o checklistę sprawy.
 Zwrotka: PEŁNA lista kroków rodzaju z nałożonym stanem odhaczeń —
-`[{step_key, label, completed, completed_by, completed_at}]`; pusta gdy sprawa/rodzaj nieznany.
+`[{schema_version, step_key, label, completed, completed_by, completed_at}]`; pusta gdy sprawa/rodzaj nieznany.
+⛔ **Tu `schema_version` jedzie w KAŻDEJ POZYCJI, nie na wierzchu listy** — odbiorca iteruje tę zwrotkę
+wprost (`foreach ( $steps as $step )`), więc doklejenie wersji jako kolejnego elementu listy podsunęłoby
+mu liczbę tam, gdzie spodziewa się kroku checklisty. Przy zwrotkach będących pojedynczą mapą wersja
+jedzie na wierzchu, bo tam jest to bezpieczne (`CaseCardApi.php:115` vs `:174`).
 ```php
 $steps = apply_filters( 'mp_case_checklist_state', null, 123 );
 ```
@@ -289,7 +302,8 @@ transakcji, akcje PO commit. `mp_cases_query` respektuje ROLĘ wołającego (mp_
 | mp_warranty_check · mp_serial_usage_count | B | C (i inni) |
 | mp_customer_find_products · mp_product_active_cases_count · mp_case_count_by_product | C | B |
 | mp_privacy_redact_for_customer | B (listener) | C (eraser) |
-| mp_rejection_reasons · mp_registered_statuses · sekcje karty | D | C |
+| mp_registered_statuses · sekcje karty | D | C |
+| mp_rejection_reasons | **C** | C (karta) · D (eksport CSV) |
 | mp_case_deadline (pojedynczy, zapas) · **mp_case_deadlines (hurtowy — lista)** | D | C |
 | mp_all_statuses | C | D |
 | mp_product_details | B | C |

@@ -41,7 +41,7 @@ Każda z trzech wtyczek ma własny ekran **Ustawienia**. Najważniejszy jest ten
 
 | Sekcja | Co ustawiasz |
 |---|---|
-| **Powody odrzucenia sprawy** | lista powodów, z której pracownik wybiera przy odrzuceniu. ⛔ **Dopóki jest pusta, nikt nie zapisze statusu „odrzucone"** — pole powodu się nie pojawi, a zapis bez powodu system odrzuca. Wypełnij ją przy wdrożeniu |
+| **Powody odrzucenia sprawy** | lista powodów, z której pracownik wybiera przy odrzuceniu. **Sześć powodów działa od razu po instalacji** — tu je dopasujesz do swojego serwisu (jeden powód w linii). ⛔ **Pustej listy system nie przyjmie**: bez powodów nie dałoby się odrzucić żadnej sprawy |
 | **Kasowanie danych przy odinstalowaniu** | czy odinstalowanie tej wtyczki ma skasować jej dane. **Domyślnie wyłączone** |
 
 **Rejestr MP → Ustawienia** ma jedną sekcję: kasowanie danych przy odinstalowaniu tej wtyczki

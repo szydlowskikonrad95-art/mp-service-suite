@@ -17,7 +17,7 @@
 | Wyjątki gwarancyjne | warranty_exceptions | **B** | — (zatwierdza WYŁĄCZNIE `mp_system_admin` w UI B) | pola exception_* w zwrotce `mp_warranty_check` |
 | Przebiegi importu | import_jobs | **B** | — | ekran importu B |
 | Reguły automatora | workflow_rules | **D** | — | — |
-| Księgowość SLA, checklisty (stan) | case_sla, case_checklists | **D** | — (stan checklisty: NAJPIERW `mp_case_checklist_authorize` w C, po OK zapis w D) | sekcje karty sprawy przez DEDYKOWANE filtry: `mp_case_deadline` (terminy) i `mp_case_checklist_state` (kroki) |
+| Księgowość SLA, checklisty (stan) | case_sla, case_checklists | **D** | — (stan checklisty: NAJPIERW `mp_case_checklist_authorize` w C, po OK zapis w D) | sekcje karty sprawy przez DEDYKOWANE filtry: `mp_case_deadline` (termin JEDNEJ sprawy — karta) · **`mp_case_deadlines` (wariant HURTOWY, terminy całej strony listy jednym zapytaniem)** · `mp_case_checklist_state` (kroki) |
 | Rejestr operacji D | workflow_events (append‑only) | **D** | — | podgląd w adminie D |
 
 ## 2. Wspólne zasoby (nie mają jednego właściciela‑pluginu)
@@ -53,13 +53,27 @@
 ## 4. Sprzątanie i cykl życia danych
 
 - **Uninstall dwuwarstwowy**: warstwa (i) ZAWSZE — opcje techniczne, transienty, crony, pliki
-  techniczne **z katalogów roboczych OBU wtyczek plikowych** (`uploads/mp-attachments/` w C,
-  `uploads/mp-imports/` w B — pliki, guardy `.htaccess`/`index.php` i sam katalog; pilnuje tego
-  `testy/e2e/uninstall-crony.sh`, który najpierw zakłada w nich próbki, żeby pusty katalog nie
-  udawał posprzątanego), auto‑strona formularza (tylko nieedytowana, po zapisanym ID); warstwa (ii) default
+  **wsadowe i raporty importu** (`uploads/mp-imports/` w B — pliki, guardy `.htaccess`/`index.php`
+  i sam katalog; pilnuje tego `testy/e2e/uninstall-crony.sh`, który najpierw zakłada w nich próbki,
+  żeby pusty katalog nie udawał posprzątanego), auto‑strona formularza (tylko nieedytowana,
+  po zapisanym ID).
+  ⛔ **ZAŁĄCZNIKI (`uploads/mp-attachments/`) NIE SĄ w warstwie (i) — od 1.3.12 idą za przełącznik,
+  tam gdzie reszta danych sprawy** (2.2). Powód: w sprawie reklamacyjnej załącznik JEST DOWODEM
+  (zdjęcie uszkodzenia, skan dokumentu zakupu), a wiersze giną dopiero za jawną zgodą — więc
+  bezwarunkowe kasowanie plików zostawiało **sprawy BEZ DOWODÓW**, wskazujące na pliki, których
+  już nie ma. Sedno asymetrii: kasowanie plików jest NIEODWRACALNE, zostawienie tabel odwracalne.
+  Warstwa (ii) default
   OFF — dane biznesowe wg JAWNEJ listy per plugin (w tym opcje‑TREŚCI D: szablony, definicje
-  checklist, statusy własne — przeżywają RAZEM z regułami; `srv_counters` = warstwa ii RAZEM ze
-  sprawami). uninstall.php IDEMPOTENTNY (przerwany → dokańcza).
+  checklist, statusy własne — przeżywają RAZEM z regułami; opcja‑TREŚĆ C: **nadpisana konfiguracja
+  pól formularza** — nie była kasowana do 1.3.11, więc po odinstalowaniu ZA ZGODĄ zostawał w bazie
+  wiersz po cichu nadpisujący domyślne pola po ponownej instalacji (`uninstall.php:171`);
+  `srv_counters` = warstwa ii RAZEM ze sprawami).
+  ⚠️ **Znany brak w 1.3.12:** opcja **powodów odrzucenia** (`mp_intake_rejection_reasons`, doszła
+  z ekranem ustawień) jest opcją‑TREŚCIĄ wg tej samej reguły, ale **`uninstall.php` jej nie kasuje
+  w żadnej warstwie** — sprawdzone poleceniem. Skutek jest łagodny (po reinstalacji wraca poprzednia
+  lista powodów zamiast domyślnej), ale to **ta sama klasa co 2.56**, naprawiona w tym samym pliku
+  kilka godzin wcześniej. Zgłoszone; poprawka wymaga zmiany kodu, więc czeka za zamrożeniem.
+  uninstall.php IDEMPOTENTNY (przerwany → dokańcza).
 - **Sygnał `mp_cases_data_erased`** (uninstall C ścieżką ON): D robi wipe case_sla + case_checklists
   (workflow_events zostaje — rejestr historyczny); B rewokuje wyjątki per‑sprawa (globalne zostają).
   C skasowany BEZ sygnału → sieroty sprząta defensywa sweepa D (`not_found` → wiersz sla czyszczony).

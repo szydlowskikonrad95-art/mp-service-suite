@@ -254,10 +254,12 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
   w naprawie / zamknięte) jest wbudowanych i nieusuwalnych. **Własne statusy dokładasz sam**
   w **Automatyzacje MP → Ustawienia**, sekcja „Statusy własne": klucz techniczny, nazwa widoczna,
   czy aktywny, czy kończy sprawę oraz termin i moment ostrzeżenia. Programista nie jest potrzebny.
-- Odrzucenie sprawy zawsze wymaga podania powodu — a powody **musisz najpierw wpisać**:
-  **MP: Sprawy → Ustawienia**, sekcja „Powody odrzucenia sprawy" → **Zapisz powody odrzucenia**.
-  ⚠️ **Dopóki lista jest pusta, pracownik nie zapisze statusu „odrzucone"** (pole powodu się nie
-  pojawi, a zapis bez powodu jest odrzucany). To jeden z pierwszych kroków konfiguracji.
+- Odrzucenie sprawy zawsze wymaga wybrania powodu z listy. **Lista działa od razu po instalacji** —
+  system ma **sześć powodów domyślnych** (brak dowodu zakupu, sprzęt poza gwarancją, uszkodzenie
+  z winy użytkownika, nie stwierdzono usterki, produkt spoza oferty, zgłoszenie powielone).
+  Dopasujesz ją do siebie w **MP: Sprawy → Ustawienia**, sekcja „Powody odrzucenia sprawy" →
+  **Zapisz powody odrzucenia**. ⚠️ **Pustej listy system nie przyjmie** — bez powodów nie dałoby się
+  w ogóle odrzucić sprawy, więc zapis pustki jest odrzucany.
 - **Wznowić zamkniętą sprawę może tylko koordynator** (i tylko do statusu „w analizie").
 
 **Szablony i checklisty:**

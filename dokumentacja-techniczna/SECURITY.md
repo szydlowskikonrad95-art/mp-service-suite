@@ -112,9 +112,26 @@ domyślne (`RateLimit::limits()`), nadpisywalne filtrem **`mp_intake_rate_limits
 
 | Licznik | Próg | Okno | Po co |
 |---|---|---|---|
-| **na adres IP** | 10 zgłoszeń | 10 minut | zalew z jednego źródła |
-| **na adres e-mail** | 3 zgłoszenia | 24 godziny | zapychanie kolejki jednym kontem |
-| **na numer seryjny** | 5 zgłoszeń | 24 godziny | wielokrotne zgłaszanie tego samego produktu |
+| **na adres IP** | 10 zgłoszeń | 10 minut, **przesuwane** | zalew z jednego źródła |
+| **na adres e-mail** | 3 zgłoszenia | 24 h, **NIERUCHOME od pierwszego zgłoszenia** | zapychanie kolejki jednym kontem |
+| **na numer seryjny** | 5 zgłoszeń | 24 h, **NIERUCHOME od pierwszego zgłoszenia** | wielokrotne zgłaszanie tego samego produktu |
+
+⏱️ **Okno dobowe jest NIERUCHOME i to jest decyzja, nie szczegół** (2.31, `RateLimit.php:157-166`).
+Przy oknie przesuwanym każde udane zgłoszenie odsuwało koniec doby, więc limit „3 na dobę" działał
+w praktyce jak „trzy pod rząd" i **klient zablokowany wieczorem nie odblokowywał się rano**, choć
+instrukcja kazała mu „poczekać do następnego dnia". Dziś doba biegnie od PIERWSZEGO z trzech zgłoszeń.
+📌 Liczniki e‑mail/serial rosną **wyłącznie po UDANYM zgłoszeniu** (`record_submission`, D5) — literówka
+w formularzu albo błąd walidacji nie zjada klientowi limitu. Licznik IP liczy KAŻDĄ próbę (anty‑flood).
+
+🔑 **Klucz licznika jest NORMALIZOWANY — inaczej limit da się obejść w sekundę.** `jan+1@`, `jan+2@`
+i `jan@` to dla licznika **jeden adres** (`RateLimit::normalize_email_for_key`), bo poczta i tak trafia
+do jednej skrzynki; numer seryjny liczy się tą samą normalizacją co dedup (myślnik/spacja nie robią
+nowego egzemplarza). ⛔ **Normalizacja dotyczy WYŁĄCZNIE klucza licznika** — adres zapisany w bazie
+i użyty do wysyłki zostaje dokładnie taki, jaki podał klient (inaczej psulibyśmy dostarczanie poczty
+i tożsamość klienta z §8). Jeden przypadek brzegowy jest świadomy: adres zaczynający się plusem
+(`+tag@domena`) **nie jest obcinany**, bo pusta część lokalna dałaby JEDEN wspólny klucz dla całej
+domeny i odebrałaby limit obcym ludziom. To samo gardło obsługuje licznik dobowy, dedup i ogranicznik
+logowania — gdyby każde miejsce liczyło klucz samo, wystarczyłoby poprawić jedno.
 
 Osobno działa **twarda deduplikacja**: identyczne zgłoszenie (ten sam numer seryjny, e-mail
 i rodzaj sprawy) w oknie **15 minut** nie zakłada nowej sprawy — to nie jest rate-limit, tylko
