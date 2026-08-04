@@ -142,12 +142,15 @@ final class RateLimit {
 		$serial = trim( $serial );
 		$limits = self::limits();
 
+		// 2.31: okno NIERUCHOME, liczone od pierwszego zgloszenia. Klient dostal na
+		// pismie „3 zgloszenia na dobe" — przy oknie przesuwanym kazde udane
+		// zgloszenie odsuwalo koniec doby i limit dzialal jak „trzy pod rzad".
 		if ( '' !== $email ) {
-			self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'] );
+			self::hit( 'mp_rl_em_' . md5( $email ), (int) $limits['email_window'], false );
 		}
 
 		if ( '' !== $serial ) {
-			self::hit( self::serial_counter_key( $serial ), (int) $limits['serial_window'] );
+			self::hit( self::serial_counter_key( $serial ), (int) $limits['serial_window'], false );
 		}
 
 		self::mark_submitted( $email, $serial, $kind );
@@ -398,19 +401,35 @@ final class RateLimit {
 	}
 
 	/**
-	 * Atomowy licznik rate-limitu w oknie przesuwanym (wlasna tabela).
+	 * Atomowy licznik rate-limitu w oknie (wlasna tabela).
 	 *
 	 * Jedna kwerenda = init/inkrement + reset po wygasnieciu okna (jak SrvCounter):
 	 * pierwszy hit zaklada wiersz z hits=1; kolejne w oknie inkrementuja; gdy okno
-	 * minelo, licznik startuje od 1. window_expires_at odswiezany na kazdym hicie
-	 * (okno przesuwane — zgodnie z dawna semantyka odswiezania TTL). LAST_INSERT_ID
-	 * zwraca NOWA wartosc licznika w tej samej sesji => brak wyscigu read-modify-write.
+	 * minelo, licznik startuje od 1. LAST_INSERT_ID zwraca NOWA wartosc licznika
+	 * w tej samej sesji => brak wyscigu read-modify-write.
 	 *
-	 * @param string $key    Klucz licznika (bez PII — hash).
-	 * @param int    $window Okno w sekundach.
+	 * ⛔ DWA RODZAJE OKNA (audyt 2.31) — roznica jest widoczna dla klienta:
+	 *
+	 * · `$przesuwane = true` (OCHRONA PRZECIWZALEWOWA: IP, zadania linku logowania).
+	 *   Koniec okna odswiezany przy KAZDYM trafieniu. Kto puka bez przerwy, zostaje
+	 *   zablokowany, dopoki nie przestanie. Dla ochrony przed zalewem to zachowanie
+	 *   pozadane i celowo zostaje.
+	 *
+	 * · `$przesuwane = false` (LIMITY ZGLOSZEN: e-mail, numer seryjny).
+	 *   Okno liczone od PIERWSZEGO zgloszenia i nieruchome. Tego wymaga obietnica
+	 *   dana klientowi na pismie — „3 zgloszenia na dobe". Przy oknie przesuwanym
+	 *   klient skladajacy po jednym zgloszeniu dziennie dostawal odmowe czwartego
+	 *   dnia, bo kazde udane zgloszenie przesuwalo koniec okna i licznik nigdy sie
+	 *   nie zerowal. „Na dobe" dzialalo jak „trzy pod rzad" — a instrukcja kazala
+	 *   obsludze sprawdzic, ile klient wyslal DZIS, wiec pracownik widzial zero
+	 *   zgloszen z dzisiaj i nie znajdowal przyczyny blokady.
+	 *
+	 * @param string $key        Klucz licznika (bez PII — hash).
+	 * @param int    $window     Okno w sekundach.
+	 * @param bool   $przesuwane Czy koniec okna ma sie przesuwac przy kazdym trafieniu.
 	 * @return int Aktualna liczba hitow w oknie (po tym hicie).
 	 */
-	private static function hit( string $key, int $window ): int {
+	private static function hit( string $key, int $window, bool $przesuwane = true ): int {
 		global $wpdb;
 
 		$table   = Tables::full( Tables::RATE_COUNTERS );
@@ -424,9 +443,11 @@ final class RateLimit {
 				VALUES (%s, LAST_INSERT_ID(1), %s)
 				ON DUPLICATE KEY UPDATE
 					hits = LAST_INSERT_ID( IF( window_expires_at <= %s, 1, hits + 1 ) ),
-					window_expires_at = %s",
+					window_expires_at = IF( %d = 1 OR window_expires_at <= %s, %s, window_expires_at )",
 				$key,
 				$expires,
+				$now,
+				$przesuwane ? 1 : 0,
 				$now,
 				$expires
 			)
