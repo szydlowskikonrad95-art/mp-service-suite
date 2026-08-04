@@ -61,9 +61,13 @@ defstat "archiwum_wewnetrzne" "array('label'=>'Archiwum','active'=>true,'termina
 IT=$(wp eval 'echo MP\Intake\Statuses::is_terminal("archiwum_wewnetrzne") ? "1":"0";' 2>/dev/null)
 [ "$IT" = "1" ] && ok "wlasny status terminalny: C is_terminal=true (flaga, nie nazwa)" || bad "flaga terminal nie dotarla do C"
 
-# ── 5. KOLIZJA z rdzeniem NIEMOZLIWA: slug 'zamknięte' -> sanitize_key -> 'zamknite' ─
+# ── 5. KOLIZJA z rdzeniem NIEMOZLIWA: slug 'zamknięte' -> 'zamkniete' ────────
+# ⚠️ Od pozycji 2.26 polskie znaki sa ZAMIENIANE, a nie usuwane: „zamknięte" daje
+# `zamkniete` (bylo `zamknite`, bo ę po prostu znikalo). Intencja tej kontroli sie
+# nie zmienia — status wlasny nazwany jak rdzeniowy NIE MOZE go nadpisac — zmienia
+# sie tylko identyfikator, ktory z tego powstaje.
 SLUG=$(defstat "zamknięte" "array('label'=>'PROBA-NADPISANIA','active'=>true,'terminal'=>false)")
-[ "$SLUG" = "zamknite" ] && ok "upsert('zamknięte') zapisany jako 'zamknite' (sanitize_key zdjal ę)" || bad "slug po sanityzacji=[$SLUG] (oczekiwano zamknite)"
+[ "$SLUG" = "zamkniete" ] && ok "upsert('zamknięte') zapisany jako 'zamkniete' (ę zamienione na e, nie zjedzone)" || bad "slug po sanityzacji=[$SLUG] (oczekiwano zamkniete)"
 CORELBL=$(wp eval 'echo MP\Intake\Statuses::all()["zamknięte"]["label"];' 2>/dev/null)
 [ "$CORELBL" = "zamknięte" ] && ok "rdzen 'zamknięte' NIETKNIETY (label != PROBA-NADPISANIA)" || bad "rdzen nadpisany! label=[$CORELBL]"
 CORETERM=$(wp eval 'echo MP\Intake\Statuses::is_terminal("zamknięte") ? "1":"0";' 2>/dev/null)
