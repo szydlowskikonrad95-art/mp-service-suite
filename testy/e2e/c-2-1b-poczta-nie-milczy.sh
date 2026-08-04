@@ -187,6 +187,27 @@ printf '%s' "$R_FAIL" | grep -q "Link weryfikacyjny" \
 	&& ok "udana ponowna wysylka GASI oznaczenie (nie wisi wiecznie)" \
 	|| bad "oznaczenie zostalo mimo udanej ponownej wysylki"
 
+# ── 4b. REGRESJA Z CI: oba wpisy w TEJ SAMEJ SEKUNDZIE ──────────────────────
+# Pierwsza wersja tej naprawy liczyla oznaczenie z CZASU (awaria nowsza niz
+# wydanie tokenu) i przechodzila lokalnie, a na maszynie CI zapalala oznaczenie
+# mimo udanej ponowki: znaczniki maja rozdzielczosc JEDNEJ SEKUNDY, a tam caly
+# przebieg miesci sie w jednej. Tu WYMUSZAMY identyczny czas obu wpisow — jesli
+# ktos wroci do porownywania czasu, ta kontrola padnie od razu, na kazdej maszynie.
+wp eval "MP\\Intake\\CaseEvents::log( $CID_FAIL, 'MAIL_FAILED', array( 'kind' => 'magic_link', 'error_code' => 'test' ), null );
+	MP\\Intake\\CaseEvents::log( $CID_FAIL, 'MAIL_SENT', array( 'kind' => 'magic_link' ), null );" >/dev/null 2>&1
+wp db query "UPDATE wp_mp_case_events SET created_at='2026-01-01 00:00:00' WHERE case_id=$CID_FAIL AND event_type IN ('MAIL_FAILED','MAIL_SENT')" >/dev/null 2>&1
+
+[ "$(oznaczenie "$NR_FAIL")" = "NIE" ] \
+	&& ok "przy identycznym czasie obu wpisow rozstrzyga KOLEJNOSC (oznaczenie zgaszone)" \
+	|| bad "oznaczenie liczone z czasu — w tej samej sekundzie nie odroznia awarii od ponowki"
+
+wp eval "MP\\Intake\\CaseEvents::log( $CID_FAIL, 'MAIL_FAILED', array( 'kind' => 'magic_link', 'error_code' => 'test' ), null );" >/dev/null 2>&1
+wp db query "UPDATE wp_mp_case_events SET created_at='2026-01-01 00:00:00' WHERE case_id=$CID_FAIL AND event_type IN ('MAIL_FAILED','MAIL_SENT')" >/dev/null 2>&1
+
+[ "$(oznaczenie "$NR_FAIL")" = "TAK" ] \
+	&& ok "nowa awaria po ponowce znowu zapala oznaczenie (proba kontrolna)" \
+	|| bad "oznaczenie nie zapala sie po kolejnej awarii — kontrola odwrotna padla"
+
 # ── 4b. POTWIERDZENIE przy padnietej poczcie: prawda BEZ numeru sprawy ──────
 # Numer SRV wychodzi wylacznie mailem albo panelem (krok 6 kartki, pilnuje C3).
 # Pierwsza wersja tej poprawki pokazywala numer na ekranie „skoro mail nie
@@ -237,9 +258,21 @@ else
 	bad "nie znaleziono Login.php ($LOGIN_PHP) — bramka anty-enumeracyjna nie zostala sprawdzona"
 fi
 
-# ── SPRZATANIE (pulapka nr 5 z briefingu: nie zostawiamy smieci) ─────────────
+# ── SPRZATANIE ZE SPRAWDZENIEM ──────────────────────────────────────────────
+# Testy w zadaniu e2e-import chodza JEDEN PO DRUGIM na TEJ SAMEJ bazie: stan
+# zostawiony tutaj wywala test kilka pozycji dalej, w miejscu bez zwiazku ze
+# zmiana. Sprzatanie BEZ kontroli jest zyczeniem, nie faktem — wiec sprawdzamy.
 rm -f "$MU"
 reset_all
+
+[ ! -f "$MU" ] \
+	&& ok "przelacznik poczty (mu-plugin) usuniety ze srodowiska" \
+	|| bad "mu-plugin ZOSTAL ($MU) — nastepne testy beda mialy podmieniona poczte"
+
+ZOSTALO=$(q "SELECT COUNT(*) FROM wp_mp_service_cases")
+[ "${ZOSTALO:-1}" = "0" ] \
+	&& ok "zgloszenia testowe posprzatane (nastepny test nie policzy ich jako swoich)" \
+	|| bad "zostawiamy $ZOSTALO spraw w bazie"
 
 echo ""
 echo "WYNIK 2.1b: PASS=$PASS FAIL=$FAIL"

@@ -99,6 +99,22 @@ final class CaseEvents {
 	public const MAIL_FAILED = 'MAIL_FAILED';
 
 	/**
+	 * Poczta WROCILA: mail wyszedl po wczesniejszej nieudanej probie na tej sprawie.
+	 *
+	 * Zapisywany TYLKO wtedy, gdy jest co odwolywac — przy zwyklej, udanej wysylce
+	 * os czasu nie puchnie ani o jeden wiersz. Dzieki temu pytanie „czy TEJ sprawie
+	 * nie doszedl link" rozstrzyga KOLEJNOSC wpisow (ostatni z pary FAILED/SENT),
+	 * a nie porownywanie czasu.
+	 *
+	 * ⛔ DLACZEGO NIE Z CZASU: znaczniki maja rozdzielczosc JEDNEJ SEKUNDY. Ponowna
+	 * wysylka potrafi zmiescic sie w tej samej sekundzie co awaria, ktora odwoluje —
+	 * wtedy „nowsze" i „starsze" sa nierozroznialne i oznaczenie zostaje zapalone
+	 * mimo udanej ponowki. Zlapane na maszynie CI, gdzie caly przebieg trwa krocej
+	 * niz sekunde; lokalnie niewidoczne, bo tam kazde wywolanie trwa ponad sekunde.
+	 */
+	public const MAIL_SENT = 'MAIL_SENT';
+
+	/**
 	 * Os czasu sprawy (append-only) — chronologicznie. Do karty sprawy personelu.
 	 *
 	 * @param int $case_id ID sprawy.
@@ -161,11 +177,15 @@ final class CaseEvents {
 	 * na pytanie o POJEDYNCZA sprawe — „ktoremu klientowi nie doszedl link".
 	 * Ekran „Niepotwierdzone" pokazywal takie sprawy nieodroznialnie od udanych.
 	 *
-	 * KTORE liczymy: tylko awarie NOWSZE niz wydanie aktualnego tokenu. Kazda ponowna
-	 * wysylka wydaje swiezy token (`CaseRepo::regenerate_token`), wiec udana ponowka
-	 * gasi oznaczenie sama, bez kasowania czegokolwiek (os czasu jest append-only).
-	 * Moment wydania liczymy z `verify_token_expires_at` minus TTL — obie wartosci
-	 * sa w GMT, tak samo jak `created_at` zdarzen.
+	 * KTORE liczymy: sprawy, ktorych OSTATNIM wpisem pocztowym jest niepowodzenie.
+	 * Udana wysylka po awarii dopisuje `MAIL_SENT`, wiec ponowka gasi oznaczenie
+	 * sama, bez kasowania czegokolwiek (os czasu jest append-only).
+	 *
+	 * ⛔ ROZSTRZYGA KOLEJNOSC WPISOW (id), NIE CZAS. Pierwsza wersja porownywala
+	 * `created_at` zdarzenia z momentem wydania tokenu i przechodzila lokalnie, a
+	 * na maszynie CI zapalala oznaczenie mimo udanej ponowki: znaczniki maja
+	 * rozdzielczosc JEDNEJ SEKUNDY, a tam cala ponowka miesci sie w tej samej
+	 * sekundzie co awaria, ktora odwoluje. Numer wpisu rosnie zawsze.
 	 *
 	 * JEDNO zapytanie na caly ekran, nie jedno na wiersz (lista ma do 100 spraw).
 	 *
@@ -182,20 +202,21 @@ final class CaseEvents {
 		}
 
 		$events       = Tables::full( Tables::CASE_EVENTS );
-		$cases        = Tables::full( Tables::CASES );
 		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- tabele wlasne, zapytanie przygotowane; liczba placeholderow jest ZMIENNA (tyle, ile id), wiec sniff nie policzy jej statycznie — argumenty ida jedna tablica przez array_merge.
 		$rows = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT DISTINCT e.case_id
+				"SELECT e.case_id
 				FROM {$events} e
-				INNER JOIN {$cases} c ON c.id = e.case_id
-				WHERE e.case_id IN ( {$placeholders} )
-				AND e.event_type = %s
-				AND c.verify_token_expires_at IS NOT NULL
-				AND e.created_at >= DATE_SUB( c.verify_token_expires_at, INTERVAL %d HOUR )",
-				array_merge( $ids, array( self::MAIL_FAILED, CaseRepo::TOKEN_TTL_HOURS ) )
+				INNER JOIN (
+					SELECT case_id, MAX(id) AS ostatni
+					FROM {$events}
+					WHERE case_id IN ( {$placeholders} ) AND event_type IN ( %s, %s )
+					GROUP BY case_id
+				) o ON o.ostatni = e.id
+				WHERE e.event_type = %s",
+				array_merge( $ids, array( self::MAIL_FAILED, self::MAIL_SENT, self::MAIL_FAILED ) )
 			)
 		);
 		// phpcs:enable
