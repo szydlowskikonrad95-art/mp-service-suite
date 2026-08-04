@@ -1943,11 +1943,12 @@ final class CaseRepo {
 	 * stan z lista spraw C — zwracamy WYLACZNIE identyfikatory (zero danych
 	 * osobowych, RODO/T5), okno czasowe + limit trzymaja koszt zapytania w ryzach.
 	 *
-	 * @param int $days  Okno (dni wstecz od weryfikacji).
-	 * @param int $limit Maksymalna liczba ID.
+	 * @param int    $days  Okno (dni wstecz od weryfikacji).
+	 * @param int    $limit Maksymalna liczba ID.
+	 * @param string $order `DESC` (domyslnie, najnowsze pierwsze) albo `ASC` (najstarsze).
 	 * @return array<int, int>
 	 */
-	public static function verified_ids_recent( int $days = 30, int $limit = 200 ): array {
+	public static function verified_ids_recent( int $days = 30, int $limit = 200, string $order = 'DESC' ): array {
 		global $wpdb;
 
 		$cases  = Tables::full( Tables::CASES );
@@ -1955,12 +1956,19 @@ final class CaseRepo {
 		$limit  = max( 1, min( 500, $limit ) );
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
 
+		// 2.18: kolejnosc JAWNA, domyslnie taka jak dotad (najnowsze pierwsze).
+		// Odwrocenie domyslnej kolejnosci zmienialoby zachowanie KAZDEMU, kto ten
+		// kontrakt wola — i zrobiloby to po cichu. Kto potrzebuje najstarszych,
+		// prosi o nie wprost; dzis robi tak wylacznie sciezka ratunkowa Automatora.
+		// WHITELIST, nie wartosc z wejscia — kolejnosc idzie wprost do SQL.
+		$order_dir = ( 'ASC' === strtoupper( $order ) ) ? 'ASC' : 'DESC';
+
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT id FROM {$cases}
 				WHERE identity_status = 'verified' AND verified_at IS NOT NULL AND verified_at >= %s
-				ORDER BY id DESC LIMIT %d",
+				ORDER BY id {$order_dir} LIMIT %d",
 				$cutoff,
 				$limit
 			)

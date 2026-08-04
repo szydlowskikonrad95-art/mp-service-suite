@@ -30,6 +30,44 @@ final class CsvParser {
 	);
 
 	/**
+	 * Najkrotszy dopuszczalny numer seryjny — tyle samo, co `Validator::validate_serial()`
+	 * na drugiej drodze wejscia (formularz). Jedna rzecz, jedna regula.
+	 */
+	public const MIN_SERIAL = 2;
+
+	/**
+	 * Limity dlugosci pol — LUSTRO szerokosci kolumn w `Schema.php`
+	 * (`serial_display`/`serial_normalized` VARCHAR(100), `model` VARCHAR(190),
+	 * `batch` VARCHAR(100), `purchase_document` VARCHAR(190)).
+	 *
+	 * ⚠️ Zmiana szerokosci kolumny MUSI isc razem ze zmiana tej tablicy — pilnuje
+	 * tego test e2e, ktory czyta prawdziwe szerokosci z `information_schema`
+	 * i porownuje je z tymi liczbami. Nie przepisuj ich „na oko".
+	 */
+	private const LIMITY = array(
+		'serial'       => 100,
+		'model'        => 190,
+		'batch'        => 100,
+		'purchase_doc' => 190,
+	);
+
+	/**
+	 * Nazwy pol po polsku do komunikatu w raporcie bledow — administrator ma
+	 * przeczytac, KTORE pole poprawic, a nie zgadywac z nazwy kolumny w bazie.
+	 *
+	 * ⚠️ Klucze MUSZA byc te same co w LIMITY — komunikat siega tu bez zapasu.
+	 * Zapas `?? $kolumna` byl martwy i analiza statyczna slusznie go odrzucila:
+	 * dopisanie limitu bez etykiety ma byc bledem widocznym od razu, a nie
+	 * ekranem, na ktorym staje techniczna nazwa kolumny.
+	 */
+	private const ETYKIETY = array(
+		'serial'       => 'numer seryjny',
+		'model'        => 'model',
+		'batch'        => 'partia produkcyjna',
+		'purchase_doc' => 'dokument zakupu',
+	);
+
+	/**
 	 * Czy serwer ma czym konwertowac Windows-1250 -> UTF-8 (iconv lub intl).
 	 *
 	 * Bez zadnego z nich import przyjmie WYLACZNIE pliki juz w UTF-8
@@ -230,6 +268,39 @@ final class CsvParser {
 				'ok'    => false,
 				'error' => 'pusty numer seryjny',
 			);
+		}
+
+		// ⛔ DLUGOSCI. Produkt ZNA szerokosc kazdej kolumny i egzekwuje ja w formularzu
+		// (`Validator::validate_serial` — 2..100 znakow, dokladnie tyle, ile ma kolumna),
+		// ale DRUGIE drzwi do tej samej tabeli — import — nie sprawdzaly tego ani razu.
+		// Numer o 249 znakach przechodzil przez parser i padal dopiero na zapisie, a admin
+		// dostawal w raporcie „blad zapisu do bazy": komunikat, ktory NIE MOWI, co poprawic.
+		// Granicy pilnowal silnik bazy, nie kod. Zmierzone na zywym demie (3.08).
+		if ( mb_strlen( $serial ) < self::MIN_SERIAL ) {
+			return array(
+				'ok'    => false,
+				'error' => sprintf(
+					'numer seryjny ma %d znak(i), a wymagane sa co najmniej %d',
+					mb_strlen( $serial ),
+					self::MIN_SERIAL
+				),
+			);
+		}
+
+		foreach ( self::LIMITY as $kolumna => $limit ) {
+			$wartosc = $get( $kolumna );
+
+			if ( mb_strlen( $wartosc ) > $limit ) {
+				return array(
+					'ok'    => false,
+					'error' => sprintf(
+						'%s ma %d znakow, a limit to %d',
+						self::ETYKIETY[ $kolumna ],
+						mb_strlen( $wartosc ),
+						$limit
+					),
+				);
+			}
 		}
 
 		$purchase_date = self::normalize_date( $get( 'purchase_date' ) );

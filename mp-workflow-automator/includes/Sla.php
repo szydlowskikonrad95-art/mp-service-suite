@@ -108,6 +108,20 @@ final class Sla {
 	}
 
 	/**
+	 * Okno ratunkowe w dniach — maksimum, jakie dopuszcza kontrakt modulu zgloszen.
+	 *
+	 * Sprawa bez wiersza terminow nigdy nie dostanie ani przydzialu, ani terminu,
+	 * wiec im szersze okno, tym mniej takich spraw zostaje bez ratunku. Wezsze okno
+	 * (30 dni) bylo wada 2.18: przy wiekszym ruchu najstarsze z niego wypadaly.
+	 */
+	private const RESCUE_DAYS = 365;
+
+	/**
+	 * Ile ID prosimy na jeden przebieg (maksimum kontraktu modulu zgloszen).
+	 */
+	private const RESCUE_LIMIT = 500;
+
+	/**
 	 * RESYNC: sprawy zweryfikowane, o ktorych Automator nic nie wie (audyt 27.07).
 	 *
 	 * Reconcile z audytu #1 rozpoznaje sieroty po BRAKU zdarzenia narodzin w C —
@@ -123,14 +137,34 @@ final class Sla {
 	public static function reconcile_untracked( int $limit = 20 ): int {
 		global $wpdb;
 
-		$ids = apply_filters( 'mp_cases_verified_ids', array(), 30, 200 );
+		// 2.18: NAJSTARSZE PIERWSZE i najszersze okno, jakie kontrakt dopuszcza.
+		// Mechanizm ratunkowy istnieje wlasnie dla spraw czekajacych najdluzej, a pytal
+		// o 200 NAJNOWSZYCH z 30 dni — czyli przy ruchu powyzej ~7 zgloszen dziennie
+		// najstarsze sprawy w ogole nie trafialy do zapytania i po miesiacu wypadaly
+		// z okna BEZPOWROTNIE. Kolejnosc prosimy JAWNIE: domyslne zachowanie kontraktu
+		// (najnowsze pierwsze) zostaje nietkniete dla kazdego innego konsumenta.
+		$ids = apply_filters( 'mp_cases_verified_ids', array(), self::RESCUE_DAYS, self::RESCUE_LIMIT, 'ASC' );
 
 		if ( ! is_array( $ids ) || array() === $ids ) {
 			return 0;
 		}
 
-		$table   = Tables::full( Tables::CASE_SLA );
-		$doszyte = 0;
+		$table = Tables::full( Tables::CASE_SLA );
+		$ids   = array_values( array_unique( array_map( 'intval', $ids ) ) );
+
+		// Ktore z nich JUZ znamy — JEDNYM zapytaniem, nie jednym na sprawe. Przy
+		// szerszym oknie pytanie per sprawa oznaczaloby 500 zapytan na przebieg
+		// zamiatarki (osobna pozycja audytu mowi wlasnie o zapytaniach w petli).
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; liczba placeholderow ZMIENNA (tyle, ile ID).
+		$znane_ids = (array) $wpdb->get_col(
+			$wpdb->prepare( "SELECT case_id FROM {$table} WHERE case_id IN ( {$placeholders} )", $ids )
+		);
+		// phpcs:enable
+
+		$znane_ids = array_flip( array_map( 'intval', $znane_ids ) );
+		$doszyte   = 0;
 
 		foreach ( $ids as $case_id ) {
 			if ( $doszyte >= $limit ) {
@@ -139,11 +173,7 @@ final class Sla {
 
 			$case_id = (int) $case_id;
 
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
-			$znane = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE case_id = %d", $case_id ) );
-			// phpcs:enable
-
-			if ( $znane > 0 ) {
+			if ( isset( $znane_ids[ $case_id ] ) ) {
 				continue;
 			}
 

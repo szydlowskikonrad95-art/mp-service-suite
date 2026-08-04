@@ -22,10 +22,25 @@ final class Messages {
 	public const REDACTED = '[ZREDAGOWANO-RODO]';
 
 	/**
+	 * Typ autora: NOTATKA WEWNETRZNA personelu (audyt 2.15).
+	 *
+	 * Produkt mial trzy typy — klient, personel, system — i zaden z nich nie byl
+	 * niewidoczny dla klienta. Serwisant nie mial gdzie zapisac uwagi dla kolegi:
+	 * o podejrzeniu ingerencji, o wycenie, o kliencie. Interfejs nie wprowadzal
+	 * w blad (pole nazywa sie „odpowiedz"), wiec nie bylo tu pulapki „notatka,
+	 * ktora wycieka" — brakowalo po prostu miejsca na notatke.
+	 *
+	 * ⛔ NIEWIDOCZNOSC JEST EGZEKWOWANA W ZAPYTANIU, nie w szablonie. Ukrycie
+	 * na poziomie wygladu przecieka przy pierwszym nowym widoku, eksporcie
+	 * albo kanale API.
+	 */
+	public const INTERNAL = 'internal';
+
+	/**
 	 * Dodaje wiadomosc do sprawy i emituje mp_case_message_added (bez tresci).
 	 *
 	 * @param int      $case_id     ID sprawy.
-	 * @param string   $author_type client|staff|system.
+	 * @param string   $author_type client|staff|system|internal.
 	 * @param int|null $author_id   ID autora (WP user; null dla system).
 	 * @param string   $body        Tresc wiadomosci.
 	 * @return int ID wiadomosci.
@@ -66,7 +81,7 @@ final class Messages {
 			Tables::full( Tables::MESSAGES ),
 			array(
 				'case_id'     => $case_id,
-				'author_type' => in_array( $author_type, array( 'client', 'staff', 'system' ), true ) ? $author_type : 'system',
+				'author_type' => in_array( $author_type, array( 'client', 'staff', 'system', self::INTERNAL ), true ) ? $author_type : 'system',
 				'author_id'   => $author_id,
 				'body'        => $body,
 				'created_at'  => $now,
@@ -83,9 +98,28 @@ final class Messages {
 		 * @param int    $message_id  ID wiadomosci.
 		 * @param string $author_type Typ autora.
 		 */
-		do_action( 'mp_case_message_added', $case_id, $message_id, $author_type );
+		// ⛔ NOTATKA WEWNETRZNA NIE EMITUJE ZDARZENIA. Zdarzenie uruchamia reguly
+		// powiadomien, a te wysylaja mail do klienta — notatka „dla kolegi" nie moze
+		// wywolac maila do osoby, przed ktora jest ukryta. Ukrycie w odczycie bez
+		// tego byloby polowiczne: tresci klient by nie zobaczyl, ale dostalby
+		// wiadomosc, ze „jest nowa odpowiedz".
+		if ( self::INTERNAL !== $author_type ) {
+			do_action( 'mp_case_message_added', $case_id, $message_id, $author_type );
+		}
 
 		return $message_id;
+	}
+
+	/**
+	 * Notatka WEWNETRZNA personelu — widoczna wylacznie w karcie sprawy (2.15).
+	 *
+	 * @param int    $case_id   ID sprawy.
+	 * @param int    $author_id Kto pisze (pracownik).
+	 * @param string $body      Tresc.
+	 * @return int ID wiadomosci.
+	 */
+	public static function add_internal_note( int $case_id, int $author_id, string $body ): int {
+		return self::add( $case_id, self::INTERNAL, $author_id, $body );
 	}
 
 	/**
@@ -102,22 +136,33 @@ final class Messages {
 	/**
 	 * Wiadomosci sprawy (chronologicznie) — panel klienta / eksport.
 	 *
-	 * @param int $case_id ID sprawy.
+	 * @param int  $case_id       ID sprawy.
+	 * @param bool $with_internal Czy dolaczyc NOTATKI WEWNETRZNE (tylko karta personelu).
 	 * @return array<int, array<string, mixed>>
 	 */
-	public static function for_case( int $case_id ): array {
+	public static function for_case( int $case_id, bool $with_internal = false ): array {
 		global $wpdb;
 
 		$table = Tables::full( Tables::MESSAGES );
 
+		// DOMYSLNIE BEZ NOTATEK WEWNETRZNYCH (audyt 2.15). Domyslna wartosc jest
+		// tu decyzja o bezpieczenstwie: kto zapomni o parametrze, dostaje wersje
+		// BEZPIECZNA dla klienta, a nie wyciek. Notatki widzi tylko ten, kto
+		// poprosi o nie WPROST — dzis wylacznie karta sprawy personelu.
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE case_id = %d ORDER BY id ASC",
-				$case_id
-			),
-			ARRAY_A
-		);
+		$rows = $with_internal
+			? $wpdb->get_results(
+				$wpdb->prepare( "SELECT * FROM {$table} WHERE case_id = %d ORDER BY id ASC", $case_id ),
+				ARRAY_A
+			)
+			: $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE case_id = %d AND author_type != %s ORDER BY id ASC",
+					$case_id,
+					self::INTERNAL
+				),
+				ARRAY_A
+			);
 		// phpcs:enable
 
 		return is_array( $rows ) ? $rows : array();

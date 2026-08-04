@@ -28,7 +28,7 @@ final class CaseActions {
 	 * @return void
 	 */
 	public static function register(): void {
-		foreach ( array( 'status', 'reply', 'assign' ) as $act ) {
+		foreach ( array( 'status', 'reply', 'assign', 'note' ) as $act ) {
 			$hook = 'mp_intake_case_' . $act;
 			add_action( 'admin_post_' . $hook, array( self::class, 'handle_' . $act ) );
 			add_action( 'admin_post_nopriv_' . $hook, array( self::class, 'handle_' . $act ) );
@@ -146,6 +146,47 @@ final class CaseActions {
 		Messages::add( $case_id, 'staff', get_current_user_id(), $body );
 
 		self::back( $case_id, __( 'Odpowiedź wysłana do klienta.', 'mp-service-intake' ) );
+	}
+
+	/**
+	 * NOTATKA WEWNETRZNA (audyt 2.15): cap personelu + nonce; NIE idzie do klienta.
+	 *
+	 * Osobny endpoint i osobny nonce, a nie „pole wyboru przy odpowiedzi" — pomylka
+	 * przy odhaczaniu kosztowalaby wyslanie klientowi uwagi napisanej dla kolegi.
+	 * Dwie drogi, ktorych nie da sie pomylic jednym kliknieciem, sa tu warte
+	 * kilkunastu linii wiecej.
+	 *
+	 * @return void
+	 */
+	public static function handle_note(): void {
+		if ( ! self::is_staff() ) {
+			self::deny();
+		}
+
+		check_admin_referer( 'mp_intake_case_note' );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- check_admin_referer() wyzej.
+		$case_id = isset( $_POST['case_id'] ) ? absint( $_POST['case_id'] ) : 0;
+		$body    = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['body'] ) ) : '';
+		// phpcs:enable
+
+		if ( 0 === $case_id ) {
+			self::back( $case_id, __( 'Brak sprawy.', 'mp-service-intake' ) );
+		}
+
+		$ctx = apply_filters( 'mp_case_get_context', null, $case_id );
+
+		if ( ! is_array( $ctx ) ) {
+			self::back( $case_id, __( 'Sprawa nie istnieje lub niepotwierdzona.', 'mp-service-intake' ) );
+		}
+
+		if ( '' === trim( $body ) ) {
+			self::back( $case_id, __( 'Notatka jest pusta.', 'mp-service-intake' ) );
+		}
+
+		Messages::add_internal_note( $case_id, get_current_user_id(), $body );
+
+		self::back( $case_id, __( 'Notatka zapisana — widzi ją tylko personel.', 'mp-service-intake' ) );
 	}
 
 	/**

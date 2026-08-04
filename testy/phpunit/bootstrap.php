@@ -94,6 +94,42 @@ if ( ! function_exists( 'wp_max_upload_size' ) ) {
 	}
 }
 
+// Stala rdzenia WP uzywana przez silnik terminow (SlaConfig::deadline_for)
+// i przez eksport CSV (czas obslugi w godzinach).
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	/**
+	 * Stub sanitize_text_field wg zachowania rdzenia WP w zakresie, ktory
+	 * dotyczy testowanych klas: znaczniki precz, biale znaki z brzegow precz,
+	 * znaki konca linii i tabulatory na spacje.
+	 *
+	 * @param string $str Surowa wartosc.
+	 * @return string
+	 */
+	function sanitize_text_field( string $str ): string { // phpcs:ignore
+		$clean = strip_tags( $str ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
+		$clean = (string) preg_replace( '/[\r\n\t ]+/', ' ', $clean );
+
+		return trim( $clean );
+	}
+}
+
+if ( ! function_exists( 'number_format_i18n' ) ) {
+	/**
+	 * Stub formatowania liczby (testy sprawdzaja WARTOSC, nie separator lokalny).
+	 *
+	 * @param float|int $number   Liczba.
+	 * @param int       $decimals Miejsca po przecinku.
+	 * @return string
+	 */
+	function number_format_i18n( $number, int $decimals = 0 ): string { // phpcs:ignore
+		return number_format( (float) $number, $decimals, '.', '' );
+	}
+}
+
 if ( ! function_exists( 'sanitize_key' ) ) {
 	/**
 	 * Stub sanitize_key wg zachowania rdzenia WP: male litery i tylko

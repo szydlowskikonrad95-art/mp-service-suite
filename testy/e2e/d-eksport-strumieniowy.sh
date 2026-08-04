@@ -119,6 +119,113 @@ KONTRAKT=$(wp eval '
 	&& ok "kontrakt oddaje laczna liczbe spraw (audyt nie wymaga sciagania wszystkiego)" \
 	|| bad "kontrakt nie oddaje total — audyt musialby liczyc po zebraniu calosci"
 
+# ── 5. POZYCJA 2.50: „Liczba spraw zamknietych" liczy SPRAWY ZAMKNIETE ──────
+# Co bylo zle: ten wiersz zestawienia rosl tylko wtedy, gdy DALO SIE policzyc czas
+# obslugi. Sprawa zamknieta z uszkodzonym albo cofnietym znacznikiem zmiany statusu
+# (czas obslugi pusty) stala w rozkladzie po statusach jako zamknieta, a w wierszu
+# „Liczba spraw zamknietych" jej NIE BYLO. Koordynator dostawal w jednym pliku dwie
+# liczby o tej samej nazwie, ktore sie nie zgadzaly, bez slowa wyjasnienia.
+# Test NIC nie zapisuje do bazy — dane wchodza przez kontrakt `mp_cases_query`.
+ANOMALIA=$(wp eval '
+	$a = new ReflectionMethod( "MP\Automator\CsvExport", "accumulate" );
+	$f = new ReflectionMethod( "MP\Automator\CsvExport", "summary_finish" );
+	$a->setAccessible( true ); $f->setAccessible( true );
+	$acc = array( "total" => 0, "by_status" => array(), "by_reason" => array(), "closed" => 0, "timed" => 0, "sum_sec" => 0 );
+
+	// 3 sprawy ZAMKNIETE, ale trzecia ma znacznik zmiany statusu WCZESNIEJSZY niz
+	// data utworzenia — kontrakt oddaje wtedy `closed_at`, ale `handling_seconds` = null.
+	$dane = array(
+		array( "status" => "zamknięte", "closed_at" => "2026-02-01 12:00:00", "handling_seconds" => 7200 ),
+		array( "status" => "zamknięte", "closed_at" => "2026-02-01 12:00:00", "handling_seconds" => 7200 ),
+		array( "status" => "zamknięte", "closed_at" => "2025-12-31 23:00:00", "handling_seconds" => null ),
+		array( "status" => "nowe",      "closed_at" => null,                  "handling_seconds" => null ),
+	);
+	foreach ( $dane as $c ) { $a->invokeArgs( null, array( &$acc, $c, "" ) ); }
+
+	$s = $f->invoke( null, $acc );
+	echo wp_json_encode( array(
+		"zamkniete"        => $s["closed_count"],
+		"status_zamkniete" => $s["by_status"]["zamknięte"] ?? 0,
+		"z_czasem"         => $s["timed_count"] ?? -1,
+		"srednia"          => $s["avg_hours"],
+	) );
+' 2>/dev/null)
+
+echo "$ANOMALIA" | grep -q '"zamkniete":3' \
+	&& ok "SEDNO 2.50: 3 sprawy zamkniete w rozkladzie = 3 w wierszu „Liczba spraw zamknietych\"" \
+	|| bad "wiersz „Liczba spraw zamknietych\" nie zgadza sie z rozkladem po statusach ($ANOMALIA)"
+echo "$ANOMALIA" | grep -q '"status_zamkniete":3' \
+	&& ok "rozklad po statusach widzi 3 sprawy zamkniete" \
+	|| bad "zly rozklad po statusach ($ANOMALIA)"
+echo "$ANOMALIA" | grep -q '"z_czasem":2' \
+	&& ok "osobna wielkosc: 2 sprawy z policzonym czasem obslugi (podstawa sredniej)" \
+	|| bad "brak osobnej liczby spraw z policzonym czasem ($ANOMALIA)"
+echo "$ANOMALIA" | grep -q '"srednia":"2' \
+	&& ok "srednia dalej dzieli sie przez sprawy Z CZASEM = 2 godziny (sprawa bez czasu jej nie zanizyla)" \
+	|| bad "zla srednia — sprawa bez czasu weszla do dzielenia ($ANOMALIA)"
+
+# Ta sama anomalia w GOTOWYM PLIKU, ktory dostaje koordynator (nie w samych liczbach).
+CSV=$(wp eval '
+	add_filter( "mp_cases_query", static function ( $r, $filters, $page, $per ) {
+		$mk = static function ( $nr, $status, $closed, $sec ) {
+			return array(
+				"case_number" => $nr, "status" => $status, "kind" => "reklamacja",
+				"country" => "PL", "lang" => "pl", "created_at" => "2026-01-15 10:00:00",
+				"closed_at" => $closed, "handling_seconds" => $sec, "rejection_reason_code" => null,
+			);
+		};
+		if ( $page > 1 ) { return array( "rows" => array(), "total" => 4 ); }
+		return array(
+			"rows" => array(
+				$mk( "SRV/2026/1", "zamknięte", "2026-02-01 12:00:00", 7200 ),
+				$mk( "SRV/2026/2", "zamknięte", "2026-02-01 12:00:00", 7200 ),
+				$mk( "SRV/2026/3", "zamknięte", "2025-12-31 23:00:00", null ),
+				$mk( "SRV/2026/4", "nowe",      null,                  null ),
+			),
+			"total" => 4,
+		);
+	}, 99, 4 );
+
+	$s = new ReflectionMethod( "MP\Automator\CsvExport", "stream" );
+	$s->setAccessible( true );
+	$s->invoke( null, array() );
+' 2>/dev/null)
+
+# Etykiety maja spacje, wiec fputcsv je cytuje — sprawdzamy dokladny ksztalt wiersza.
+WIERSZ=$(echo "$CSV" | grep -F 'Liczba spraw zamkniętych' | head -1 | tr -d '\r')
+[ "$WIERSZ" = '"Liczba spraw zamkniętych";3' ] \
+	&& ok "plik dla koordynatora: „Liczba spraw zamknietych\";3 zgodne ze statusami" \
+	|| bad "w pliku stoi [$WIERSZ] zamiast \"Liczba spraw zamkniętych\";3"
+echo "$CSV" | grep -qF '"W tym z policzonym czasem obsługi";2' \
+	&& ok "plik nazywa druga wielkosc wprost: „W tym z policzonym czasem obslugi\";2" \
+	|| bad "plik nie rozroznia obu wielkosci"
+echo "$CSV" | grep -qF '"Sprawy zamknięte bez policzonego czasu obsługi";1' \
+	&& ok "plik pokazuje roznice (1 sprawa) zamiast milczec" \
+	|| bad "roznica miedzy liczbami nie jest w pliku nazwana"
+echo "$CSV" | grep -qF 'Brak znacznika zmiany statusu' \
+	&& ok "plik wyjasnia, SKAD roznica (koordynator czyta CSV bez nas)" \
+	|| bad "brak przypisu tlumaczacego roznice"
+
+# Zdrowe dane: przypisu NIE MA (zestawienie nie strasza bez powodu).
+CSV_OK=$(wp eval '
+	add_filter( "mp_cases_query", static function ( $r, $filters, $page, $per ) {
+		if ( $page > 1 ) { return array( "rows" => array(), "total" => 1 ); }
+		return array( "rows" => array( array(
+			"case_number" => "SRV/2026/9", "status" => "zamknięte", "kind" => "reklamacja",
+			"country" => "PL", "lang" => "pl", "created_at" => "2026-01-15 10:00:00",
+			"closed_at" => "2026-01-15 12:00:00", "handling_seconds" => 7200,
+			"rejection_reason_code" => null,
+		) ), "total" => 1 );
+	}, 99, 4 );
+	$s = new ReflectionMethod( "MP\Automator\CsvExport", "stream" );
+	$s->setAccessible( true );
+	$s->invoke( null, array() );
+' 2>/dev/null)
+
+echo "$CSV_OK" | grep -qF 'Sprawy zamknięte bez policzonego czasu obsługi' \
+	&& bad "przy zdrowych danych zestawienie doklada wiersz o roznicy, ktorej nie ma" \
+	|| ok "przy zdrowych danych zestawienie milczy o roznicy (obie liczby rowne)"
+
 echo ""
 echo "WYNIK EKSPORT-STRUMIENIOWY: PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
