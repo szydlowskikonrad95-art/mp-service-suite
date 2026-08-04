@@ -312,21 +312,39 @@ final class Privacy {
 					);
 				}
 
-				foreach ( Messages::for_case( $case_id ) as $msg ) {
+				// ⛔ `true` = RAZEM Z NOTATKAMI WEWNETRZNYMI. Odczyt domyslny ich NIE zwraca
+				// (naprawa 2.15 — i slusznie, bo chroni panel klienta przed wyciekiem), ale
+				// wydanie danych na zadanie RODO to inna sprawa: artykul 15 obejmuje takze
+				// OPINIE o osobie, wiec notatka personelu o kliencie jest jego dana.
+				// Pominiecie byloby awaria NIEWIDOCZNA dla administratora — paczka wygladalaby
+				// na kompletna. Decyzja swiadoma, nie przeoczenie: patrz test
+				// `testy/e2e/c-rodo-notatki-wewnetrzne.sh`.
+				foreach ( Messages::for_case( $case_id, true ) as $msg ) {
+					$dane_wiadomosci = array(
+						array(
+							'name'  => __( 'Sprawa', 'mp-service-intake' ),
+							'value' => (string) $case['case_number'],
+						),
+						array(
+							'name'  => __( 'Treść', 'mp-service-intake' ),
+							'value' => (string) $msg['body'],
+						),
+					);
+
+					// Czlowiek czytajacy paczke ma wiedziec, ze to zapisek personelu,
+					// a nie wiadomosc, ktora do niego wyszla.
+					if ( Messages::INTERNAL === (string) $msg['author_type'] ) {
+						$dane_wiadomosci[] = array(
+							'name'  => __( 'Rodzaj wpisu', 'mp-service-intake' ),
+							'value' => __( 'notatka wewnętrzna personelu (nie była wysyłana do klienta)', 'mp-service-intake' ),
+						);
+					}
+
 					$export[] = array(
 						'group_id'    => 'mp_messages',
 						'group_label' => __( 'Wiadomości w sprawach MP', 'mp-service-intake' ),
 						'item_id'     => 'message-' . (int) $msg['id'],
-						'data'        => array(
-							array(
-								'name'  => __( 'Sprawa', 'mp-service-intake' ),
-								'value' => (string) $case['case_number'],
-							),
-							array(
-								'name'  => __( 'Treść', 'mp-service-intake' ),
-								'value' => (string) $msg['body'],
-							),
-						),
+						'data'        => $dane_wiadomosci,
 					);
 				}
 			}

@@ -195,8 +195,19 @@ final class SiteHealthTests {
 		// na stronie — serwis B2B nocą stoi, a panel świecił na zielono, bo test
 		// sprawdzał tylko plan. Porównujemy WYKONANIE (log SWEEP_RUN) z progiem
 		// dwóch interwałów (2 × 5 min).
-		$prog_s  = 10 * MINUTE_IN_SECONDS;
-		$ostatni = \MP\Automator\WorkflowEvents::last_time( \MP\Automator\WorkflowEvents::SWEEP_RUN );
+		$prog_s = 10 * MINUTE_IN_SECONDS;
+
+		// 2.21: pytamy BICIE SERCA (jedna nadpisywana opcja), nie rejestr zdarzen.
+		// Wczesniej odpowiedz na „czy cron chodzi" wyciagalismy z ostatniego wpisu
+		// SWEEP_RUN, wiec rejestr musial rosnac o wiersz co piec minut TYLKO po to,
+		// zeby ten ekran mial czego szukac. Zapas: gdy bicia serca jeszcze nie ma
+		// (instalacja sprzed tej wersji), pytamy rejestr — inaczej po aktualizacji
+		// Stan witryny na chwile przestalby widziec przebiegi, ktore byly.
+		$ostatni = (string) get_option( Sweep::HEARTBEAT_OPTION, '' );
+
+		if ( '' === $ostatni ) {
+			$ostatni = \MP\Automator\WorkflowEvents::last_time( \MP\Automator\WorkflowEvents::SWEEP_RUN );
+		}
 
 		if ( null !== $ostatni && ( time() - (int) strtotime( $ostatni . ' +0000' ) ) > $prog_s ) {
 			return SiteHealth::wynik(

@@ -62,6 +62,18 @@ MP\Automator\Common\Uninstall::run(
 	'mp_module_automator',
 	// Patrz komentarz w module zgloszen: wersja schematu zyje i umiera RAZEM
 	// z tabelami, wiec nie kasujemy jej w warstwie technicznej.
-	array( 'mp_automator_delete_data', MP\Automator\Sla::ALERT_OPTION ),
+	array(
+		'mp_automator_delete_data',
+		MP\Automator\Sla::ALERT_OPTION,
+		// 2.20: stan sprzatania sierot — kursor po tabeli i alarm „sprzatanie stoi".
+		// To stan ROBOCZY modulu, nie dane klienta, wiec znika zawsze, niezaleznie
+		// od zgody na kasowanie danych. Bez tego test „zero sladu po odinstalowaniu"
+		// slusznie zglasza zostawione opcje — zlapal to CI, nie my.
+		MP\Automator\Sla::ORPHAN_CURSOR_OPTION,
+		MP\Automator\Sla::ORPHAN_ALERT_OPTION,
+		// 2.21: bicie serca zamiatarki — ten sam powod, ta sama zasada. Kazda nowa
+		// opcja robocza bez wpisu tutaj to nowy slad po odinstalowaniu.
+		MP\Automator\Sweep::HEARTBEAT_OPTION,
+	),
 	MP\Automator\Lifecycle::CRON_HOOKS
 );

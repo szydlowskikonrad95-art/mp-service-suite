@@ -3,9 +3,22 @@
  * Konfiguracja formularza — PLASKI schemat per RODZAJ sprawy (kontrakt C).
  *
  * ZERO logiki warunkowej pole-od-pola (ostrzezenie przed „wlasnym form-builderem"):
- * kazdy rodzaj to lista pol {key, label, type, required, pii_sensitive}. Admin
- * edytuje wymagalnosc bez zmiany kodu (opcja autoload=no, warstwa TRESCI uninstalla);
- * bez zapisanej konfiguracji dziala domyslna mapa z tej klasy.
+ * kazdy rodzaj to lista pol {key, label, type, required, pii_sensitive}.
+ * Bez zapisanej konfiguracji dziala domyslna mapa z tej klasy.
+ *
+ * ⛔ EKRANU EDYCJI TYCH POL NIE MA — i nie jest to przeoczenie (audyt 2.56).
+ * Naglowek obiecywal wczesniej, ze „admin edytuje wymagalnosc bez zmiany kodu",
+ * przez co informatyk klienta szukal w panelu ekranu, ktorego nikt nie zbudowal:
+ * opcja `mp_intake_form_config` byla tylko CZYTANA (`fields_for`), a zapisu nie
+ * bylo nigdzie — ani ekranu, ani polecenia wiersza polecen.
+ *
+ * Zamawiajacy edytowania pol z panelu NIE zamawial (kartka wymaga „wymaganych pol
+ * i zalacznikow zaleznych od kategorii produktu" — to robia `category_fields`
+ * i `attachments_for`), wiec ekranu nie dokladamy. Nadpisanie zostaje jako furtka
+ * dla WDROZENIOWCA: ustawia sie ja programowo albo z wiersza polecen, np.
+ *   wp option update mp_intake_form_config '<json>' --format=json --autoload=no
+ * ⚠️ `--autoload=no` jest istotne: konfiguracja czytana jest dopiero przy render
+ * formularza, wiec nie ma po co wisiec w pamieci na kazdym zadaniu.
  *
  * @package MP\Intake
  */
@@ -18,7 +31,11 @@ namespace MP\Intake;
 final class FormConfig {
 
 	/**
-	 * Opcja z nadpisana konfiguracja (autoload=no — warstwa TRESCI).
+	 * Opcja z nadpisana konfiguracja pol (warstwa TRESCI — kasowana przy
+	 * odinstalowaniu ZA ZGODA admina, `uninstall.php`).
+	 *
+	 * Tylko do ODCZYTU z poziomu produktu: ustawia ja wdrozeniowiec (patrz
+	 * naglowek klasy). Zaden ekran ani polecenie wtyczki jej nie zapisuje.
 	 */
 	public const OPTION = 'mp_intake_form_config';
 

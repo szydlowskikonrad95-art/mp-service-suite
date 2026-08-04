@@ -157,4 +157,27 @@ final class Statuses {
 
 		return isset( $all[ $slug ] ) && $all[ $slug ]['terminal'];
 	}
+
+	/**
+	 * Slugi WSZYSTKICH statusow terminalnych — rdzen 7 PLUS wlasne z modulu D.
+	 *
+	 * Do zapytan, ktore musza odroznic sprawe zywa od zamknietej po stronie bazy
+	 * (sprzatanie retencji zalacznikow, cz.1 pkt 2). ⛔ NIE wpisuj takiej listy
+	 * na sztywno: administrator moze dodac WLASNY status i oznaczyc go jako
+	 * terminalny, a zaszyta lista uznalaby taka sprawe za zywa albo — gorzej —
+	 * za zamknieta wbrew jego ustawieniu.
+	 *
+	 * @return array<int, string> Lista slugow (moze byc pusta, gdy ktos odebral rdzeniowi terminalnosc filtrem).
+	 */
+	public static function terminal_slugs(): array {
+		$slugi = array();
+
+		foreach ( self::all() as $slug => $def ) {
+			if ( ! empty( $def['terminal'] ) ) {
+				$slugi[] = (string) $slug;
+			}
+		}
+
+		return $slugi;
+	}
 }

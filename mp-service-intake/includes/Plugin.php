@@ -48,6 +48,11 @@ final class Plugin {
 		// Slownik nazw rodzajow dla innych modulow (kontrakt `mp_case_kind_labels`).
 		add_filter( 'mp_case_kind_labels', array( FormConfig::class, 'provide_kind_labels' ) );
 
+		// Slownik powodow odrzucenia (kontrakt `mp_rejection_reasons`). Zaczep mial
+		// dotad dwa ODCZYTY i zero dostawcow, wiec status „odrzucone" byl wybieralny,
+		// ale niezapisywalny (cz. 1 pkt 5 audytu).
+		RejectionReasons::register();
+
 		Front\Frontend::register();
 		Front\SubmissionHandler::register();
 		Front\AccountPage::register();
@@ -73,6 +78,27 @@ final class Plugin {
 			static function (): void {
 				CaseRepo::reconcile_unlaunched();
 			}
+		);
+
+		// cz.1 pkt 2: okno retencji zalacznikow biegnie OD ZAMKNIECIA sprawy.
+		// Termin byl ustawiany raz, przy wgraniu pliku, i nigdy nieprzeliczany —
+		// wiec sprawa prowadzona dluzej niz okno tracila dowody W TRAKCIE (rodzaj
+		// „zapytanie" ma okno TRZECH miesiecy). Przeliczamy w chwili, od ktorej
+		// termin ma sens: gdy sprawa naprawde sie konczy.
+		// ⚠️ Zaczep leci PO COMMIT (`CaseRepo::change_status`), wiec widzimy stan
+		// juz zapisany. Wznowienie nie wymaga tu nic osobnego: sprawa przestaje
+		// byc terminalna, a sprzatanie pomija sprawy zywe.
+		add_action(
+			'mp_case_status_changed',
+			static function ( int $case_id, string $from, string $to ): void {
+				unset( $from );
+
+				if ( Statuses::is_terminal( $to ) ) {
+					Attachments::refresh_retention_for_case( $case_id );
+				}
+			},
+			10,
+			3
 		);
 
 		if ( is_admin() ) {
@@ -170,6 +196,34 @@ final class Plugin {
 		// osobowych) — Automator porownuje je ze swoim stanem i doszywa sprawy,
 		// ktore przeszly weryfikacje, gdy byl wylaczony (audyt 27.07). Wolane z
 		// crona, wiec BEZ bramki uprawnien — jak `mp_case_get_context`.
+		// Kontrakt D->C: czy sprawa W OGOLE istnieje (audyt 2.20). Osobny od
+		// `mp_case_get_context`, bo tamten odpowiada tylko o sprawach zweryfikowanych
+		// — a sprawa niepotwierdzona ISTNIEJE i jej wiersz terminow nie jest sierota.
+		// Kontrakt D->C w wersji ZBIORCZEJ: ktore z podanych spraw istnieja (2.22).
+		// Sprzatanie sierot chodzi w zadaniu cyklicznym, wiec pytanie po jednej
+		// sprawie znaczyloby tyle zapytan, ile sprawdzanych wierszy.
+		add_filter(
+			'mp_cases_existing_ids',
+			static function ( $result, $case_ids = array() ) {
+				unset( $result );
+
+				return CaseRepo::existing_ids( (array) $case_ids );
+			},
+			10,
+			2
+		);
+
+		add_filter(
+			'mp_case_exists',
+			static function ( $result, $case_id = 0 ) {
+				unset( $result );
+
+				return CaseRepo::exists( (int) $case_id );
+			},
+			10,
+			2
+		);
+
 		add_filter(
 			'mp_cases_verified_ids',
 			static function ( $result, $days = 30, $limit = 200, $order = 'DESC' ) {

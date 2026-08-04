@@ -79,6 +79,18 @@ final class Sweep {
 	private const MAIL_BUDGET = 120;
 
 	/**
+	 * Bicie serca zamiatarki: czas OSTATNIEGO przebiegu (opcja NADPISYWANA).
+	 *
+	 * PO CO OSOBNA OPCJA, skoro jest rejestr zdarzen (audyt 2.21): odpowiedz na
+	 * pytanie „czy cron w ogole chodzi" wyciagalismy z ostatniego wpisu SWEEP_RUN,
+	 * czyli z tabeli, ktora z ZALOZENIA nigdy nic nie kasuje (dziennik rozliczalnosci,
+	 * wymog z kartki). To dawalo 105 tysiecy wierszy rocznie na instalacji, gdzie
+	 * nikt nie zlozyl ani jednego zgloszenia — RUCH WLASNY PRODUKTU, nie klienta.
+	 * Jedna nadpisywana wartosc odpowiada na to samo pytanie i nie rosnie.
+	 */
+	public const HEARTBEAT_OPTION = 'mp_automator_sweep_heartbeat';
+
+	/**
 	 * Rejestruje interwal + hak crona (wolane z Plugin::boot).
 	 *
 	 * @return void
@@ -184,10 +196,11 @@ final class Sweep {
 
 			// Audyt #13: zaleglosci nadrabiane PETLA paczek (max MAX_ROUNDS na
 			// przebieg) zamiast jednej paczki na 5 minut.
-			$rounds  = 0;
-			$sum_rem = 0;
-			$sum_sup = 0;
-			$sum_esc = 0;
+			$rounds       = 0;
+			$sum_rem      = 0;
+			$sum_sup      = 0;
+			$sum_esc      = 0;
+			$sum_esc_mail = 0;
 
 			/**
 			 * Budzet maili na przebieg (audyt kosztu 27.07) — hosting klienta ma
@@ -201,6 +214,36 @@ final class Sweep {
 
 			do {
 				++$rounds;
+
+				/*
+				 * ESKALACJE WYBIERAMY NAJPIERW, WYSYLAMY NADAL PO PRZYPOMNIENIACH (poz. 2.30).
+				 *
+				 * Budzet jest JEDEN na przebieg i obejmuje obie sciezki — do 1.3.12
+				 * sprawdzaly go wylacznie przypomnienia, a eskalacje ponizej progu
+				 * digestu (mail NA KAZDA SPRAWE, w KAZDEJ rundzie) wychodzily poza nim.
+				 * Skoro budzet jest wspolny, to eskalacja — pilniejsza, bo termin JUZ
+				 * minal — musi miec swoja czesc ZAREZERWOWANA, zanim przypomnienia
+				 * wydadza wszystko. Inaczej domkniecie dziury odebraloby jej
+				 * pierwszenstwo, a tego robic nie wolno.
+				 *
+				 * Zapytanie jest to samo co dotad, tylko przesuniete wyzej — liczba
+				 * zapytan na runde sie NIE zmienia (poz. 2.22).
+				 */
+				$escalations = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT case_id FROM {$table}
+						WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
+						ORDER BY deadline_at ASC LIMIT %d",
+						$now,
+						self::ESCALATION_BATCH
+					)
+				);
+
+				$wolne_maile = max( 0, $budzet_maili - $sum_rem - $sum_esc_mail );
+				// Powyzej progu cala lista to JEDEN mail — dlugosc listy nie podnosi
+				// rezerwy (uzasadnienie autora z 29.07 zostaje w mocy).
+				$rezerwa_esk = min( Sla::escalation_mail_cost( $escalations ), $wolne_maile );
+				$limit_przyp = max( 0, $budzet_maili - $sum_esc_mail - $rezerwa_esk );
 
 				// PRZYPOMNIENIA (mail): prog warning minal, niewyslane, ale termin JESZCZE
 				// aktywny (deadline w PRZYSZLOSCI). Sprawy juz po terminie NIE dostaja
@@ -220,7 +263,7 @@ final class Sweep {
 				$wyslane = 0;
 
 				foreach ( $reminders as $case_id ) {
-					if ( $sum_rem + $wyslane >= $budzet_maili ) {
+					if ( $sum_rem + $wyslane >= $limit_przyp ) {
 						// Budzet wyczerpany: reszta ma marker NIETKNIETY, wiec kolejny
 						// przebieg (za 5 minut) wezmie ja od tego samego miejsca.
 						$przerwane = true;
@@ -237,27 +280,26 @@ final class Sweep {
 				// (stan wewnetrzny) vs event (audyt) — patrz Sla::claim_suppressed_reminders.
 				$suppressed = Sla::claim_suppressed_reminders();
 
-				// ESKALACJE: termin minal, nieeskalowane. Masa (>DIGEST_THRESHOLD) => JEDEN
-				// digest zamiast lawiny osobnych maili (SLA-3). Idempotencja przez escalated_at.
+				// ESKALACJE (lista wybrana na poczatku rundy): termin minal, nieeskalowane.
+				// Masa (>DIGEST_THRESHOLD) => JEDEN digest zamiast lawiny osobnych maili
+				// (SLA-3). Idempotencja przez escalated_at.
 				//
-				// Limit WLASNY (ESCALATION_BATCH), nie wspolny z przypomnieniami: prog digestu
-				// liczy sie na przekazanej liscie, wiec ciecie po 50 dawalo 10 „zbiorczych"
-				// maili zamiast jednego (audyt 29.07). Eskalacja powyzej progu to jeden mail
-				// na cala liste, wiec wiekszy limit NIE zwieksza liczby wiadomosci.
-				$escalations = $wpdb->get_col(
-					$wpdb->prepare(
-						"SELECT case_id FROM {$table}
-						WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
-						ORDER BY deadline_at ASC LIMIT %d",
-						$now,
-						self::ESCALATION_BATCH
-					)
-				);
+				// Limit paczki WLASNY (ESCALATION_BATCH), nie wspolny z przypomnieniami: prog
+				// digestu liczy sie na przekazanej liscie, wiec ciecie po 50 dawalo 10
+				// „zbiorczych" maili zamiast jednego (audyt 29.07). Eskalacja powyzej progu to
+				// jeden mail na cala liste, wiec wiekszy limit NIE zwieksza liczby wiadomosci.
+				// Budzet MAILI jest natomiast wspolny (poz. 2.30) — z rezerwa policzona wyzej.
+				$wynik_esk     = Sla::escalate( $escalations, $rezerwa_esk );
+				$sum_esc_mail += $wynik_esk['maile'];
 
-				Sla::escalate( $escalations );
+				if ( $wynik_esk['odlozone'] > 0 ) {
+					// Budzet wyczerpany: odlozone sprawy maja PUSTY escalated_at, wiec
+					// kolejny przebieg wezmie je od tego samego miejsca.
+					$przerwane = true;
+				}
 
 				$last_rem = count( $reminders );
-				$last_esc = count( $escalations );
+				$last_esc = count( $escalations ) - $wynik_esk['odlozone'];
 
 				// Liczymy REALNIE wyslane, nie znalezione — inaczej licznik w rejestrze
 				// klamalby po przerwaniu budzetem (i zasugerowalby wyslanie maili,
@@ -272,17 +314,48 @@ final class Sweep {
 				&& $rounds < self::MAX_ROUNDS
 				&& ( self::BATCH === $last_rem || self::ESCALATION_BATCH === $last_esc ) );
 
-			WorkflowEvents::log(
-				WorkflowEvents::SWEEP_RUN,
-				array(
-					'reminders'            => $sum_rem,
-					'reminders_suppressed' => $sum_sup,
-					'escalations'          => $sum_esc,
-					'rounds'               => $rounds,
-					'budzet_maili'         => $budzet_maili,
-					'przerwany_budzetem'   => $przerwane ? 1 : 0,
-				)
-			);
+			// 2.20: sprzatanie sierot NA KONIEC przebiegu, nigdy przed nim.
+			// Pierwsza wersja wolala je na poczatku i kasowala wiersze, ZANIM
+			// zamiatarka zdazyla je obsluzyc — licznik eskalacji zszedl ze 120 na 71
+			// (zlapal to istniejacy test „jeden digest na przebieg"). Kolejnosc jest
+			// tu czescia poprawnosci: najpierw robimy robote, potem sprzatamy.
+			//
+			// Sprzatanie ma WLASNY wpis w rejestrze (`action=cleanup_orphans`) i tylko
+			// wtedy, gdy naprawde cos skasowalo — wiec warunek 2.21 ponizej go nie
+			// dotyczy i nic przez to nie ginie.
+			Sla::cleanup_orphans();
+
+			// BICIE SERCA: zawsze, jedna nadpisywana wartosc. To ona odpowiada
+			// na pytanie „czy zadanie sie WYKONUJE" (Stan witryny) — nie rejestr.
+			update_option( self::HEARTBEAT_OPTION, gmdate( 'Y-m-d H:i:s' ), false );
+
+			// 2.21: wpis do rejestru TYLKO gdy przebieg naprawde cos zrobil.
+			// Rejestr jest append-only z zalozenia (i slusznie — to dziennik
+			// rozliczalnosci), wiec jedyne, co mozemy zrobic z jego wzrostem, to
+			// przestac go zasypywac wlasnym ruchem. Przebieg, ktory nic nie zrobil,
+			// nie jest zdarzeniem wartym wiersza na zawsze.
+			//
+			// 2.30: „cos zrobil" obejmuje TAKZE maile eskalacji. Same eskalacje bez
+			// przypomnien to nadal praca, ktora kosztowala budzet — musi byc widoczna.
+			$cos_zrobiono = ( $sum_rem > 0 || $sum_sup > 0 || $sum_esc > 0 || $sum_esc_mail > 0 || $przerwane );
+
+			if ( $cos_zrobiono ) {
+				WorkflowEvents::log(
+					WorkflowEvents::SWEEP_RUN,
+					array(
+						'reminders'            => $sum_rem,
+						'reminders_suppressed' => $sum_sup,
+						'escalations'          => $sum_esc,
+						// Ile MAILI kosztowaly eskalacje (digest = 1 na cala liste). Bez tej
+						// liczby budzet byl niesprawdzalny od strony rejestru: „escalations"
+						// liczy SPRAWY, a lawiny maili pilnuje liczba WIADOMOSCI (poz. 2.30).
+						'escalation_mails'     => $sum_esc_mail,
+						'rounds'               => $rounds,
+						'budzet_maili'         => $budzet_maili,
+						'przerwany_budzetem'   => $przerwane ? 1 : 0,
+					)
+				);
+			}
 		} finally {
 			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', self::LOCK ) );
 		}

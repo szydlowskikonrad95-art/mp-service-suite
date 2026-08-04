@@ -1170,6 +1170,10 @@ final class CaseRepo {
 	 * jemu; brak uprawnien => pusto. Tylko sprawy ZWERYFIKOWANE (status istnieje
 	 * dopiero po weryfikacji). Paginacja: chunk max 500 (kontrakt).
 	 *
+	 * CZAS: wiersz niesie DWIE nazwane wielkosci, nie jedna — `handling_seconds`
+	 * (czas obslugi, od `verified_at`) i `age_seconds` (wiek sprawy, od `created_at`).
+	 * Powod przy samym wyliczeniu nizej (cz.1 pkt 3).
+	 *
 	 * @param array<string, mixed> $filters  Opcjonalne {status?, kind?, date_from?, date_to?}.
 	 * @param int                  $page     Strona (>= 1).
 	 * @param int                  $per_page Rozmiar strony (1..500).
@@ -1266,12 +1270,44 @@ final class CaseRepo {
 			$status_val = (string) $row['status'];
 			$closed_at  = isset( $terminal[ $status_val ] ) ? ( $row['status_changed_at'] ?? null ) : null;
 
+			/*
+			 * DWIE ROZNE WIELKOSCI, DWIE ROZNE PODSTAWY — i obie nazwane (cz.1 pkt 3).
+			 *
+			 * Do 1.3.12 bylo tu jedno `handling_seconds` liczone od `created_at`, a raport
+			 * koncowy pokazywany KLIENTOWI liczyl to samo pojecie od `verified_at`
+			 * (`ClosingReport::handling_label`). Rozjazd siega okna potwierdzenia, czyli
+			 * `CONFIRM_WINDOW_HOURS` = 72 godzin: na zmierzonej sprawie SRV/2026/0059
+			 * eksport podawal 0,32 h, a raport liczyl od 0,09 h — ta sama wielkosc, dwie
+			 * liczby, prawie czterokrotna roznica.
+			 *
+			 *  * `handling_seconds` — CZAS OBSLUGI, od `verified_at` do zamkniecia. Tylko
+			 *    ten odcinek serwis kontroluje: przed potwierdzeniem sprawa nie istnieje
+			 *    dla personelu (brak SLA, brak przydzialu), a zwloka klienta w klinieciu
+			 *    linku nie jest praca serwisu. Ta sama podstawa co u klienta.
+			 *  * `age_seconds` — WIEK SPRAWY, od `created_at` do zamkniecia. Odpowiada na
+			 *    „ile ta sprawa trwala od zlozenia" i niesie DOKLADNIE te liczbe, ktora
+			 *    eksport podawal wczesniej — zeby zmiana podstawy nie skasowala po cichu
+			 *    wartosci z raportow, ktore koordynator juz widzial.
+			 *
+			 * ⚠️ ZAMOWIENIE NIE ROZSTRZYGA, ktora z nich jest „czasem obslugi" — mowi tylko
+			 * o eksporcie z czasem obslugi. Dlatego produkt podaje OBIE, kazda z podstawa
+			 * nazwana w naglowku, i zostawia rozstrzygniecie klientowi.
+			 */
 			$handling = null;
+			$age      = null;
+
 			if ( null !== $closed_at ) {
-				$closed_ts  = strtotime( (string) $closed_at );
-				$created_ts = strtotime( (string) $row['created_at'] );
+				$closed_ts   = strtotime( (string) $closed_at );
+				$created_ts  = strtotime( (string) $row['created_at'] );
+				$verified_at = $row['verified_at'] ?? null;
+				$verified_ts = null !== $verified_at ? strtotime( (string) $verified_at ) : false;
+
 				if ( false !== $closed_ts && false !== $created_ts && $closed_ts >= $created_ts ) {
-					$handling = $closed_ts - $created_ts;
+					$age = $closed_ts - $created_ts;
+				}
+
+				if ( false !== $closed_ts && false !== $verified_ts && $closed_ts >= $verified_ts ) {
+					$handling = $closed_ts - $verified_ts;
 				}
 			}
 
@@ -1285,6 +1321,7 @@ final class CaseRepo {
 				'verified_at'           => null !== $row['verified_at'] ? (string) $row['verified_at'] : null,
 				'closed_at'             => null !== $closed_at ? (string) $closed_at : null,
 				'handling_seconds'      => $handling,
+				'age_seconds'           => $age,
 				'rejection_reason_code' => null !== $row['rejection_reason_code'] ? (string) $row['rejection_reason_code'] : null,
 			);
 		}
@@ -1355,7 +1392,35 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w ostatnich 30 dniach.
+	 * Okno wykrywania powtornego zgloszenia tego samego egzemplarza — DOMYSLNIE 30 dni.
+	 *
+	 * PO CO OSOBNA FUNKCJA (audyt 2.39): liczba byla WPISANA NA SZTYWNO, bez filtra
+	 * i bez ustawienia, wiec ten sam sprzet zgloszony po 31 dniach nie dostawal flagi
+	 * w ogole — a sprzet wracajacy do serwisu z ta sama usterka to typowy przebieg
+	 * reklamacyjny, nie przypadek brzegowy. Bliźniacza liczba w tym samym pliku
+	 * (retencja zgloszen niepotwierdzonych) od poczatku byla WARTOSCIA DOMYSLNA
+	 * przestawialna filtrem — czyli w produkcie istnial poprawny wzorzec, tylko
+	 * nie zostal tu uzyty. Rozciagamy go, zamiast wymyslac drugi sposob.
+	 *
+	 * ⛔ Wartosc z filtra jest OGRANICZANA: zero albo liczba ujemna wylaczylyby
+	 * wykrywanie po cichu, a wartosc absurdalnie duza zmienilaby „ostatnio"
+	 * w „kiedykolwiek". Granice sa jawne, a nie zostawione wdrozeniowcowi.
+	 *
+	 * @return int Liczba dni (1..3650).
+	 */
+	public static function serial_reuse_window_days(): int {
+		/**
+		 * Ile dni wstecz szukamy wczesniejszej sprawy tego samego egzemplarza.
+		 *
+		 * @param int $days Domyslnie 30.
+		 */
+		$days = (int) apply_filters( 'mp_intake_serial_reuse_days', 30 );
+
+		return max( 1, min( 3650, $days ) );
+	}
+
+	/**
+	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w oknie wykrywania.
 	 *
 	 * @param int $product_id ID produktu w rejestrze.
 	 * @return bool
@@ -1364,7 +1429,7 @@ final class CaseRepo {
 		global $wpdb;
 
 		$table  = Tables::full( Tables::CASES );
-		$cutoff = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - self::serial_reuse_window_days() * DAY_IN_SECONDS );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
 		$count = (int) $wpdb->get_var(
@@ -1973,6 +2038,66 @@ final class CaseRepo {
 		// phpcs:enable
 
 		return count( $ids );
+	}
+
+	/**
+	 * Czy sprawa o tym ID W OGOLE ISTNIEJE (audyt 2.20).
+	 *
+	 * ⛔ TO NIE TO SAMO co „modul automatyzacji widzi jej kontekst". Kontekst
+	 * dostaja wylacznie sprawy ZWERYFIKOWANE, wiec sprawa istniejaca, ale jeszcze
+	 * niepotwierdzona, wyglada stamtad jak nieistniejaca. Sprzatanie osieroconych
+	 * wierszy musi rozrozniac te dwie rzeczy, bo w pierwszym przypadku kasowanie
+	 * jest porzadkiem, a w drugim — utrata danych.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return bool
+	 */
+	public static function exists( int $case_id ): bool {
+		global $wpdb;
+
+		if ( $case_id <= 0 ) {
+			return false;
+		}
+
+		$cases = Tables::full( Tables::CASES );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$cases} WHERE id = %d", $case_id ) );
+		// phpcs:enable
+
+		return null !== $id;
+	}
+
+	/**
+	 * Ktore z podanych spraw ISTNIEJA — JEDNYM zapytaniem (audyt 2.22, wzorzec).
+	 *
+	 * Pytanie po jednej sprawie kosztuje tyle zapytan, ile wierszy sprawdzamy —
+	 * a sprzatanie osieroconych wierszy chodzi w zadaniu cyklicznym co piec minut.
+	 * To ta sama klasa kosztu co pozycja 2.22, wiec zamykamy ja tu od razu, zamiast
+	 * czekac, az urosnie.
+	 *
+	 * @param array<int, int> $case_ids ID spraw.
+	 * @return array<int, int> ID tych, ktore istnieja.
+	 */
+	public static function existing_ids( array $case_ids ): array {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $case_ids ) ) ) );
+
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$cases        = Tables::full( Tables::CASES );
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; liczba placeholderow ZMIENNA (tyle, ile ID).
+		$znalezione = (array) $wpdb->get_col(
+			$wpdb->prepare( "SELECT id FROM {$cases} WHERE id IN ( {$placeholders} )", $ids )
+		);
+		// phpcs:enable
+
+		return array_map( 'intval', $znalezione );
 	}
 
 	/**

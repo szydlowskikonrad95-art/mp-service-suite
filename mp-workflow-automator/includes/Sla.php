@@ -122,6 +122,150 @@ final class Sla {
 	private const RESCUE_LIMIT = 500;
 
 	/**
+	 * Kursor sprzatania sierot — do ktorego `case_id` doszlismy w tabeli terminow.
+	 */
+	public const ORPHAN_CURSOR_OPTION = 'mp_automator_orphan_cursor';
+
+	/**
+	 * Alarm: kontrakt sprawdzania spraw nie odpowiada, wiec NIE sprzatamy.
+	 */
+	public const ORPHAN_ALERT_OPTION = 'mp_automator_orphan_alert';
+
+	/**
+	 * Ile wierszy terminow sprawdzamy na jeden przebieg zamiatarki.
+	 */
+	private const ORPHAN_BATCH = 50;
+
+	/**
+	 * Ile „martwych" wierszy w paczce wystarczy, zeby podejrzewac awarie kontraktu.
+	 */
+	private const ORPHAN_SANITY_MIN = 5;
+
+	/**
+	 * Kasuje WIERSZE-SIEROTY w tabeli terminow (audyt 2.20).
+	 *
+	 * CZTERY komentarze w tym module zapowiadaly, ze osierocone wiersze posprzata
+	 * zamiatarka („sweep sprzata osobno", „nie widzi sierot — nic nie robimy"),
+	 * a w calym module nie bylo ANI JEDNEJ instrukcji kasowania poza czyszczeniem
+	 * calej tabeli przy dezaktywacji. Wiersze po usunietych sprawach zostawaly
+	 * w bazie bez konca. Obietnica z komentarza staje sie tu kodem.
+	 *
+	 * ⛔ DWA BEZPIECZNIKI, bo pomylka kasuje dane:
+	 * 1. Brak zaczepu `mp_cases_existing_ids` = modul zgloszen nie odpowiada. Wtedy
+	 *    KAZDY wiersz wygladalby na sierote — wychodzimy, nie ruszajac niczego.
+	 * 2. Gdy w paczce NIC nie zyje, a martwych jest co najmniej kilka, to znacznie
+	 *    bardziej prawdopodobne, ze padl kontrakt, niz ze wszystkie sprawy naraz
+	 *    zniknely. Podnosimy alarm i NIE kasujemy.
+	 *
+	 * Kursor przesuwa sie po tabeli i zawija — inaczej zamiatarka w kolko badalaby
+	 * ten sam poczatek tabeli, a sieroty lezace dalej nigdy nie trafilyby do paczki.
+	 *
+	 * @param int $limit Ile wierszy sprawdzic w tym przebiegu.
+	 * @return int Liczba skasowanych wierszy.
+	 */
+	public static function cleanup_orphans( int $limit = self::ORPHAN_BATCH ): int {
+		global $wpdb;
+
+		// ⛔ Pytamy o ISTNIENIE sprawy, nie o to, czy widzimy jej kontekst. Kontekst
+		// dostaja wylacznie sprawy zweryfikowane, wiec sprawa istniejaca, ale jeszcze
+		// niepotwierdzona, wygladalaby stad jak nieistniejaca — i skasowalibysmy jej
+		// wiersz terminow. Bez tego kontraktu NIE sprzatamy w ogole.
+		if ( ! has_filter( 'mp_cases_existing_ids' ) ) {
+			return 0;
+		}
+
+		$limit  = max( 1, min( 500, $limit ) );
+		$table  = Tables::full( Tables::CASE_SLA );
+		$kursor = (int) get_option( self::ORPHAN_CURSOR_OPTION, 0 );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna, zapytanie przygotowane.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT case_id FROM {$table} WHERE case_id > %d ORDER BY case_id ASC LIMIT %d",
+				$kursor,
+				$limit
+			)
+		);
+
+		// Koniec tabeli — zawijamy i zaczynamy od poczatku przy nastepnym przebiegu.
+		if ( array() === (array) $ids ) {
+			if ( $kursor > 0 ) {
+				update_option( self::ORPHAN_CURSOR_OPTION, 0, false );
+			}
+
+			return 0;
+		}
+		// phpcs:enable
+
+		// JEDNO pytanie na cala paczke, nie jedno na wiersz. To ta sama klasa kosztu
+		// co pozycja 2.22: zadanie cykliczne chodzace co piec minut nie moze skalowac
+		// liczby zapytan z liczba sprawdzanych wierszy. Pytamy o ISTNIENIE sprawy —
+		// sprawa niepotwierdzona istnieje, choc jej kontekstu stad nie widac.
+		$ids      = array_map( 'intval', (array) $ids );
+		$istnieja = array_flip( array_map( 'intval', (array) apply_filters( 'mp_cases_existing_ids', array(), $ids ) ) );
+		$sieroty  = array();
+		$zywe     = 0;
+
+		foreach ( $ids as $case_id ) {
+			if ( isset( $istnieja[ $case_id ] ) ) {
+				++$zywe;
+
+				continue;
+			}
+
+			$sieroty[] = $case_id;
+		}
+
+		update_option( self::ORPHAN_CURSOR_OPTION, (int) end( $ids ), false );
+
+		if ( array() === $sieroty ) {
+			if ( array() !== (array) get_option( self::ORPHAN_ALERT_OPTION, array() ) ) {
+				delete_option( self::ORPHAN_ALERT_OPTION );
+			}
+
+			return 0;
+		}
+
+		// Bezpiecznik 2: cala paczka martwa => podejrzewamy kontrakt, nie dane.
+		if ( 0 === $zywe && count( $sieroty ) >= self::ORPHAN_SANITY_MIN ) {
+			update_option(
+				self::ORPHAN_ALERT_OPTION,
+				array(
+					'powod' => 'kontrakt_nie_odpowiada',
+					'ile'   => count( $sieroty ),
+					'time'  => gmdate( 'Y-m-d H:i:s' ),
+				),
+				false
+			);
+
+			return 0;
+		}
+
+		$placeholders = implode( ', ', array_fill( 0, count( $sieroty ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; liczba placeholderow ZMIENNA (tyle, ile sierot), wiec sniff nie policzy jej statycznie.
+		$skasowane = (int) $wpdb->query(
+			$wpdb->prepare( "DELETE FROM {$table} WHERE case_id IN ( {$placeholders} )", $sieroty )
+		);
+		// phpcs:enable
+
+		if ( $skasowane > 0 ) {
+			// JEDEN wpis zbiorczy na przebieg, nie jeden na wiersz — rejestry i tak
+			// rosna bez retencji (osobna pozycja audytu), wiec nie dokladamy im halasu.
+			WorkflowEvents::log(
+				WorkflowEvents::SWEEP_RUN,
+				array(
+					'action' => 'cleanup_orphans',
+					'ile'    => $skasowane,
+				),
+				null
+			);
+		}
+
+		return $skasowane;
+	}
+
+	/**
 	 * RESYNC: sprawy zweryfikowane, o ktorych Automator nic nie wie (audyt 27.07).
 	 *
 	 * Reconcile z audytu #1 rozpoznaje sieroty po BRAKU zdarzenia narodzin w C —
@@ -577,30 +721,90 @@ final class Sla {
 	}
 
 	/**
+	 * ILE MAILI kosztuje eskalacja podanej listy — bez wysylania czegokolwiek.
+	 *
+	 * Powyzej progu (DIGEST_THRESHOLD) cala lista to JEDEN zbiorczy mail, wiec
+	 * jej dlugosc nie ma wplywu na koszt (i dlatego eskalacje maja wlasny, wiekszy
+	 * limit paczki niz przypomnienia — audyt 29.07). Ponizej progu kazda sprawa to
+	 * osobna wiadomosc. Sweep pyta o to ZANIM wyda budzet na przypomnienia, zeby
+	 * eskalacja — pilniejsza, bo termin JUZ minal — nie zostala bez pokrycia.
+	 *
+	 * @param int[] $case_ids ID spraw wymagalnych do eskalacji.
+	 * @return int Liczba wiadomosci, ktore wyjda przy eskalacji tej listy.
+	 */
+	public static function escalation_mail_cost( array $case_ids ): int {
+		$ile = count( array_filter( array_map( 'intval', $case_ids ) ) );
+
+		if ( 0 === $ile ) {
+			return 0;
+		}
+
+		return $ile <= self::DIGEST_THRESHOLD ? $ile : 1;
+	}
+
+	/**
 	 * Wysyla eskalacje dla zestawu spraw. Ponizej progu (DIGEST_THRESHOLD) — per
 	 * sprawa (Sla::notify, pelny send-then-claim). Powyzej — JEDEN digest do
 	 * koordynatora (SLA-3 „bez lawiny"): reaktywacja / pierwsza instalacja / masa
 	 * zaleglosci nie wystrzeliwuje seria osobnych maili. Idempotentne (escalated_at).
 	 *
-	 * @param int[] $case_ids ID spraw wymagalnych do eskalacji.
-	 * @return void
+	 * BUDZET (poz. 2.30): budzet maili na przebieg obejmuje TAKZE te sciezke.
+	 * Do 1.3.12 sprawdzal go wylacznie sweep przypomnien, wiec eskalacje ponizej
+	 * progu — mail NA KAZDA SPRAWE, w kazdej rundzie petli — wychodzily poza nim.
+	 * Sprawy, ktore sie nie zmiescily, zostaja z PUSTYM `escalated_at`: kolejny
+	 * przebieg (za 5 minut) bierze je od tego samego miejsca, nic nie przepada
+	 * i nic nie idzie dwa razy. Digest kosztuje jeden mail, wiec dlugosc listy
+	 * nadal nie ma znaczenia — uzasadnienie autora zostaje w mocy.
+	 *
+	 * @param int[]    $case_ids     ID spraw wymagalnych do eskalacji.
+	 * @param int|null $budzet_maili Ile wiadomosci wolno jeszcze wyslac; null = bez limitu.
+	 * @return array{maile: int, odlozone: int} Wyslane wiadomosci i sprawy odlozone na kolejny przebieg.
 	 */
-	public static function escalate( array $case_ids ): void {
+	public static function escalate( array $case_ids, ?int $budzet_maili = null ): array {
 		$case_ids = array_values( array_filter( array_map( 'intval', $case_ids ) ) );
 
 		if ( empty( $case_ids ) ) {
-			return;
+			return array(
+				'maile'    => 0,
+				'odlozone' => 0,
+			);
 		}
 
 		if ( count( $case_ids ) <= self::DIGEST_THRESHOLD ) {
+			// Jeden mail NA SPRAWE: budzet tnie liste (najstarsze terminy pierwsze —
+			// sweep podaje ja posortowana po `deadline_at`).
+			$odlozone = 0;
+
+			if ( null !== $budzet_maili && count( $case_ids ) > $budzet_maili ) {
+				$odlozone = count( $case_ids ) - max( 0, $budzet_maili );
+				$case_ids = array_slice( $case_ids, 0, max( 0, $budzet_maili ) );
+			}
+
 			foreach ( $case_ids as $cid ) {
 				self::notify( $cid, self::KIND_ESCALATION );
 			}
 
-			return;
+			return array(
+				'maile'    => count( $case_ids ),
+				'odlozone' => $odlozone,
+			);
+		}
+
+		// Digest: JEDEN mail na cala liste. Nie ma czego ciac — albo jest miejsce
+		// na te jedna wiadomosc, albo cala lista czeka na kolejny przebieg.
+		if ( null !== $budzet_maili && $budzet_maili < 1 ) {
+			return array(
+				'maile'    => 0,
+				'odlozone' => count( $case_ids ),
+			);
 		}
 
 		self::escalate_digest( $case_ids );
+
+		return array(
+			'maile'    => 1,
+			'odlozone' => 0,
+		);
 	}
 
 	/**
