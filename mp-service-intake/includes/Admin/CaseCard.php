@@ -197,6 +197,17 @@ final class CaseCard {
 				printf( '<option value="%s">%s</option>', esc_attr( (string) $code ), esc_html( (string) $rlabel ) );
 			}
 			echo '</select></label>';
+		} else {
+			// SLEPY ZAULEK NIE MOZE WROCIC PO CICHU (cz. 1 pkt 5). Gdy slownik jest
+			// pusty, status „odrzucone" da sie WYBRAC, ale zapis odbije sie o
+			// REJECTION_REASON_REQUIRED — a pracownik nie zobaczy nawet pola, ktore
+			// mialby wypelnic. Zamiast chowac problem, mowimy gdzie go naprawic.
+			printf(
+				'<span class="notice notice-warning" style="margin:0;padding:.25rem .5rem">%s <a href="%s">%s</a></span>',
+				esc_html__( 'Lista powodów odrzucenia jest pusta, więc statusu „odrzucone" nie da się zapisać.', 'mp-service-intake' ),
+				esc_url( admin_url( 'admin.php?page=' . SettingsScreen::PAGE_SLUG ) ),
+				esc_html__( 'Uzupełnij powody w Ustawieniach zgłoszeń', 'mp-service-intake' )
+			);
 		}
 		submit_button( __( 'Zmień status', 'mp-service-intake' ), 'primary', 'mp_status_submit', false );
 		echo '</form>';
