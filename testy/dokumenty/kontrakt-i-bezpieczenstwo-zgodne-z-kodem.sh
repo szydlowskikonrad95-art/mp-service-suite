@@ -32,8 +32,12 @@
 #    ten test ma zaczerwienic sie tak samo, jak gdy sklamie dokument.
 #
 # ⛔ STRAZNIK KOMPLETU (lekcja z 04.08: „kontrola, ktora cicho nie startuje,
-#    swieci zielono"): ekstraktor nazw musi znalezc co najmniej MIN_PUNKTOW
-#    punktow kontraktu. Zepsuty regex = blad przebiegu, nie zielone zero.
+#    swieci zielono") — DWA, bo sa dwa sposoby na ciche zero:
+#    1. ekstraktor nazw musi znalezc co najmniej MIN_PUNKTOW punktow kontraktu.
+#       Zepsuty regex = blad przebiegu, nie zielone zero.
+#    2. na koncu przebiegu PASS+FAIL musi wyjsc co najmniej MIN_KONTROLI.
+#       Bez tego skasowanie calego bloku if/else nie zmienia wyniku: bramka
+#       dalej konczy sie zerem i melduje zielone, tylko pilnuje juz mniej.
 #
 # Uruchomienie z katalogu repo:  bash testy/dokumenty/kontrakt-i-bezpieczenstwo-zgodne-z-kodem.sh
 # Zero WordPressa i zero bazy — czyta pliki repo. Exit 0 = zero FAIL.
@@ -46,6 +50,17 @@ cd "$REPO" || { echo "BLAD PRZEBIEGU: nie wchodze do $REPO"; exit 2; }
 KONTRAKT="dokumentacja-techniczna/API-KONTRAKT.md"
 SECURITY="dokumentacja-techniczna/SECURITY.md"
 MIN_PUNKTOW=20
+
+# Ile kontroli (ok/bad) ma sie NAPRAWDE wykonac w calym przebiegu.
+# 14 = liczba ZMIERZONA, nie przyjeta: przebieg na 5363c0f (gałąź główna,
+# 04.08) wypisal „PASS=14 FAIL=0". Sklada sie z: 2.32 piec · 2.33 cztery ·
+# 2.48a jedna · 2.48b jedna · 2.48c trzy (petla po trzech znanych nazwach).
+# Prog stoi DOKLADNIE na tej liczbie — prog nizszy pilnowalby sam siebie.
+#
+# PO DOLOZENIU LUB USUNIECIU KONTROLI: uruchom bramke, przepisz nowa liczbe
+# TUTAJ i dopisz w tym komentarzu, ktora doszla albo znikla i dlaczego.
+# Nie zgaduj — przepisz z wydruku.
+MIN_KONTROLI=14
 
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); echo "  OK   $1"; }
@@ -188,4 +203,12 @@ done
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"
+
+# ── STRAZNIK KOMPLETU: czy wszystkie kontrole w ogole wystartowaly ──────────
+if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
+	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
+	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i czy nie znikl caly blok if/else."
+	exit 2
+fi
+
 [ "$FAIL" -eq 0 ] || exit 1
