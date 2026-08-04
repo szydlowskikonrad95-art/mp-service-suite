@@ -13,6 +13,7 @@ namespace MP\Registry\Admin;
 
 use MP\Registry\Common\Roles;
 
+use MP\Registry\Assets;
 use MP\Registry\Archive;
 use MP\Registry\Categories;
 use MP\Registry\ProductEvents;
@@ -76,7 +77,7 @@ final class ProductsScreen {
 			'mp-registry-admin',
 			plugin_dir_url( MP_REGISTRY_FILE ) . 'assets/css/admin-registry.css',
 			array(),
-			MP_REGISTRY_VERSION
+			Assets::ver( 'assets/css/admin-registry.css' )
 		);
 	}
 
@@ -481,6 +482,9 @@ final class ProductsScreen {
 	public static function describe_event( array $row ): array {
 		$type    = (string) ( $row['event_type'] ?? '' );
 		$payload = isset( $row['payload'] ) && is_array( $row['payload'] ) ? $row['payload'] : array();
+		// Wersja ksztaltu wpisu jest kluczem TECHNICZNYM, nie zmiana danych produktu —
+		// bez tego ekran pokazywalby wiersz „schema_version: (puste) -> 1".
+		$payload = ProductEvents::pola_zmian( $payload );
 
 		if ( ProductEvents::EXCEPTION_CREATED === $type || ProductEvents::EXCEPTION_REVOKED === $type ) {
 			$label = ProductEvents::EXCEPTION_CREATED === $type

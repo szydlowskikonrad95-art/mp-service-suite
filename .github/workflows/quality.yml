@@ -223,6 +223,10 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-12-ponowienia-powiadomien.sh
       - name: Testy widoczności spraw (pracownik widzi tylko swoje)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-24-widocznosc-spraw.sh
+      - name: Testy mechanizmu ratunkowego (sięga spraw czekających najdłużej)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-18-ratunek-najstarsze.sh
+      - name: Testy kosztu przeglądu spraw (liczba zapytań nie rośnie z liczbą spraw)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-22-zapytania-nie-rosna.sh
       - name: Testy rejestru bez własnego hałasu (bicie serca zamiast wpisu co 5 minut)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-21-rejestr-bez-halasu.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)
