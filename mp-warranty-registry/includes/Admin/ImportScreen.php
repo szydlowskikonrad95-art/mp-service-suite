@@ -11,6 +11,7 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Assets;
 use MP\Registry\Categories;
 use MP\Registry\CsvParser;
 use MP\Registry\Importer;
@@ -86,14 +87,14 @@ final class ImportScreen {
 			'mp-import-admin',
 			$base . 'assets/css/admin-import.css',
 			array(),
-			MP_REGISTRY_VERSION
+			Assets::ver( 'assets/css/admin-import.css' )
 		);
 
 		wp_enqueue_script(
 			'mp-import-admin',
 			$base . 'assets/js/admin-import.js',
 			array(),
-			MP_REGISTRY_VERSION,
+			Assets::ver( 'assets/js/admin-import.js' ),
 			true
 		);
 
@@ -137,8 +138,32 @@ final class ImportScreen {
 				'doneErrors' => __( 'Pobierz raport błędów poniżej (tabela „Ostatnie importy").', 'mp-warranty-registry' ),
 				'netError'   => __( 'Błąd połączenia — import NIE przepadł. Kliknij „Wznów import", żeby kontynuować od miejsca przerwania.', 'mp-warranty-registry' ),
 				'resuming'   => __( 'Wznawiam import…', 'mp-warranty-registry' ),
+				// Teksty dla czytnika ekranu. Postep ogłaszany co 10%, a nie po
+				// kazdej paczce — inaczej czytnik zagadalby operatora na smierc
+				// i komunikat o BLEDZIE utonalby w strumieniu „przetworzono…".
+				'srStarted'  => __( 'Import rozpoczęty.', 'mp-warranty-registry' ),
+				/* translators: %1$s: postep w procentach. */
+				'srProgress' => __( 'Import w toku: %1$s procent.', 'mp-warranty-registry' ),
 			),
 		);
+	}
+
+	/**
+	 * Postep w procentach (0..100) — do ogloszenia dla czytnika ekranu.
+	 *
+	 * Funkcja czysta. Zero wierszy w pliku to NIE jest blad (pusty CSV),
+	 * wiec zwracamy 0, a nie dzielimy przez zero.
+	 *
+	 * @param int $processed Przetworzone wiersze.
+	 * @param int $total     Wszystkie wiersze.
+	 * @return int
+	 */
+	public static function percent( int $processed, int $total ): int {
+		if ( $total <= 0 ) {
+			return 0;
+		}
+
+		return (int) max( 0, min( 100, (int) floor( $processed * 100 / $total ) ) );
 	}
 
 	/**
@@ -196,7 +221,7 @@ final class ImportScreen {
 					?>
 				</p>
 				<p>
-					<progress id="mp-import-progress" max="<?php echo esc_attr( (string) max( 1, (int) ( $live['total_rows'] ?? 0 ) ) ); ?>" value="<?php echo esc_attr( (string) (int) ( $live['processed_rows'] ?? 0 ) ); ?>"></progress>
+					<progress id="mp-import-progress" aria-label="<?php esc_attr_e( 'Postęp importu', 'mp-warranty-registry' ); ?>" max="<?php echo esc_attr( (string) max( 1, (int) ( $live['total_rows'] ?? 0 ) ) ); ?>" value="<?php echo esc_attr( (string) (int) ( $live['processed_rows'] ?? 0 ) ); ?>"></progress>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary hidden" id="mp-import-resume" data-job="<?php echo esc_attr( (string) (int) ( $live['id'] ?? 0 ) ); ?>">
@@ -204,6 +229,37 @@ final class ImportScreen {
 					</button>
 				</p>
 			</div>
+
+			<?php
+			/*
+			 * ⛔ Obszary ogłaszane czytnikowi ekranu. Do 1.3.12 stan importu istniał
+			 * WYŁĄCZNIE wizualnie: skrypt podmieniał tekst w `#mp-import-message`,
+			 * a w całym tym pliku nie było ANI JEDNEGO atrybutu `aria-`. Osoba
+			 * z czytnikiem uruchamiała import i nie dowiadywała się ani że trwa,
+			 * ani że się skończył, ani że padł — tekst zmieniał się w ciszy.
+			 *
+			 * Dwa OSOBNE obszary, oba na stałe w dokumencie i nigdy nieukrywane:
+			 * ukryty (`display:none`) obszar aria-live bywa pomijany, gdy odsłania
+			 * się go i zapełnia w tej samej chwili — a dokładnie tak działa `show()`.
+			 * Postęp idzie „polite" (nie przerywa), błąd „assertive" (przerywa).
+			 *
+			 * Ta sama technika stoi w OŚMIU miejscach na powierzchni klienta
+			 * (`Front/AccountPage.php`, `Front/FormRenderer.php`) — tutaj, na
+			 * powierzchni personelu, nie została użyta ani razu.
+			 */
+			?>
+			<p id="mp-import-live" class="screen-reader-text" role="status" aria-live="polite" aria-atomic="true">
+				<?php
+				if ( null !== $live ) {
+					printf(
+						/* translators: %1$s: postep w procentach. */
+						esc_html__( 'Import w toku: %1$s procent.', 'mp-warranty-registry' ),
+						esc_html( number_format_i18n( self::percent( (int) $live['processed_rows'], (int) $live['total_rows'] ) ) )
+					);
+				}
+				?>
+			</p>
+			<p id="mp-import-alert" class="screen-reader-text" role="alert" aria-live="assertive" aria-atomic="true"></p>
 
 			<?php foreach ( $stale_jobs as $stale ) : ?>
 				<div class="notice notice-warning">
