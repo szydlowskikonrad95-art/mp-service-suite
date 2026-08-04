@@ -76,6 +76,18 @@ STAN_STARY=$(stan_crona)
 	&& ok "stare bicie serca => Stan witryny KRZYCZY, ze pilnowanie terminow stoi" \
 	|| bad "Stan witryny nie zauwazyl, ze cron stanal (status=$STAN_STARY) — diagnostyka zepsuta"
 
+# ── 5b. Rejestr NIE ROZSTRZYGA JUZ w druga strone ──────────────────────────
+# Pytanie kontrolne: czy diagnostyka czyta OBA zrodla i wystarcza jej jedno?
+# Gdyby tak bylo, stary wpis w rejestrze uspokajalby ja mimo martwego bicia
+# serca — albo swieze bicie nie przebijaloby starego wpisu. Sprawdzamy OBIE
+# strony: tu swieze bicie + STARY rejestr ma dawac spokoj (rejestr nie alarmuje).
+wp eval 'MP\Automator\Sweep::run();' >/dev/null 2>&1
+wp db query "UPDATE wp_mp_workflow_events SET created_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 MINUTE) WHERE event_type='SWEEP_RUN'" >/dev/null 2>&1
+STAN_MIESZANY=$(stan_crona)
+[ "$STAN_MIESZANY" = "good" ] \
+	&& ok "swieze bicie serca przebija stary wpis w rejestrze (rejestr juz nie rozstrzyga)" \
+	|| bad "stary wpis w rejestrze psuje ocene mimo swiezego bicia serca (status=$STAN_MIESZANY)"
+
 # ── 6. ZAPAS dla instalacji sprzed tej wersji: brak bicia => czyta rejestr ──
 wp eval "delete_option('$BICIE');" >/dev/null 2>&1
 wp eval 'MP\Automator\WorkflowEvents::log( MP\Automator\WorkflowEvents::SWEEP_RUN, array( "test" => 1 ), null );' >/dev/null 2>&1
