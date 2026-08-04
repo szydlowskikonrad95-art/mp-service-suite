@@ -427,7 +427,24 @@ echo "WYNIK: $PASS ok, $FAIL fail"
 # Straznik na komplet kontroli: kontrola, ktora nie wystartowala (literowka
 # w nazwie funkcji, przeniesiona definicja), nie zglasza sie jako FAIL — po
 # prostu jej nie ma, a bramka swieci zielono. Liczba kontroli musi sie zgadzac.
-MIN_KONTROLI=44
+#
+# ⛔ TA LICZBA JEST ZMIERZONA, NIE OSZACOWANA. Stan na 4.08.2026, na scalonym `main`
+# (po #254): pelny przebieg wykonal 55 kontroli — policzone dwa razy, niezaleznie:
+# licznikiem samego skryptu (PASS+FAIL) i zliczeniem wierszy wydruku
+# (`bash testy/dokumenty/liczby-zgodne-z-kodem.sh | grep -cE '^  (OK|FAIL)'`).
+# Wczesniej stalo 44 przy 55 wykonywanych — czyli byl luz na JEDENASCIE kontroli,
+# ktore mogly cicho zniknac, a straznik by tego nie zobaczyl. Prog ma stac
+# DOKLADNIE na liczbie wykonywanych, bo inaczej pilnuje sam siebie, nie kontroli.
+#
+# ⚠️ CZESC KONTROLI JEST WARUNKOWA — odpalaja sie tylko, gdy w dokumencie stoi
+# konkretna fraza albo gdy w kodzie czegos NIE MA. Przeformulowanie zdania
+# w dokumencie albo dolozenie czegos do kodu WYLACZY taka kontrole i ten straznik
+# zaswieci na czerwono. To jest zamierzone: znikniecie kontroli ma byc widoczne,
+# a nie ciche. Gdy zniknieta kontrola jest uzasadniona — zmien te liczbe i dopisz
+# w komentarzu, ktora to i dlaczego.
+#
+# PO DOLOZENIU KONTROLI: uruchom bramke, przepisz nowa liczbe TUTAJ. Nie zgaduj.
+MIN_KONTROLI=55
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i kolejnosc definicji funkcji."
