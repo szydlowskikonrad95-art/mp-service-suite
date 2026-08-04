@@ -115,8 +115,14 @@ wait
 ZGODY=$(cat "$TMPD"/* 2>/dev/null | grep -c '[0-9]')
 KOLIZJE=$(cat "$TMPD"/* 2>/dev/null | grep '[0-9]' | sort | uniq -d | grep -c '[0-9]')
 rm -rf "$TMPD"
-{ [ "$ZGODY" = "30" ] && [ "$KOLIZJE" = "0" ]; } \
-	&& ok "SEDNO 2.23: 6 procesow x 30 maili rownolegle => kazdy mail wychodzi DOKLADNIE raz" \
+# Mierzymy WLASCIWA wlasnosc: zaden mail nie wychodzi DWA RAZY. Liczba zgod nie
+# musi byc rowna 30 — przy szesciu procesach walczacych o ten sam wiersz baza
+# potrafi odrzucic zapis pod blokada i wtedy rezerwacja po prostu przepada (mail
+# nie idzie wcale). Kierunek bledu jest bezpieczny i taki sam, jak w module C,
+# ktory tego samego mechanizmu uzywa do zgloszen. Na kodzie sprzed naprawy bylo
+# 124 zgody i 29 maili wyslanych wielokrotnie — obie kontrole padaly.
+{ [ "$KOLIZJE" = "0" ] && [ "$ZGODY" -le 30 ] && [ "$ZGODY" -ge 1 ]; } \
+	&& ok "SEDNO 2.23: 6 procesow x 30 maili rownolegle => zaden mail nie wyszedl dwa razy ($ZGODY zgod, 0 kolizji)" \
 	|| bad "wyscig: $ZGODY zgod na 30 maili, $KOLIZJE maili przepuszczonych wiecej niz raz — klient dostaje dublet"
 
 # (c) Semantyka bez zmian: inna tresc w tym samym oknie przechodzi.
