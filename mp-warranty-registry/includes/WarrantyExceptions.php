@@ -23,6 +23,12 @@ namespace MP\Registry;
 final class WarrantyExceptions {
 
 	/**
+	 * Wersja ksztaltu zwrotki `mp_privacy_redact_for_customer`.
+	 * Kontrakt (`API-KONTRAKT.md:10`): kazda zwrotka niesie `schema_version`.
+	 */
+	public const REDACT_SCHEMA_VERSION = 1;
+
+	/**
 	 * Maksymalna dlugosc powodu (kontrakt: reason <= 500).
 	 */
 	public const REASON_MAX = 500;
@@ -306,6 +312,7 @@ final class WarrantyExceptions {
 			return array(
 				'success'        => true,
 				'redacted_count' => 0,
+				'schema_version' => self::REDACT_SCHEMA_VERSION,
 			);
 		}
 
@@ -324,6 +331,7 @@ final class WarrantyExceptions {
 		return array(
 			'success'        => false !== $redacted,
 			'redacted_count' => false === $redacted ? 0 : (int) $redacted,
+			'schema_version' => self::REDACT_SCHEMA_VERSION,
 		);
 	}
 

@@ -17,7 +17,7 @@ ale niezależne wtyczki WordPress**:
 |---|---|---|
 | **MP Service Intake** | recepcja | formularz zgłoszeń (4 rodzaje, pola wg kategorii), numery spraw `SRV/RRRR/NNNN`, weryfikacja mailowa, konto klienta bez hasła (magic-link), wiadomości klient↔serwis, RODO |
 | **MP Warranty & Serial Registry** | magazyn wiedzy | rejestr produktów/numerów seryjnych/partii, import CSV porcjami z raportem błędów, poprawianie danych produktu z historią zmian, automatyczny status gwarancji, wyjątki gwarancyjne za zgodą admina, wyszukiwarka |
-| **MP Workflow Automator** | kierownik | reguły przydziału (kategoria/kraj/język/priorytet), 7 konfigurowalnych statusów, maile po ważnych zmianach, SLA z przypomnieniem i eskalacją, checklisty, raporty CSV |
+| **MP Workflow Automator** | kierownik | reguły przydziału (kategoria, priorytet — pola „kraj" i „język" **nie zadziałają**, bo produkt tych danych nigdzie nie zbiera), 7 statusów wbudowanych (nieusuwalnych) **plus statusy własne dodawane w panelu**, godziny terminów ustawiane w panelu, maile po ważnych zmianach, SLA z przypomnieniem i eskalacją, checklisty, raporty CSV |
 
 Dane żyją w **16 dedykowanych tabelach** (nie we wpisach WP) z twardymi zasadami integralności:
 unikalny numer sprawy nadawany przez bazę, nieusuwalna oś zdarzeń każdej sprawy, blokada archiwizacji
@@ -38,7 +38,8 @@ WordPress 6.x · PHP 8.1–8.5 (CI testuje każdą wersję) · MySQL 8 / MariaDB
    brakuje na hostingu (fileinfo, biblioteka obrazów, HTTPS, nadawca poczty, cron…) i **jak to
    naprawić** — łącznie z tym, czy automatyzacja realnie się wykonuje, a nie tylko jest zaplanowana.
 4. W Rejestrze zaimportuj produkty z CSV (na ekranie importu jest przykładowy plik do pobrania).
-5. W Automatorze uzupełnij **pulę pracowników** reguły przydziału i progi SLA.
+5. W Automatorze (**Automatyzacje MP → Ustawienia**) uzupełnij **pulę pracowników** reguły przydziału
+   i **godziny terminów** — jedno i drugie ustawia się z panelu, bez programisty.
 
 Pełna instrukcja krok po kroku ze zrzutami: pakiet instrukcji w katalogu wydania.
 

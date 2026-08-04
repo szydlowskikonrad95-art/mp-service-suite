@@ -15,6 +15,18 @@ use MP\Registry\Common\Str;
 final class Repo {
 
 	/**
+	 * Wersja ksztaltu zwrotki `mp_product_details`.
+	 *
+	 * ⛔ `API-KONTRAKT.md:10` stawia bezwarunkowo: „Zwrotki niosa `schema_version`".
+	 * W calym produkcie pole trafialo do odpowiedzi DWA razy (WarrantyCheck
+	 * i WorkflowEvents) — odbiorca, ktory zgodnie z kontraktem sprawdza wersje
+	 * PRZED odczytem danych, przy tej zwrotce nie dostawal jej wcale.
+	 * Wzorzec przepisany z `WarrantyCheck::SCHEMA_VERSION`: stala per zwrotka,
+	 * bo kazda zmienia ksztalt wlasnym tempem.
+	 */
+	public const DETAILS_SCHEMA_VERSION = 1;
+
+	/**
 	 * Znajduje produkt po numerze seryjnym (postac dowolna — normalizacja tu).
 	 *
 	 * @param string $serial Surowy numer seryjny.
@@ -306,6 +318,7 @@ final class Repo {
 			'warranty_until'    => $warranty_until,
 			'warranty_status'   => WarrantyStatus::compute( true, '' !== $warranty_until ? $warranty_until : null, null, null ),
 			'archived'          => ! empty( $row['archived'] ),
+			'schema_version'    => self::DETAILS_SCHEMA_VERSION,
 		);
 	}
 
