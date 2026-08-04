@@ -148,6 +148,71 @@ for U in "--user=mp-dod-agent" ""; do
 	[ "$R" = "DENIED" ] && ok "archiwum: $WHO dostaje odmowe" || bad "archiwum: $WHO PRZESZEDL"
 done
 
+# ── 6b. BRAMKA ARCHIWIZACJI: aktywna sprawa blokuje archiwum (2.17) ─────────
+# Audyt wymienia `Archive` wsrod klas bez ani jednego testu i pisze o niej wprost:
+# „jedyna rzecz w produkcie zrobiona wzorcowo, i nietestowana". Dotad sprawdzalismy
+# tu WYLACZNIE odmowe dla agenta i anonima (punkt 6 wyzej) — czyli uprawnienia.
+# SAMA BRAMKA (nie archiwizuj produktu, ktory ma otwarta sprawe) nie byla pilnowana
+# nigdzie: ani liczba spraw, ani odmowa przy niejednoznacznej odpowiedzi modulu
+# spraw, ani odmiana komunikatu przez przypadki.
+# Liczbe aktywnych spraw podajemy filtrem — bramka pyta o nia kontraktem, wiec
+# test nie musi zakladac spraw w bazie ani niczego po sobie sprzatac.
+ARCH=$(wp eval '
+	$pid = (int) $GLOBALS["wpdb"]->get_var( "SELECT id FROM wp_mp_product_registry ORDER BY id LIMIT 1" );
+	wp_set_current_user( 1 );
+	$u = wp_get_current_user();
+	$u->add_cap( "mp_system_admin" );
+
+	$wynik = array( "pid" => $pid );
+	$probuj = static function ( $ile ) use ( $pid ) {
+		$f = static function () use ( $ile ) { return $ile; };
+		add_filter( "mp_product_active_cases_count", $f, 99 );
+		$r = MP\Registry\Archive::archive( $pid );
+		remove_filter( "mp_product_active_cases_count", $f, 99 );
+		return is_array( $r ) ? (string) $r["error"] : "ARCHIWUM";
+	};
+
+	$wynik["blokada_1"]  = $probuj( 1 );
+	$wynik["blokada_3"]  = $probuj( 3 );
+	$wynik["blokada_5"]  = $probuj( 5 );
+	$wynik["niepewne"]   = $probuj( "nie wiem" );
+	$wynik["bez_spraw"]  = $probuj( 0 );
+	$wynik["w_bazie"]    = (string) $GLOBALS["wpdb"]->get_var( "SELECT archived FROM wp_mp_product_registry WHERE id = " . $pid );
+	$wynik["juz_w_arch"] = $probuj( 0 );
+
+	// Sprzatanie: produkt wraca poza archiwum, uprawnienie zdjete z konta.
+	$GLOBALS["wpdb"]->query( "UPDATE wp_mp_product_registry SET archived = 0 WHERE id = " . $pid );
+	$u->remove_cap( "mp_system_admin" );
+
+	echo wp_json_encode( $wynik, JSON_UNESCAPED_UNICODE );
+' 2>/dev/null)
+
+echo "$ARCH" | grep -qF 'Produkt ma 1 aktywną sprawę' \
+	&& ok "archiwizacja: 1 otwarta sprawa BLOKUJE i mowi to poprawna polszczyzna" \
+	|| bad "bramka archiwizacji przy 1 sprawie ($ARCH)"
+echo "$ARCH" | grep -qF 'Produkt ma 3 aktywne sprawy' \
+	&& ok "archiwizacja: 3 sprawy — odmiana przez przypadki (2-4)" \
+	|| bad "zla odmiana przy 3 sprawach ($ARCH)"
+echo "$ARCH" | grep -qF 'Produkt ma 5 aktywnych spraw' \
+	&& ok "archiwizacja: 5 spraw — odmiana przez przypadki (5+)" \
+	|| bad "zla odmiana przy 5 sprawach ($ARCH)"
+echo "$ARCH" | grep -q 'FAIL-CLOSED' \
+	&& ok "archiwizacja: niejednoznaczna odpowiedz modulu spraw => ODMOWA (fail-closed)" \
+	|| bad "niejednoznaczna odpowiedz nie zatrzymala archiwizacji ($ARCH)"
+echo "$ARCH" | grep -q '"bez_spraw":"ARCHIWUM"' \
+	&& ok "archiwizacja: zero aktywnych spraw => produkt idzie do archiwum" \
+	|| bad "bramka blokuje TAKZE produkt bez spraw ($ARCH)"
+echo "$ARCH" | grep -q '"w_bazie":"1"' \
+	&& ok "archiwizacja zapisala sie w bazie (nie tylko zwrocila zgode)" \
+	|| bad "produkt nie trafil do archiwum w bazie ($ARCH)"
+echo "$ARCH" | grep -qF 'już w archiwum' \
+	&& ok "archiwizacja drugi raz => grzeczna odmowa zamiast cichego powtorzenia" \
+	|| bad "powtorna archiwizacja nie jest wychwytywana ($ARCH)"
+ARCH_ZOST=$(q "SELECT COUNT(*) FROM wp_mp_product_registry WHERE archived=1")
+[ "${ARCH_ZOST:-9}" = "0" ] \
+	&& ok "test przywrocil produkt poza archiwum (nic nie zostaje po sobie)" \
+	|| bad "produkt zostal w archiwum ($ARCH_ZOST) — nastepny test dostanie inny stan"
+
 # ── 7. Snapshot-uninstall (default OFF: dane zostaja, role/opcje znikaja; opt-in: tabele znikaja) ──
 wp plugin uninstall mp-warranty-registry mp-service-intake mp-workflow-automator --deactivate --skip-delete >/dev/null 2>&1 \
 	&& ok "uninstall x3 przeszedl bez fatala" || bad "uninstall pad"
