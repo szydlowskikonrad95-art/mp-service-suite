@@ -49,7 +49,7 @@ final class CaseRepo {
 	 * WALIDACJA SYNCHRONICZNA PRZED insertem (P1.4): odmowa = zwrot bledow
 	 * {field, reason_code}, NIC nie ldauje w bazie ani w osi czasu. Snapshot
 	 * gwarancji: pelna zwrotka mp_warranty_check z chwili zgloszenia (niesie
-	 * model, gwarancje ORAZ PARTIE — kartka linia 47). Bez serialu / bez
+	 * model, gwarancje ORAZ PARTIE — specyfikacja linia 47). Bez serialu / bez
 	 * modulu B: snapshot NULL (sprawa bez produktu jest dozwolona).
 	 *
 	 * @param array<string, mixed> $input kind, email, name, phone, values (mapa pol), country, lang.
@@ -1043,7 +1043,7 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Lista spraw dla PERSONELU (ekran „MP: Sprawy" / karta sprawy — kartka krok 7).
+	 * Lista spraw dla PERSONELU (ekran „MP: Sprawy" / karta sprawy — specyfikacja krok 7).
 	 * Model B: CALY personel (agent/koordynator/admin) widzi WSZYSTKIE zweryfikowane
 	 * sprawy — BEZ scopingu per assigned_to (inaczej niz query() dla raportow/RODO).
 	 * Personel obsluguje sprawy, wiec widzi imie/e-mail klienta (to NIE eksport).
@@ -1769,8 +1769,8 @@ final class CaseRepo {
 	 *
 	 * Czysta funkcja (testowana jednostkowo — `VerifyPayloadTest`).
 	 *
-	 * Po co: kartka P1.4 zada „walidacji numeru dokumentu zakupu (...) i daty zakupu",
-	 * a kartka P2.2 wymienia CZTERY statusy gwarancji. Czwarty („wymagana weryfikacja")
+	 * Po co: specyfikacja P1.4 zada „walidacji numeru dokumentu zakupu (...) i daty zakupu",
+	 * a specyfikacja P2.2 wymienia CZTERY statusy gwarancji. Czwarty („wymagana weryfikacja")
 	 * `WarrantyStatus::compute` zwraca WYLACZNIE gdy `purchase_doc_match` albo
 	 * `purchase_date_match` jest `false`, a `WarrantyCheck::assemble` liczy te flagi tylko
 	 * wtedy, gdy dostanie dane do porownania. Bez tego ladunku czwarty status byl

@@ -1,4 +1,4 @@
-# Co dodaliśmy ponad kartkę — i dlaczego
+# Co dodaliśmy ponad specyfikację — i dlaczego
 
 > Ten dokument spisuje rzeczy, które w kodzie **wyglądają jak „więcej niż w specyfikacji"**, i dla
 > każdej pokazuje, **którą literę specyfikacji realizują**. Cel: żeby czytający nie musiał się
@@ -17,7 +17,7 @@ Format każdego punktu: **CO** (co widać w kodzie) · **KOTWICA W KARTCE** (kt�
 
 ## 2. Stan techniczny sprawy PRZED „nowe" (bufor weryfikacji)
 
-- **CO:** sprawa niezweryfikowana ma `identity_status = 'pending'` i **nie ma jeszcze żadnego z 7 statusów** kartki — status roboczy pojawia się dopiero przy potwierdzeniu.
+- **CO:** sprawa niezweryfikowana ma `identity_status = 'pending'` i **nie ma jeszcze żadnego z 7 statusów** specyfikacji — status roboczy pojawia się dopiero przy potwierdzeniu.
 - **KOTWICA W KARTCE:** 7 statusów ze specyfikacji jest **nietkniętych** — „pending/przed‑wejściem" to stan techniczny PRZED wejściem na oś statusów, nie ósmy status. To wprost służy P1.6 (nieweryfikowane zgłoszenia nie zajmują kolejki).
 - **GDZIE:** `mp-service-intake/includes/CaseRepo.php` (`identity_status`), `mp-service-intake/includes/Statuses.php` (rdzeń 7 statusów `CORE`, nieusuwalny).
 

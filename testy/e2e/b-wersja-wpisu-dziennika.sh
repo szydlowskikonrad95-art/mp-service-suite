@@ -6,7 +6,7 @@
 # (w payloadzie)". Dziennik rejestru jako JEDYNY z trzech tego pola nie zapisywal
 # (intake 2 wystapienia, automator 2, rejestr 0). Dziennik jest append-only, wiec
 # przy pierwszej zmianie ksztaltu nie dalo by sie odroznic starych wpisow od nowych —
-# a mowa o wpisach, ktore kartka wymienia wprost jako historie zmian i decyzji.
+# a mowa o wpisach, ktore specyfikacja wymienia wprost jako historie zmian i decyzji.
 #
 # Ten test pilnuje, ze:
 #   1. wpis o zmianie danych produktu niesie wersje ksztaltu,

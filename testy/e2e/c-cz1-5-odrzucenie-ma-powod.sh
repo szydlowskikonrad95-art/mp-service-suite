@@ -6,7 +6,7 @@
 # ktorego NIKT W PRODUKCIE NIE REJESTROWAL — byly tylko dwa odczyty (karta sprawy
 # i eksport CSV). Bez powodu `CaseRepo::change_status` odbija zapis bledem
 # REJECTION_REASON_REQUIRED. Pracownik wybieral wiec status z listy siedmiu
-# wymaganych przez kartke klienta, klikal „Zmien status" i dostawal odmowe,
+# wymaganych przez specyfikacje klienta, klikal „Zmien status" i dostawal odmowe,
 # ktorej nie mial jak spelnic. Slepy zaulek.
 #
 # Test sprawdza obie strony: (a) ze slepy zaulek zniknal, (b) ze naprawa NIE

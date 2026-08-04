@@ -172,7 +172,7 @@ final class Repo {
 	 *
 	 * ⛔ Do 1.3.12 kazde zapytanie do tabeli wyjatkow filtrowalo po konkretnym
 	 * produkcie. Administrator, ktory przyznal ich dwadziescia, nie mial jak ich
-	 * przejrzec — a kartka wymaga „historii zmian danych produktu i decyzji
+	 * przejrzec — a specyfikacja wymaga „historii zmian danych produktu i decyzji
 	 * gwarancyjnych". Ta metoda jest jedynym zapytaniem, ktore patrzy na calosc.
 	 *
 	 * „Przeterminowany" NIE jest stanem w bazie (status zna tylko active/revoked)
@@ -326,7 +326,7 @@ final class Repo {
 	 * Pola, ktore wolno poprawic z panelu.
 	 *
 	 * ⛔ NIE MA TU `serial_display` ani `serial_normalized`. Numer seryjny jest kluczem,
-	 * po ktorym sprawy trzymaja sie produktu (relacja z kartki:
+	 * po ktorym sprawy trzymaja sie produktu (relacja ze specyfikacji:
 	 * `wp_mp_product_registry.id -> wp_mp_service_cases.product_registry_id`).
 	 * Podmiana numeru w istniejacym wierszu przepisalaby historie serwisowa na inny
 	 * egzemplarz — poprawka literowki wygladalaby jak cicha zamiana produktu.
@@ -362,7 +362,7 @@ final class Repo {
 	/**
 	 * Poprawia dane produktu w rejestrze i zapisuje zmiane w historii.
 	 *
-	 * Kartka, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
+	 * Specyfikacja, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
 	 * Decyzje gwarancyjne zapisywal juz `WarrantyExceptions`; tu domykamy pierwsza
 	 * polowe wymogu — bez ekranu poprawiania nie bylo CZEGO zapisywac, bo dane
 	 * produktu wchodzily wylacznie importem i pozostawaly nietykalne.

@@ -125,7 +125,7 @@ dla-klienta/              instrukcje ×4 role ze zrzutami, diagramy, raport dost
 dokumentacja-techniczna/  kontrakt hooków, baza, bezpieczeństwo, maszyna stanów, migracje
 testy/                    phpunit (czysta logika) + ~70 skryptów e2e na ŻYWYM WordPressie
 build/                    budowa ZIP-ów + linter zakazu dotykania cudzych tabel
-PONAD-KARTKE.md           co wykracza ponad specyfikację i którą jej literę realizuje
+PONAD-SPECYFIKACJE.md           co wykracza ponad specyfikację i którą jej literę realizuje
 ```
 
 ## Jakość — maszyny, nie obietnice

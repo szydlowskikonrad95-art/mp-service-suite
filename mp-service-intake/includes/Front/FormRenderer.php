@@ -117,7 +117,7 @@ final class FormRenderer {
 		}
 
 		// Zalaczniki (JPG/PNG/WebP/PDF, do 5 plikow) — etykieta I wymagalnosc
-		// zaleza od KATEGORII produktu (P1.2 z kartki). JS przelacza jedno
+		// zaleza od KATEGORII produktu (P1.2 ze specyfikacji). JS przelacza jedno
 		// i drugie przy zmianie kategorii; serwer waliduje niezaleznie
 		// (SubmissionHandler: bramka przed utworzeniem sprawy).
 		$attachments = FormConfig::attachments_for( $category );

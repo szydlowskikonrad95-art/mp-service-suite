@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD C17 (rate-limit zadan magic-linku): ochrona skrzynek klientow i
 # endpointu logowania przed zalewem linkami. Standard (OWASP anti-automation) —
-# poza kartka, ale profeska bezpieczenstwa. Osobne liczniki od formularza zgloszen.
+# poza specyfikacja, ale profeska bezpieczenstwa. Osobne liczniki od formularza zgloszen.
 # - 5 zadan przechodzi, 6. z tego samego IP+email => BLOCK_RATE
 # - limit per-IP: gdy IP wyczerpane, inny email z tego IP tez blokowany
 # - limit per-email: gdy email wyczerpany, inne IP tez blokowane (ochrona skrzynki)

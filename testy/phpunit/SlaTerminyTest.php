@@ -52,7 +52,7 @@ final class SlaTerminyTest extends TestCase {
 	}
 
 	/**
-	 * Kazdy status rdzenia ma termin ZGODNY Z KARTKA, co do godziny.
+	 * Kazdy status rdzenia ma termin ZGODNY Z SPECYFIKACJA, co do godziny.
 	 *
 	 * To jest kontrola, ktorej brakowalo: skrocenie naprawy ze 120 godzin do
 	 * jednej przechodzilo przez warstwe jednostkowa bez sladu.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD: poprawianie danych produktu + historia zmian.
 #
-# Kartka, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
+# Specyfikacja, plugin 2: „historia zmian danych produktu i decyzji gwarancyjnych".
 # Decyzje gwarancyjne byly logowane od poczatku, ale danych produktu NIE DALO SIE
 # ZMIENIC (wchodzily wylacznie importem, ponowny import odrzucal duplikat seriala),
 # wiec historia zmian danych nie miala czego zapisywac. Ten test pilnuje, ze:

@@ -121,7 +121,7 @@ const ZRZUTY = [
     url: () => process.env.MP_FORM_URL,
     wyloguj: true,
     kadrDo: '.mp-intake',
-    // Kategoria AGD: pokazuje WYMAGANY załącznik (P1.2 z kartki) — dokładnie to,
+    // Kategoria AGD: pokazuje WYMAGANY załącznik (P1.2 ze specyfikacji) — dokładnie to,
     // czego instrukcja klienta uczy w akapicie o kategoriach.
     akcje: async (page) => {
       await page.selectOption('#mp-f-kind', 'reklamacja');

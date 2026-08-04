@@ -137,7 +137,7 @@ final class SubmissionHandler {
 			$gate_errors['customer_name'] = $name_error;
 		}
 
-		// P1.2 (kartka: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
+		// P1.2 (specyfikacja: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
 		// produktu"). Bramka PRZED utworzeniem sprawy i PRZED rezerwacja dedup:
 		// sprawa nie moze powstac bez obowiazkowego zdjecia, bo klient dostalby
 		// wtedy tylko notke „czesc zalacznikow nie zostala dolaczona", a serwis
@@ -314,7 +314,7 @@ final class SubmissionHandler {
 
 			// 2.1b: ten sam wzorzec co przy zgloszeniu — wynik wysylki byl ignorowany.
 			// Tu bolalo najbardziej: numer sprawy klient poznaje WYLACZNIE z tego maila
-			// (krok 6 kartki), wiec przy padnietej poczcie zostawal z niczym, slyszac,
+			// (krok 6 specyfikacji), wiec przy padnietej poczcie zostawal z niczym, slyszac,
 			// ze numer zostal wyslany. Brak adresu = mail nie poszedl tak samo.
 			$mail_ok = '' !== $email
 				&& Mailer::send_confirmation( $email, (string) $result['case_number'], (int) $result['case_id'] );
@@ -330,7 +330,7 @@ final class SubmissionHandler {
 
 			// ⛔ NUMERU SPRAWY TU NIE POKAZUJEMY, choc klient wlasnie udowodnil, ze ma
 			// dostep do skrzynki. Reguła produktu jest starsza i szersza: SRV wychodzi
-			// WYLACZNIE mailem albo panelem (naglowek tego pliku, krok 6 kartki), a
+			// WYLACZNIE mailem albo panelem (naglowek tego pliku, krok 6 specyfikacji), a
 			// pilnuje jej test C3 („strona POST nie zdradza numeru SRV"). Pierwsza
 			// wersja tej poprawki numer pokazywala i C3 od razu ja zlapal — zmiana
 			// tamtej reguly to decyzja wlasciciela produktu, nie skutek uboczny

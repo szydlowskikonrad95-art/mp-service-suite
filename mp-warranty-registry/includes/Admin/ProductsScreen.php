@@ -251,7 +251,7 @@ final class ProductsScreen {
 	}
 
 	/**
-	 * Widok poprawiania danych produktu (kartka: „historia zmian danych produktu").
+	 * Widok poprawiania danych produktu (specyfikacja: „historia zmian danych produktu").
 	 *
 	 * Numer seryjny pokazujemy, ale tylko do odczytu — jest kluczem, po ktorym sprawy
 	 * trzymaja sie produktu (patrz `Repo::EDITABLE_FIELDS`).
@@ -372,7 +372,7 @@ final class ProductsScreen {
 	}
 
 	/**
-	 * Widok historii egzemplarza (kartka: „historia zmian danych produktu
+	 * Widok historii egzemplarza (specyfikacja: „historia zmian danych produktu
 	 * i decyzji gwarancyjnych").
 	 *
 	 * ⛔ Dziennik `wp_mp_product_events` byl do 1.3.12 zapisywany i nieczytany —

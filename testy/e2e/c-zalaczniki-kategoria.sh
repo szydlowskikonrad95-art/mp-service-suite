@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD P1.2, druga polowa: ZALACZNIKI zalezne od KATEGORII produktu.
-# Kartka (Plugin 1): „wymagane pola i zalaczniki zalezne od wybranej kategorii
+# Specyfikacja (Plugin 1): „wymagane pola i zalaczniki zalezne od wybranej kategorii
 # produktu". Pola dzialaly od poczatku, zalaczniki NIE — we wszystkich
 # kategoriach identyczne i zawsze opcjonalne.
 #

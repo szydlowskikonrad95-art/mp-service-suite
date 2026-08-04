@@ -113,7 +113,7 @@
 	}
 
 	/**
-	 * Reguły załączników dla kategorii (P1.2 — kartka: „wymagane pola
+	 * Reguły załączników dla kategorii (P1.2 — specyfikacja: „wymagane pola
 	 * i załączniki zależne od wybranej kategorii produktu").
 	 *
 	 * @param {string} category Wybrana kategoria (może być pusta).

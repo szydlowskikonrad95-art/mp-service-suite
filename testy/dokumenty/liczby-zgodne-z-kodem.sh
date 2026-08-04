@@ -217,7 +217,7 @@ for plik in mp-service-intake/includes/Admin/CaseCard.php mp-warranty-registry/i
 		|| bad "inna nazwa czwartego statusu w: $plik (ma byc: wymagana weryfikacja)"
 done
 
-# ── kopia przed wdrozeniem (kartka: „Kopie i odtworzenie") ──────────────────
+# ── kopia przed wdrozeniem (specyfikacja: „Kopie i odtworzenie") ──────────────────
 sprawdz_tekst "INSTRUKCJA: kopia bazy PRZED instalacja" "kopi[^ ]* bazy" dla-klienta/INSTRUKCJA-KLIENTA.md
 sprawdz "PRZECZYTAJ-MNIE wskazuje polityke kopii" "MIGRATION_POLICY" dla-klienta/PRZECZYTAJ-MNIE.txt
 grep -q "MIGRATION_POLICY.md" build/pakuj-dla-klienta.sh \

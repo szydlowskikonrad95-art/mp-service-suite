@@ -103,7 +103,7 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			Admin\UnverifiedScreen::register();
-			// Warsztat pracy personelu: lista spraw + karta (kartka krok 7).
+			// Warsztat pracy personelu: lista spraw + karta (specyfikacja krok 7).
 			Admin\CasesScreen::register();
 			// Ustawienia modulu (1.3.12): przelacznik kasowania danych przy
 			// odinstalowaniu. Opcje czytal uninstall.php, a ustawic jej nie dalo
@@ -278,7 +278,7 @@ final class Plugin {
 		// Kontrakt B->C: liczba AKTYWNYCH (nie-terminalnych) spraw produktu. Registry
 		// (Archive.php) pyta PRZED archiwizacja/usunieciem produktu — >0 => odmawia.
 		// FAIL-CLOSED: gdy Intake nieaktywny, listenera brak => has_filter() false =>
-		// Registry odmawia „na slowo". B5 (kartka: brak usuniecia produktu z aktywna sprawa).
+		// Registry odmawia „na slowo". B5 (specyfikacja: brak usuniecia produktu z aktywna sprawa).
 		add_filter(
 			'mp_product_active_cases_count',
 			static function ( $result, $product_registry_id ) {
@@ -304,7 +304,7 @@ final class Plugin {
 			2
 		);
 
-		// Kontrakt B->C: wyszukiwarka „po kliencie" (kartka P2.6) — C zna klient->sprawy
+		// Kontrakt B->C: wyszukiwarka „po kliencie" (specyfikacja P2.6) — C zna klient->sprawy
 		// ->produkty. Bez tego listenera search po kliencie w rejestrze jest wylaczony.
 		add_filter(
 			'mp_customer_find_products',
@@ -318,7 +318,7 @@ final class Plugin {
 		);
 
 		// Kontrakt B->C: wyjatek gwarancyjny zmienil stan => wpis na osi sprawy
-		// (kartka relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
+		// (specyfikacja relacja 3: kazda decyzja tworzy wpis w osi czasu). B emituje
 		// mp_warranty_exception_changed PO COMMIT (active/revoked). case_id=NULL =
 		// wyjatek globalny na produkt (brak sprawy) => no-op (EVENT_MODEL.md). Flaga #11.
 		add_action(
@@ -355,7 +355,7 @@ final class Plugin {
 		);
 
 		// Kontrakt D->C: powiadomienie SLA (przypomnienie/eskalacja) tworzy wpis na
-		// osi sprawy (kartka relacja 3). D emituje mp_sla_notified PO wyslaniu maila;
+		// osi sprawy (specyfikacja relacja 3). D emituje mp_sla_notified PO wyslaniu maila;
 		// wzorzec 1:1 jak listener wyjatkow. NO-PII (kind + recipient_ref, bez adresu).
 		add_action(
 			'mp_sla_notified',
