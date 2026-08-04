@@ -217,6 +217,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-rodo-zgloszenia-niepotwierdzone.sh
       - name: Testy awarii poczty (klient i personel słyszą, że mail nie wyszedł)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-1b-poczta-nie-milczy.sh
+      - name: Testy ochrony przed duplikatem (ten sam sprzęt mimo innego zapisu numeru)
+        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-1-duplikat-i-komunikat.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c26-widok-zwrot-i-etykiety.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
