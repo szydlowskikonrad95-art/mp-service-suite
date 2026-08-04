@@ -34,8 +34,9 @@ Kliknij numer sprawy. Na karcie masz wszystko:
   sprawy podstawiają się same),
 - **Zmiana statusu** — prowadź sprawę po statusach (nowe → w analizie → … → zamknięte).
   **Odrzucenie wymaga wybrania powodu** z listy — pole powodu pojawia się przy statusie
-  „odrzucone" i bez niego zapis się nie uda. Jeśli lista powodów jest pusta (nikt jej jeszcze
-  nie wypełnił), poproś administratora systemu — uzupełnia ją w **MP: Sprawy → Ustawienia**.
+  „odrzucone" i bez niego zapis się nie uda. Lista jest gotowa od instalacji; jeśli brakuje w niej
+  powodu, który u Was występuje, poproś administratora systemu o dopisanie
+  (**MP: Sprawy → Ustawienia**).
 
 Zmiana danych kontaktowych przez klienta **zostawia ślad na osi zdarzeń** (sam fakt i nazwy
 zmienionych pól, bez wartości — numer telefonu jest daną osobową). Zanim zadzwonisz pod numer

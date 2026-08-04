@@ -31,16 +31,29 @@ status 'nowe' + event CASE_CREATED + akcja mp_case_created + konto klienta + 2. 
 | Status | Terminalny? | SLA |
 |---|---|---|
 | nowe | nie | tak (default 24 h) |
-| do uzupełnienia | nie | tak (72 h) |
+| do uzupełnienia | nie | **NIE — licznik STOI** (deadline NULL) |
 | w analizie | nie | tak (48 h) |
 | zaakceptowane | nie | tak (24 h) |
 | w naprawie | nie | tak (120 h) |
 | odrzucone | **TAK** | bez SLA (deadline NULL) |
 | zamknięte | **TAK** | bez SLA (deadline NULL) |
 
+⏸️ **„Do uzupełnienia" od 1.3.12 nie ma terminu — to jedyny NIETERMINALNY status bez SLA.**
+Zapisane jako `'do uzupełnienia' => 0` w `SlaConfig::CORE_HOURS` (`SlaConfig.php:69`); ścieżka
+`sla_hours <= 0 => deadline NULL` istniała już wcześniej, więc zero nie wymaga osobnej obsługi,
+a zamiatarka bierze wyłącznie wiersze z `deadline_at IS NOT NULL`. **Powód:** w tym statusie piłka
+jest po stronie KLIENTA — do 1.3.11 status miał własne okno 72 h, które biegło przez cały czas
+oczekiwania, więc po trzech dobach sprawa **eskalowała do koordynatora za to, że klient nie odpisał**,
+i zafałszowywała średni czas obsługi w eksporcie. Zegar rusza od nowa przy powrocie do statusu
+roboczego (każda zmiana statusu liczy termin od zera). ⛔ **Sprawa nie znika z radaru**: zaparkowaną
+tu na stałe łapie osobna miara wieku (`Sla::stale_cases`), niezależna od terminów.
+⚠️ **Nie mylić z 72 h z §0** — tamto to okno POTWIERDZENIA sprawy (`CaseRepo::CONFIRM_WINDOW_HOURS`),
+zupełnie inny mechanizm; ta sama liczba w dwóch znaczeniach kosztowała już jedno nieporozumienie.
+
 Czasy = godziny kalendarzowe 24/7/365 × modyfikator priorytetu (wysoki ×0,5 / normalny ×1 /
-niski ×2). **Godziny terminów każdego statusu ustawia administrator**
-w panelu (Automatyzacje MP → Ustawienia, sekcja „Godziny terminów"). ⚠️ **Modyfikator priorytetu
+niski ×2). **Godziny terminów statusów WBUDOWANYCH ustawia administrator** w panelu
+(Automatyzacje MP → Ustawienia, sekcja „Godziny terminów (statusy wbudowane)"); termin statusu
+WŁASNEGO ustawia się przy nim samym, w sekcji „Statusy własne". ⚠️ **Modyfikator priorytetu
 konfigurowalny NIE jest** — siedzi w kodzie jako stała `SlaConfig::PRIORITY_MODIFIER`.
 
 ## 2. Dozwolone przejścia
@@ -49,7 +62,14 @@ konfigurowalny NIE jest** — siedzi w kodzie jako stała `SlaConfig::PRIORITY_M
   status istnieje na liście, optimistic‑lock (`expected_status` się zgadza), wymogi specjalne niżej.
   NIE budujemy edytora grafu przejść.
 - **Wejście w „odrzucone" WYMAGA `rejection_reason_code`** (kolumna + kod w evencie + w
-  `mp_cases_query`; słownik z filtra `mp_rejection_reasons` od D, degraded: mini‑słownik C).
+  `mp_cases_query`). **Słownik powodów oddaje C** — `MP\Intake\RejectionReasons` jest jedynym
+  dostawcą filtra `mp_rejection_reasons` (`RejectionReasons.php:86`), a czytają go karta sprawy C
+  i eksport CSV D. **Domyślny słownik jest NIEPUSTY** (6 powodów, `RejectionReasons::defaults()`)
+  i pustej listy nie da się zapisać — inaczej świeża instalacja miałaby ślepy zaułek: karta pokazuje
+  pole powodu tylko przy niepustej liście, a bez powodu `change_status` odbija `REJECTION_REASON_REQUIRED`.
+  Listę edytuje admin w **MP: Sprawy → Ustawienia**, sekcja „Powody odrzucenia sprawy".
+  *(Do 1.3.11 filtr nie miał ŻADNEGO dostawcy — stąd wcześniejszy zapis „słownik od D, degraded:
+  mini‑słownik C" opisywał zamiar, nie stan: D go nie rejestrowało, a mini‑słownika C nie było.)*
 - **Wejście w „zamknięte"** → D generuje RAPORT KOŃCOWY sprawy (wiadomość systemowa przez
   `mp_case_add_system_message` + mail do klienta — krok 8 spec).
 - **REOPEN (z terminalnych): „zamknięte" → „w analizie" oraz „odrzucone" → „w analizie"** — wykonuje

@@ -36,7 +36,7 @@ patrz OWNERSHIP.md; pilnuje tego linter cudzych tabel w CI).
 | `wp_mp_attachments` | wymóg zamówienia/RODO: „limity typów i rozmiaru plików" + „zdefiniowana retencja załączników" — cron retencji chodzi po tej tabeli |
 | `wp_mp_consents` | spec RODO: „rejestr zgód" |
 | `wp_mp_srv_counters` | techniczna; wymóg zamówienia: „automatyczne generowanie numeru sprawy" + sekcja 2: „unikalny numer sprawy" — licznik atomowy per rok (patrz §4) |
-| `wp_mp_rate_counters` | techniczna (migracja v2); wymóg zamówienia: „ochrona formularza przed spamem, duplikatami" — atomowe liczniki rate‑limitu i rezerwacje dedup w oknach przesuwanych (dawne transienty przepuszczały równoległe żądania); klucze to HASHE (md5), zero PII; wygasłe wiersze sprząta cron retencji |
+| `wp_mp_rate_counters` | techniczna (migracja v2); wymóg zamówienia: „ochrona formularza przed spamem, duplikatami" — atomowe liczniki rate‑limitu i rezerwacje dedup (dawne transienty przepuszczały równoległe żądania); klucze to HASHE (md5), zero PII; wygasłe wiersze sprząta cron retencji. ⚠️ **Okna NIE są jednakowe:** licznik IP jest PRZESUWANY, a liczniki dobowe e‑mail/serial są NIERUCHOME — liczone od PIERWSZEGO zgłoszenia (2.31, `RateLimit.php:157-166`). Przy oknie przesuwanym każde udane zgłoszenie odsuwało koniec doby i limit „3 na dobę" działał jak „trzy pod rząd" |
 
 ### Własność B — mp-warranty-registry (4)
 
@@ -92,8 +92,14 @@ witryny wyłącznie przy prezentacji).
 - **`wp_mp_messages`**: `case_id` · `author_type` (client/staff/system) · treść (redagowalna przy
   RODO) · `created_at`. Wiadomości na sprawie zamkniętej DOZWOLONE.
 - **`wp_mp_attachments`**: `case_id` · ścieżka (losowa nazwa bez rozszerzenia) · typ (finfo) ·
-  rozmiar · `retention_until` (wyliczane przy tworzeniu z konfiguracji per RODZAJ sprawy) ·
-  `deleted_at`. Kasowanie załącznika ZAWSZE = wiersz + PLIK z dysku.
+  rozmiar · **`original_name`** (nazwa nadana przez KLIENTA — dana osobowa, patrz MAPA‑PII) ·
+  `retention_until` (wyliczane przy tworzeniu z konfiguracji per RODZAJ sprawy) · `deleted_at`.
+  ⛔ **Kasowanie załącznika = PLIK z dysku + `deleted_at` + REDAKCJA `original_name`; WIERSZ ZOSTAJE.**
+  Wiersz jest śladem operacji (kiedy, jaka sprawa, jaki typ, jaki rozmiar) i tego nie odbieramy — ale
+  nazwa pliku to treść pisana przez człowieka (skany dowodów zakupu bywają nazwane imieniem
+  i nazwiskiem), więc po skasowaniu pliku nie służy już do niczego, a **przeżywała żądanie usunięcia
+  danych**. Redakcja siedzi w JEDNYM gardle (`Attachments.php:538-545`), więc obejmuje ścieżkę RODO,
+  cron retencji i kasowanie ręczne.
 - **`wp_mp_consents`**: klient/e‑mail · `case_id` (zgoda spięta ze sprawą) · `consented_at` ·
   wersja zgody · **PEŁNY TEKST zgody zamrożony w wierszu** (rozliczalność art. 7).
 - **`wp_mp_srv_counters`**: `year` PK · `value`.
@@ -184,11 +190,12 @@ sprawach → duplikaty SRV po reinstalacji w tym samym roku).
 | Kolumna | PII | Mechanizm RODO |
 |---|---|---|
 | `customers.*` (dane kontaktowe) | TAK | eraser C: czyszczenie pól + `anonymized_at` + odpięcie konta WP (wiersz i relacje zostają) |
-| `service_cases.form_data` → pola `pii_sensitive` | TAK | eraser C: redakcja WARTOŚCI pól pii_sensitive (struktura/etykiety zostają) |
+| `service_cases.form_data` → pola `pii_sensitive` | TAK | eraser C: redakcja WARTOŚCI pól wrażliwych (struktura/etykiety zostają). ⛔ **Lista pól brana z AKTUALNEJ konfiguracji** (`FormConfig::sensitive_keys()`), nie z flagi zamrożonej w wierszu sprawy — inaczej poprawienie konfiguracji naprawiałoby wyłącznie sprawy PRZYSZŁE, a wszystkie leżące w bazie zostałyby brudne. Pole dokładane nadpisaniem konfiguracji: **typ `text`/`textarea` bez jawnej decyzji jest traktowany jako WRAŻLIWY** (jawne `false` dalej wygrywa) — brak decyzji przestał znaczyć ciche „nie" (`FormConfig.php:586-588`) |
 | `service_cases.rodzaj/status/czasy/numery` | NIE | — (fakty procesowe) |
 | opis problemu / notatki w sprawie | TAK | eraser C: redakcja → `[ZREDAGOWANO-RODO]` |
 | `messages.tresc` | TAK | eraser C: redakcja wiadomości klienta (kwazi‑identyfikatory) |
-| `attachments` (pliki) | TAK | eraser C: kasacja plików (wiersz+PLIK); niezależnie cron retencji `retention_until` |
+| `attachments` — PLIK | TAK | eraser C: kasacja pliku z dysku; niezależnie cron retencji `retention_until` |
+| `attachments.original_name` | TAK (nazwa nadana przez klienta) | redakcja przy kasowaniu załącznika — **wiersz zostaje jako ślad operacji, nazwa znika** (`Attachments.php:538-545`); jedno gardło dla RODO, retencji i kasowania ręcznego |
 | `consents` (tekst+meta zgody) | TAK (rozliczalność) | rejestr zgód — art. 7; wycofanie = `CONSENT_WITHDRAWN`; NIE podlega redakcji treści (dowód zgody) |
 | `case_events.payload` | **NIE Z KONSTRUKCJI** | ŻELAZNA ZASADA NO‑PII‑IN‑LOG — events nietykalne, redakcja ich nie dotyczy (EVENT_MODEL.md) |
 | `product_registry.purchase_document` | TAK (kwazi‑identyfikator) | wartości żyją TYLKO w tabeli stanu; w diffach eventów `{field, changed:true}`; nie wychodzi hookami (weryfikacja `$verify` porównywana po stronie B) |
