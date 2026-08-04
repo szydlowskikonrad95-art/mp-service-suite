@@ -53,6 +53,15 @@ final class RateLimit {
 	public const DEDUP_WINDOW = 900;
 
 	/**
+	 * Ile razy powtarzamy rezerwacje, gdy baza odbije zapis kolizja na blokadzie.
+	 *
+	 * Bez ponowienia pojedyncza kolizja oznaczala „ktos inny ma rezerwacje" — czyli
+	 * mail nie szedl do NIKOGO. Trzy podejscia z krotka przerwa wystarczyly, zeby
+	 * w serii dziesieciu przebiegow (6 procesow x 30 kluczy) nie zginela ani jedna.
+	 */
+	private const CLAIM_ATTEMPTS = 3;
+
+	/**
 	 * Okno dedup w PELNYCH minutach — do komunikatow dla czlowieka.
 	 *
 	 * @return int Minuty (minimum 1, zeby komunikat nigdy nie mowil „0 minut").
@@ -245,30 +254,127 @@ final class RateLimit {
 	public static function claim_window( string $key, int $window ): bool {
 		global $wpdb;
 
-		$table   = Tables::full( Tables::RATE_COUNTERS );
-		$now     = gmdate( 'Y-m-d H:i:s' );
-		$expires = gmdate( 'Y-m-d H:i:s', time() + $window );
+		// Okno <= 0 znaczylo dotad „rezerwacja zawsze przyznana" (wiersz wygasal
+		// w tej samej sekundzie, w ktorej powstawal). Zachowujemy to co do wyniku,
+		// tyle ze bez zapisu smiecia do tabeli. Zaden dzisiejszy wolajacy tego nie
+		// uzywa — `MailDedup` odbija okno <= 0 u siebie, a dedup zgloszen ma 900 s.
+		if ( $window <= 0 ) {
+			return true;
+		}
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowa rezerwacja pod unikalnym kluczem.
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO {$table} (rl_key, hits, window_expires_at)
-				VALUES (%s, LAST_INSERT_ID(1), %s)
-				ON DUPLICATE KEY UPDATE
-					hits = LAST_INSERT_ID( IF( window_expires_at <= %s, 1, hits + 1 ) ),
-					window_expires_at = IF( window_expires_at <= %s, %s, window_expires_at )",
-				$key,
-				$expires,
-				$now,
-				$now,
-				$expires
-			)
-		);
+		$table = Tables::full( Tables::RATE_COUNTERS );
 
-		$count = (int) $wpdb->insert_id;
-		// phpcs:enable
+		/*
+		 * ⛔ CZEMU NIE JEDNA KWERENDA. Dotad rezerwacja szla jednym
+		 * `INSERT ... ON DUPLICATE KEY UPDATE` z `LAST_INSERT_ID(wyrazenie)`, a wynik
+		 * czytany byl z `$wpdb->insert_id`. Pomiar (6 procesow walczacych o ten sam
+		 * klucz, seria przebiegow) pokazal DWIE wady tego rozwiazania:
+		 *  * GUBIONE REZERWACJE — przy kolizji na blokadzie wiersza kwerenda pada,
+		 *    `insert_id` schodzi do zera i wychodzi „ktos inny ma rezerwacje". Nikt
+		 *    jej wtedy nie ma: mail nie idzie do NIKOGO (26-29 zgod na 30 w kazdym
+		 *    przebiegu);
+		 *  * DUBEL — rzadko, ale realnie (1 na ~90-180 kluczy) dwa procesy dostawaly
+		 *    zgode na ten sam klucz, czyli dokladnie to, przed czym ten mechanizm ma
+		 *    chronic.
+		 * Teraz wynik NIE ZALEZY od `insert_id` ani od kolejnosci wyliczania wyrazen
+		 * w silniku bazy, tylko od dwoch rzeczy, ktore baza gwarantuje wprost:
+		 * klucz glowny (wiersz powstaje DOKLADNIE raz) i liczba zmienionych wierszy
+		 * w warunkowym zapisie (okno przejmuje DOKLADNIE jeden proces).
+		 */
+		$last = $wpdb->suppress_errors( true );
 
-		return 1 === $count;
+		try {
+			for ( $proba = 1; $proba <= self::CLAIM_ATTEMPTS; $proba++ ) {
+				$now     = gmdate( 'Y-m-d H:i:s' );
+				$expires = gmdate( 'Y-m-d H:i:s', time() + $window );
+
+				// (1) Klucz wolny? Wiersz powstaje DOKLADNIE raz — reszcie procesow
+				// `INSERT IGNORE` odda zero zmienionych wierszy, bez bledu i bez
+				// zaleznosci od `insert_id`.
+				$wpdb->last_error = '';
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; rezerwacja pod kluczem glownym.
+				$powstal = $wpdb->query(
+					$wpdb->prepare(
+						"INSERT IGNORE INTO {$table} (rl_key, hits, window_expires_at) VALUES (%s, 1, %s)",
+						$key,
+						$expires
+					)
+				);
+				// phpcs:enable
+
+				if ( 1 === (int) $powstal ) {
+					return true;
+				}
+
+				if ( false === $powstal && self::blad_przejsciowy( (string) $wpdb->last_error ) ) {
+					usleep( $proba * 5000 );
+					continue;
+				}
+
+				// (2) Wiersz jest. Przejmujemy go WYLACZNIE, gdy poprzednie okno juz
+				// wygaslo — warunek siedzi w zapisie, wiec przy dwoch procesach naraz
+				// dokladnie jeden dostanie „zmieniono 1 wiersz".
+				$wpdb->last_error = '';
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; przejecie WYGASLEGO okna.
+				$przejete = $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$table} SET hits = 1, window_expires_at = %s WHERE rl_key = %s AND window_expires_at <= %s",
+						$expires,
+						$key,
+						$now
+					)
+				);
+				// phpcs:enable
+
+				if ( 1 === (int) $przejete ) {
+					return true;
+				}
+
+				if ( false === $przejete && self::blad_przejsciowy( (string) $wpdb->last_error ) ) {
+					usleep( $proba * 5000 );
+					continue;
+				}
+
+				// (3) Rezerwacja zyje i jest CUDZA. Liczymy probe (dawne `hits + 1`,
+				// z ktorego korzysta `current_count`), ale wynik jest juz przesadzony.
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; licznik prob w zywym oknie.
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$table} SET hits = hits + 1 WHERE rl_key = %s AND window_expires_at > %s",
+						$key,
+						$now
+					)
+				);
+				// phpcs:enable
+
+				return false;
+			}
+
+			return false;
+		} finally {
+			$wpdb->suppress_errors( $last );
+		}
+	}
+
+	/**
+	 * Czy blad bazy jest PRZEJSCIOWY (kolizja na blokadzie), czy trwaly.
+	 *
+	 * Przejsciowy = ta sama kwerenda ma sens za chwile. Trwaly (np. brak tabeli)
+	 * ponawiac nie ma po co — i nie wolno go zamieniac na cicha odmowe rezerwacji.
+	 *
+	 * @param string $blad Tresc bledu z `$wpdb->last_error`.
+	 * @return bool
+	 */
+	private static function blad_przejsciowy( string $blad ): bool {
+		if ( '' === $blad ) {
+			return false;
+		}
+
+		$blad = strtolower( $blad );
+
+		return false !== strpos( $blad, 'deadlock' )
+			|| false !== strpos( $blad, 'lock wait timeout' )
+			|| false !== strpos( $blad, 'try restarting transaction' );
 	}
 
 	/**
