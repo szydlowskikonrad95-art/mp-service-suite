@@ -90,7 +90,7 @@ zamykającym sprawę** — obie strony mówią o tym samym.
 ## 3a. Notatki wewnętrzne — co zespół musi o nich wiedzieć
 
 Notatka wewnętrzna przy sprawie jest niewidoczna w panelu klienta i **nie idzie do niego mailem** —
-służy do uwag dla kolegi (podejrzenie ingerencji, ustalenia co do wyceny, kontekst rozmowy).
+służy do uwag dla innego pracownika serwisu (podejrzenie ingerencji, ustalenia co do wyceny, kontekst rozmowy).
 
 🔴 **Ale klient może ją przeczytać.** Wniosek o dostęp do danych (art. 15 RODO) obejmuje także
 **opinie o osobie**, więc notatka o kliencie jest jego daną i **wchodzi do paczki**, którą

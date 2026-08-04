@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.12] — 2026-08-04
+
 ### Naprawione — dostęp ról (wydanie 1.3.12, grupa 1)
 - **Koordynator serwisu przestaje mieć dostęp do MNIEJ ekranów niż podległy mu pracownik.**
   Role MP nie mają hierarchii (to projekt: kod sprawdza wyłącznie uprawnienia, nigdy nazwy roli),
