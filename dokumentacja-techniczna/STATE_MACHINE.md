@@ -26,7 +26,7 @@ status 'nowe' + event CASE_CREATED + akcja mp_case_created + konto klienta + 2. 
 - 72 h to okno POTWIERDZENIA sprawy; sam LINK wygasa wcześniej, po 24 h (`CaseRepo::TOKEN_TTL_HOURS`). Sieroty pending kasuje cron dopiero po
   **30 dniach** (`mp_intake_pending_retention_days`, czysty DELETE + unlink plików; spraw verified NIGDY nie dotyka).
 
-## 1. Rdzeń 7 statusów (spec P3.2)
+## 1. Rdzeń 7 statusów
 
 | Status | Terminalny? | SLA |
 |---|---|---|
@@ -39,7 +39,7 @@ status 'nowe' + event CASE_CREATED + akcja mp_case_created + konto klienta + 2. 
 | zamknięte | **TAK** | bez SLA (deadline NULL) |
 
 Czasy = godziny kalendarzowe 24/7/365 × modyfikator priorytetu (wysoki ×0,5 / normalny ×1 /
-niski ×2 — SEMANTYKA‑CZASU.md). **Godziny terminów każdego statusu ustawia administrator**
+niski ×2). **Godziny terminów każdego statusu ustawia administrator**
 w panelu (Automatyzacje MP → Ustawienia, sekcja „Godziny terminów"). ⚠️ **Modyfikator priorytetu
 konfigurowalny NIE jest** — siedzi w kodzie jako stała `SlaConfig::PRIORITY_MODIFIER`.
 
@@ -60,7 +60,7 @@ konfigurowalny NIE jest** — siedzi w kodzie jako stała `SlaConfig::PRIORITY_M
 - Wiadomości na sprawie ZAMKNIĘTEJ są dozwolone (nie zmieniają statusu; panel pokazuje notę,
   notyfikacja D działa normalnie).
 
-## 3. Statusy własne (P3.2 „konfigurowalne")
+## 3. Statusy własne ( „konfigurowalne")
 
 - Definiuje D — **podstrona w menu: Automatyzacje MP → Ustawienia, sekcja „Statusy własne"**
   (kolumny na ekranie: klucz techniczny / nazwa widoczna / aktywny / kończy sprawę / termin

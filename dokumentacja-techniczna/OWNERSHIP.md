@@ -71,6 +71,6 @@
 
 1. `build/lint-cudze-tabele.php` w CI: literał nazwy cudzej tabeli w kodzie pluginu = czerwone.
 2. Standard kodu: nazwy tabel wyłącznie ze stałych/centralnej metody (zakaz dynamicznego składania).
-3. Testy DoD per klocek: „uninstall JEDNEGO przy dwóch aktywnych → permission checks sąsiadów
+3. Testy odbiorcze per moduł: „uninstall JEDNEGO przy dwóch aktywnych → permission checks sąsiadów
    działają" + test 3‑etapowy sekwencyjny z asercją TREŚCI markerów.
 4. Testy negatywne uprawnień dla 4 ról na kluczowych operacjach.

@@ -69,7 +69,7 @@ Zapis eventu i mutacja stanu = JEDNA transakcja (status bez eventu NIGDY); akcje
 | MAIL_SKIPPED_NO_RECIPIENT | {case_id, template_key} (klient zanonimizowany = stan legalny) |
 | EXPORT_GENERATED | {user_id, liczba wierszy, hash filtrów} — bez PII |
 | CRUD konfiguracji | {obiekt, id, actor} (reguły/szablony/statusy/SLA/**pula pracowników** — `object=assignment_pool` z `rule_id` i liczbą osób, bez identyfikatorów w treści) |
-| CLOSING_REPORT_GENERATED | {case_id} — raport końcowy po zamknięciu sprawy (krok 8 kartki) |
+| CLOSING_REPORT_GENERATED | {case_id} — raport końcowy po zamknięciu sprawy |
 | MAIL_DEDUPED | {case_id, template_key} — identyczna wiadomość w oknie dedupu |
 | przebiegi sweepa / resync / „Przelicz terminy obsługi" | {statystyki przebiegu; przy przerwaniu budżetem maili także `budzet_maili` i `przerwany_budzetem`} |
 

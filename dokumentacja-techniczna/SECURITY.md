@@ -1,6 +1,6 @@
 # SECURITY.md — model bezpieczeństwa MP Service Suite
 
-> Kontrakt D2 (macierz ról/capabilities) + wynik security-sweepu (DoD C §3).
+> Kontrakt D2 (macierz ról/capabilities) + wynik przeglądu bezpieczeństwa.
 > Zasada: **nonce = CSRF · capability = autoryzacja · ownership = IDOR**. Trzy warstwy, rozdzielone.
 >
 > ℹ️ **O ścieżkach typu `testy/e2e/…`, `build/…`, `lib/mp-common/…` w tym i sąsiednich dokumentach:**
@@ -84,7 +84,7 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
   mimo to **zgłasza to jako ostrzeżenie** (nie honoruje `phpcs:disable`) — **znany false-positive, zero ryzyka SQL**.
   Opcjonalna modernizacja gdyby wymagany był czysty plugin-check: placeholder `%i` na identyfikatory (`$wpdb->prepare`, WP 6.2+).
 - Wejścia: `sanitize_*` / `absint` przy każdym `$_POST/$_GET`. Wyjścia: `esc_html/esc_attr/esc_url` przy każdym echo (WPCS w CI).
-- Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem anty-spamu P1.6).
+- Rate-limit zgłoszeń na transientach — pod persistent object-cache może różnić się od DB (na demo bez cache liczy z `wp_options`); twardsza gwarancja = własna tabela (poza zakresem wymogu anty-spamowego).
 
 ## 6b. Nagłówki bezpieczeństwa stron wtyczki
 
@@ -148,7 +148,7 @@ nie awaria. Do testów używaj różnych adresów e-mail albo podnieś progi wsp
   dopiero `mp_intake_withdraw_confirm`, z **własnym nonce**, więc token pierwszego kroku nie
   wystarcza. Powód: przycisk sąsiadował z „Zapisz dane" i jedno pudło kciukiem kasowało dane
   nieodwracalnie. Ten sam wzorzec, co przy potwierdzaniu zgłoszenia i logowaniu linkiem (GET nie
-  zmienia stanu). Strażnik: `testy/e2e/c27-rodo-potwierdzenie.sh`.
+  zmienia stanu). Test pilnujący: `testy/e2e/c27-rodo-potwierdzenie.sh`.
 - **Samoobsługa danych na koncie współdzielonym jest wyłączona**: gdy konto WP obsługuje
   więcej niż jeden rekord klienta, panel chowa formularze edycji danych i „Wycofaj zgodę
   i usuń moje dane", a POST-y odmawiają **po stronie serwera** (także ze starym, ważnym
