@@ -80,6 +80,17 @@ wp eval 'MP\Automator\SlaConfig::save_core( array() );' >/dev/null 2>&1
 POWROT=$(wp eval 'echo MP\Automator\SlaConfig::for_status("nowe")["sla_hours"];' 2>/dev/null)
 [ "$POWROT" = "24" ] && ok "wyczyszczenie nadpisan wraca do wartosci fabrycznej" || bad "po wyczyszczeniu zostalo $POWROT"
 
+# ⛔ SPRZATANIE PO SOBIE — NIE OZDOBNIK, TYLKO WARUNEK POPRAWNOSCI CALEGO ZESTAWU.
+# Zapis godzin PODBIJA wersje polityki, a kolejne testy w tym samym przebiegu chodza
+# na TEJ SAMEJ bazie. Zostawiona wersja 3 wywalila `d-p34a-sla-ksiega.sh` (oczekuje
+# policy=1) — w miejscu bez zadnego zwiazku z ta zmiana. Test, ktory psuje kolejny
+# test, jest gorszy niz brak testu, bo winnego szuka sie potem godzine.
+wp eval "update_option( MP\Automator\SlaConfig::POLICY_OPTION, ${PRZED:-1}, false ); delete_option( MP\Automator\SlaConfig::CORE_OPTION );" >/dev/null 2>&1
+WERSJA_PO_SPRZATANIU=$(wp eval 'echo MP\Automator\SlaConfig::policy_version();' 2>/dev/null)
+[ "$WERSJA_PO_SPRZATANIU" = "${PRZED:-1}" ] \
+	&& ok "sprzatanie: wersja polityki przywrocona do stanu zastanego ($PRZED)" \
+	|| bad "sprzatanie ZAWIODLO — wersja polityki to $WERSJA_PO_SPRZATANIU zamiast $PRZED (nastepne testy dostana zabrudzona baze)"
+
 echo "== 4. STATUSY WLASNE: ZAPIS Z EKRANU SIEGA WALIDATORA DRUGIEGO MODULU =="
 wp eval 'MP\Automator\StatusDefs::delete( "test-ustawienia" );' >/dev/null 2>&1
 SLUG=$(wp eval 'echo MP\Automator\StatusDefs::upsert( "test-ustawienia", array( "label" => "Test ustawien", "active" => true, "terminal" => false, "sla_hours" => 12, "warning_hours" => 3 ) );' 2>/dev/null)
@@ -160,6 +171,14 @@ CZYTA=$(wp eval 'echo MP\Automator\Common\UninstallSwitch::is_on( "mp_automator_
 wp option update mp_automator_delete_data 0 >/dev/null 2>&1
 CZYTA0=$(wp eval 'echo MP\Automator\Common\UninstallSwitch::is_on( "mp_automator_delete_data" ) ? "wlaczony" : "wylaczony";' 2>/dev/null)
 [ "$CZYTA0" = "wylaczony" ] && ok "proba kontrolna: wylaczone ustawienie odczytane jako wylaczone" || bad "przelacznik zawsze melduje wlaczony"
+
+echo "== 8. STAN ZASTANY PRZYWROCONY (baza dzielona z reszta zestawu) =="
+wp eval 'MP\Automator\StatusDefs::delete( "test-ustawienia" ); MP\Automator\StatusDefs::delete( "status-o-nazwie-duzo-za-dlugiej-na-kolumne" );' >/dev/null 2>&1
+ZOSTALO_ST=$(wp eval 'echo count( MP\Automator\StatusDefs::all() );' 2>/dev/null)
+[ "$ZOSTALO_ST" = "0" ] && ok "zadne statusy testowe nie zostaly w konfiguracji" || bad "zostalo $ZOSTALO_ST statusow wlasnych po tescie"
+
+ZOSTALO_REG=$(wp eval 'echo count( array_filter( MP\Automator\Rules::all(), static function( $r ) { return "test_ochrona_systemowej" === (string) $r["system_key"]; } ) );' 2>/dev/null)
+[ "$ZOSTALO_REG" = "0" ] && ok "regula testowa systemowa posprzatana" || bad "zostala regula testowa ($ZOSTALO_REG)"
 
 echo "----"
 echo "PASS=$PASS FAIL=$FAIL"
