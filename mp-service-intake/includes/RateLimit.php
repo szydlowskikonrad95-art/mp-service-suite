@@ -3,13 +3,16 @@
  * Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy waski.
  *
  * Warstwy (domyslne, konfigurowalne filtrem `mp_intake_rate_limits`):
- *  - IP:     10 / 10 min   (anty-flood z jednego adresu)
- *  - e-mail:  3 / doba
- *  - serial:  5 / doba
+ *  - IP:     10 / 10 min   (anty-flood z jednego adresu; okno PRZESUWANE)
+ *  - e-mail:  3 / doba     (okno NIERUCHOME, od pierwszego zgloszenia — 2.31)
+ *  - serial:  5 / doba     (okno NIERUCHOME, od pierwszego zgloszenia — 2.31)
+ * Roznica okien jest zamierzona i opisana przy `hit()`: limit zgloszen musi
+ * odpowiadac obietnicy „na dobe" danej klientowi na pismie, a ochrona przed
+ * zalewem ma trwac tak dlugo, jak dlugo ktos puka.
  * Dedup twardy: ten sam (serial + e-mail + rodzaj) w 15 min = duplikat.
  *
- * Licznik = ATOMOWA tabela mp_rate_counters (okno przesuwane; INSERT ... ON
- * DUPLICATE KEY UPDATE + LAST_INSERT_ID jak SrvCounter) — odporny na wyscig
+ * Licznik = ATOMOWA tabela mp_rate_counters (INSERT ... ON DUPLICATE KEY UPDATE
+ * + LAST_INSERT_ID jak SrvCounter) — odporny na wyscig
  * rownoleglych zadan (dawny transientowy read-modify-write przepuszczal N zadan
  * naraz, D3). Wygasle wiersze sprzata cron retencji (cleanup_expired).
  * DEDUP = REZERWACJA (claim) na tej samej tabeli (znalezisko #4 audytu 27.07):
