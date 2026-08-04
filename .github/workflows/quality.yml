@@ -361,6 +361,26 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/cron-odtwarza-sie.sh
       - name: Testy puli pracowników (pusta pula = brak przydziału; zapis z panelu = sprawa trafia do człowieka)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-pula-pracownikow.sh
+      # ⛔ DOWODY NAPRAW Z 3-4.08, KTORE NIE CHODZILY NIGDZIE (2.17). Powstaly przy
+      #    naprawach, zostaly scalone i przez kilkanascie godzin NIE BYLY WPIETE —
+      #    dokladnie ta sama dziura, ktora wykryto przy 2.38. Ida PRZED krokiem DoD,
+      #    bo on kasuje rejestr i odinstalowuje wtyczki.
+      - name: Dowód 2.38 (historia egzemplarza — dziennik rejestru jest CZYTANY, nie tylko zapisywany)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-historia-egzemplarza.sh
+      - name: Dowód 2.4a (import mówi, KTÓRE pole jest za długie i jaki jest limit)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-import-dlugosci.sh
+      - name: Dowód 2.47 (ekran importu ogłasza postęp i błąd także czytnikowi ekranu)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-import-oglasza-stan.sh
+      - name: Dowód 2.41 (poprawka stylu/skryptu dociera do przeglądarek)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-odswiezanie-plikow.sh
+      - name: Dowód 2.46 (przyrząd a11y sięga ekranów personelu i mówi, co zbadał)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-skaner-a11y-siega-panelu.sh
+      - name: Dowód 2.45 (wpis dziennika rejestru niesie wersję kształtu)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-wersja-wpisu-dziennika.sh
+      - name: Dowód 2.13 (ekran wyjątków gwarancyjnych pokazuje WSZYSTKIE udzielone)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-wszystkie-wyjatki.sh
+      - name: Dowód 2.27 (zwrotki rejestru niosą wersję kształtu)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/b-zwrotki-niosa-wersje.sh
       - name: Testy DoD (import 10k + kill/wznowienie + uninstall)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
       - name: Testy uninstall-crony (zero zadań-widm — NA SAMYM KOŃCU, odinstalowuje wtyczki)
