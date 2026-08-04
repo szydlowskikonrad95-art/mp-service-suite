@@ -34,6 +34,13 @@ i administratorzy nie prowadzą spraw, więc nie da się na nich przydzielić sp
 się ich (mogą być pomyłką lub spamem). Link potwierdzający jest ważny **72 godziny**, więc po tym
 czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika razem z danymi**.
 
+Kolumna **„Poczta"** pokazuje, czy link potwierdzający w ogóle wyszedł. Oznaczenie
+**„⚠ Link NIE doszedł"** znaczy, że wysyłka maila padła po stronie serwera — klient nie dostał
+nic i nie ma czego potwierdzić, więc **samo czekanie nic nie da**. W takim wypadku sprawdź
+**Narzędzia → Stan witryny** (sekcja poczty), a po naprawie użyj przy zgłoszeniu akcji
+**„popraw e-mail i wyślij ponownie"** — przy okazji poprawisz literówkę w adresie. Ponowną
+wysyłkę dla tej samej sprawy można wywołać **raz na 5 minut**.
+
 ![Niepotwierdzone zgłoszenia](zdjecia/admin-03-niepotwierdzone.png)
 
 ## 3. Automatyzacja — Twój panel sterowania
@@ -48,8 +55,9 @@ czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika ra
   nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
 - **Akcje**: „Przelicz terminy obsługi" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
   powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
-- **Statusy spraw** — 7 wbudowanych, nieusuwalnych, pokazanych do odczytu. ⚠️ System przewiduje
-  dokładanie własnych statusów, ale nie ma na to ekranu — zrobi to programista.
+- **Statusy spraw** — 7 wbudowanych i nieusuwalnych. **Własne statusy dokłada administrator**
+  w **Automatyzacje MP → Ustawienia** (sekcja „Statusy własne"); tam też ustawia się **godziny
+  terminów** dla każdego statusu. Programista nie jest do tego potrzebny.
 - **Rejestr zdarzeń** — co automat zrobił i dlaczego (np. `ASSIGNMENT_UNMATCHED` = nie umiał
   przydzielić). Przycisk „Pokaż techniczne" odsłania też wpisy cyklicznego sprawdzania.
 - **Checklisty i szablony odpowiedzi** — kroki obsługi per rodzaj sprawy i gotowe treści maili;

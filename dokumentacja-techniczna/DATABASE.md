@@ -80,8 +80,12 @@ witryny wyłącznie przy prezentacji — SEMANTYKA‑CZASU.md).
   `warranty_snapshot` LONGTEXT (pełna zwrotka `mp_warranty_check` z chwili zgłoszenia) +
   `warranty_snapshot_schema_version` · rodzaj sprawy (reklamacja/naprawa/zapytanie/zwrot) ·
   `priority` · `assigned_to` (+ klucz złożony `(assigned_to, identity_status)` z migracji v3 — „moje
-  sprawy" pracownika i eksport CSV per pracownik bez skanu tabeli; audyt #16) · kraj (z mapy pól) ·
-  język (auto z locale).
+  sprawy" pracownika i eksport CSV per pracownik bez skanu tabeli; audyt #16) · `country` i `lang`.
+  ⛔ **Te dwie kolumny istnieją, ale NIC ICH NIE WYPEŁNIA.** Zapis bierze je z wejścia
+  (`CaseRepo.php:108-109`), a żaden punkt wejścia ich nie podaje — ani formularz zgłoszenia,
+  ani wiersz poleceń — więc zostają puste. Reguła przydziału oparta na kraju albo języku
+  **nie dopasuje żadnej sprawy**; ekran reguł ostrzega o tym wprost. Wcześniejszy opis
+  („kraj z mapy pól", „język auto z locale") opisywał zamiar, nie stan.
 - **`wp_mp_case_events`**: `case_id` · typ zdarzenia · `payload` LONGTEXT (JSON walidowany w PHP)
   + `schema_version` · actor · `created_at`. **APPEND‑ONLY BEZ WYJĄTKÓW** (zero metod UPDATE/DELETE);
   zero pól wolnotekstowych — patrz EVENT_MODEL.md.

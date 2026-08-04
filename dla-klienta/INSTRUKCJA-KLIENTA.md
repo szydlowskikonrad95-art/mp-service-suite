@@ -222,8 +222,9 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
 
 **Statusy spraw:**
 - 7 statusów podstawowych (nowe / do uzupełnienia / w analizie / zaakceptowane / odrzucone /
-  w naprawie / zamknięte) jest wbudowanych i nieusuwalnych. ⚠️ System przewiduje dokładanie własnych
-  statusów, ale **nie ma na to ekranu** — dołożenie statusu to zadanie dla programisty.
+  w naprawie / zamknięte) jest wbudowanych i nieusuwalnych. **Własne statusy dokładasz sam**
+  w **Automatyzacje MP → Ustawienia**, sekcja „Statusy własne": klucz techniczny, nazwa widoczna,
+  czy aktywny, czy kończy sprawę oraz termin i moment ostrzeżenia. Programista nie jest potrzebny.
 - Odrzucenie sprawy zawsze wymaga podania powodu. **Wznowić zamkniętą sprawę może tylko
   koordynator** (i tylko do statusu „w analizie").
 
