@@ -221,6 +221,8 @@ jobs:
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-1-duplikat-i-komunikat.sh
       - name: Testy ponowień powiadomień z reguł (poczta pada, mail nie ginie)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-12-ponowienia-powiadomien.sh
+      - name: Testy widoczności spraw (pracownik widzi tylko swoje)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-24-widocznosc-spraw.sh
       - name: Testy sprzątania sierot w tabeli terminów (obietnica z komentarza staje się kodem)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-20-sieroty-terminow.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)

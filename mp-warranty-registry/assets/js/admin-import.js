@@ -19,7 +19,60 @@
 	var message = document.getElementById( 'mp-import-message' );
 	var progress = document.getElementById( 'mp-import-progress' );
 	var resumeBtn = document.getElementById( 'mp-import-resume' );
+	var live = document.getElementById( 'mp-import-live' );
+	var alertBox = document.getElementById( 'mp-import-alert' );
 	var running = false;
+	var lastAnnounced = -1;
+
+	/**
+	 * Ogłasza spokojnie (postęp, zakończenie) — nie przerywa czytnikowi.
+	 *
+	 * @param {string} text Tekst do ogłoszenia.
+	 */
+	function announce( text ) {
+		if ( alertBox ) {
+			alertBox.textContent = '';
+		}
+
+		if ( live ) {
+			live.textContent = text;
+		}
+	}
+
+	/**
+	 * Ogłasza natychmiast (błąd) — przerywa, bo import stanął i czeka na człowieka.
+	 *
+	 * @param {string} text Tekst do ogłoszenia.
+	 */
+	function announceError( text ) {
+		if ( live ) {
+			live.textContent = '';
+		}
+
+		if ( alertBox ) {
+			alertBox.textContent = text;
+		}
+	}
+
+	/**
+	 * Postęp ogłaszany co pełne 10%, a nie po każdej paczce. Import po 200 wierszy
+	 * daje kilkadziesiąt aktualizacji na minutę — czytnik czytałby je bez przerwy
+	 * i zagłuszył komunikat, na który operator naprawdę czeka.
+	 *
+	 * @param {number} processed Przetworzone wiersze.
+	 * @param {number} total     Wszystkie wiersze.
+	 */
+	function announceProgress( processed, total ) {
+		var percent = total > 0 ? Math.floor( ( processed * 100 ) / total ) : 0;
+		var step = Math.floor( percent / 10 ) * 10;
+
+		if ( step <= lastAnnounced ) {
+			return;
+		}
+
+		lastAnnounced = step;
+		announce( sprintf( cfg.i18n.srProgress, [ step ] ) );
+	}
 
 	function sprintf( template, args ) {
 		return template.replace( /%(\d)\$s/g, function ( _match, index ) {
@@ -44,6 +97,7 @@
 		}
 
 		show( sprintf( cfg.i18n.progress, [ processed, total, errors ] ) );
+		announceProgress( processed, total );
 	}
 
 	function post( action, fields ) {
@@ -70,15 +124,21 @@
 			progress.value = progress.max;
 		}
 
-		show(
-			sprintf( cfg.i18n.done, [ data.processed, data.total, data.errors ] ),
-			data.errors > 0 ? cfg.i18n.doneErrors : ''
-		);
+		var text = sprintf( cfg.i18n.done, [ data.processed, data.total, data.errors ] );
+		var extra = data.errors > 0 ? cfg.i18n.doneErrors : '';
+
+		show( text, extra );
+
+		// Zakonczenie ogłaszamy ZAWSZE, niezaleznie od progu 10% — to jest ten
+		// jeden komunikat, na ktory operator czeka.
+		lastAnnounced = 100;
+		announce( extra ? text + ' ' + extra : text );
 	}
 
 	function fail( text ) {
 		running = false;
 		show( text );
+		announceError( text );
 
 		if ( resumeBtn ) {
 			resumeBtn.classList.remove( 'hidden' );
@@ -91,6 +151,8 @@
 		}
 
 		running = true;
+		lastAnnounced = -1;
+		announce( cfg.i18n.srStarted );
 
 		if ( resumeBtn ) {
 			resumeBtn.classList.add( 'hidden' );

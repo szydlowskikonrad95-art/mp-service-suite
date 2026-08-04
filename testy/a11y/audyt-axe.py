@@ -9,9 +9,29 @@ kazdy (takze klient) sprawdzi wynik u siebie:
     AXE=./node_modules/axe-core/axe.min.js \\
     python3 audyt-axe.py
 
-Sprawdza trzy powierzchnie, ktore widzi KLIENT: formularz zgloszenia, panel przed
-zalogowaniem i panel po zalogowaniu. Panel zalogowany jest najwazniejszy — tam sa dane
-osobowe i tam CI bez przegladarki nie dosiegnie kontrastu kolorow.
+ZAKRES. Narzedzie bada DWIE rodziny powierzchni:
+  * powierzchnie KLIENTA: formularz zgloszenia, panel przed zalogowaniem i panel po
+    zalogowaniu. Panel zalogowany jest najwazniejszy — tam sa dane osobowe i tam CI
+    bez przegladarki nie dosiegnie kontrastu kolorow,
+  * ekrany PERSONELU w panelu WordPressa (rejestr, wyjatki, import, sprawy,
+    niepotwierdzone, ustawienia, automat) — wymagaja konta, wiec podaje sie
+    MP_ADMIN_USER i MP_ADMIN_PASS.
+
+⛔ DLACZEGO EKRANY PERSONELU SA TU W OGOLE: do 1.3.12 to narzedzie badalo WYLACZNIE
+trzy powierzchnie klienta i zawezenie siedzialo w PRZYRZADZIE, nie w jednym przebiegu.
+Skutek byl taki, ze kazde kolejne wydanie wychodzilo „zielone" na dostepnosci, opisujac
+czesc systemu i nie mowiac, ze to czesc. Luka nie byla teoretyczna: w obszarze, ktorego
+przyrzad nie siegal, lezala prawdziwa wada (panel automatyzacji przy powiekszeniu 200%
+wychodzil 184 px poza okno).
+
+⛔ ZAKRES JEST DRUKOWANY W PODSUMOWANIU — zawsze, takze gdy czegos nie zbadano.
+Raport bez zdania o zakresie jest tym samym bledem, ktory naprawiamy. Pominiecie
+powierzchni NIE zmienia kodu wyjscia (klient nie musi dawac konta administratora),
+ale MUSI byc widoczne w wyniku.
+
+Podglad zakresu bez uruchamiania przegladarki:
+
+    MP_BASE=https://twoja-strona.pl python3 audyt-axe.py --lista-powierzchni
 
 ⚠️ TRZECI EKRAN wymaga wejscia na konto z linku wyslanego mailem, wiec potrzebny jest
 DOSTEP DO SKRZYNKI przez jej API (`MP_MAILPIT` — adres serwera poczty testowej).
@@ -40,7 +60,9 @@ import re
 import sys
 import urllib.request
 
-from playwright.sync_api import sync_playwright
+# ⚠️ playwright wciagamy DOPIERO przy badaniu (nizej). Podglad zakresu
+# (`--lista-powierzchni`) ma dzialac takze tam, gdzie przegladarki nie ma —
+# inaczej nie da sie maszynowo sprawdzic, CO to narzedzie w ogole obejmuje.
 
 # Adres badanej witryny podaje uruchamiajacy. Bez wartosci domyslnej z premedytacja:
 # poprzednia wskazywala na srodowisko deweloperskie, ktore juz nie istnieje, a skrypt
@@ -53,6 +75,47 @@ MAILPIT = (os.environ.get("MP_MAILPIT") or "").rstrip("/")
 EMAIL = os.environ.get("MP_EMAIL", "anna.nowak@example.com")
 AXE_PLIK = pathlib.Path(os.environ.get("AXE", "./node_modules/axe-core/axe.min.js"))
 TAGI = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
+
+# Konto do panelu WordPressa. Brak = ekrany personelu POMINIETE (i powiedziane wprost).
+ADMIN_USER = os.environ.get("MP_ADMIN_USER", "")
+ADMIN_PASS = os.environ.get("MP_ADMIN_PASS", "")
+
+# Ekrany personelu. `#wpbody-content .wrap` to tresc NASZEGO ekranu bez obudowy
+# panelu WordPressa — obudowy nie dostarczamy, tak samo jak motywu na froncie.
+EKRANY_PERSONELU = (
+    ("Panel — rejestr produktow", "mp-registry"),
+    ("Panel — wyjatki gwarancyjne", "mp-registry-exceptions"),
+    ("Panel — import CSV", "mp-registry-import"),
+    ("Panel — sprawy", "mp-cases"),
+    ("Panel — zgloszenia niepotwierdzone", "mp-intake-unverified"),
+    ("Panel — ustawienia zgloszen", "mp-intake-settings"),
+    ("Panel — automat", "mp-automator"),
+    ("Panel — ustawienia automatu", "mp-automator-settings"),
+)
+SELEKTOR_PANELU = "#wpbody-content .wrap"
+
+# Co zbadane, a co nie — do zdania o zakresie w podsumowaniu.
+zbadane = []
+pominiete = []
+
+
+def adres_ekranu(slug):
+    """Adres ekranu panelu — wyliczalny, bez pytania witryny."""
+    return f"{BAZA}/wp-admin/admin.php?page={slug}"
+
+
+if "--lista-powierzchni" in sys.argv:
+    # Podglad zakresu bez przegladarki: czym to narzedzie w ogole siega.
+    print("POWIERZCHNIE KLIENTA:")
+    print("  Formularz zgloszenia (publiczny)   [slug: zgloszenie-serwisowe, nadpisanie: MP_URL_FORMULARZ]")
+    print("  Panel klienta — przed zalogowaniem [slug: panel-zgloszen, nadpisanie: MP_URL_PANEL]")
+    print("  Panel klienta — po zalogowaniu     [wymaga MP_MAILPIT]")
+    print("EKRANY PERSONELU (wymagaja MP_ADMIN_USER i MP_ADMIN_PASS):")
+    for nazwa, slug in EKRANY_PERSONELU:
+        print(f"  {nazwa} [{adres_ekranu(slug)}]")
+    print(f"POWIERZCHNI RAZEM: {3 + len(EKRANY_PERSONELU)}")
+    print("ZAKRES: powierzchnie klienta + ekrany personelu")
+    sys.exit(0)
 
 if not AXE_PLIK.exists():
     sys.exit(f"Brak axe-core: {AXE_PLIK}. Zainstaluj: npm i axe-core (albo wskaz zmienna AXE).")
@@ -140,6 +203,22 @@ def link_logowania():
     return szukaj.group(0).replace("&amp;", "&").strip() if szukaj else None
 
 
+def zaloguj_do_panelu(strona):
+    """Wchodzi na konto personelu. Nieudane logowanie to BLAD, nie ciche pominiecie."""
+    strona.goto(f"{BAZA}/wp-login.php", wait_until="networkidle")
+    strona.fill("#user_login", ADMIN_USER)
+    strona.fill("#user_pass", ADMIN_PASS)
+    strona.click("#wp-submit")
+    strona.wait_for_load_state("networkidle")
+    if strona.locator("#wpbody-content").count() < 1:
+        sys.exit(
+            "BLAD: nie udalo sie wejsc na konto panelu (MP_ADMIN_USER/MP_ADMIN_PASS). "
+            "Badanie przerwane — inaczej ekrany personelu wyszlyby czyste, bo puste."
+        )
+
+
+from playwright.sync_api import sync_playwright  # noqa: E402 — po trybie --lista-powierzchni
+
 with sync_playwright() as pw:
     b = pw.chromium.launch()
     k = b.new_context(viewport={"width": 1280, "height": 900}, locale="pl-PL")
@@ -153,11 +232,13 @@ with sync_playwright() as pw:
     s.wait_for_timeout(800)
     upewnij_sie(s, 'form select[name="kind"]', "formularz zgloszenia")
     audytuj(s, "Formularz zgloszenia (publiczny)", ".mp-intake")
+    zbadane.append("Formularz zgloszenia (publiczny)")
 
     s.goto(URL_PANEL, wait_until="networkidle")
     s.wait_for_timeout(600)
     upewnij_sie(s, 'input[type="email"]', "panel klienta — logowanie mailem")
     audytuj(s, "Panel klienta — przed zalogowaniem", ".mp-account")
+    zbadane.append("Panel klienta — przed zalogowaniem")
 
     if not MAILPIT:
         # U klienta to normalny przypadek, nie awaria: wejscie na konto idzie linkiem
@@ -165,6 +246,7 @@ with sync_playwright() as pw:
         print("\n--- Panel klienta — po zalogowaniu: POMINIETY")
         print("     Ten ekran wymaga linku z maila. Podaj adres API skrzynki, zeby go zbadac:")
         print("     MP_MAILPIT=<adres API skrzynki> MP_EMAIL=<adres klienta>")
+        pominiete.append("Panel klienta — po zalogowaniu (brak MP_MAILPIT)")
     else:
         s.fill('input[type="email"]', EMAIL)
         s.click('button[type="submit"]')
@@ -177,13 +259,49 @@ with sync_playwright() as pw:
             s.wait_for_load_state("networkidle")
             s.wait_for_timeout(1500)
             audytuj(s, "Panel klienta — po zalogowaniu", ".mp-account")
+            zbadane.append("Panel klienta — po zalogowaniu")
         else:
             # Skrzynke wskazano, wiec link MIAL byc — brak = realna awaria, nie pominiecie.
             print("\n--- Panel zalogowany: BLAD (wskazano skrzynke, a nie ma w niej linku logowania)")
             bledy += 1
 
+    # ── EKRANY PERSONELU ───────────────────────────────────────────────────────
+    # Tu wlasnie przyrzad dotad nie siegal. Bez konta pomijamy — ale GLOSNO.
+    if not ADMIN_USER or not ADMIN_PASS:
+        print("\n--- Ekrany personelu (panel): POMINIETE")
+        print("     Wymagaja konta w panelu. Podaj je, zeby zbadac:")
+        print("     MP_ADMIN_USER=<login> MP_ADMIN_PASS=<haslo>")
+        print(f"     Niezbadanych ekranow: {len(EKRANY_PERSONELU)}")
+        for nazwa, _slug in EKRANY_PERSONELU:
+            pominiete.append(nazwa + " (brak konta panelu)")
+    else:
+        zaloguj_do_panelu(s)
+        for nazwa, slug in EKRANY_PERSONELU:
+            s.goto(adres_ekranu(slug), wait_until="networkidle")
+            s.wait_for_timeout(400)
+            # Bramka jak na froncie: pusty ekran ma byc bledem, nie zerem naruszen.
+            # „Brak uprawnien" tez tu wpadnie — konto bez praw daloby falszywa czystosc.
+            upewnij_sie(s, SELEKTOR_PANELU, nazwa)
+            audytuj(s, nazwa, SELEKTOR_PANELU)
+            zbadane.append(nazwa)
+
     b.close()
+
+# ⛔ ZDANIE O ZAKRESIE. Bez niego „zero naruszen" znaczy tyle, co poprzednio:
+# ze cos zbadano i nie wiadomo co. To jest sedno naprawy, nie ozdoba wydruku.
+print("\nZAKRES BADANIA")
+print(f"  zbadane powierzchnie ({len(zbadane)}):")
+for nazwa in zbadane:
+    print(f"    + {nazwa}")
+if pominiete:
+    print(f"  POMINIETE ({len(pominiete)}) — wynik ponizej ICH NIE OBEJMUJE:")
+    for nazwa in pominiete:
+        print(f"    - {nazwa}")
+else:
+    print("  pominietych: brak")
 
 print("\nWYNIK:", "zero naruszen w naszych powierzchniach"
       if bledy == 0 else f"naruszen w naszych powierzchniach: {bledy}")
+if pominiete:
+    print("UWAGA: wynik dotyczy WYLACZNIE powierzchni wymienionych jako zbadane.")
 sys.exit(1 if bledy else 0)
