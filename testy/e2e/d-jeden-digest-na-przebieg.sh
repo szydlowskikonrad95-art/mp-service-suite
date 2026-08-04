@@ -84,9 +84,18 @@ wp eval 'global $wpdb; $wpdb->query("UPDATE {$wpdb->prefix}mp_case_sla SET escal
 # czytala „co zrobil ostatni przebieg" z ostatniego wpisu — i po cichym przebiegu
 # dostawala payload z biegu POPRZEDNIEGO, czyli meldowala dubel, ktorego nie bylo.
 # Teraz mierzymy to samo WPROST i mocniej: brak nowego wpisu = przebieg nic nie zrobil.
-WPISY_PRZED=$(wp eval 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_workflow_events WHERE event_type = \"SWEEP_RUN\"");' 2>/dev/null | tr -d '[:space:]')
+#
+# ⚠️ Od pozycji 2.20 zamiatarka sprzata przy okazji WIERSZE-SIEROTY i — gdy naprawde
+# cos skasowala — zostawia po tym WLASNY wpis `SWEEP_RUN` z `action=cleanup_orphans`.
+# Ten test podklada 120 wierszy terminow dla spraw, ktore NIE ISTNIEJA, wiec sprzatanie
+# ma tu pelne prawo dzialac i wpis zostawic. Liczymy wiec wpisy PODSUMOWANIA przebiegu
+# (payload z `rounds`) zamiast wszystkich `SWEEP_RUN` — inaczej ta kontrola meldowalaby
+# „dubel u koordynatora" za cudza, poprawna robote. Wlasnosc, o ktora tu chodzi
+# (cichy przebieg nie zostawia wiersza podsumowania), zostaje bez zmian.
+PODSUMOWANIA='SELECT COUNT(*) FROM {$wpdb->prefix}mp_workflow_events WHERE event_type = \"SWEEP_RUN\" AND payload LIKE \"%rounds%\"'
+WPISY_PRZED=$(wp eval "global \$wpdb; echo (int) \$wpdb->get_var(\"$PODSUMOWANIA\");" 2>/dev/null | tr -d '[:space:]')
 wp eval 'MP\Automator\Sweep::run();' >/dev/null 2>&1
-WPISY_PO=$(wp eval 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_workflow_events WHERE event_type = \"SWEEP_RUN\"");' 2>/dev/null | tr -d '[:space:]')
+WPISY_PO=$(wp eval "global \$wpdb; echo (int) \$wpdb->get_var(\"$PODSUMOWANIA\");" 2>/dev/null | tr -d '[:space:]')
 [ "${WPISY_PO:-1}" = "${WPISY_PRZED:-0}" ] \
 	&& ok "sprawy juz eskalowane NIE ida drugi raz (powtorny przebieg nic nie zrobil)" \
 	|| bad "powtorny przebieg cos zrobil — grozi dubel u koordynatora (wpisy $WPISY_PRZED -> $WPISY_PO)"
