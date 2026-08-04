@@ -339,6 +339,47 @@ else
 fi
 
 
+# ── historia zmian modulu opisuje WLASNY modul, nie cudzy (poz. 2.9) ────────
+# Wpisy w readme.txt trzech modulow byly IDENTYCZNE: kazdy opisywal poprawke
+# ekranu wyjatkow gwarancyjnych i etykiete przycisku „SWEEP_RUN" w rejestrze
+# zdarzen, choc kod obu tych rzeczy istnieje wylacznie w po JEDNYM module.
+# Kto otwieral historie zmian modulu zgloszen, czytal o cudzych funkcjach.
+#
+# Kontrola jest WZORCOWA, nie na jeden napis: nazwa stalej z kodu wolno stac
+# w historii zmian tylko tego modulu, ktory te stala naprawde ma. Doklada sie
+# ja przez dopisanie nazwy do listy STALE_MODULOWE.
+STALE_MODULOWE="SWEEP_RUN EXCEPTION_APPLIED"
+for MODUL in mp-service-intake mp-warranty-registry mp-workflow-automator; do
+	for STALA in $STALE_MODULOWE; do
+		if ! grep -qF "$STALA" "$MODUL/readme.txt" 2>/dev/null; then
+			continue   # nie opisuje — nie ma czego sprawdzac
+		fi
+		if grep -rqF "$STALA" "$MODUL/includes" 2>/dev/null; then
+			ok "$MODUL/readme.txt opisuje '$STALA' i ta rzecz jest w kodzie TEGO modulu"
+		else
+			bad "$MODUL/readme.txt opisuje '$STALA', a w kodzie tego modulu tego nie ma (historia zmian opisuje cudzy modul)"
+		fi
+	done
+done
+
+# Druga strona tej samej wady: trzy historie zmian byly BAJT W BAJT takie same.
+# Identyczne sekcje znacza, ze co najmniej dwie opisuja cudza robote.
+# Porownujemy SAMA sekcje historii zmian, nie caly plik.
+sekcja_zmian() { sed -n '/^== Changelog ==/,$p' "$1" 2>/dev/null; }
+LINII_HIST=$(sekcja_zmian mp-service-intake/readme.txt | wc -l)
+if [ "$LINII_HIST" -lt 10 ]; then
+	bad "kontrola historii zmian mierzy PUSTO (sekcja '== Changelog ==' ma $LINII_HIST linii) — sprawdz naglowek w readme.txt"
+else
+	H_A=$(sekcja_zmian mp-service-intake/readme.txt | md5sum)
+	H_B=$(sekcja_zmian mp-warranty-registry/readme.txt | md5sum)
+	H_C=$(sekcja_zmian mp-workflow-automator/readme.txt | md5sum)
+	if [ "$H_A" = "$H_B" ] || [ "$H_A" = "$H_C" ] || [ "$H_B" = "$H_C" ]; then
+		bad "historia zmian jest identyczna w co najmniej dwoch modulach — przeklejona miedzy wtyczkami"
+	else
+		ok "historia zmian rozna w kazdym z trzech modulow ($LINII_HIST linii w module zgloszen)"
+	fi
+fi
+
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
