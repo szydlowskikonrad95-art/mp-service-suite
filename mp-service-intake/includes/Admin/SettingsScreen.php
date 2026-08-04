@@ -12,6 +12,7 @@
 namespace MP\Intake\Admin;
 
 use MP\Intake\Common\UninstallSwitch;
+use MP\Intake\RejectionReasons;
 
 /**
  * Podstrona „Ustawienia" pod menu spraw.
@@ -87,6 +88,8 @@ final class SettingsScreen {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z wlasnego redirectu (bez zmiany stanu); handler zapisu mial nonce.
 		$ok = isset( $_GET['mp_settings_ok'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_settings_ok'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- odczyt flagi z wlasnego redirectu (bez zmiany stanu); handler zapisu mial nonce.
+		$blad = isset( $_GET['mp_settings_error'] ) ? sanitize_key( (string) wp_unslash( $_GET['mp_settings_error'] ) ) : '';
 
 		?>
 		<div class="wrap">
@@ -94,6 +97,23 @@ final class SettingsScreen {
 			<?php if ( 'odinstaluj' === $ok ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Ustawienie kasowania danych zapisane.', 'mp-service-intake' ); ?></p></div>
 			<?php endif; ?>
+			<?php if ( 'powody' === $ok ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Powody odrzucenia zapisane.', 'mp-service-intake' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( 'powody-puste' === $blad ) : ?>
+				<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Lista powodów odrzucenia nie może być pusta — bez ani jednego powodu nie da się odrzucić sprawy. Nie zapisano.', 'mp-service-intake' ); ?></p></div>
+			<?php endif; ?>
+
+			<h2><?php esc_html_e( 'Powody odrzucenia sprawy', 'mp-service-intake' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Z tej listy pracownik wybiera powód, gdy nadaje sprawie status „odrzucone". Bez powodu zapis nie przechodzi, więc lista nie może być pusta. Jeden powód w linii, w postaci „kod|Etykieta dla człowieka"; sam tekst też wystarczy — kod powstanie z niego automatycznie. Kod trafia do eksportu CSV i do zestawień, więc nie zmieniaj go po tym, jak zaczął być używany.', 'mp-service-intake' ); ?>
+			</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( RejectionReasons::ACTION_CONFIG ); ?>" />
+				<?php wp_nonce_field( RejectionReasons::ACTION_CONFIG ); ?>
+				<textarea name="mp_rejection_reasons" rows="8" cols="70" class="large-text code"><?php echo esc_textarea( RejectionReasons::to_text() ); ?></textarea>
+				<?php submit_button( __( 'Zapisz powody odrzucenia', 'mp-service-intake' ) ); ?>
+			</form>
 
 			<h2><?php esc_html_e( 'Kasowanie danych przy odinstalowaniu', 'mp-service-intake' ); ?></h2>
 			<?php

@@ -577,30 +577,90 @@ final class Sla {
 	}
 
 	/**
+	 * ILE MAILI kosztuje eskalacja podanej listy — bez wysylania czegokolwiek.
+	 *
+	 * Powyzej progu (DIGEST_THRESHOLD) cala lista to JEDEN zbiorczy mail, wiec
+	 * jej dlugosc nie ma wplywu na koszt (i dlatego eskalacje maja wlasny, wiekszy
+	 * limit paczki niz przypomnienia — audyt 29.07). Ponizej progu kazda sprawa to
+	 * osobna wiadomosc. Sweep pyta o to ZANIM wyda budzet na przypomnienia, zeby
+	 * eskalacja — pilniejsza, bo termin JUZ minal — nie zostala bez pokrycia.
+	 *
+	 * @param int[] $case_ids ID spraw wymagalnych do eskalacji.
+	 * @return int Liczba wiadomosci, ktore wyjda przy eskalacji tej listy.
+	 */
+	public static function escalation_mail_cost( array $case_ids ): int {
+		$ile = count( array_filter( array_map( 'intval', $case_ids ) ) );
+
+		if ( 0 === $ile ) {
+			return 0;
+		}
+
+		return $ile <= self::DIGEST_THRESHOLD ? $ile : 1;
+	}
+
+	/**
 	 * Wysyla eskalacje dla zestawu spraw. Ponizej progu (DIGEST_THRESHOLD) — per
 	 * sprawa (Sla::notify, pelny send-then-claim). Powyzej — JEDEN digest do
 	 * koordynatora (SLA-3 „bez lawiny"): reaktywacja / pierwsza instalacja / masa
 	 * zaleglosci nie wystrzeliwuje seria osobnych maili. Idempotentne (escalated_at).
 	 *
-	 * @param int[] $case_ids ID spraw wymagalnych do eskalacji.
-	 * @return void
+	 * BUDZET (poz. 2.30): budzet maili na przebieg obejmuje TAKZE te sciezke.
+	 * Do 1.3.12 sprawdzal go wylacznie sweep przypomnien, wiec eskalacje ponizej
+	 * progu — mail NA KAZDA SPRAWE, w kazdej rundzie petli — wychodzily poza nim.
+	 * Sprawy, ktore sie nie zmiescily, zostaja z PUSTYM `escalated_at`: kolejny
+	 * przebieg (za 5 minut) bierze je od tego samego miejsca, nic nie przepada
+	 * i nic nie idzie dwa razy. Digest kosztuje jeden mail, wiec dlugosc listy
+	 * nadal nie ma znaczenia — uzasadnienie autora zostaje w mocy.
+	 *
+	 * @param int[]    $case_ids     ID spraw wymagalnych do eskalacji.
+	 * @param int|null $budzet_maili Ile wiadomosci wolno jeszcze wyslac; null = bez limitu.
+	 * @return array{maile: int, odlozone: int} Wyslane wiadomosci i sprawy odlozone na kolejny przebieg.
 	 */
-	public static function escalate( array $case_ids ): void {
+	public static function escalate( array $case_ids, ?int $budzet_maili = null ): array {
 		$case_ids = array_values( array_filter( array_map( 'intval', $case_ids ) ) );
 
 		if ( empty( $case_ids ) ) {
-			return;
+			return array(
+				'maile'    => 0,
+				'odlozone' => 0,
+			);
 		}
 
 		if ( count( $case_ids ) <= self::DIGEST_THRESHOLD ) {
+			// Jeden mail NA SPRAWE: budzet tnie liste (najstarsze terminy pierwsze —
+			// sweep podaje ja posortowana po `deadline_at`).
+			$odlozone = 0;
+
+			if ( null !== $budzet_maili && count( $case_ids ) > $budzet_maili ) {
+				$odlozone = count( $case_ids ) - max( 0, $budzet_maili );
+				$case_ids = array_slice( $case_ids, 0, max( 0, $budzet_maili ) );
+			}
+
 			foreach ( $case_ids as $cid ) {
 				self::notify( $cid, self::KIND_ESCALATION );
 			}
 
-			return;
+			return array(
+				'maile'    => count( $case_ids ),
+				'odlozone' => $odlozone,
+			);
+		}
+
+		// Digest: JEDEN mail na cala liste. Nie ma czego ciac — albo jest miejsce
+		// na te jedna wiadomosc, albo cala lista czeka na kolejny przebieg.
+		if ( null !== $budzet_maili && $budzet_maili < 1 ) {
+			return array(
+				'maile'    => 0,
+				'odlozone' => count( $case_ids ),
+			);
 		}
 
 		self::escalate_digest( $case_ids );
+
+		return array(
+			'maile'    => 1,
+			'odlozone' => 0,
+		);
 	}
 
 	/**

@@ -48,6 +48,12 @@ final class CaseCard {
 			'SLA_REMINDER_SENT'      => __( 'Przypomnienie o terminie', 'mp-service-intake' ),
 			'SLA_ESCALATED'          => __( 'Termin przekroczony (eskalacja)', 'mp-service-intake' ),
 			'MAIL_FAILED'            => __( 'Nieudana wysyłka e-maila', 'mp-service-intake' ),
+			// ⚠️ MAIL_SENT wypadl z tej mapy, choc stala istnieje (CaseEvents:115) i Mailer
+			// ja zapisuje (Front/Mailer.php:157,217) — czyli TA SAMA klasa bledu co
+			// CASE_CREATED z C26. Nie jest to osobna pozycja audytu; znalezione przy 2.49,
+			// dokladane tu, bo naprawiamy wzorzec, nie egzemplarz.
+			'MAIL_SENT'              => __( 'E-mail wysłany', 'mp-service-intake' ),
+			'CONTACT_UPDATED'        => __( 'Zmiana danych kontaktowych', 'mp-service-intake' ),
 		);
 	}
 
@@ -197,6 +203,17 @@ final class CaseCard {
 				printf( '<option value="%s">%s</option>', esc_attr( (string) $code ), esc_html( (string) $rlabel ) );
 			}
 			echo '</select></label>';
+		} else {
+			// SLEPY ZAULEK NIE MOZE WROCIC PO CICHU (cz. 1 pkt 5). Gdy slownik jest
+			// pusty, status „odrzucone" da sie WYBRAC, ale zapis odbije sie o
+			// REJECTION_REASON_REQUIRED — a pracownik nie zobaczy nawet pola, ktore
+			// mialby wypelnic. Zamiast chowac problem, mowimy gdzie go naprawic.
+			printf(
+				'<span class="notice notice-warning" style="margin:0;padding:.25rem .5rem">%s <a href="%s">%s</a></span>',
+				esc_html__( 'Lista powodów odrzucenia jest pusta, więc statusu „odrzucone" nie da się zapisać.', 'mp-service-intake' ),
+				esc_url( admin_url( 'admin.php?page=' . SettingsScreen::PAGE_SLUG ) ),
+				esc_html__( 'Uzupełnij powody w Ustawieniach zgłoszeń', 'mp-service-intake' )
+			);
 		}
 		submit_button( __( 'Zmień status', 'mp-service-intake' ), 'primary', 'mp_status_submit', false );
 		echo '</form>';

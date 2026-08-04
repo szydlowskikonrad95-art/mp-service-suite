@@ -163,6 +163,13 @@ if ( $mp_intake_delete_data ) {
 
 	delete_option( MP\Intake\Schema::VERSION_OPTION );
 
+	// 2.56: nadpisana konfiguracja pol formularza. OWNERSHIP.md zalicza opcje-TRESCI
+	// do warstwy (ii) („szablony, definicje checklist, statusy wlasne" — za jawna
+	// zgoda admina), a nagłowek FormConfig sam nazywa ta opcje warstwa tresci.
+	// Mimo to nie kasowal jej nikt: po odinstalowaniu ZA ZGODA zostawal w bazie
+	// wiersz, ktory po ponownej instalacji po cichu nadpisywalby domyslne pola.
+	delete_option( MP\Intake\FormConfig::OPTION );
+
 	/**
 	 * Sygnal kontraktowy: tabele spraw przestaly istniec (API-KONTRAKT.md §A).
 	 *

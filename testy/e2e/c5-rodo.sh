@@ -106,8 +106,15 @@ OUT2=$(wp mp case-create --kind=zapytanie --email='export@example.com' --desc='p
 T2=$(echo "$OUT2" | grep '^token=' | cut -d= -f2)
 wp mp case-verify "$T2" >/dev/null 2>&1
 EXP=$(wp eval "\$e = MP\Intake\Privacy::export('export@example.com'); echo count(\$e['data']).'|'.(\$e['done']?'DONE':'');" 2>/dev/null)
-GROUPS=$(echo "$EXP" | cut -d'|' -f1)
-[ "${GROUPS:-0}" -ge 2 ] && echo "$EXP" | grep -q "DONE" && ok "exporter zwraca dane klienta+sprawy ($GROUPS grup, done)" || bad "exporter: $EXP"
+# ⛔ TA KONTROLA BYLA MARTWA (znalezione 4.08 przy 2.49, ta sama mina co `UID`).
+# Zmienna nazywala sie `GROUPS`, a `GROUPS` jest w bashu TABLICA GRUP UZYTKOWNIKA.
+# Przypisanie cicho nie przechodzi (zero bledu, exit 0), a `"$GROUPS"` rozwija sie
+# do numeru grupy POWLOKI — w CI liczba rzedu tysiaca, wiec `-ge 2` przechodzilo
+# ZAWSZE, niezaleznie od tego, co zwrocil eksporter. Sprawdzone podlozonym bledem:
+# przy eksporcie zwracajacym ZERO grup kontrola dalej meldowala sukces.
+# ⚠️ Odwrotnie u roota: tam grupa = 0, wiec ten sam test padalby bez winy produktu.
+LICZBA_GRUP=$(echo "$EXP" | cut -d'|' -f1)
+[ "${LICZBA_GRUP:-0}" -ge 2 ] && echo "$EXP" | grep -q "DONE" && ok "exporter zwraca dane klienta+sprawy ($LICZBA_GRUP grup, done)" || bad "exporter: $EXP"
 
 # ── 7. Wycofanie zgody (self-service, art. 7(3)) ───────────────────────────
 EXPCUST=$(q "SELECT customer_id FROM wp_mp_service_cases WHERE case_number IS NOT NULL ORDER BY id DESC LIMIT 1")
