@@ -33,16 +33,25 @@ Kliknij numer sprawy. Na karcie masz wszystko:
 - **Wiadomości** — rozmowa z klientem; możesz użyć gotowego szablonu odpowiedzi (pola typu numer
   sprawy podstawiają się same),
 - **Zmiana statusu** — prowadź sprawę po statusach (nowe → w analizie → … → zamknięte).
-  ⚠️ **Statusu „odrzucone" nie ustawisz w tej wersji z panelu.** Odrzucenie wymaga powodu
-  z listy powodów, a lista nie jest skonfigurowana — pole powodu nie pojawia się przy
-  akcjach, więc próba zapisu kończy się komunikatem o braku powodu. Jeśli sprawa ma zostać
-  odrzucona, ustal dalszy krok z koordynatorem.
+  **Odrzucenie wymaga wybrania powodu** z listy — pole powodu pojawia się przy statusie
+  „odrzucone" i bez niego zapis się nie uda. Jeśli lista powodów jest pusta (nikt jej jeszcze
+  nie wypełnił), poproś administratora systemu — uzupełnia ją w **MP: Sprawy → Ustawienia**.
+
+Zmiana danych kontaktowych przez klienta **zostawia ślad na osi zdarzeń** (sam fakt i nazwy
+zmienionych pól, bez wartości — numer telefonu jest daną osobową). Zanim zadzwonisz pod numer
+z góry karty, rzuć okiem na oś: jeśli klient go poprawił, dzwonisz pod stary.
 
 ## 3. Terminy (SLA)
 
 - Przy każdej otwartej sprawie widzisz **termin pierwszej reakcji**.
 - **Przed terminem** system wyśle Ci przypomnienie mailem. **Po terminie** sprawa eskaluje
   do koordynatora — nie chowaj trudnych spraw, po prostu pisz do klienta i zmieniaj statusy.
+- ⏸️ **Gdy przestawisz sprawę na „do uzupełnienia", zegar STAJE** — czekamy wtedy na klienta
+  (zdjęcie, dokument, odpowiedź) i nie liczymy tego czasu Tobie. W kolumnie terminu i na karcie
+  zobaczysz napis **„czeka na klienta"** zamiast daty. **To nie jest awaria ani zgubiony termin.**
+  Zegar rusza od nowa, gdy przestawisz sprawę na status roboczy.
+  ⚠️ Sprawa nie znika przez to z radaru — osobna miara pokazuje, jak długo w ogóle stoi.
+  Używaj tego statusu wtedy, gdy naprawdę czekasz na klienta, a nie żeby zatrzymać termin.
 
 ## 4. Eksport
 

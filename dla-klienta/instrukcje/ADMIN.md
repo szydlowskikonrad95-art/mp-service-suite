@@ -33,12 +33,19 @@ Każda z trzech wtyczek ma własny ekran **Ustawienia**. Najważniejszy jest ten
 | Sekcja | Co ustawiasz |
 |---|---|
 | **Statusy własne** | dokładasz własne statusy obok siedmiu wbudowanych: klucz techniczny, nazwa widoczna, czy aktywny, czy kończy sprawę, termin w godzinach i moment ostrzeżenia. Siedmiu wbudowanych nie da się usunąć |
-| **Godziny terminów** | ile godzin sprawa może stać w danym statusie, zanim minie termin. Priorytet wysoki skraca termin o połowę, niski podwaja. Statusy „odrzucone" i „zamknięte" terminu nie mają |
-| **Reguły przydziału** | warunki, po których automat rozdziela sprawy. ⚠️ Warunki **„kraj" i „język" nie zadziałają** — produkt nigdzie tych danych nie zbiera, więc reguła oparta na nich nie dopasuje żadnej sprawy. Ekran mówi to wprost |
+| **Godziny terminów (statusy wbudowane)** | ile godzin sprawa może stać w danym statusie, zanim minie termin. Priorytet wysoki skraca termin o połowę, niski podwaja. Statusy „odrzucone" i „zamknięte" terminu nie mają |
+| **Reguły przydziału i powiadomień** | dokładasz i wyłączasz reguły: KIEDY → JEŚLI → ZRÓB, z numerem kolejności. Pole **„Szczegóły akcji" to zapis JSON** (wzory pod polem, np. `{"new_status":"w analizie"}`); reszta to listy wyboru. ⚠️ Warunki **„kraj" i „język" nie zadziałają** — produkt nigdzie tych danych nie zbiera, więc reguła oparta na nich nie dopasuje żadnej sprawy. Ekran mówi to wprost |
 | **Kasowanie danych przy odinstalowaniu** | czy odinstalowanie wtyczki ma skasować dane. **Domyślnie wyłączone** |
 
-**Rejestr MP → Ustawienia** i **MP: Sprawy → Ustawienia** mają po jednej sekcji: kasowanie danych
-przy odinstalowaniu tej wtyczki (też domyślnie wyłączone).
+**MP: Sprawy → Ustawienia** — dwie sekcje, każda z własnym przyciskiem:
+
+| Sekcja | Co ustawiasz |
+|---|---|
+| **Powody odrzucenia sprawy** | lista powodów, z której pracownik wybiera przy odrzuceniu. ⛔ **Dopóki jest pusta, nikt nie zapisze statusu „odrzucone"** — pole powodu się nie pojawi, a zapis bez powodu system odrzuca. Wypełnij ją przy wdrożeniu |
+| **Kasowanie danych przy odinstalowaniu** | czy odinstalowanie tej wtyczki ma skasować jej dane. **Domyślnie wyłączone** |
+
+**Rejestr MP → Ustawienia** ma jedną sekcję: kasowanie danych przy odinstalowaniu tej wtyczki
+(też domyślnie wyłączone).
 
 > ⚠️ Zmiana godzin terminów nie przelicza sama spraw już otwartych — po zapisie użyj akcji
 > **„Przelicz terminy obsługi"** w panelu automatyzacji.

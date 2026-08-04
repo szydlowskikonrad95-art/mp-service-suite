@@ -86,8 +86,11 @@ Dla **każdego** z 3 plików ZIP:
   - **„Panel zgłoszeń"** — logowanie klienta i podgląd jego spraw.
 - Powstają **4 role** użytkowników (patrz §6). Twoje konto administratora dostaje pełne uprawnienia do ekranów systemu.
 - W menu bocznym pojawiają się ekrany: **MP: Sprawy** (lista zgłoszeń), **MP: Niepotwierdzone**
-  (zgłoszenia, których klient jeszcze nie potwierdził mailem), **Rejestr MP** (produkty i gwarancje)
-  oraz **Automatyzacje MP** (przydział, terminy, raporty).
+  (zgłoszenia, których klient jeszcze nie potwierdził mailem), **Rejestr MP** (produkty i gwarancje,
+  a pod nim **Wyjątki gwarancyjne**) oraz **Automatyzacje MP** (przydział, terminy, raporty).
+- **Każda z trzech wtyczek ma własną podstronę „Ustawienia"** — to tam konfiguruje się system
+  bez programisty (statusy własne, godziny terminów, reguły przydziału, powody odrzucenia,
+  kasowanie danych przy odinstalowaniu). Szczegóły: §5.3 niżej i `instrukcje/ADMIN.md` §1a.
 
 > Strony, role i uprawnienia zakładają się **same** przy włączeniu — system rusza od razu.
 > Żeby jednak zaczął pracować za Ciebie (przydzielać sprawy, liczyć terminy, sprawdzać gwarancje),
@@ -129,9 +132,16 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
 > zgłoszenie wysłane **dwa razy w ciągu 15 minut** nie zakłada drugiej sprawy — to ochrona przed
 > podwójnym kliknięciem, a nie błąd.
 >
-> Gdy klient mówi „nie mogę wysłać zgłoszenia", **najpierw sprawdź, czy nie wysyłał już dziś kilku** —
-> to najczęstsza przyczyna. Progi da się zmienić, ale wymaga to kilku linijek od programisty
-> (opis w `SECURITY.md`, w dokumentacji dla informatyka).
+> ⏱️ **„Na dobę" znaczy 24 godziny od PIERWSZEGO z tych zgłoszeń, a nie „do północy".** Kto
+> wysłał trzecie zgłoszenie o 23:00, odblokuje się dopiero następnego dnia o tej samej godzinie,
+> nie rano. Podawaj konkretną godzinę, nie „jutro".
+> ✉️ **Adresy z plusem to jeden i ten sam adres.** `jan+1@`, `jan+2@` i `jan@` liczą się do
+> **jednego** limitu, bo poczta i tak idzie do jednej skrzynki — inaczej limit dałoby się obejść
+> w sekundę. Zgłaszający, który „zmienił adres" i dalej dostaje odmowę, nie ma awarii.
+>
+> Gdy klient mówi „nie mogę wysłać zgłoszenia", **najpierw sprawdź, czy nie wysyłał już kilku
+> w ciągu ostatniej doby** — to najczęstsza przyczyna. Progi da się zmienić, ale wymaga to kilku
+> linijek od programisty (opis w `SECURITY.md`, w dokumentacji dla informatyka).
 > ⚠️ Jeśli Twoja strona stoi **za pośrednikiem** (np. Cloudflare), przeczytaj też §7.4 — wtedy
 > limit na łącze może objąć **wszystkich** klientów naraz.
 - **Załącznik zależy od kategorii.** Dla kategorii **„AGD drobne"** i **„Elektronarzędzia"** zdjęcie tabliczki
@@ -208,25 +218,47 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
   round-robin) → **Zapisz listę pracowników**.
 - **Pusta lista = przydział nie działa** (sprawy zostają „nieprzydzielone"). Tabela reguł pisze o tym
   wprost przy regule przydziału, a **Narzędzia → Stan witryny** pokazuje to jako problem do naprawienia.
-- Reguły opisane są po polsku: KIEDY (np. nowa sprawa) → JEŚLI (kategoria/kraj/język/priorytet)
-  → ZRÓB (przydziel / zmień status / ustaw priorytet / powiadom). ⚠️ Sama **treść reguł jest wbudowana
-  i pokazywana tylko do odczytu** — z panelu ustawia się listę pracowników; dołożenie nowej reguły
-  to zadanie dla programisty.
+- Reguły opisane są po polsku: KIEDY (nowa sprawa / zmiana statusu / nowa wiadomość) → JEŚLI
+  (kategoria produktu, rodzaj sprawy, status, priorytet) → ZRÓB (przydziel / zmień status /
+  ustaw priorytet / powiadom). **Reguły dokładasz, wyłączasz i zmieniasz sam** w **Automatyzacje MP
+  → Ustawienia**, sekcja „Reguły przydziału i powiadomień" → **Zapisz reguły**. Kolejność
+  sprawdzania ustawia numer; pusty warunek znaczy „pasuje zawsze".
+  ⚠️ Jedno pole jest techniczne: **„Szczegóły akcji" wpisuje się w zapisie JSON**
+  (np. `{"new_status":"w analizie"}`) — gotowe wzory dla każdej akcji są **na tym samym ekranie,
+  pod polem**. Reszta to listy wyboru.
+  ⚠️ Na liście warunków są też **„kraj" i „język" — one nigdy nie dopasują żadnej sprawy**,
+  bo produkt tych danych nigdzie nie zbiera. Ekran mówi to wprost, nad tabelą; nie buduj
+  na nich reguły.
 
 **Terminy SLA:**
-- Terminy są **wbudowane i liczą się same**: nowe zgłoszenie — 24 h na pierwszą reakcję,
-  „w analizie" — 48 h, „zaakceptowane" — 24 h. Przypomnienie wychodzi po upływie 75 % czasu.
-  ⚠️ Nie ma ekranu do zmiany tych godzin — inne wartości ustawia programista.
+- Terminy liczą się same, a **godziny ustawiasz sam** w **Automatyzacje MP → Ustawienia**,
+  sekcja „Godziny terminów (statusy wbudowane)" → **Zapisz godziny terminów**.
+  Termin statusu WŁASNEGO ustawia się przy nim samym, w sekcji „Statusy własne". Wartości domyślne: nowe zgłoszenie —
+  24 h na pierwszą reakcję, „w analizie" — 48 h, „zaakceptowane" — 24 h, „w naprawie" — 120 h.
+  Przypomnienie wychodzi po upływie 75 % czasu. Priorytet wysoki skraca termin o połowę, niski
+  podwaja.
+- ⏸️ **Status „do uzupełnienia" nie ma terminu — i tak ma być.** To jedyny status, w którym
+  czekamy na ruch klienta (zdjęcie, dokument, odpowiedź), więc **zegar stoi**: serwis nie dostaje
+  przekroczenia za cudzą zwłokę i nie idzie z tego eskalacja. Na liście spraw i na karcie zobaczysz
+  wtedy napis **„czeka na klienta"** zamiast daty — **to nie jest awaria ani brak danych**. Zegar
+  rusza od nowa przy zmianie statusu na roboczy. Sprawa zaparkowana tu na stałe nie znika z radaru:
+  łapie ją osobna miara wieku sprawy.
+- Statusy „odrzucone" i „zamknięte" terminu nie mają (kończą sprawę).
 - System sam wysyła pracownikowi **przypomnienie przed terminem** i **eskalację do koordynatora
   po terminie**. Sprawdzanie chodzi co 5 minut (patrz nota §7.3 — na produkcji ustaw systemowy cron).
+- ⚠️ Zmiana godzin **nie przelicza sama spraw już otwartych** — po zapisie użyj akcji
+  **„Przelicz terminy obsługi"** w panelu automatyzacji.
 
 **Statusy spraw:**
 - 7 statusów podstawowych (nowe / do uzupełnienia / w analizie / zaakceptowane / odrzucone /
   w naprawie / zamknięte) jest wbudowanych i nieusuwalnych. **Własne statusy dokładasz sam**
   w **Automatyzacje MP → Ustawienia**, sekcja „Statusy własne": klucz techniczny, nazwa widoczna,
   czy aktywny, czy kończy sprawę oraz termin i moment ostrzeżenia. Programista nie jest potrzebny.
-- Odrzucenie sprawy zawsze wymaga podania powodu. **Wznowić zamkniętą sprawę może tylko
-  koordynator** (i tylko do statusu „w analizie").
+- Odrzucenie sprawy zawsze wymaga podania powodu — a powody **musisz najpierw wpisać**:
+  **MP: Sprawy → Ustawienia**, sekcja „Powody odrzucenia sprawy" → **Zapisz powody odrzucenia**.
+  ⚠️ **Dopóki lista jest pusta, pracownik nie zapisze statusu „odrzucone"** (pole powodu się nie
+  pojawi, a zapis bez powodu jest odrzucany). To jeden z pierwszych kroków konfiguracji.
+- **Wznowić zamkniętą sprawę może tylko koordynator** (i tylko do statusu „w analizie").
 
 **Szablony i checklisty:**
 - **Automatyzacje MP → sekcja „Checklisty i szablony odpowiedzi"** — gotowe treści maili z podstawianymi polami (numer sprawy,
