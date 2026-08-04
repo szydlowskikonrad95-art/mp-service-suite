@@ -53,29 +53,20 @@ delete_option( MP\Intake\Front\AccountPage::FINGERPRINT_OPTION );
 // Audit-log operacji personelu (metadane operacyjne — kasowane zawsze).
 delete_option( MP\Intake\Audit::OPTION );
 
-// Warstwa (i) — katalog zalacznikow (PLIKI techniczne) sprzatany ZAWSZE.
-$mp_intake_uploads = wp_upload_dir();
-$mp_intake_att_dir = rtrim( (string) $mp_intake_uploads['basedir'], '/' ) . '/mp-attachments';
-
-if ( is_dir( $mp_intake_att_dir ) ) {
-	$mp_intake_files = glob( $mp_intake_att_dir . '/*' );
-
-	foreach ( ( false === $mp_intake_files ? array() : $mp_intake_files ) as $mp_intake_file ) {
-		if ( is_file( $mp_intake_file ) ) {
-			wp_delete_file( $mp_intake_file );
-		}
-	}
-
-	// Zostaja tylko .htaccess/index.php (guardy) — skasuj i zdejmij katalog.
-	foreach ( array( '/.htaccess', '/index.php' ) as $mp_intake_guard ) {
-		if ( is_file( $mp_intake_att_dir . $mp_intake_guard ) ) {
-			wp_delete_file( $mp_intake_att_dir . $mp_intake_guard );
-		}
-	}
-
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- uninstall: pusty katalog techniczny zalacznikow.
-	rmdir( $mp_intake_att_dir );
-}
+// Warstwa (i) — ZALACZNIKI SA DOWODEM W SPRAWIE, nie plikiem technicznym (audyt 2.2).
+//
+// Bylo tu bezwarunkowe kasowanie plikow zalacznikow, podczas gdy wiersze w bazie
+// gina dopiero za jawna zgoda admina — a zgoda jest DOMYSLNIE WYLACZONA. Deklarowany
+// cel tej asymetrii brzmi: „zeby przypadkowe odinstalowanie nie skasowalo danych
+// biznesowych". W sprawie reklamacyjnej i gwarancyjnej ZALACZNIK JEST DOWODEM:
+// zdjeciem uszkodzenia, skanem dokumentu zakupu. Po przypadkowym odinstalowaniu
+// zostawaly wiec sprawy BEZ DOWODOW — wiersze wskazujace na pliki, ktorych juz nie ma.
+//
+// ⛔ I to jest sedno: kasowanie plikow jest NIEODWRACALNE, a zostawienie tabel
+// odwracalne. Produkt zachowywal to, co dalo sie odtworzyc, i usuwal to, czego
+// odtworzyc sie nie da. Zalaczniki ida teraz TAM, GDZIE RESZTA DANYCH SPRAWY —
+// za przelacznik. Pliki wsadowe i raporty importu zostaja czyszczone zawsze:
+// to artefakty techniczne, na ktore nie wskazuje zadna przezywajaca sprawa.
 
 // Warstwa (ii) — dane biznesowe C — kasowane WYLACZNIE za jawna zgoda admina.
 // srv_counters czyszczone RAZEM ze sprawami: skasowanie licznika przy zostawionych
@@ -84,6 +75,30 @@ $mp_intake_delete_data = ( '1' === get_option( 'mp_intake_delete_data', '0' ) );
 
 if ( $mp_intake_delete_data ) {
 	global $wpdb;
+
+	// 2.2: zalaczniki (DOWODY w sprawach) gina razem z danymi sprawy, nie wczesniej.
+	$mp_intake_uploads = wp_upload_dir();
+	$mp_intake_att_dir = rtrim( (string) $mp_intake_uploads['basedir'], '/' ) . '/mp-attachments';
+
+	if ( is_dir( $mp_intake_att_dir ) ) {
+		$mp_intake_files = glob( $mp_intake_att_dir . '/*' );
+
+		foreach ( ( false === $mp_intake_files ? array() : $mp_intake_files ) as $mp_intake_file ) {
+			if ( is_file( $mp_intake_file ) ) {
+				wp_delete_file( $mp_intake_file );
+			}
+		}
+
+		// Zostaja tylko .htaccess/index.php (guardy) — skasuj i zdejmij katalog.
+		foreach ( array( '/.htaccess', '/index.php' ) as $mp_intake_guard ) {
+			if ( is_file( $mp_intake_att_dir . $mp_intake_guard ) ) {
+				wp_delete_file( $mp_intake_att_dir . $mp_intake_guard );
+			}
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- uninstall: pusty katalog techniczny zalacznikow.
+		rmdir( $mp_intake_att_dir );
+	}
 
 	// ── Konta klientow zalozone przez wtyczke ────────────────────────────────
 	// Bez tego po odinstalowaniu zostawaly w `wp_users` adresy e-mail klientow

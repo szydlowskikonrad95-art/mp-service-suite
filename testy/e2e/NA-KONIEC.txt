@@ -11,11 +11,14 @@
 # ⛔ KOLEJNOSC W TYM PLIKU TEZ MA ZNACZENIE — wpisy ida po kolei, z gory na dol.
 # `uninstall-crony.sh` zostaje OSTATNI: on jako jedyny odinstalowuje wszystkie trzy
 # wtyczki i JUZ ICH NIE WLACZA z powrotem, wiec cokolwiek po nim, leci na pustce.
-import-dod.sh
+# 2.2: sprawdza OBIE strony przelacznika kasowania danych, wiec przy wlaczonym
+# odinstalowuje modul zgloszen i kasuje tabele. Sam po sobie sprzata (wlacza wtyczke
+# z powrotem, sprawdza, ze tabele i auto-strona wrocily), ale wracaja PUSTE. Wykryty
+# automatycznie ladowalby w SRODKU przebiegu i zabieral dane testom idacym po nim.
+# Stoi PO `import-dod.sh`, zeby niczego mu nie zabrac, i PRZED `uninstall-crony.sh`,
+# ktoremu zostawia dzialajacy produkt z zaplanowanymi cronami.
 # 2.56: odinstalowuje modul zgloszen ZA ZGODA, czyli kasuje tabele — i owszem, sam po
-# sobie sprzata (wlacza wtyczke z powrotem, sprawdza, ze tabele wrocily), ale wracaja
-# PUSTE. Wykryty automatycznie ladowalby w srodku przebiegu i zabieral dane testom
-# idacym po nim. Stoi PO `import-dod.sh`, zeby niczego mu nie zabrac, i PRZED
-# `uninstall-crony.sh`, ktoremu zostawia dzialajacy produkt z zaplanowanymi cronami.
+c-2-2-zalaczniki-przy-odinstalowaniu.sh
 c-2-56-konfiguracja-pol-formularza.sh
+import-dod.sh
 uninstall-crony.sh
