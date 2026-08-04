@@ -48,16 +48,22 @@ final class ProgKrazeniaTest extends TestCase {
 	}
 
 	/**
-	 * Przy domyslnej konfiguracji: (24+72+48+24+120) × 2,0 = 576 godzin = 24 dni.
+	 * Przy domyslnej konfiguracji: (24+0+48+24+120) × 2,0 = 432 godziny = 18 dni.
 	 *
 	 * Ta kontrola jest po to, zeby zmiana domyslnych godzin statusow albo
 	 * modyfikatorow priorytetu NIE przeszla niezauwazona: przesuwa granice, po
 	 * ktorej produkt mowi czlowiekowi „ta sprawa krazy".
+	 *
+	 * ⭐ I ZADZIALALA: 4.08 status „do uzupelnienia" dostal ZERO godzin (licznik stoi,
+	 * gdy czekamy na klienta — standard branzowy), przez co suma spadla z 288 na 216,
+	 * a prog z 576 na 432 godziny. Liczby ponizej sa wiec ZAKTUALIZOWANE SWIADOMIE,
+	 * razem z ta zmiana — nie „naprawione, bo test padl". Prog nadal wynika z rachunku,
+	 * czego pilnuje kontrola obok.
 	 */
-	public function test_domyslna_konfiguracja_daje_576_godzin(): void {
-		self::assertSame( 288, array_sum( SlaConfig::core_defaults() ), 'Suma domyślnych godzin rdzenia się zmieniła.' );
+	public function test_domyslna_konfiguracja_daje_432_godziny(): void {
+		self::assertSame( 216, array_sum( SlaConfig::core_defaults() ), 'Suma domyślnych godzin rdzenia się zmieniła.' );
 		self::assertSame( 2.0, SlaConfig::slowest_priority_modifier(), 'Najwolniejszy priorytet przestał podwajać terminy.' );
-		self::assertSame( 576, Sla::stale_threshold_hours() );
+		self::assertSame( 432, Sla::stale_threshold_hours() );
 	}
 
 	/**
