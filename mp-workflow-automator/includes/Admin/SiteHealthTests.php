@@ -31,9 +31,11 @@ final class SiteHealthTests {
 		SiteHealth::register(
 			'mp_automator',
 			array(
-				'cron'   => array( self::class, 'test_cron' ),
-				'pula'   => array( self::class, 'test_pula_przydzialu' ),
-				'poczta' => array( self::class, 'test_poczta_wysylka' ),
+				'cron'      => array( self::class, 'test_cron' ),
+				'krazenie'  => array( self::class, 'test_sprawy_krazace' ),
+				'fabryczne' => array( self::class, 'test_tresci_fabryczne' ),
+				'pula'      => array( self::class, 'test_pula_przydzialu' ),
+				'poczta'    => array( self::class, 'test_poczta_wysylka' ),
 			)
 		);
 	}
@@ -152,6 +154,126 @@ final class SiteHealthTests {
 				),
 				$pracownikow
 			)
+		);
+	}
+
+	/**
+	 * SPRAWY KRAZACE: otwarte dluzej, niz pozwala suma ich wlasnych terminow.
+	 *
+	 * Po co osobna kontrola, skoro sa terminy SLA (cz.1 pkt 3): termin liczy sie od
+	 * ZMIANY STATUSU, wiec kazda zmiana restartuje zegar. Sprawa odbijana miedzy
+	 * statusami ma zawsze swiezy, zielony termin — panel pokazuje „wszystko w terminie"
+	 * przy reklamacji sprzed miesiaca. Ta kontrola patrzy na wielkosc, ktora sie NIE
+	 * restartuje, i nie rusza samych terminow.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_sprawy_krazace(): array {
+		$wynik = Sla::stale_cases( 5 );
+		$ile   = count( $wynik['sprawy'] ) + (int) $wynik['pominietych'];
+		$prog  = (int) $wynik['prog_godzin'];
+		$dni   = (int) round( $prog / 24 );
+
+		if ( 0 === $ile ) {
+			return SiteHealth::wynik(
+				'mp_automator_krazenie',
+				'good',
+				__( 'Żadna sprawa nie krąży bez końca', 'mp-workflow-automator' ),
+				sprintf(
+					/* translators: 1: prog w godzinach, 2: prog w dniach */
+					__( 'Nie ma spraw otwartych dłużej niż %1$d godz. (%2$d dni), czyli dłużej, niż wynosi suma terminów wszystkich statusów przy najwolniejszym priorytecie.', 'mp-workflow-automator' ),
+					$prog,
+					$dni
+				)
+			);
+		}
+
+		$numery = array();
+
+		foreach ( $wynik['sprawy'] as $sprawa ) {
+			$numery[] = (string) $sprawa['case_number'];
+		}
+
+		return SiteHealth::wynik(
+			'mp_automator_krazenie',
+			'recommended',
+			sprintf(
+				/* translators: %d: liczba spraw krazacych */
+				_n(
+					'%d sprawa jest otwarta dłużej, niż pozwala suma jej terminów',
+					'%d spraw jest otwartych dłużej, niż pozwala suma ich terminów',
+					$ile,
+					'mp-workflow-automator'
+				),
+				$ile
+			),
+			sprintf(
+				/* translators: 1: prog w dniach, 2: numery spraw */
+				__( 'Termin pojedynczego statusu liczy się od ostatniej zmiany statusu, więc sprawa przestawiana między statusami ma zawsze świeży, zielony termin — i nie zgłasza się sama. Te sprawy są w obsłudze dłużej niż %1$d dni: %2$s.', 'mp-workflow-automator' ),
+				$dni,
+				implode( ', ', $numery )
+			),
+			__( 'Otwórz Automatyzacje MP — sekcja „Sprawy krążące" pokazuje pełną listę z liczbą dni. Sprawdź, czy te sprawy czekają na kogoś u Was, czy na odpowiedź klienta.', 'mp-workflow-automator' )
+		);
+	}
+
+	/**
+	 * TRESCI FABRYCZNE WORDPRESSA widoczne publicznie (poz. 2.7).
+	 *
+	 * ⛔ TA KONTROLA NICZEGO NIE KASUJE I NIE UKRYWA — tylko NAZYWA. Wpis „Hello world!"
+	 * i strona „Sample Page" nalezaza do witryny, nie do nas: wtyczka, ktora kasuje albo
+	 * chowa cudze tresci przy okazji, robi rzecz nieodwracalna i moze zniszczyc czyjas
+	 * prace. Usuwa je czlowiek, swiadomie, krokiem z instrukcji wdrozenia — my
+	 * pilnujemy tylko, zeby o tym kroku nie dalo sie zapomniec po cichu.
+	 *
+	 * PO CZYM POZNAJEMY, ze to fabryka, a nie czyjas tresc: WordPress zaklada te dwa
+	 * wpisy przy instalacji i zawsze dostaja ID 1 (wpis) oraz 2 (strona) — numery nie sa
+	 * ponownie uzywane. Zglaszamy je WYLACZNIE wtedy, gdy sa OPUBLIKOWANE i NIGDY
+	 * NIEEDYTOWANE (`post_modified_gmt` = `post_date_gmt`). Po tytule nie idziemy, bo
+	 * jest tlumaczony. Ktos, kto przerobil te strone na wlasna tresc, nie zobaczy tu nic.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function test_tresci_fabryczne(): array {
+		$fabryczne = array();
+
+		foreach ( array( 1, 2 ) as $id ) {
+			$wpis = get_post( $id );
+
+			if ( ! $wpis instanceof \WP_Post ) {
+				continue;
+			}
+
+			if ( 'publish' !== $wpis->post_status ) {
+				continue;
+			}
+
+			if ( (string) $wpis->post_modified_gmt !== (string) $wpis->post_date_gmt ) {
+				continue;
+			}
+
+			$fabryczne[] = sprintf( '„%s" (%s)', $wpis->post_title, get_permalink( $wpis ) );
+		}
+
+		if ( array() === $fabryczne ) {
+			return SiteHealth::wynik(
+				'mp_automator_fabryczne',
+				'good',
+				__( 'Witryna nie pokazuje treści fabrycznych WordPressa', 'mp-workflow-automator' ),
+				__( 'Przykładowy wpis i przykładowa strona zakładane przy instalacji WordPressa nie są publicznie widoczne (usunięte, ukryte albo zastąpione własną treścią).', 'mp-workflow-automator' )
+			);
+		}
+
+		return SiteHealth::wynik(
+			'mp_automator_fabryczne',
+			'recommended',
+			__( 'Witryna pokazuje treści fabryczne WordPressa', 'mp-workflow-automator' ),
+			sprintf(
+				/* translators: %s: lista tresci fabrycznych z adresami */
+				__( 'Te treści są widoczne dla każdego, bez logowania, i przy pierwszym kontakcie sprawiają wrażenie niedokończonej witryny: %s. Zakłada je WordPress przy instalacji, a nie wtyczki MP.', 'mp-workflow-automator' ),
+				implode( ', ', $fabryczne )
+			),
+			__( 'Wejdź w Wpisy i Strony i usuń je albo zastąp własną treścią. Wtyczka celowo nie robi tego za Ciebie — to treści Twojej witryny i skasowanie ich bez pytania byłoby nieodwracalne.', 'mp-workflow-automator' )
 		);
 	}
 

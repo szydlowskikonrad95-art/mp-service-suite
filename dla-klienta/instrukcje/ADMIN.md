@@ -120,8 +120,8 @@ w historii produktu.
 
 ## 5. Utrzymanie
 
-- **Narzędzia → Stan witryny** — 14 testów systemu (poczta zgłoszeń i automatu, załączniki, HTTPS, pula przydziału,
-  wykonywanie się crona, sprawy poza automatyzacją…). Zielono = zdrowo; czerwono = instrukcja
+- **Narzędzia → Stan witryny** — 16 testów systemu (poczta zgłoszeń i automatu, załączniki, HTTPS, pula przydziału,
+  wykonywanie się crona, sprawy poza automatyzacją, sprawy krążące bez końca, treści fabryczne WordPressa…). Zielono = zdrowo; czerwono = instrukcja
   naprawy w treści testu.
 - **Aktualizacje wtyczek**: standardowo przez ZIP; migracje bazy wykonują się same przy wejściu
   do panelu, crony odtwarzają się same, a **terminy spraw już otwartych przeliczają się

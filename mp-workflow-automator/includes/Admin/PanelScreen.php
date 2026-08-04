@@ -20,6 +20,7 @@ use MP\Automator\AssignmentPool;
 use MP\Automator\ChecklistTemplates;
 use MP\Automator\ResponseTemplates;
 use MP\Automator\Rules;
+use MP\Automator\Sla;
 use MP\Automator\Tables;
 use MP\Automator\WorkflowEvents;
 
@@ -169,6 +170,7 @@ final class PanelScreen {
 			<?php
 			self::render_notice();
 			self::render_actions();
+			self::render_stale();
 			self::render_rules();
 			self::render_statuses();
 			self::render_events();
@@ -507,6 +509,94 @@ final class PanelScreen {
 			'rodzaj'      => __( 'rodzaj sprawy', 'mp-workflow-automator' ),
 			'status'      => __( 'status', 'mp-workflow-automator' ),
 		);
+	}
+
+	/**
+	 * SPRAWY KRAZACE — otwarte dluzej, niz pozwala suma ich wlasnych terminow.
+	 *
+	 * DLACZEGO TO TU STOI (cz.1 pkt 3): termin SLA liczy sie od zmiany statusu, wiec
+	 * kazda zmiana restartuje zegar. Sprawa odbijana miedzy statusami ma zawsze swiezy,
+	 * ZIELONY termin — i wlasnie dlatego panel potrafil pokazywac „wszystko w terminie"
+	 * przy reklamacji sprzed miesiaca. Ta sekcja pokazuje wielkosc, ktora sie NIE
+	 * restartuje, i robi to tam, gdzie koordynator i tak patrzy. Terminow nie ruszamy.
+	 *
+	 * @return void
+	 */
+	private static function render_stale(): void {
+		$wynik = Sla::stale_cases();
+		$prog  = (int) $wynik['prog_godzin'];
+		$dni   = (int) round( $prog / 24 );
+
+		?>
+		<h2 class="mp-automator-h2"><?php esc_html_e( 'Sprawy krążące', 'mp-workflow-automator' ); ?></h2>
+		<p class="mp-automator-intro">
+			<?php
+			echo esc_html(
+				sprintf(
+					/* translators: 1: prog w godzinach, 2: prog w dniach */
+					__( 'Sprawy w obsłudze dłużej niż %1$d godz. (%2$d dni) — czyli dłużej, niż wynosi suma terminów wszystkich statusów przy najwolniejszym priorytecie. Termin pojedynczego statusu liczy się od ostatniej zmiany statusu, więc taka sprawa może mieć zielony termin i mimo to stać w miejscu od tygodni.', 'mp-workflow-automator' ),
+					$prog,
+					$dni
+				)
+			);
+			?>
+		</p>
+		<?php if ( array() === $wynik['sprawy'] ) : ?>
+			<p><?php esc_html_e( 'Żadna sprawa nie przekracza tego progu.', 'mp-workflow-automator' ); ?></p>
+		<?php else : ?>
+			<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Lista spraw krążących', 'mp-workflow-automator' ); ?>">
+				<table class="widefat striped mp-automator-table">
+					<caption class="screen-reader-text"><?php esc_html_e( 'Lista spraw krążących', 'mp-workflow-automator' ); ?></caption>
+					<thead>
+						<tr>
+							<th scope="col"><?php esc_html_e( 'Nr sprawy', 'mp-workflow-automator' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Status', 'mp-workflow-automator' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'W obsłudze (dni)', 'mp-workflow-automator' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Od złożenia (dni)', 'mp-workflow-automator' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Potwierdzona (UTC)', 'mp-workflow-automator' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $wynik['sprawy'] as $sprawa ) : ?>
+							<tr>
+								<td><?php echo esc_html( (string) $sprawa['case_number'] ); ?></td>
+								<td><?php echo esc_html( (string) $sprawa['status'] ); ?></td>
+								<td><?php echo esc_html( (string) (int) floor( (int) $sprawa['godzin_w_obsludze'] / 24 ) ); ?></td>
+								<td><?php echo esc_html( (string) (int) floor( (int) $sprawa['godzin_od_zlozenia'] / 24 ) ); ?></td>
+								<td><?php echo esc_html( (string) $sprawa['potwierdzona'] ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+			<?php if ( $wynik['pominietych'] > 0 || $wynik['urwane'] ) : ?>
+				<p>
+					<?php
+					// SUFIT MOWI O SOBIE: lista ucieta bez slowa wygladalaby jak komplet.
+					if ( $wynik['pominietych'] > 0 ) {
+						echo esc_html(
+							sprintf(
+								/* translators: %d: liczba spraw poza lista */
+								__( 'Pokazano najstarsze; poza listą jest jeszcze %d takich spraw.', 'mp-workflow-automator' ),
+								(int) $wynik['pominietych']
+							)
+						);
+					}
+					if ( $wynik['urwane'] ) {
+						echo ' ';
+						echo esc_html(
+							sprintf(
+								/* translators: %d: liczba przejrzanych spraw */
+								__( 'Przejrzano %d najnowszych spraw — przy większej bazie starsze mogą tu nie trafić.', 'mp-workflow-automator' ),
+								(int) $wynik['sprawdzonych']
+							)
+						);
+					}
+					?>
+				</p>
+			<?php endif; ?>
+		<?php endif; ?>
+		<?php
 	}
 
 	/**
