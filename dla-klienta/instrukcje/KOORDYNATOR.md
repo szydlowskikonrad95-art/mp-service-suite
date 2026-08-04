@@ -55,6 +55,29 @@ wysyłkę dla tej samej sprawy można wywołać **raz na 5 minut**.
   nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
 - **Akcje**: „Przelicz terminy obsługi" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
   powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
+
+### ⏱️ Dwie kolumny czasu w eksporcie — i dlaczego dwie
+
+Eksport podaje **dwie różne wielkości**, każdą z podstawą wypisaną w nagłówku:
+
+| Kolumna | Liczy od | Co mierzy |
+|---|---|---|
+| **Czas obsługi od potwierdzenia (godz.)** | od potwierdzenia zgłoszenia przez klienta | pracę serwisu — odcinek, na który serwis ma wpływ |
+| **Wiek sprawy od złożenia (godz.)** | od wysłania formularza przez klienta | ile sprawa trwała łącznie, z czekaniem na potwierdzenie |
+
+Różnica między nimi to **czas, przez który zgłoszenie czekało na potwierdzenie przez klienta —
+do 72 godzin** (tyle jest ważny link potwierdzający). Przy sprawie potwierdzonej po dwóch dniach
+jedna liczba będzie o kilkadziesiąt godzin większa od drugiej, mimo że serwis pracował tyle samo.
+
+**Czas obsługi liczony od potwierdzenia to ta sama liczba, którą klient widzi we wpisie
+zamykającym sprawę** — obie strony mówią o tym samym.
+
+> ⚠️ **To jest nasza interpretacja i czeka na Twoje potwierdzenie.** Zamówienie mówi o eksporcie
+> z czasem obsługi, ale **nie rozstrzyga, którą z tych dwóch wielkości nazwać „czasem obsługi"**.
+> Dlatego produkt podaje **obie** i nie wybiera za Ciebie. Do wersji 1.3.11 eksport podawał pod
+> nazwą „Czas obsługi (godz.)" wielkość liczoną **od złożenia** — czyli tę, która dziś nazywa się
+> **wiekiem sprawy**. Stara liczba nie zniknęła: jest w tej właśnie kolumnie i w zestawieniu.
+> Jeśli powiesz, że „czas obsługi" ma znaczyć co innego, zmienimy nazwy — liczby są policzone i tak.
 - **Statusy spraw** — 7 wbudowanych i nieusuwalnych. **Własne statusy dokłada administrator**
   w **Automatyzacje MP → Ustawienia** (sekcja „Statusy własne"); tam też ustawia się **godziny
   terminów** dla każdego statusu. Programista nie jest do tego potrzebny.

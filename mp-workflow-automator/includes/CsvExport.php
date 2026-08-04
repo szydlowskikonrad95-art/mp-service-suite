@@ -162,20 +162,28 @@ final class CsvExport {
 				__( 'Język', 'mp-workflow-automator' ),
 				__( 'Data utworzenia (UTC)', 'mp-workflow-automator' ),
 				__( 'Data zamknięcia (UTC)', 'mp-workflow-automator' ),
-				__( 'Czas obsługi (godz.)', 'mp-workflow-automator' ),
+				// PODSTAWA W NAGLOWKU, nie w domysle (cz.1 pkt 3): do 1.3.12 stala tu jedna
+				// kolumna „Czas obsługi (godz.)" liczona od ZLOZENIA, a raport konczacy
+				// sprawe pokazywal klientowi te sama wielkosc liczona od POTWIERDZENIA.
+				// Teraz sa obie i kazda mowi, od czego liczy.
+				__( 'Czas obsługi od potwierdzenia (godz.)', 'mp-workflow-automator' ),
+				__( 'Wiek sprawy od złożenia (godz.)', 'mp-workflow-automator' ),
 				__( 'Powód odrzucenia (kod)', 'mp-workflow-automator' ),
 				__( 'Powód odrzucenia', 'mp-workflow-automator' ),
 			)
 		);
 
 		// Akumulator zestawienia — rosnie o STALA wielkosc, nie o liczbe spraw.
-		$acc  = array(
+		$acc = array(
 			'total'     => 0,
 			'by_status' => array(),
 			'by_reason' => array(),
 			'closed'    => 0,
 			'timed'     => 0,
 			'sum_sec'   => 0,
+			// Wiek sprawy ma WLASNE liczniki — inaczej srednia mieszalaby dwie podstawy.
+			'timed_age' => 0,
+			'sum_age'   => 0,
 		);
 		$page = 1;
 
@@ -200,6 +208,7 @@ final class CsvExport {
 						(string) ( $c['created_at'] ?? '' ),
 						(string) ( $c['closed_at'] ?? '' ),
 						self::hours( $c['handling_seconds'] ?? null ),
+						self::hours( $c['age_seconds'] ?? null ),
 						$code,
 						$label,
 					)
@@ -233,11 +242,30 @@ final class CsvExport {
 		}
 
 		self::put_row( $out, array( '' ) );
-		self::put_row( $out, array( __( 'Czas obsługi (sprawy zamknięte)', 'mp-workflow-automator' ) ) );
+		self::put_row( $out, array( __( 'Czas obsługi — od potwierdzenia zgłoszenia do zamknięcia (sprawy zamknięte)', 'mp-workflow-automator' ) ) );
 		self::put_row( $out, array( __( 'Liczba spraw zamkniętych', 'mp-workflow-automator' ), (string) $summary['closed_count'] ) );
 		self::put_row( $out, array( __( 'W tym z policzonym czasem obsługi', 'mp-workflow-automator' ), (string) $summary['timed_count'] ) );
 		self::put_row( $out, array( __( 'Średni czas obsługi (godz.)', 'mp-workflow-automator' ), $summary['avg_hours'] ) );
 		self::put_row( $out, array( __( 'Łączny czas obsługi (godz.)', 'mp-workflow-automator' ), $summary['total_hours'] ) );
+
+		// STARA LICZBA ZOSTAJE W PLIKU (cz.1 pkt 3). Do 1.3.12 „czas obsługi" liczył się
+		// od ZŁOŻENIA — gdyby ta wielkość teraz zniknęła, zestawienia sprzed tej wersji
+		// przestałyby się z czymkolwiek zgadzać i nikt by nie wiedział dlaczego.
+		self::put_row( $out, array( '' ) );
+		self::put_row( $out, array( __( 'Wiek sprawy — od złożenia zgłoszenia do zamknięcia (sprawy zamknięte)', 'mp-workflow-automator' ) ) );
+		self::put_row( $out, array( __( 'W tym z policzonym wiekiem sprawy', 'mp-workflow-automator' ), (string) $summary['aged_count'] ) );
+		self::put_row( $out, array( __( 'Średni wiek sprawy (godz.)', 'mp-workflow-automator' ), $summary['avg_age'] ) );
+		self::put_row( $out, array( __( 'Łączny wiek spraw (godz.)', 'mp-workflow-automator' ), $summary['total_age'] ) );
+
+		// ⚠️ TO ZDANIE MA STAC W SAMYM PLIKU, nie tylko w naszych notatkach: koordynator
+		// czyta CSV bez nas, a roznica miedzy tymi dwiema liczbami siega 72 godzin
+		// (okno potwierdzenia zgloszenia).
+		self::put_row(
+			$out,
+			array(
+				__( 'Uwaga: zamówienie nie rozstrzyga, którą z tych dwóch wielkości nazywać „czasem obsługi". Produkt podaje obie z nazwaną podstawą — czas obsługi liczy od potwierdzenia zgłoszenia (tak samo jak raport końcowy pokazywany klientowi), a wiek sprawy od jej złożenia. Różnica to czas oczekiwania na potwierdzenie przez klienta, do 72 godzin. Ta interpretacja czeka na potwierdzenie przez zamawiającego.', 'mp-workflow-automator' ),
+			)
+		);
 
 		// Roznica MUSI byc nazwana w samym pliku — koordynator czyta CSV bez nas.
 		$bez_czasu = (int) $summary['closed_count'] - (int) $summary['timed_count'];
@@ -318,6 +346,16 @@ final class CsvExport {
 			$acc['sum_sec'] += (int) $handling;
 		}
 
+		// Wiek sprawy liczy sie NIEZALEZNIE od czasu obslugi: sprawa moze miec wiek
+		// (jest `created_at`), a nie miec czasu obslugi (brak `verified_at`) — i wtedy
+		// nie wolno jej wciagac do sredniej czasu obslugi ani odwrotnie.
+		$wiek = $sprawa['age_seconds'] ?? null;
+
+		if ( null !== $wiek ) {
+			$acc['timed_age'] = (int) ( $acc['timed_age'] ?? 0 ) + 1;
+			$acc['sum_age']   = (int) ( $acc['sum_age'] ?? 0 ) + (int) $wiek;
+		}
+
 		if ( '' !== $code ) {
 			if ( ! isset( $acc['by_reason'][ $code ] ) ) {
 				$acc['by_reason'][ $code ] = 0;
@@ -333,9 +371,11 @@ final class CsvExport {
 	 * @return array<string, mixed>
 	 */
 	private static function summary_finish( array $acc ): array {
-		$closed  = (int) $acc['closed'];
-		$timed   = (int) ( $acc['timed'] ?? 0 );
-		$sum_sec = (int) $acc['sum_sec'];
+		$closed    = (int) $acc['closed'];
+		$timed     = (int) ( $acc['timed'] ?? 0 );
+		$sum_sec   = (int) $acc['sum_sec'];
+		$timed_age = (int) ( $acc['timed_age'] ?? 0 );
+		$sum_age   = (int) ( $acc['sum_age'] ?? 0 );
 
 		return array(
 			'total'        => (int) $acc['total'],
@@ -346,6 +386,12 @@ final class CsvExport {
 			// zamknietych — sprawa bez czasu nie ma czego wniesc do sredniej.
 			'avg_hours'    => $timed > 0 ? self::hours( (int) round( $sum_sec / $timed ) ) : '',
 			'total_hours'  => self::hours( $sum_sec ),
+			// Wiek sprawy — te same zasady, wlasne liczniki. To ta wielkosc, ktora
+			// eksport podawal do 1.3.12 jako „czas obslugi" (cz.1 pkt 3): zostaje
+			// w pliku, zeby stara liczba dalej byla do znalezienia.
+			'aged_count'   => $timed_age,
+			'avg_age'      => $timed_age > 0 ? self::hours( (int) round( $sum_age / $timed_age ) ) : '',
+			'total_age'    => self::hours( $sum_age ),
 			'by_reason'    => (array) $acc['by_reason'],
 		);
 	}

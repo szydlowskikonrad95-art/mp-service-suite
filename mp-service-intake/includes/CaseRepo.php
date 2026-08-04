@@ -1127,6 +1127,10 @@ final class CaseRepo {
 	 * jemu; brak uprawnien => pusto. Tylko sprawy ZWERYFIKOWANE (status istnieje
 	 * dopiero po weryfikacji). Paginacja: chunk max 500 (kontrakt).
 	 *
+	 * CZAS: wiersz niesie DWIE nazwane wielkosci, nie jedna — `handling_seconds`
+	 * (czas obslugi, od `verified_at`) i `age_seconds` (wiek sprawy, od `created_at`).
+	 * Powod przy samym wyliczeniu nizej (cz.1 pkt 3).
+	 *
 	 * @param array<string, mixed> $filters  Opcjonalne {status?, kind?, date_from?, date_to?}.
 	 * @param int                  $page     Strona (>= 1).
 	 * @param int                  $per_page Rozmiar strony (1..500).
@@ -1222,12 +1226,44 @@ final class CaseRepo {
 			$status_val = (string) $row['status'];
 			$closed_at  = isset( $terminal[ $status_val ] ) ? ( $row['status_changed_at'] ?? null ) : null;
 
+			/*
+			 * DWIE ROZNE WIELKOSCI, DWIE ROZNE PODSTAWY — i obie nazwane (cz.1 pkt 3).
+			 *
+			 * Do 1.3.12 bylo tu jedno `handling_seconds` liczone od `created_at`, a raport
+			 * koncowy pokazywany KLIENTOWI liczyl to samo pojecie od `verified_at`
+			 * (`ClosingReport::handling_label`). Rozjazd siega okna potwierdzenia, czyli
+			 * `CONFIRM_WINDOW_HOURS` = 72 godzin: na zmierzonej sprawie SRV/2026/0059
+			 * eksport podawal 0,32 h, a raport liczyl od 0,09 h — ta sama wielkosc, dwie
+			 * liczby, prawie czterokrotna roznica.
+			 *
+			 *  * `handling_seconds` — CZAS OBSLUGI, od `verified_at` do zamkniecia. Tylko
+			 *    ten odcinek serwis kontroluje: przed potwierdzeniem sprawa nie istnieje
+			 *    dla personelu (brak SLA, brak przydzialu), a zwloka klienta w klinieciu
+			 *    linku nie jest praca serwisu. Ta sama podstawa co u klienta.
+			 *  * `age_seconds` — WIEK SPRAWY, od `created_at` do zamkniecia. Odpowiada na
+			 *    „ile ta sprawa trwala od zlozenia" i niesie DOKLADNIE te liczbe, ktora
+			 *    eksport podawal wczesniej — zeby zmiana podstawy nie skasowala po cichu
+			 *    wartosci z raportow, ktore koordynator juz widzial.
+			 *
+			 * ⚠️ ZAMOWIENIE NIE ROZSTRZYGA, ktora z nich jest „czasem obslugi" — mowi tylko
+			 * o eksporcie z czasem obslugi. Dlatego produkt podaje OBIE, kazda z podstawa
+			 * nazwana w naglowku, i zostawia rozstrzygniecie klientowi.
+			 */
 			$handling = null;
+			$age      = null;
+
 			if ( null !== $closed_at ) {
-				$closed_ts  = strtotime( (string) $closed_at );
-				$created_ts = strtotime( (string) $row['created_at'] );
+				$closed_ts   = strtotime( (string) $closed_at );
+				$created_ts  = strtotime( (string) $row['created_at'] );
+				$verified_at = $row['verified_at'] ?? null;
+				$verified_ts = null !== $verified_at ? strtotime( (string) $verified_at ) : false;
+
 				if ( false !== $closed_ts && false !== $created_ts && $closed_ts >= $created_ts ) {
-					$handling = $closed_ts - $created_ts;
+					$age = $closed_ts - $created_ts;
+				}
+
+				if ( false !== $closed_ts && false !== $verified_ts && $closed_ts >= $verified_ts ) {
+					$handling = $closed_ts - $verified_ts;
 				}
 			}
 
@@ -1241,6 +1277,7 @@ final class CaseRepo {
 				'verified_at'           => null !== $row['verified_at'] ? (string) $row['verified_at'] : null,
 				'closed_at'             => null !== $closed_at ? (string) $closed_at : null,
 				'handling_seconds'      => $handling,
+				'age_seconds'           => $age,
 				'rejection_reason_code' => null !== $row['rejection_reason_code'] ? (string) $row['rejection_reason_code'] : null,
 			);
 		}

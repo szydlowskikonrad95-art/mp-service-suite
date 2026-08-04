@@ -103,8 +103,13 @@ final class ClosingReport {
 		$handling = self::handling_label( $opened, $closed );
 
 		if ( '' !== $handling ) {
+			// PODSTAWA STOI PRZY LICZBIE (cz.1 pkt 3). Ta wartosc zawsze liczyla sie od
+			// POTWIERDZENIA zgloszenia, tylko nigdzie tego nie mowila — a eksport CSV
+			// podawal pod ta sama nazwa liczbe od ZLOZENIA, wieksza nawet o 72 godziny
+			// (okno potwierdzenia). Klient i koordynator dostawali dwie rozne liczby
+			// tej samej wielkosci. Teraz obie strony licza tak samo i obie mowia, od czego.
 			/* translators: %s: czas obslugi (np. „2 dni 3 godz"). */
-			$lines[] = sprintf( __( 'Czas obsługi: %s', 'mp-workflow-automator' ), $handling );
+			$lines[] = sprintf( __( 'Czas obsługi (od potwierdzenia zgłoszenia): %s', 'mp-workflow-automator' ), $handling );
 		}
 
 		$lines[] = __( 'Dziękujemy za zgłoszenie.', 'mp-workflow-automator' );
