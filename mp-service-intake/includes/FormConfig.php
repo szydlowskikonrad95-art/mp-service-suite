@@ -103,10 +103,52 @@ final class FormConfig {
 					'label'         => __( 'Powód zwrotu', 'mp-service-intake' ),
 					'type'          => 'textarea',
 					'required'      => true,
-					'pii_sensitive' => false,
+					// RODO: to jest SWOBODNY OPIS pisany przez klienta — bliznniacze pole
+					// `issue_description` ma te flage od poczatku. Bez niej redakcja
+					// (CaseRepo::redact_pii_fields) omijala to pole i tresc zostawala
+					// w bazie PO wykonanym zadaniu usuniecia danych.
+					'pii_sensitive' => true,
 				),
 			),
 		);
+	}
+
+	/**
+	 * Klucze pol, ktore sa WRAZLIWE wg AKTUALNEJ konfiguracji — po wszystkich
+	 * rodzajach spraw i wszystkich kategoriach.
+	 *
+	 * ⛔ PO CO TO ISTNIEJE: flaga `pii_sensitive` jest ZAPISYWANA W WIERSZU SPRAWY
+	 * w chwili zlozenia zgloszenia. Samo poprawienie flagi w tej klasie naprawia
+	 * wiec wylacznie sprawy PRZYSZLE — sprawy juz lezace w bazie maja w sobie stara
+	 * wartosc i przy zadaniu usuniecia danych dalej byly by pomijane. Ta sama
+	 * pulapka co przy kontach zalozonych przed poprawka tozsamosci klienta:
+	 * poprawka, ktora nie obejmuje tego, co juz jest, chroni tylko nowych.
+	 *
+	 * Redakcja pyta wiec RAZ o aktualna liste kluczy i traktuje ja jako obowiazujaca
+	 * — bez migracji przepisujacej stare wiersze.
+	 *
+	 * @return array<int, string> Klucze pol wrazliwych (bez powtorzen).
+	 */
+	public static function sensitive_keys(): array {
+		$klucze = array();
+
+		foreach ( self::KINDS as $kind ) {
+			foreach ( self::fields_for( $kind ) as $field ) {
+				if ( ! empty( $field['pii_sensitive'] ) ) {
+					$klucze[ (string) $field['key'] ] = true;
+				}
+			}
+		}
+
+		foreach ( self::CATEGORY_SLUGS as $slug ) {
+			foreach ( self::category_fields( $slug ) as $field ) {
+				if ( ! empty( $field['pii_sensitive'] ) ) {
+					$klucze[ (string) $field['key'] ] = true;
+				}
+			}
+		}
+
+		return array_keys( $klucze );
 	}
 
 	/**
@@ -322,7 +364,12 @@ final class FormConfig {
 					'label'         => __( 'Objaw dźwięku (np. brak dźwięku, trzaski, jeden kanał)', 'mp-service-intake' ),
 					'type'          => 'text',
 					'required'      => false,
-					'pii_sensitive' => false,
+					// RODO: pole SWOBODNEGO OPISU sytuacji, ta sama klasa co opis usterki
+					// — czlowiek wpisuje tam, co uwaza, i nierzadko wlasne okolicznosci.
+					// Pozostale pola kategorii (model z tabliczki, nr partii) zostaja bez
+					// flagi SWIADOMIE: identyfikuja EGZEMPLARZ, nie osobe, a ich redakcja
+					// odebralaby serwisowi dane techniczne sprzetu.
+					'pii_sensitive' => true,
 				),
 			),
 			'agd'              => array(
@@ -527,12 +574,25 @@ final class FormConfig {
 
 			$type = (string) ( $field['type'] ?? 'text' );
 
+			$typ_pola = in_array( $type, self::FIELD_TYPES, true ) ? $type : 'text';
+
+			// ⛔ BEZPIECZNA STRONA DOMYSLNA dla pol dokladanych przez administratora.
+			// Dotad brak flagi znaczyl „nie wrazliwe", wiec KAZDE nowe pole swobodnego
+			// tekstu bylo domyslnie POMIJANE przy usuwaniu danych — ta sama wada, ktora
+			// wlasnie naprawiamy przy „Powodzie zwrotu", tyle ze na przyszlosc i bez
+			// konca. Teraz: pole tekstowe bez jawnej decyzji jest traktowane jako
+			// wrazliwe. Jawne `false` w konfiguracji dalej wygrywa — decyzja czlowieka
+			// zostaje decyzja czlowieka, brak decyzji przestaje byc cichym „nie".
+			$wrazliwe = array_key_exists( 'pii_sensitive', $field )
+				? ! empty( $field['pii_sensitive'] )
+				: in_array( $typ_pola, array( 'text', 'textarea' ), true );
+
 			$out[] = array(
 				'key'           => (string) $field['key'],
 				'label'         => (string) ( $field['label'] ?? $field['key'] ),
-				'type'          => in_array( $type, self::FIELD_TYPES, true ) ? $type : 'text',
+				'type'          => $typ_pola,
 				'required'      => ! empty( $field['required'] ),
-				'pii_sensitive' => ! empty( $field['pii_sensitive'] ),
+				'pii_sensitive' => $wrazliwe,
 			);
 		}
 
