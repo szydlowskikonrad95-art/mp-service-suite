@@ -225,6 +225,8 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c-2-24-widocznosc-spraw.sh
       - name: Testy mechanizmu ratunkowego (sięga spraw czekających najdłużej)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-18-ratunek-najstarsze.sh
+      - name: Testy kosztu przeglądu spraw (liczba zapytań nie rośnie z liczbą spraw)
+        run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-2-22-zapytania-nie-rosna.sh
       - name: Testy C26 (widok zwrotu + etykiety zdarzeń i priorytetu)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c26-widok-zwrot-i-etykiety.sh
       - name: Testy C6c (ochrona zgłoszeń — rate-limit + dedup P1.6)
