@@ -53,6 +53,47 @@ final class StatusDefs {
 	private const SLUG_MAX = 20;
 
 	/**
+	 * Buduje IDENTYFIKATOR statusu z tego, co wpisal czlowiek (audyt 2.26).
+	 *
+	 * PROBLEM: `sanitize_key()` USUWA polskie znaki i spacje, zamiast je zamieniac.
+	 * Administrator wpisujacy „W realizacji" dostawal identyfikator `wrealizacji`,
+	 * a „Do uzupełnienia" — `douzupenienia`. Cicho, bez slowa, i nie do odczytania
+	 * przez czlowieka, ktory kiedys na to spojrzy.
+	 *
+	 * ⭐ WZORZEC WZIETY Z SASIEDNIEGO MODULU, nie wymyslony: kategorie produktow
+	 * maja klucz `elektronarzedzia` przy etykiecie „Elektronarzędzia" — ktos
+	 * swiadomie napisal klucz bez ogonka, zeby przezyl normalizacje. Robimy to
+	 * samo, tylko maszynowo: `remove_accents()` zamienia ę na e, spacje staja sie
+	 * lacznikiem, a dopiero potem wchodzi ta sama funkcja co dotad.
+	 *
+	 * ⛔ Statusy RDZENIA (z kartki: „do uzupełnienia", „w naprawie", „zamknięte")
+	 * TA DROGA NIE IDA — sa zaszyte w module zgloszen i zapisane w tysiacach
+	 * wierszy spraw. Ich zmiana to migracja danych, nie poprawka nazwy, i nie
+	 * robi sie jej tydzien przed wydaniem. Zgodnosc statusow wlasnych z kontraktem
+	 * zalatwia to, po co pozycja powstala: pierwszy status wlasny z polskim znakiem
+	 * nie stworzy juz drugiej konwencji nazw.
+	 *
+	 * @param string $raw Surowy identyfikator albo etykieta od administratora.
+	 * @return string Identyfikator zgodny z kontraktem ('' gdy nie zostalo nic).
+	 */
+	public static function slug_from_input( string $raw ): string {
+		$raw = trim( $raw );
+
+		if ( '' === $raw ) {
+			return '';
+		}
+
+		$bez_ogonkow = function_exists( 'remove_accents' ) ? remove_accents( $raw ) : $raw;
+		// ⛔ TYLKO BIALE ZNAKI. Podkreslenie jest w kontrakcie znakiem DOZWOLONYM,
+		// wiec zamiana go na lacznik zmienialaby identyfikatory, ktore juz dzialaja
+		// (`ekspertyza_zewn` -> `ekspertyza-zewn`) — czyli naprawiajac zapis nowych
+		// statusow, zepsulbym istniejace. Zlapal to istniejacy test statusow.
+		$z_lacznikiem = (string) preg_replace( '/\s+/u', '-', $bez_ogonkow );
+
+		return sanitize_key( $z_lacznikiem );
+	}
+
+	/**
 	 * Zwraca wszystkie definicje statusow wlasnych (znormalizowane).
 	 *
 	 * @return array<string, array{label: string, active: bool, terminal: bool, sla_hours: int, warning_hours: int}>
@@ -67,6 +108,8 @@ final class StatusDefs {
 		$out = array();
 
 		foreach ( $raw as $slug => $def ) {
+			// Odczyt zostaje na `sanitize_key`: identyfikatory zapisane WCZESNIEJ
+			// (po staremu) musza dalej dzialac. Nowa regula obowiazuje przy zapisie.
 			$slug = sanitize_key( (string) $slug );
 
 			// Defensywa: pomijamy puste i przekraczajace szerokosc kolumny C
@@ -116,7 +159,9 @@ final class StatusDefs {
 	 * @return string Slug uzyty do zapisu ('' = odrzucone).
 	 */
 	public static function upsert( string $slug, array $def ): string {
-		$slug = sanitize_key( $slug );
+		// 2.26: identyfikator POWSTAJE z tego, co wpisal czlowiek, a nie zostaje
+		// po nim okrojony — „W realizacji" daje `w-realizacji`, nie `wrealizacji`.
+		$slug = self::slug_from_input( $slug );
 
 		// Pusty po sanityzacji LUB dluzszy niz kolumna statusu C = ODMOWA
 		// (D nie publikuje statusu, ktorego walidator/baza C nie obsluzy).
