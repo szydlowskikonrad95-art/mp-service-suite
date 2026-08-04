@@ -161,6 +161,18 @@ jobs:
           mkdir -p /tmp/wp/wp-content/mu-plugins
           cp "$GITHUB_WORKSPACE"/docker/mu-plugins/mp-test-mail-capture.php /tmp/wp/wp-content/mu-plugins/
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
+      # ⛔ SERWER MUSI WSTAC PRZED TESTAMI HTTP. Wczesniej stawial go krok „Testy C3”,
+      # jakby przy okazji — a gdy 94 kroki zastapilem jednym, front przestal istniec
+      # i 18 testow padlo naraz (zlapane przez CI przed scaleniem). Teraz to WLASNY krok,
+      # ktory JAWNIE sprawdza, czy serwer odpowiada: cichy brak frontu wyglada jak awaria
+      # produktu, a jest awaria srodowiska.
+      - name: Wbudowany serwer WordPressa (front dla testów HTTP)
+        run: |
+          cd /tmp/wp
+          wp server --host=127.0.0.1 --port=8080 --docroot=/tmp/wp >/tmp/wp-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ -o /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:8080/ -o /dev/null || { echo "⛔ Wbudowany serwer NIE WSTAL — testy HTTP nie mialyby sie do czego polaczyc."; tail -20 /tmp/wp-server.log; exit 1; }
+          echo "✔ Front odpowiada na http://127.0.0.1:8080/"
       # ⛔ JEDEN KROK ZAMIAST 94 WPISANYCH RECZNIE. Kazdy nowy test byl dopisywany
       # w to samo miejsce tej listy, wiec dwie galezie robione rownolegle ZAWSZE
       # konfliktowaly w tym pliku — a zle rozwiazany konflikt po cichu wyrzucal cudzy

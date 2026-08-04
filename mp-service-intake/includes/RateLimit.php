@@ -41,8 +41,22 @@ final class RateLimit {
 
 	/**
 	 * Okno dedup w sekundach (15 min).
+	 *
+	 * PUBLICZNA, bo ta sama liczba musi trafic do KLIENTA: komunikat o odrzuconym
+	 * duplikacie mowi mu, ile ma odczekac, zanim zglosi INNA usterke tego samego
+	 * sprzetu. Wpisana slownie („kwadrans") rozjechalaby sie po pierwszej zmianie
+	 * okna — dokladnie tak jak TTL linku logowania (`Front\Login::TTL_SECONDS`).
 	 */
-	private const DEDUP_WINDOW = 900;
+	public const DEDUP_WINDOW = 900;
+
+	/**
+	 * Okno dedup w PELNYCH minutach — do komunikatow dla czlowieka.
+	 *
+	 * @return int Minuty (minimum 1, zeby komunikat nigdy nie mowil „0 minut").
+	 */
+	public static function dedup_minutes(): int {
+		return max( 1, (int) round( self::DEDUP_WINDOW / 60 ) );
+	}
 
 	/**
 	 * Domyslne limity (nadpisywalne filtrem).
@@ -107,7 +121,7 @@ final class RateLimit {
 			return self::BLOCK_RATE;
 		}
 
-		if ( '' !== $serial && self::current_count( 'mp_rl_sn_' . md5( $serial ) ) >= (int) $limits['serial_max'] ) {
+		if ( '' !== $serial && self::current_count( self::serial_counter_key( $serial ) ) >= (int) $limits['serial_max'] ) {
 			return self::BLOCK_RATE;
 		}
 
@@ -133,7 +147,7 @@ final class RateLimit {
 		}
 
 		if ( '' !== $serial ) {
-			self::hit( 'mp_rl_sn_' . md5( $serial ), (int) $limits['serial_window'] );
+			self::hit( self::serial_counter_key( $serial ), (int) $limits['serial_window'] );
 		}
 
 		self::mark_submitted( $email, $serial, $kind );
@@ -310,7 +324,30 @@ final class RateLimit {
 	 * @return string
 	 */
 	private static function dedup_key( string $serial, string $email, string $kind ): string {
-		return 'mp_rl_dd_' . md5( $serial . '|' . $email . '|' . $kind );
+		// 2.1(a): numer seryjny wchodzi do klucza ZNORMALIZOWANY, tak jak wszedzie
+		// indziej w produkcie. Wczesniej szedl po samym `trim()`, wiec „ABC-123"
+		// i „abc123" dawaly DWA klucze i ochrona przed duplikatem konczyla sie na
+		// jednym myslniku. Reguly nie wymyslamy: `Common\Str::normalize_serial()`
+		// istnieje w produkcie z kontraktem autora („«ABC-123» i «abc 123» to TEN
+		// SAM serial") i tak samo liczy ja rejestr produktow oraz walidator.
+		// NORMALIZUJEMY TUTAJ, w jednym gardle — cztery miejsca wolajace ten klucz
+		// (odczyt, rezerwacja, zwolnienie, marker sukcesu) musza liczyc go IDENTYCZNIE,
+		// inaczej rezerwacji nie da sie zwolnic tym samym kluczem, ktorym powstala.
+		return 'mp_rl_dd_' . md5( Common\Str::normalize_serial( $serial ) . '|' . $email . '|' . $kind );
+	}
+
+	/**
+	 * Klucz licznika dobowego dla numeru seryjnego (2.1a — ta sama normalizacja).
+	 *
+	 * Limit „5 zgloszen na numer seryjny na dobe" obchodzilo sie tak samo jak
+	 * ochrone przed duplikatem: doklejeniem myslnika. Licznik i dedup musza
+	 * rozpoznawac ten sam egzemplarz sprzetu, wiec licza numer tak samo.
+	 *
+	 * @param string $serial Numer seryjny (surowy).
+	 * @return string
+	 */
+	private static function serial_counter_key( string $serial ): string {
+		return 'mp_rl_sn_' . md5( Common\Str::normalize_serial( $serial ) );
 	}
 
 	/**
