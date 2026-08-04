@@ -151,6 +151,88 @@ final class Repo {
 	}
 
 	/**
+	 * Filtry widoku wszystkich wyjatkow gwarancyjnych.
+	 */
+	public const EXCEPTION_FILTERS = array( 'active', 'expired', 'revoked', 'all' );
+
+	/**
+	 * WSZYSTKIE udzielone wyjatki gwarancyjne — bez zawezania do jednego produktu.
+	 *
+	 * ⛔ Do 1.3.12 kazde zapytanie do tabeli wyjatkow filtrowalo po konkretnym
+	 * produkcie. Administrator, ktory przyznal ich dwadziescia, nie mial jak ich
+	 * przejrzec — a kartka wymaga „historii zmian danych produktu i decyzji
+	 * gwarancyjnych". Ta metoda jest jedynym zapytaniem, ktore patrzy na calosc.
+	 *
+	 * „Przeterminowany" NIE jest stanem w bazie (status zna tylko active/revoked)
+	 * — liczy sie go z daty, tak samo jak przy renderze ekranu produktu.
+	 *
+	 * @param string $filter   Jeden z EXCEPTION_FILTERS.
+	 * @param int    $page     Numer strony (od 1).
+	 * @param int    $per_page Ile na stronie (1..100).
+	 * @return array{rows: array<int, array<string, mixed>>, total: int}
+	 */
+	public static function all_exceptions( string $filter = 'active', int $page = 1, int $per_page = 20 ): array {
+		global $wpdb;
+
+		if ( ! in_array( $filter, self::EXCEPTION_FILTERS, true ) ) {
+			$filter = 'active';
+		}
+
+		$page     = max( 1, $page );
+		$per_page = max( 1, min( 100, $per_page ) );
+		$offset   = ( $page - 1 ) * $per_page;
+
+		$table    = Tables::full( Tables::EXCEPTIONS );
+		$registry = Tables::full( Tables::REGISTRY );
+		$now      = gmdate( 'Y-m-d H:i:s' );
+
+		// Warunki trzymamy w JEDNYM miejscu — inaczej licznik i lista rozjezdzaja sie
+		// przy pierwszej zmianie (wtedy strona 2 pokazuje co innego niz „z 20").
+		switch ( $filter ) {
+			case 'expired':
+				$where  = "e.status = 'active' AND e.valid_until IS NOT NULL AND e.valid_until < %s";
+				$params = array( $now );
+				break;
+			case 'revoked':
+				$where  = "e.status = 'revoked'";
+				$params = array();
+				break;
+			case 'all':
+				$where  = '1 = 1';
+				$params = array();
+				break;
+			case 'active':
+			default:
+				$where  = "e.status = 'active' AND ( e.valid_until IS NULL OR e.valid_until >= %s )";
+				$params = array( $now );
+				break;
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabele wlasne; nazwy tabel i warunek zlozone WYLACZNIE ze stalych tej klasy (zero wejscia uzytkownika), wszystkie wartosci ida przez prepare().
+		$total_sql = "SELECT COUNT(*) FROM {$table} e WHERE {$where}";
+		$total     = (int) ( array() === $params
+			? $wpdb->get_var( $total_sql )
+			: $wpdb->get_var( $wpdb->prepare( $total_sql, $params ) ) );
+
+		$rows_sql = "SELECT e.*, r.serial_display, r.model
+			FROM {$table} e
+			LEFT JOIN {$registry} r ON r.id = e.product_registry_id
+			WHERE {$where}
+			ORDER BY e.id DESC
+			LIMIT %d OFFSET %d";
+		$rows     = $wpdb->get_results(
+			$wpdb->prepare( $rows_sql, array_merge( $params, array( $per_page, $offset ) ) ),
+			ARRAY_A
+		);
+		// phpcs:enable
+
+		return array(
+			'rows'  => is_array( $rows ) ? $rows : array(),
+			'total' => $total,
+		);
+	}
+
+	/**
 	 * Kategoria produktu po ID — dla haka kontraktowego `mp_product_category`
 	 * (Intake `get_context.kategoria` => os przydzialu w Automatorze).
 	 *

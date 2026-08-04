@@ -955,6 +955,51 @@ final class CaseRepo {
 	}
 
 	/**
+	 * Widocznosc: personel widzi WSZYSTKO.
+	 */
+	public const SCOPE_ALL = 'all';
+
+	/**
+	 * Widocznosc: pracownik widzi TYLKO sprawy przypisane do siebie.
+	 */
+	public const SCOPE_OWN = 'own';
+
+	/**
+	 * Widocznosc: brak dostepu (klient, gosc).
+	 */
+	public const SCOPE_NONE = 'none';
+
+	/**
+	 * JEDEN kontrakt widocznosci spraw dla biezacego uzytkownika (audyt 2.24).
+	 *
+	 * PO CO OSOBNA FUNKCJA: produkt mial DWA sprzeczne kontrakty w jednym pliku —
+	 * `query()` ograniczalo pracownika do wlasnych spraw, a `query_for_staff()`
+	 * pokazywalo kazdemu z personelu wszystko, z komentarzem „ekran i tak bramkuje".
+	 * Ekran listy spraw uzywa tej drugiej funkcji i NIE bramkowal: mial tylko
+	 * OPCJONALNY filtr „Moje sprawy", ktory pracownik mogl zignorowac. Zmierzone
+	 * na demie: pracownik mial przypisane 17 spraw, a ekran pokazywal mu 26.
+	 *
+	 * Rozstrzyga dokumentacja samego produktu — `PRACOWNIK.md`, sekcja „Zasady,
+	 * ktore system egzekwuje za Ciebie": „Nie zobaczysz spraw, ktorych nie masz
+	 * prawa widziec". Zamawiajacy nie musi niczego dopowiadac.
+	 *
+	 * ⛔ Kod pyta o CAPABILITY, nigdy o nazwe roli — role MP nie maja hierarchii.
+	 *
+	 * @return string SCOPE_ALL | SCOPE_OWN | SCOPE_NONE.
+	 */
+	public static function scope_for_current_user(): string {
+		if ( current_user_can( 'mp_coordinator' ) || current_user_can( 'mp_system_admin' ) ) {
+			return self::SCOPE_ALL;
+		}
+
+		if ( current_user_can( 'mp_agent' ) ) {
+			return self::SCOPE_OWN;
+		}
+
+		return self::SCOPE_NONE;
+	}
+
+	/**
 	 * Lista spraw dla PERSONELU (ekran „MP: Sprawy" / karta sprawy — kartka krok 7).
 	 * Model B: CALY personel (agent/koordynator/admin) widzi WSZYSTKIE zweryfikowane
 	 * sprawy — BEZ scopingu per assigned_to (inaczej niz query() dla raportow/RODO).
@@ -971,8 +1016,13 @@ final class CaseRepo {
 	public static function query_for_staff( array $filters = array(), int $page = 1, int $per_page = 20, string $orderby = 'created_at', string $order = 'DESC' ): array {
 		global $wpdb;
 
-		// Model B: dowolny personel widzi wszystko; nie-personel => pusto (obrona warstwowa, ekran i tak bramkuje).
-		if ( ! current_user_can( 'mp_agent' ) && ! current_user_can( 'mp_coordinator' ) && ! current_user_can( 'mp_system_admin' ) ) {
+		// 2.24: TEN SAM kontrakt co `query()` — koordynator i administrator widza
+		// wszystko, pracownik tylko swoje, reszta pusto. Wczesniej stalo tu „dowolny
+		// personel widzi wszystko" z komentarzem, ze „ekran i tak bramkuje" — a ekran
+		// nie bramkowal, wiec obietnica z instrukcji pracownika byla nieprawdziwa.
+		$scope = self::scope_for_current_user();
+
+		if ( self::SCOPE_NONE === $scope ) {
 			return array(
 				'rows'     => array(),
 				'total'    => 0,
@@ -1000,6 +1050,13 @@ final class CaseRepo {
 
 		$where  = array( 'c.identity_status = %s' );
 		$params = array( 'verified' );
+
+		// Pracownik: tylko sprawy przypisane do niego. Warunek jest NIEZALEZNY od
+		// filtra „Moje sprawy" — ten zostaje wygoda, a nie jedyna ochrona.
+		if ( self::SCOPE_OWN === $scope ) {
+			$where[]  = 'c.assigned_to = %d';
+			$params[] = get_current_user_id();
+		}
 
 		$status = isset( $filters['status'] ) ? sanitize_text_field( (string) $filters['status'] ) : '';
 		if ( '' !== $status ) {
@@ -1082,9 +1139,10 @@ final class CaseRepo {
 		$page     = max( 1, $page );
 		$offset   = ( $page - 1 ) * $per_page;
 
-		// Widocznosc wg roli (kontrakt: mp_agent => tylko swoje; kod sprawdza CAP, nie nazwe roli).
-		$scope_all = current_user_can( 'mp_coordinator' ) || current_user_can( 'mp_system_admin' );
-		$scope_own = ! $scope_all && current_user_can( 'mp_agent' );
+		// Widocznosc wg roli — JEDEN kontrakt dla wszystkich list (2.24).
+		$scope     = self::scope_for_current_user();
+		$scope_all = self::SCOPE_ALL === $scope;
+		$scope_own = self::SCOPE_OWN === $scope;
 
 		if ( ! $scope_all && ! $scope_own ) {
 			return array(
