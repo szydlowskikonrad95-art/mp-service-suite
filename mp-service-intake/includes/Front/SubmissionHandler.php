@@ -13,6 +13,7 @@ namespace MP\Intake\Front;
 
 use MP\Intake\Attachments;
 use MP\Intake\CaseRepo;
+use MP\Intake\Common\Str;
 use MP\Intake\Consents;
 use MP\Intake\FormConfig;
 use MP\Intake\RateLimit;
@@ -115,7 +116,7 @@ final class SubmissionHandler {
 
 		if ( null !== $blocked ) {
 			$notice = RateLimit::BLOCK_DUPLICATE === $blocked
-				? __( 'To zgłoszenie właśnie przyjęliśmy — sprawdź swoją skrzynkę e-mail.', 'mp-service-intake' )
+				? self::duplicate_message()
 				: __( 'Zbyt wiele zgłoszeń w krótkim czasie. Spróbuj ponownie za jakiś czas.', 'mp-service-intake' );
 			self::redirect_back( array( 'notice' => $notice ) );
 		}
@@ -167,7 +168,7 @@ final class SubmissionHandler {
 		// check-then-set (marker dopiero po sukcesie) przepuszczal oba: dwie
 		// sprawy w bazie, dwa maile do klienta.
 		if ( ! RateLimit::claim_submission( $email, $serial, $kind ) ) {
-			self::redirect_back( array( 'notice' => __( 'To zgłoszenie właśnie przyjęliśmy — sprawdź swoją skrzynkę e-mail.', 'mp-service-intake' ) ) );
+			self::redirect_back( array( 'notice' => self::duplicate_message() ) );
 		}
 
 		$result = CaseRepo::create(
@@ -485,6 +486,42 @@ final class SubmissionHandler {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Komunikat po ODRZUCENIU zgloszenia jako duplikat (audyt 2.1 — czesc (b)).
+	 *
+	 * PO CO: oba miejsca odrzucenia (odczyt przed praca i przegrana rezerwacja
+	 * atomowa) mowily „To zgloszenie wlasnie przyjelismy — sprawdz skrzynke".
+	 * Przy podwojnym kliknieciu bylo to nieszkodliwe, ale klucz duplikatu to
+	 * `e-mail + numer seryjny + rodzaj`, wiec klient zglaszajacy w tym samym oknie
+	 * INNA usterke tego samego sprzetu dostawal zdanie brzmiace jak potwierdzenie.
+	 * Sprawa nie powstawala, a on byl pewien, ze powstala.
+	 *
+	 * JEDNO ZRODLO dla obu miejsc — inaczej za tydzien rozjada sie slowo w slowo.
+	 * Liczba minut z `RateLimit::DEDUP_WINDOW`, nie wpisana slownie.
+	 *
+	 * @return string
+	 */
+	private static function duplicate_message(): string {
+		$minuty = RateLimit::dedup_minutes();
+
+		return sprintf(
+			/* translators: %s: okno dedup w minutach z odmiana, np. „15 minut". */
+			__( 'Tego zgłoszenia NIE przyjęliśmy — takie samo (ten sam sprzęt i ten sam rodzaj sprawy) przyjęliśmy chwilę wcześniej i to nim się zajmujemy. Sprawdź swoją skrzynkę e-mail. Jeśli zgłaszasz INNĄ usterkę tego samego sprzętu, odczekaj %s albo skontaktuj się z serwisem.', 'mp-service-intake' ),
+			sprintf(
+				Str::odmiana(
+					$minuty,
+					/* translators: forma dla 1. */
+					__( '%d minutę', 'mp-service-intake' ),
+					/* translators: forma dla 2-4. */
+					__( '%d minuty', 'mp-service-intake' ),
+					/* translators: forma dla 0 i 5+. */
+					__( '%d minut', 'mp-service-intake' )
+				),
+				$minuty
+			)
+		);
 	}
 
 	/**
