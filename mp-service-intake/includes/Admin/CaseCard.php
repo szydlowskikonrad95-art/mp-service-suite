@@ -48,6 +48,12 @@ final class CaseCard {
 			'SLA_REMINDER_SENT'      => __( 'Przypomnienie o terminie', 'mp-service-intake' ),
 			'SLA_ESCALATED'          => __( 'Termin przekroczony (eskalacja)', 'mp-service-intake' ),
 			'MAIL_FAILED'            => __( 'Nieudana wysyłka e-maila', 'mp-service-intake' ),
+			// ⚠️ MAIL_SENT wypadl z tej mapy, choc stala istnieje (CaseEvents:115) i Mailer
+			// ja zapisuje (Front/Mailer.php:157,217) — czyli TA SAMA klasa bledu co
+			// CASE_CREATED z C26. Nie jest to osobna pozycja audytu; znalezione przy 2.49,
+			// dokladane tu, bo naprawiamy wzorzec, nie egzemplarz.
+			'MAIL_SENT'              => __( 'E-mail wysłany', 'mp-service-intake' ),
+			'CONTACT_UPDATED'        => __( 'Zmiana danych kontaktowych', 'mp-service-intake' ),
 		);
 	}
 

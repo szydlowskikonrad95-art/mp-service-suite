@@ -296,7 +296,44 @@ final class AccountPage {
 		$phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['phone'] ) ) : '';
 
 		foreach ( $customer_ids as $customer_id ) {
+			// 2.49: co SIE ZMIENILO ustalamy PRZED zapisem — inaczej zostaje sam fakt
+			// klikniecia „zapisz", ktory nic nie mowi. Zapisanie formularza bez zmian
+			// NIE ma zostawiac wpisu: historia ma odpowiadac na pytanie „czy numer
+			// sie zmienil", a nie „ile razy klient otworzyl swoje dane".
+			$przed     = Customers::get( $customer_id );
+			$zmienione = array();
+
+			if ( is_array( $przed ) ) {
+				if ( (string) ( $przed['name'] ?? '' ) !== $name ) {
+					$zmienione[] = 'name';
+				}
+
+				if ( (string) ( $przed['phone'] ?? '' ) !== $phone ) {
+					$zmienione[] = 'phone';
+				}
+			}
+
 			Customers::update_contact( $customer_id, $name, $phone );
+
+			if ( array() === $zmienione ) {
+				continue;
+			}
+
+			// Wpis ladzie na KAZDEJ sprawie tego klienta — bo tam patrzy pracownik,
+			// zanim zadzwoni. Osobnej osi czasu klienta produkt nie ma, a zaden
+			// ekran nie pokazuje danych kontaktowych z historia.
+			// ⛔ NAZWY POL, nigdy wartosci: historia sprawy jest dziennikiem NO-PII.
+			foreach ( CaseRepo::for_customer( $customer_id ) as $sprawa ) {
+				CaseEvents::log(
+					(int) ( $sprawa['id'] ?? 0 ),
+					CaseEvents::CONTACT_UPDATED,
+					array(
+						'fields' => $zmienione,
+						'actor'  => 'client',
+					),
+					$user_id
+				);
+			}
 		}
 
 		self::redirect_notice( __( 'Dane kontaktowe zostały zapisane.', 'mp-service-intake' ) );
