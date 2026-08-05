@@ -55,6 +55,87 @@ final class SubmissionHandler {
 		add_action( 'admin_post_nopriv_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
 		add_action( 'admin_post_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
 		add_action( 'admin_post_mp_intake_attachment', array( self::class, 'handle_attachment' ) );
+
+		// S4 #1: zaladunek wiekszy niz post_max_size => PHP wyrzuca $_POST i $_FILES,
+		// wiec 'action' ginie i admin-post.php odpala hook BEZ akcji, ktorego nikt
+		// nie obsluguje => biala pusta strona (handle_submit nawet nie startuje).
+		// Lapiemy TEN jeden przypadek i wracamy na formularz z komunikatem o limicie.
+		add_action( 'admin_post_nopriv', array( self::class, 'guard_oversized_post' ) );
+		add_action( 'admin_post', array( self::class, 'guard_oversized_post' ) );
+	}
+
+	/**
+	 * Strażnik zaladunku przekraczajacego post_max_size (S4 #1).
+	 *
+	 * Wpiety w admin-post.php BEZ akcji (jedyny hook, ktory wtedy leci). Reaguje
+	 * WYLACZNIE gdy: POST, $_POST i $_FILES puste, Content-Length > post_max_size,
+	 * a zrodlem jest nasza strona formularza. Wtedy zamiast bialej pustki wraca na
+	 * formularz z komunikatem, do ilu megabajtow serwer przyjmuje pliki. Kazdy inny
+	 * bezakcyjny POST zostawiamy nietkniety (return) — nie przejmujemy cudzego ruchu.
+	 *
+	 * @return void
+	 */
+	public static function guard_oversized_post(): void {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REQUEST_METHOD'] ) ) : '';
+
+		if ( 'POST' !== $method ) {
+			return;
+		}
+
+		// Oversized-POST: PHP zostawia $_POST i $_FILES puste mimo niezerowego ciala.
+		$content_length = isset( $_SERVER['CONTENT_LENGTH'] ) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- oversized-POST: cialo (w tym nonce) PHP juz wyrzucil; sprawdzamy WYLACZNIE pustosc $_POST/$_FILES, nie przetwarzamy zadnej wartosci.
+		if ( array() !== $_POST || array() !== $_FILES || $content_length <= 0 ) {
+			return;
+		}
+
+		$post_max = wp_convert_hr_to_bytes( (string) ini_get( 'post_max_size' ) );
+
+		if ( $post_max <= 0 || $content_length <= $post_max ) {
+			return;
+		}
+
+		// Tylko dla NASZEGO formularza — inaczej przechwycilibysmy cudzy bezakcyjny
+		// POST. Referer jest jedynym tropem (body przepadlo razem z 'action').
+		// Porownujemy caly adres BEZ schematu (odpornosc na http/https), zeby dzialalo
+		// i przy ladnych permalinkach (/zgloszenie-serwisowe/), i przy zwyklych (?page_id=N),
+		// gdzie sama sciezka to „/" i nie odroznilaby stron.
+		$strip    = static fn( string $u ): string => (string) preg_replace( '#^https?://#i', '', $u );
+		$referer  = $strip( (string) wp_get_referer() );
+		$form_url = $strip( self::form_page_url() );
+
+		if ( '' === $referer || '' === $form_url || 0 !== strpos( $referer, $form_url ) ) {
+			return;
+		}
+
+		// Komunikat podaje limit REALNIE egzekwowany na pliki (min(upload,post)).
+		self::redirect_back(
+			array(
+				'notice' => sprintf(
+					/* translators: %s: rozmiar z jednostka, np. „2 MB". */
+					__( 'Załącznik jest za duży — ten serwer przyjmuje pliki do %s. Zmniejsz zdjęcie (np. w telefonie) i wyślij zgłoszenie ponownie; wpisane dane wpisz jeszcze raz.', 'mp-service-intake' ),
+					size_format( wp_max_upload_size() )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Adres strony formularza zgloszenia (permalink auto-strony) albo ''.
+	 *
+	 * @return string
+	 */
+	private static function form_page_url(): string {
+		$page_id = (int) get_option( 'mp_intake_form_page_id', 0 );
+
+		if ( $page_id <= 0 ) {
+			return '';
+		}
+
+		$url = get_permalink( $page_id );
+
+		return false === $url ? '' : (string) $url;
 	}
 
 	/**
@@ -115,10 +196,20 @@ final class SubmissionHandler {
 		$blocked = RateLimit::check( $ip, $email, $serial, $kind );
 
 		if ( null !== $blocked ) {
+			// S4 #3: odmowa NIE czysci formularza — wpisane dane wracaja w PRG
+			// (echo_values), zeby czlowiek nie przepisywal opisu usterki od nowa.
+			// Przy limicie (nie dedup) komunikat mowi KIEDY znow mozna i ze nie
+			// trzeba czekac: wiadomosc w istniejacej sprawie idzie od razu i nie
+			// podlega temu limitowi (tak samo mowi instrukcja klienta).
 			$notice = RateLimit::BLOCK_DUPLICATE === $blocked
 				? self::duplicate_message()
-				: __( 'Zbyt wiele zgłoszeń w krótkim czasie. Spróbuj ponownie za jakiś czas.', 'mp-service-intake' );
-			self::redirect_back( array( 'notice' => $notice ) );
+				: self::rate_limited_message( RateLimit::retry_after( $ip, $email, $serial ) );
+			self::redirect_back(
+				array(
+					'notice' => $notice,
+					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
+				)
+			);
 		}
 
 		// Zgoda RODO i imie zglaszajacego — JEDNA bramka, nie dwie. Bramki
@@ -556,6 +647,34 @@ final class SubmissionHandler {
 				),
 				$minuty
 			)
+		);
+	}
+
+	/**
+	 * Komunikat odmowy przy przekroczeniu limitu zgloszen (S4 #3).
+	 *
+	 * Mowi KIEDY znow mozna (moment z RateLimit::retry_after, w strefie witryny)
+	 * oraz ze nie trzeba czekac — wiadomosc w istniejacej sprawie idzie od razu.
+	 * Zastepuje dawne „Spróbuj ponownie za jakiś czas", ktore nie mowilo ani
+	 * kiedy, ani co zrobic zamiast. Gdy momentu nie da sie ustalic (okno tuz
+	 * wygaslo) — pomijamy zdanie o godzinie, reszta zostaje.
+	 *
+	 * @param int|null $retry_ts Unix ts konca blokady albo null.
+	 * @return string
+	 */
+	private static function rate_limited_message( ?int $retry_ts ): string {
+		$kiedy = null !== $retry_ts
+			? sprintf(
+				/* translators: %s: data i godzina, od ktorej znow mozna wyslac, np. „5.08, 14:30". */
+				__( ' Kolejne zgłoszenie z tego adresu wyślesz po %s.', 'mp-service-intake' ),
+				wp_date( 'j.m, H:i', $retry_ts )
+			)
+			: '';
+
+		return sprintf(
+			/* translators: %s: zdanie „Kolejne zgłoszenie … wyślesz po …" albo puste. */
+			__( 'Z tego adresu wysłano zbyt wiele zgłoszeń w krótkim czasie.%s Nie musisz czekać — jeśli masz już założoną sprawę, napisz wiadomość przy niej w panelu zgłoszeń: trafia do serwisu od razu i nie podlega temu limitowi.', 'mp-service-intake' ),
+			$kiedy
 		);
 	}
 

@@ -14,6 +14,7 @@
 
 namespace MP\Intake\Admin;
 
+use MP\Intake\Notices;
 use MP\Intake\Common\Roles;
 
 use MP\Intake\Audit;
@@ -125,8 +126,9 @@ final class UnverifiedScreen {
 
 		echo '<div class="wrap"><h1>' . esc_html__( 'Zgłoszenia niepotwierdzone', 'mp-service-intake' ) . '</h1>';
 
+		// S4 #2: tylko komunikaty z listy dozwolonych — spreparowany link nie pokaze dowolnego zdania.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG, tresc escapowana.
-		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
+		$notice = Notices::filter( isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '' );
 
 		if ( '' !== $notice ) {
 			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html( $notice ) . '</p></div>';

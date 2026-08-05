@@ -15,6 +15,7 @@
 namespace MP\Intake\Admin;
 
 use MP\Intake\Attachments;
+use MP\Intake\Notices;
 use MP\Intake\CaseEvents;
 use MP\Intake\CaseRepo;
 use MP\Intake\Messages;
@@ -111,8 +112,9 @@ final class CaseCard {
 		}
 
 		// Komunikat PRG (np. po toggle checklisty).
+		// S4 #2: tylko komunikaty z listy dozwolonych — spreparowany link nie pokaze dowolnego zdania.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG, tresc escapowana.
-		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
+		$notice = Notices::filter( isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '' );
 		if ( '' !== $notice ) {
 			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html( $notice ) . '</p></div>';
 		}
