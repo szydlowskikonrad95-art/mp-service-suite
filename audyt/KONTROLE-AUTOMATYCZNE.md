@@ -41,8 +41,10 @@ przebiegu zdanie „wydanie przeszło kontrole" byłoby nie do udowodnienia.
   które do nich nie należą.
 
 ### Działanie na żywym WordPressie
-- **87 kroków testowych na uruchomionym WordPressie 6.9.4** — nie atrapy, tylko prawdziwa
-  instalacja z bazą danych. Zakres obejmuje m.in.:
+- **Ponad 140 skryptów testowych na uruchomionym WordPressie 6.9.4** — nie atrapy, tylko prawdziwa
+  instalacja z bazą danych. Dokładną, pełną listę wyznacza `testy/e2e/uruchom-wszystkie.sh --lista`,
+  a jej kompletności pilnuje bramka w CI — przebieg pada, gdy choć jeden skrypt wypadnie
+  z zestawu. Zakres obejmuje m.in.:
   formularz zgłoszenia i pułapki na roboty · załączniki (kontrola typu pliku, usuwanie danych
   EXIF, blokada dostępu, próby wejścia na cudzy plik) · RODO (zgody, anonimizacja, eksport
   i usuwanie danych) · logowanie klienta linkiem jednorazowym · maszyna statusów sprawy ·
@@ -77,6 +79,8 @@ Te trzy obszary są domeną przeglądów opisanych w [`RAPORT-AUDYTU.md`](RAPORT
 
 ## Skala
 
-- **115 plików testowych** w katalogu [`testy/`](../testy/)
-- **21 zestawów testów jednostkowych**, **88 scenariuszy** na żywym WordPressie
+- **ponad 190 plików testowych** w katalogu [`testy/`](../testy/)
+- **ponad 25 zestawów testów jednostkowych** i **ponad 140 scenariuszy** na żywym WordPressie;
+  dokładną liczbę scenariuszy wyznacza pełna lista `testy/e2e/uruchom-wszystkie.sh --lista`,
+  której kompletności pilnuje bramka w CI
 - kontrole uruchamiane przy **każdej** zmianie — nie na żądanie, nie przed wydaniem

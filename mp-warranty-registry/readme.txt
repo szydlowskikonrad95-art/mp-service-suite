@@ -6,37 +6,37 @@ Stable tag: 1.3.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Product, serial number, production batch and warranty registry with CSV import, warranty status and admin search.
+Rejestr produktów, numerów seryjnych, partii produkcyjnych i gwarancji: import CSV, automatyczny status gwarancji, wyszukiwarka administracyjna.
 
 == Description ==
 
-Stores products, serial numbers, production batches and warranty periods in dedicated database tables. Imports registry data from CSV files (resilient to regional encodings and separators), determines warranty status automatically (active, expired, no data, verification required), detects serial number reuse across cases, supports admin-approved warranty exceptions and provides an administrative search by serial, customer, invoice or model.
+Przechowuje produkty, numery seryjne, partie produkcyjne i okresy gwarancyjne w dedykowanych tabelach bazy danych. Importuje dane rejestru z plików CSV (odpornie na regionalne kodowania i separatory), automatycznie wyznacza status gwarancji (aktywna, wygasła, brak danych, wymagana weryfikacja), wykrywa ponowne użycie tego samego numeru seryjnego w wielu sprawach, obsługuje wyjątki gwarancyjne zatwierdzane przez uprawnionego administratora i udostępnia wyszukiwarkę administracyjną po numerze seryjnym, kliencie, fakturze lub modelu.
 
-Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
+Część pakietu MP Service Suite (trzy współpracujące wtyczki; każda działa też samodzielnie w trybie ograniczonym i nigdy nie powoduje błędów krytycznych). Interfejs i e-maile wtyczki są po polsku (język źródłowy); każdy napis jest umiędzynarodowiony przez text domain, więc wtyczkę można przetłumaczyć na inne języki. Osobnych plików .po/.mo nie dołączamy, bo polski jest językiem bazowym.
 
 == Requirements ==
 
-* WordPress 6.x (6.0 or newer)
-* PHP 8.1 or newer
-* MySQL 8.0+ or MariaDB 10.6+
-* HTTPS -- the suite handles passwordless (magic-link) login and customer personal data.
-* WP-Cron enabled -- scheduled tasks rely on it: SLA deadlines, reminders and escalations (Workflow Automator), background CSV imports (Registry) and data-retention cleanup (Intake).
+* WordPress 6.x (6.0 lub nowszy)
+* PHP 8.1 lub nowszy
+* MySQL 8.0+ lub MariaDB 10.6+
+* HTTPS -- pakiet obsługuje logowanie bez hasła (magic-link) i dane osobowe klientów.
+* Włączony WP-Cron -- na zadaniach cyklicznych stoją: terminy SLA, przypomnienia i eskalacje (Workflow Automator), importy CSV w tle (Registry) oraz retencyjne sprzątanie danych (Intake).
 
-Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
+Rozwijane i testowane na WordPressie 6.9.4, PHP 8.1-8.5, MariaDB 11.8; dodatkowo 27.07.2026 paczka przeszła kontrolną instalację od zera na WordPressie 7.0.2 (PHP 8.2).
 
 == Frequently Asked Questions ==
 
-= What should the CSV import file look like? =
+= Jak ma wyglądać plik CSV do importu? =
 
-A ready-to-use sample ships with the plugin: `przyklady/przyklad-import-produktow.csv`. The import screen also links to it ("Pobierz przykładowy plik CSV").
+Gotowy przykład jest dołączony do wtyczki: `przyklady/przyklad-import-produktow.csv`. Linkuje do niego także ekran importu („Pobierz przykładowy plik CSV").
 
-Only the serial column is required (header `serial`, `numer_seryjny` or `sn`). Optional columns: `model`, `partia` (`batch`), `faktura` (`dokument_zakupu`), `data_zakupu`, `gwarancja_do` (`warranty_until`), `kategoria`. Without `gwarancja_do` the warranty status cannot be computed and the product shows "no data".
+Wymagana jest wyłącznie kolumna z numerem seryjnym (nagłówek `serial`, `numer_seryjny` albo `sn`). Kolumny opcjonalne: `model`, `partia` (`batch`), `faktura` (`dokument_zakupu`), `data_zakupu`, `gwarancja_do` (`warranty_until`), `kategoria`. Bez `gwarancja_do` statusu gwarancji nie da się wyliczyć i produkt pokazuje „brak danych".
 
-Dates: `2026-04-12` or `12.04.2026` (Polish Excel). Separator: `;` or `,`, detected automatically. Encoding: UTF-8 or Windows-1250 (the latter needs the iconv or intl extension; otherwise the file is rejected instead of silently mangling Polish characters). Maximum file size: 8 MB -- split larger registries, imports are resumable.
+Daty: `2026-04-12` albo `12.04.2026` (polski Excel). Separator: `;` albo `,`, wykrywany automatycznie. Kodowanie: UTF-8 albo Windows-1250 (to drugie wymaga rozszerzenia iconv lub intl; bez niego plik jest odrzucany, zamiast po cichu psuć polskie znaki). Maksymalny rozmiar pliku: 8 MB -- większe rejestry podziel na części, importy są wznawialne.
 
-= Does re-importing a file update existing products? =
+= Czy ponowny import pliku aktualizuje istniejące produkty? =
 
-No. The import ADDS products. A serial number already present in the registry is reported in the error report as a duplicate and the existing entry is left untouched. Serial comparison ignores spaces, dashes and letter case, so `SN-AUD-1001` and `sn aud 1001` are the same product.
+Nie. Import DODAJE produkty. Numer seryjny obecny już w rejestrze trafia do raportu błędów jako duplikat, a istniejący wpis zostaje nietknięty. Porównanie numerów seryjnych pomija spacje, myślniki i wielkość liter, więc `SN-AUD-1001` i `sn aud 1001` to ten sam produkt.
 
 == Changelog ==
 

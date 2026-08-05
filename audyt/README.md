@@ -12,7 +12,7 @@ powstawał.
 
 | Plik | Co zawiera |
 |---|---|
-| [`KONTROLE-AUTOMATYCZNE.md`](KONTROLE-AUTOMATYCZNE.md) | co sprawdza się **samo**, przy każdej zmianie — 16 kontroli, 87 kroków na żywym WordPressie |
+| [`KONTROLE-AUTOMATYCZNE.md`](KONTROLE-AUTOMATYCZNE.md) | co sprawdza się **samo**, przy każdej zmianie — 16 kontroli, ponad 140 skryptów na żywym WordPressie |
 | [`RAPORT-AUDYTU.md`](RAPORT-AUDYTU.md) | wyniki kolejnych rund przeglądów: co znaleziono i jak naprawiono |
 | [`RUBRYKA-GOTOWE.md`](RUBRYKA-GOTOWE.md) | definicja „gotowe" — lista warunków z dowodem wykonania przy każdym |
 | [`ZAKRES-SPRAWDZONY.md`](ZAKRES-SPRAWDZONY.md) | co zostało sprawdzone i **czego nie sprawdzono** |
@@ -21,7 +21,7 @@ powstawał.
 
 **1. Maszyna, przy każdej zmianie.** 16 kontroli uruchamianych automatycznie: testy na pięciu
 wersjach PHP (8.1–8.5), analiza statyczna bez pliku wyjątków, skan sekretów, oficjalna kontrola
-wtyczek WordPressa na zbudowanej paczce, 87 kroków testowych na uruchomionym WordPressie 6.9.4.
+wtyczek WordPressa na zbudowanej paczce, ponad 140 skryptów testowych na uruchomionym WordPressie 6.9.4.
 Zmiana nie wejdzie, dopóki komplet nie jest zielony.
 
 **2. Przeglądy przed wydaniem — każdy pod innym kątem.** Bramki automatyczne łapią **regresje**

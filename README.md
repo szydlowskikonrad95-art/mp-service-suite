@@ -129,6 +129,10 @@ build/                    budowa ZIP-ów + linter zakazu dotykania cudzych tabel
 PONAD-SPECYFIKACJE.md           co wykracza ponad specyfikację i którą jej literę realizuje
 ```
 
+Litery **B / C / D** przy wtyczkach to wewnętrzne oznaczenia modułów z kolejności budowy
+(B = rejestr, C = zgłoszenia, D = automatyzacje) — spotkasz je w historii zmian i w dokumentacji
+technicznej; w specyfikacji zamawiającego te same wtyczki noszą numery 1 (Intake), 2 (Registry), 3 (Automator).
+
 ## Jakość — maszyny, nie obietnice
 
 Każda zmiana przechodzi w CI: składnia i testy na **PHP 8.1–8.5** · PHPCS (WordPress Coding
@@ -173,7 +177,7 @@ otwarte i **czego nie sprawdzono**.
 - [`audyt/RAPORT-AUDYTU.md`](audyt/RAPORT-AUDYTU.md) — kolejne rundy przeglądu, każda pod innym
   kątem; znaleziska wraz z tymi, które obciążają wykonawcę
 - [`audyt/KONTROLE-AUTOMATYCZNE.md`](audyt/KONTROLE-AUTOMATYCZNE.md) — 16 kontroli uruchamianych
-  przy każdej zmianie, 87 kroków testowych na żywym WordPressie
+  przy każdej zmianie, ponad 140 skryptów testowych na żywym WordPressie
 - [`audyt/RUBRYKA-GOTOWE.md`](audyt/RUBRYKA-GOTOWE.md) — binarna definicja „gotowe": każde
   kryterium z dowodem wykonania
 - [`audyt/ZAKRES-SPRAWDZONY.md`](audyt/ZAKRES-SPRAWDZONY.md) — granica: co przetestowano

@@ -93,29 +93,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   (retencja) i żądania osoby. Wcześniej istniał tylko pierwszy.
 
 ### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0) — konto klienta
-- 🔴 **Adres e-mail klienta przestaje byc widoczny publicznie.** Konto WordPressa zakladane przy
-  potwierdzeniu zgloszenia bralo nazwe wyswietlana z nazwiska, a gdy nazwiska nie bylo — z adresu
-  e-mail. Formularz o nazwisko **nie pytal**, wiec w normalnym torze zgloszenia nazwa konta byla
-  adresem, a WordPress publikuje ja na stronie autora (jawnej i indeksowalnej). Teraz konto WP
-  **z zalozenia nie nosi danych osobowych**: nazwa wyswietlana, login i czlon adresu strony autora
-  sa neutralne (`Klient serwisu #N`, `mp-klient-N`), a imie i nazwisko zyje wylacznie w tabeli
-  klientow wtyczki, gdzie obsluguje je eraser RODO. Strona autora konta klienta dostaje `noindex`.
-- 🔴 **Konta zalozone WCZESNIEJ sa poprawiane jednorazowo** (migracja schematu 4). Bez tego kroku
-  poprawka chronilaby tylko nowych klientow: nazwa wyswietlana zapisywana jest **raz w zyciu konta**
-  i nic jej nigdy nie aktualizowalo, wiec osoby juz ujawnione pozostalyby ujawnione. Kont personelu
+- 🔴 **Adres e-mail klienta przestaje być widoczny publicznie.** Konto WordPressa zakładane przy
+  potwierdzeniu zgłoszenia brało nazwę wyświetlaną z nazwiska, a gdy nazwiska nie było — z adresu
+  e-mail. Formularz o nazwisko **nie pytał**, więc w normalnym torze zgłoszenia nazwa konta była
+  adresem, a WordPress publikuje ją na stronie autora (jawnej i indeksowalnej). Teraz konto WP
+  **z założenia nie nosi danych osobowych**: nazwa wyświetlana, login i człon adresu strony autora
+  są neutralne (`Klient serwisu #N`, `mp-klient-N`), a imię i nazwisko żyje wyłącznie w tabeli
+  klientów wtyczki, gdzie obsługuje je eraser RODO. Strona autora konta klienta dostaje `noindex`.
+- 🔴 **Konta założone WCZEŚNIEJ są poprawiane jednorazowo** (migracja schematu 4). Bez tego kroku
+  poprawka chroniłaby tylko nowych klientów: nazwa wyświetlana zapisywana jest **raz w życiu konta**
+  i nic jej nigdy nie aktualizowało, więc osoby już ujawnione pozostałyby ujawnione. Kont personelu
   i administratora migracja nie tyka.
-- **Formularz publiczny pyta o imie i nazwisko.** To korzen obu powyzszych wad i trzeciej:
-  ochrona przed sklejeniem dwoch osob pod wspolna skrzynka (recepcja, sekretariat) wymagala dwoch
-  niepustych nazwisk, wiec **nigdy sie nie wlaczala**. Teraz dwie osoby pod jednym adresem dostaja
+- **Formularz publiczny pyta o imię i nazwisko.** To korzeń obu powyższych wad i trzeciej:
+  ochrona przed sklejeniem dwóch osób pod wspólną skrzynką (recepcja, sekretariat) wymagała dwóch
+  niepustych nazwisk, więc **nigdy się nie włączała**. Teraz dwie osoby pod jednym adresem dostają
   osobne rekordy klienta, a ta sama osoba (inna pisownia) nadal jeden.
-- **Brak zgody i brak imienia wracaja do czlowieka RAZEM**, jedna bramka zamiast dwoch — poprawianie
-  formularza nie wymaga kolejnego okrazenia.
+- **Brak zgody i brak imienia wracają do człowieka RAZEM**, jedna bramka zamiast dwóch — poprawianie
+  formularza nie wymaga kolejnego okrążenia.
 
 ### Dowody
-- Test przegladarkowy `testy/e2e/c-tozsamosc-konta-klienta.sh` (w CI): 20 kontroli, w tym proby
-  kontrolne detektora, odtworzenie stanu sprzed poprawki i sprawdzenie anonimowym zadaniem HTTP,
-  ze strona autora nie zdradza ani adresu, ani nazwiska.
-- Testy jednostkowe `TozsamoscKlientaTest` (granica dlugosci liczona w znakach, nie bajtach).
+- Test przeglądarkowy `testy/e2e/c-tozsamosc-konta-klienta.sh` (w CI): 20 kontroli, w tym próby
+  kontrolne detektora, odtworzenie stanu sprzed poprawki i sprawdzenie anonimowym żądaniem HTTP,
+  że strona autora nie zdradza ani adresu, ani nazwiska.
+- Testy jednostkowe `TozsamoscKlientaTest` (granica długości liczona w znakach, nie bajtach).
 
 ### Naprawione — sześć wad z kontroli na działającej instalacji (wydanie 1.3.12, grupa 6)
 
@@ -157,6 +157,24 @@ na liście audytu. Wszystkie zamknięte w tym wydaniu.
   sprawę** pracownik obsługuje bez zmian i koordynator robi wszystko, co robił.
 - Testy przeglądarkowe układu tabel (w CI) mierzą także, czy tabela jest **dostępna, a nie tylko
   schowana**, i kończą się „pomiar nieważny" tam, gdzie ekran nie ma danych do pokazania.
+
+### Naprawione — cztery rzeczy z ostatniego przeglądu ekranów personelu (wydanie 1.3.12, grupa 7, #273)
+
+Ostatnia kontrola przed wysyłką przeszła jeszcze raz przez ekrany personelu na działającej
+instalacji. Trzy z tych napraw pilnuje test w CI (`testy/e2e/c-wyglad-rejestr-zdarzen.sh`):
+
+- **Rejestr zdarzeń automatyzacji mówi, której sprawy dotyczy wpis.** Wcześniej osiemnaście
+  z dwudziestu wpisów pokazywało wewnętrzny numer wiersza bazy zamiast numeru sprawy —
+  człowiek nie wiedział, co czyta.
+- **Kolumna „Szczegóły" w rejestrze zdarzeń jest po ludzku.** Wcześniej pokazywała surowy
+  zapis techniczny, przycięty w połowie słowa — wyglądał jak uszkodzone dane, a nie jak skrót.
+- **Przycisk „Wyślij ponownie" na liście zgłoszeń niepotwierdzonych przestał być niewidzialny.**
+  Przy typowym oknie stał poza ekranem we wszystkich wierszach; dojechać przewinięciem się dało,
+  ale nic nie sygnalizowało, że dalej cokolwiek jest. Krawędź tabeli pokazuje teraz cień
+  przewijania — wyłącznie wtedy, gdy rzeczywiście jest co przewijać.
+- **Podsumowanie importu przestało samo sobie przeczyć** — ten sam import potrafił pokazać
+  naraz „8 / 8 wierszy" i „8 błędów", bo nagłówek obiecywał wynik, a kolumna liczyła postęp.
+  Tabela pokazuje teraz „Zaimportowane / wszystkie", czyli zdanie prawdziwe na każdym etapie.
 
 ### Naprawione — dostępność (WCAG 2.1 AA)
 - **Błąd formularza prowadzi do konkretnego pola.** Podsumowanie błędów jest listą odnośników,

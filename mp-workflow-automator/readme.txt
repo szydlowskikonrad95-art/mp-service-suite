@@ -6,23 +6,23 @@ Stable tag: 1.3.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Rules engine for service cases: automatic assignment, statuses, e-mail notifications, SLA deadlines, checklists, reports.
+Silnik reguł dla spraw serwisowych: automatyczny przydział, statusy, powiadomienia e-mail, terminy SLA, checklisty, raporty.
 
 == Description ==
 
-Automates the service workflow: assigns cases to staff based on product category, country, language or priority, manages configurable case statuses, sends e-mail notifications to customers and staff on every relevant change, tracks SLA deadlines with reminders before and escalations after the deadline, provides per-type checklists and response templates, and exports CSV reports.
+Automatyzuje obieg serwisowy: przydziela sprawy pracownikom według kategorii produktu, kraju, języka lub priorytetu, zarządza konfigurowalnymi statusami spraw, wysyła powiadomienia e-mail do klientów i personelu po każdej istotnej zmianie, pilnuje terminów SLA z przypomnieniem przed terminem i eskalacją po jego przekroczeniu, udostępnia checklisty i szablony odpowiedzi dla poszczególnych typów spraw oraz eksportuje raporty CSV.
 
-Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
+Część pakietu MP Service Suite (trzy współpracujące wtyczki; każda działa też samodzielnie w trybie ograniczonym i nigdy nie powoduje błędów krytycznych). Interfejs i e-maile wtyczki są po polsku (język źródłowy); każdy napis jest umiędzynarodowiony przez text domain, więc wtyczkę można przetłumaczyć na inne języki. Osobnych plików .po/.mo nie dołączamy, bo polski jest językiem bazowym.
 
 == Requirements ==
 
-* WordPress 6.x (6.0 or newer)
-* PHP 8.1 or newer
-* MySQL 8.0+ or MariaDB 10.6+
-* HTTPS -- the suite handles passwordless (magic-link) login and customer personal data.
-* WP-Cron enabled -- scheduled tasks rely on it: SLA deadlines, reminders and escalations (Workflow Automator), background CSV imports (Registry) and data-retention cleanup (Intake).
+* WordPress 6.x (6.0 lub nowszy)
+* PHP 8.1 lub nowszy
+* MySQL 8.0+ lub MariaDB 10.6+
+* HTTPS -- pakiet obsługuje logowanie bez hasła (magic-link) i dane osobowe klientów.
+* Włączony WP-Cron -- na zadaniach cyklicznych stoją: terminy SLA, przypomnienia i eskalacje (Workflow Automator), importy CSV w tle (Registry) oraz retencyjne sprzątanie danych (Intake).
 
-Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
+Rozwijane i testowane na WordPressie 6.9.4, PHP 8.1-8.5, MariaDB 11.8; dodatkowo 27.07.2026 paczka przeszła kontrolną instalację od zera na WordPressie 7.0.2 (PHP 8.2).
 
 == Changelog ==
 
