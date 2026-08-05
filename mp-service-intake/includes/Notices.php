@@ -62,6 +62,9 @@ final class Notices {
 			// Panel personelu — karta sprawy (CaseActions → CaseCard).
 			__( 'Brak danych zmiany statusu.', 'mp-service-intake' ),
 			__( 'Status zmieniony (klient i przypisany pracownik powiadomieni).', 'mp-service-intake' ),
+			// W6: wariant, gdy autor zmiany = przypisany pracownik (self-skip
+			// automatora) albo sprawa nie ma przypisanego — mail idzie tylko do klienta.
+			__( 'Status zmieniony (klient powiadomiony).', 'mp-service-intake' ),
 			__( 'Ktoś zmienił status w międzyczasie — odśwież stronę i spróbuj ponownie.', 'mp-service-intake' ),
 			__( 'Odrzucenie wymaga podania powodu.', 'mp-service-intake' ),
 			__( 'Niedozwolone przejście statusu (sprawę zamkniętą można tylko wznowić do „w analizie").', 'mp-service-intake' ),
