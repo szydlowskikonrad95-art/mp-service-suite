@@ -97,6 +97,29 @@ if [ "${#BRAKUJACE[@]}" -gt 0 ]; then
 	echo "⚠ W KOLEJNOSC.txt sa nazwy BEZ PLIKU (skasowane albo przemianowane): ${BRAKUJACE[*]}"
 fi
 
+# PODZIAL NA CZESCI (sharding CI): MP_SHARDS=ile czesci, MP_SHARD=ktora (1..N).
+# Kazda czesc bierze co N-ty plik od swojego offsetu — kolejnosc wzgledna zachowana,
+# a testy NISZCZACE zajmuja koncowe pozycje pelnej listy, wiec w kazdej czesci
+# tez laduja na samym koncu (kazda czesc ma wlasna instalacje WP).
+# Bez zmiennych (domyslnie 1 czesc) zachowanie IDENTYCZNE jak dotad.
+SHARDS=${MP_SHARDS:-1}
+SHARD=${MP_SHARD:-1}
+if [ "$SHARDS" -gt 1 ]; then
+	CZESC=()
+	i=0
+	for T in "${DO_URUCHOMIENIA[@]}"; do
+		if [ $(( i % SHARDS )) -eq $(( SHARD - 1 )) ]; then
+			CZESC+=( "$T" )
+		fi
+		i=$(( i + 1 ))
+	done
+	DO_URUCHOMIENIA=( "${CZESC[@]:-}" )
+	# Bramka widocznosci liczy CZESC zestawu — prog przeliczony na czesc,
+	# inaczej kazda czesc padnie na progu calego zestawu.
+	MINIMUM=$(( MINIMUM / SHARDS ))
+	echo "◔ Czesc $SHARD z $SHARDS (prog widocznosci czesci: $MINIMUM)"
+fi
+
 ILE="${#DO_URUCHOMIENIA[@]}"
 
 # Podglad bez uruchamiania — do sprawdzenia, CO wejdzie do przebiegu.
@@ -121,6 +144,12 @@ done
 
 echo "═══════════════════════════════"
 echo "WYKONANE: $WYKONANE z $ILE · PADLY: ${#PADLY[@]}"
+
+# Licznik do pliku — bramka sumujaca w CI sprawdza, czy czesci razem daja PELNA liste
+# (podzial, ktory gubi pliki, wygladalby jak zielone CI).
+if [ -n "${MP_WYKONANE_PLIK:-}" ]; then
+	echo "$WYKONANE" > "$MP_WYKONANE_PLIK"
+fi
 
 if [ "${#PADLY[@]}" -gt 0 ]; then
 	printf '  ✖ %s\n' "${PADLY[@]}"
