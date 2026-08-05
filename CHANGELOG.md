@@ -18,11 +18,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   i administrator systemu — do wszystkich, klient — do swoich. Nikt uprawniony nie stracił dostępu.
 
 ### Naprawione — historia sprawy i powiadomienia
-- 🔴 **Zmiany statusu bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii się
-  nie udał, status i tak się zmieniał — sprawa dostawała nowy stan, a oś czasu o tym milczała,
-  choć produkt obiecuje historię nieusuwalną i kompletną. Teraz nieudany zapis **wycofuje całą
-  zmianę**: personel widzi „Nie udało się zmienić statusu", a administrator dostaje sygnał
-  w **Narzędzia → Stan witryny**. Lepiej odmówić zmiany, niż zmienić stan po cichu.
+- 🔴 **Żadnej zmiany sprawy bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii
+  się nie udał, zmiana i tak wchodziła — sprawa dostawała nowy stan, a oś czasu o tym milczała,
+  choć produkt obiecuje historię nieusuwalną i kompletną. Dotyczyło to **zmiany statusu, przydziału
+  pracownika i zmiany priorytetu**. Teraz nieudany zapis **wycofuje całą zmianę**: personel widzi,
+  że operacja się nie powiodła, a administrator dostaje sygnał w **Narzędzia → Stan witryny**.
+  Lepiej odmówić zmiany, niż zmienić stan po cichu.
 - 🔴 **Reguła powiadomienia utworzona dokładnie tak, jak podpowiada ekran, nie wyśle już
   wewnętrznej wiadomości do klienta.** Podpowiedź w polu „Szczegóły akcji" uczy jednego zapisu
   odbiorcy, a silnik reguł rozumiał tylko drugi — i cicho wysyłał **klientowi** treść napisaną dla

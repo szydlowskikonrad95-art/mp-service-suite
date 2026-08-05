@@ -536,7 +536,7 @@ final class CaseRepo {
 			)
 		);
 
-		CaseEvents::log(
+		$zapisano = CaseEvents::log(
 			$case_id,
 			CaseEvents::CASE_ASSIGNED,
 			array(
@@ -546,7 +546,14 @@ final class CaseRepo {
 			),
 			$actor_id
 		);
+		// phpcs:enable
 
+		// Przydzial bez sladu na osi = ten sam blad co zmiana statusu bez sladu.
+		if ( ! $zapisano ) {
+			return self::wycofaj_bez_sladu( CaseEvents::CASE_ASSIGNED );
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- commit.
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
 
@@ -657,7 +664,7 @@ final class CaseRepo {
 			)
 		);
 
-		CaseEvents::log(
+		$zapisano = CaseEvents::log(
 			$case_id,
 			CaseEvents::PRIORITY_CHANGED,
 			array(
@@ -667,7 +674,14 @@ final class CaseRepo {
 			),
 			$actor_id
 		);
+		// phpcs:enable
 
+		// Zmiana priorytetu bez sladu na osi = ten sam blad co zmiana statusu bez sladu.
+		if ( ! $zapisano ) {
+			return self::wycofaj_bez_sladu( CaseEvents::PRIORITY_CHANGED );
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- commit.
 		$wpdb->query( 'COMMIT' );
 		// phpcs:enable
 
@@ -925,23 +939,8 @@ final class CaseRepo {
 
 		$zapisano = CaseEvents::log( $case_id, CaseEvents::STATUS_CHANGED, $payload, $actor_id );
 
-		/*
-		 * D2 (2026-08-05): wynik logu byl ignorowany, a COMMIT szedl bezwarunkowo —
-		 * przy nieudanym insercie zdarzenia status zmienial sie BEZ wpisu na osi,
-		 * a README obiecuje os nieusuwalna i kompletna. Lepiej odmowic zmiany, niz
-		 * zmienic stan po cichu bez sladu: nieudany zapis wycofuje cala transakcje.
-		 * (EventWrite sam podnosi alarm w Stanie witryny — tu tylko decyzja o stanie.)
-		 */
 		if ( ! $zapisano ) {
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- rollback.
-			$wpdb->query( 'ROLLBACK' );
-			// phpcs:enable
-
-			return array(
-				'schema_version' => self::SCHEMA_VERSION,
-				'success'        => false,
-				'error_code'     => 'EVENT_LOG_FAILED',
-			);
+			return self::wycofaj_bez_sladu( CaseEvents::STATUS_CHANGED );
 		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- commit.
@@ -956,6 +955,44 @@ final class CaseRepo {
 			'success'        => true,
 			'from'           => $from,
 			'to'             => $new_status,
+		);
+	}
+
+	/**
+	 * Wspolna reakcja na NIEUDANY zapis sladu w OTWARTEJ transakcji (D2 + blizniaki).
+	 *
+	 * ⛔ SLAD JEST CZESCIA OPERACJI, NIE DODATKIEM. Sama transakcja tego nie zalatwia:
+	 * nieudany INSERT zdarzenia jej NIE przerywa, wiec COMMIT szedl mimo braku wpisu
+	 * i mutacja zostawala w bazie bez sladu na osi, ktora README obiecuje jako
+	 * nieusuwalna i kompletna. Lepiej odmowic operacji, niz zmienic stan po cichu.
+	 *
+	 * ⚠️ ALARM DOPIERO PO WYCOFANIU — i to jest cala pulapka tego wzorca.
+	 * `Common\EventWrite::insert()` podnosi alarm SAM, ale robi to W SRODKU transakcji,
+	 * a `wp_options` jest tabela transakcyjna: ROLLBACK zabiera alarm razem z reszta
+	 * i administrator nie dostaje ZADNEGO sygnalu o gubionych wpisach. Dlatego
+	 * podnosimy go tu jeszcze raz, juz po wycofaniu. Ten sam wniosek zapisal wczesniej
+	 * `WarrantyExceptions` w module B („zlapane wlasnym testem, nie czytaniem kodu") —
+	 * korzystamy z jego lekcji zamiast powtarzac jego droge.
+	 *
+	 * Jedno gardlo dla WSZYSTKICH trzech operacji (`change_status`, `assign`,
+	 * `set_priority`): naprawa dotyczy WZORCA, a trzy kopie tego samego warunku
+	 * rozjechalyby sie przy pierwszej zmianie.
+	 *
+	 * @param string $event_type Typ zdarzenia, ktorego nie udalo sie zapisac (do alarmu).
+	 * @return array{schema_version: int, success: bool, error_code: string}
+	 */
+	private static function wycofaj_bez_sladu( string $event_type ): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- zamkniecie transakcji.
+		$wpdb->query( 'ROLLBACK' );
+
+		Common\EventWrite::alert( Tables::full( Tables::CASE_EVENTS ), $event_type );
+
+		return array(
+			'schema_version' => self::SCHEMA_VERSION,
+			'success'        => false,
+			'error_code'     => 'EVENT_LOG_FAILED',
 		);
 	}
 
