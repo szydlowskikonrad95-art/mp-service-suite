@@ -15,6 +15,7 @@
 
 namespace MP\Intake\Front;
 
+use MP\Intake\Notices;
 use MP\Intake\Statuses;
 
 use MP\Intake\FormConfig;
@@ -142,8 +143,9 @@ final class AccountPage {
 	private static function render_login_form(): string {
 		$out = '<div class="mp-account mp-account--login">';
 
+		// S4 #2: tylko komunikaty z listy dozwolonych — spreparowany link nie pokaze dowolnego zdania.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG (bez skutkow), tresc escapowana.
-		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
+		$notice = Notices::filter( isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '' );
 
 		if ( '' !== $notice ) {
 			$out .= '<p class="mp-account__notice" role="status">' . esc_html( $notice ) . '</p>';
@@ -193,8 +195,9 @@ final class AccountPage {
 		$out .= '<h2>' . esc_html__( 'Moje zgłoszenia', 'mp-service-intake' ) . '</h2>';
 		$out .= '<p><a href="' . esc_url( wp_logout_url( self::url() ) ) . '">' . esc_html__( 'Wyloguj', 'mp-service-intake' ) . '</a></p>';
 
+		// S4 #2: tylko komunikaty z listy dozwolonych — spreparowany link nie pokaze dowolnego zdania.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tylko wyswietlenie komunikatu PRG (bez skutkow), tresc escapowana.
-		$notice = isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '';
+		$notice = Notices::filter( isset( $_GET['mp_notice'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['mp_notice'] ) ) : '' );
 
 		if ( '' !== $notice ) {
 			$out .= '<p class="mp-account__notice" role="status">' . esc_html( $notice ) . '</p>';
