@@ -247,6 +247,10 @@ final class Importer {
 			return array(
 				'status'    => 'processing',
 				'processed' => (int) $job['processed_rows'],
+				// Z2: „zaimportowane" = wiersze PRZYJETE DO REJESTRU. Ekran ma pokazywac
+				// TE liczbe, nie „przetworzone" (te obejmuja tez odrzucone) — inaczej
+				// baner mowi „4 z 4", a tabela obok „1 / 4" i operator widzi sprzecznosc.
+				'success'   => (int) $job['success_rows'],
 				'total'     => (int) $job['total_rows'],
 				'errors'    => (int) $job['error_rows'],
 			);
@@ -400,6 +404,7 @@ final class Importer {
 			return array(
 				'status'    => 'done',
 				'processed' => $processed_total,
+				'success'   => (int) $job['success_rows'] + $success,
 				'total'     => $total,
 				'errors'    => (int) $job['error_rows'] + count( $errors ),
 			);
@@ -408,6 +413,7 @@ final class Importer {
 		return array(
 			'status'    => 'processing',
 			'processed' => $processed_total,
+			'success'   => (int) $job['success_rows'] + $success,
 			'total'     => $total,
 			'errors'    => (int) $job['error_rows'] + count( $errors ),
 		);

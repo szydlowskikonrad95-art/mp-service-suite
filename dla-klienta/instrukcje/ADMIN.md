@@ -141,8 +141,19 @@ celowo nie przechowuje notatek ani danych osobowych; powód znajdziesz na liści
   do panelu, crony odtwarzają się same, a **terminy spraw już otwartych przeliczają się
   automatycznie** — nie musisz po aktualizacji klikać „Przelicz terminy obsługi". Przed aktualizacją
   na produkcji zrób kopię bazy (polityka: `MIGRATION_POLICY.md` — w głównym katalogu paczki).
-- **Odinstalowanie** sprząta role systemowe (4 role), automatycznie założone strony (2), zadania
-  cykliczne oraz pliki wsadowe i raporty błędów z importu produktów. **Załączniki ze zgłoszeń idą
+- **Odinstalowanie** sprząta zadania cykliczne oraz pliki wsadowe i raporty błędów z importu
+  produktów — te znikają zawsze. **Role systemowe (4) i automatycznie założone strony (2) też
+  znikają, ale pod warunkami**, o których warto wiedzieć, zanim uznasz, że coś nie zadziałało:
+  - **Role znikają dopiero przy usunięciu OSTATNIEJ z trzech wtyczek.** Dopóki choć jedna zostaje,
+    role muszą zostać — inaczej odebrałbyś dostęp osobom, które nadal pracują w pozostałych
+    modułach. Jeśli po odinstalowaniu widzisz role MP na liście użytkowników, sprawdź, czy na
+    pewno usunięte są wszystkie trzy wtyczki.
+  - **Strona znika tylko wtedy, gdy nikt jej nie edytował.** Jeśli dopisałeś do niej choćby zdanie,
+    zostaje razem z Twoją treścią — system nie kasuje cudzej pracy. Taką stronę usuwasz sam
+    (Strony → Kosz), o ile jej nie potrzebujesz.
+
+  Obie zasady działają na Twoją korzyść: przy ponownej instalacji system odnajduje istniejące
+  strony zamiast zakładać duplikaty. **Załączniki ze zgłoszeń idą
   tam, gdzie reszta danych sprawy**: kasowane są tylko przy włączonym przełączniku „Kasowanie danych
   przy odinstalowaniu" (domyślnie wyłączony — patrz §1a); bez niego zostają na dysku razem z danymi w bazie. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
   oraz wpisy niepotwierdzonych zgłoszeń **zostają w bazie** — to świadoma decyzja, żeby

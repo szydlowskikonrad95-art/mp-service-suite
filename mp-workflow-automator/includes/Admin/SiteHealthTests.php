@@ -128,15 +128,23 @@ final class SiteHealthTests {
 			);
 		}
 
+		/*
+		 * ⛔ TRESC AKCJI PONIZEJ MUSI PROWADZIC DO EKRANU, KTORY GASI TEN TEST.
+		 * Poprzednia wersja (audyt ekranow 27.07) kazala nadac role „Pracownik serwisu MP"
+		 * i twierdzila, ze pula „wynika z przypisanej roli". To byla nieprawda: ten test
+		 * liczy pule ZAPISANA w regule (`pracownikow_w_puli` czyta `action_config_json`
+		 * -> `pool`), a rola jest tylko dodatkowym filtrem uprawnien. Niezalezna kontrola
+		 * wdrozenia 1.3.13 wykonala tamta instrukcje doslownie — ostrzezenie NIE zniknelo,
+		 * a zgloszenia dalej szly do nikogo. Diagnostyka wbudowana jest jedynym narzedziem
+		 * osoby nietechnicznej, wiec akcja ma mowic dokladnie to, co gasi problem: ZAPIS PULI.
+		 */
 		if ( 0 === $pracownikow ) {
 			return SiteHealth::wynik(
 				'mp_automator_pula',
 				'recommended',
 				__( 'Nowe zgłoszenia nie trafiają do nikogo — pusta lista pracowników', 'mp-workflow-automator' ),
 				__( 'Reguła automatycznego przydziału jest włączona, ale nie wskazano ani jednego pracownika serwisu (albo wskazane osoby straciły uprawnienia). Zgłoszenia będą przyjmowane i widoczne na liście, lecz nikt nie dostanie ich do obsługi ani powiadomienia mailem.', 'mp-workflow-automator' ),
-				// Audyt ekranow 27.07: pula pracownikow NIE jest lista w regule — wynika z
-				// przypisanej roli. Tresc mowi teraz to, co user realnie ma zrobic.
-				__( 'Wejdź w Użytkownicy, otwórz osobę, która ma obsługiwać zgłoszenia, i nadaj jej rolę „Pracownik serwisu MP". Zgłoszenia rozdzielają się między wszystkie osoby z tą rolą.', 'mp-workflow-automator' )
+				__( 'Wejdź w „Automatyzacje MP" → sekcja „Kto dostaje zgłoszenia", zaznacz osoby, które mają obsługiwać zgłoszenia, i kliknij „Zapisz listę pracowników". Warunek wstępny: te osoby muszą mieć rolę „Pracownik serwisu MP" (Użytkownicy → edycja osoby) — sama rola jednak nie wystarczy, dopóki lista nie zostanie zapisana.', 'mp-workflow-automator' )
 			);
 		}
 
