@@ -403,7 +403,7 @@ final class Attachments {
 		$case_table = Tables::full( Tables::CASES );
 		$row        = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT a.path, a.mime, a.original_name, a.deleted_at, s.customer_id, s.identity_status
+				"SELECT a.path, a.mime, a.original_name, a.deleted_at, a.case_id, s.customer_id, s.identity_status
 				FROM {$att_table} a INNER JOIN {$case_table} s ON s.id = a.case_id
 				WHERE a.id = %d",
 				$attachment_id
@@ -416,7 +416,7 @@ final class Attachments {
 			self::deny( 404 );
 		}
 
-		if ( ! self::can_access( (int) $row['customer_id'], (string) $row['identity_status'], null === $row['customer_id'] ) ) {
+		if ( ! self::can_access( (int) $row['customer_id'], (string) $row['identity_status'], null === $row['customer_id'], (int) $row['case_id'] ) ) {
 			self::deny( 403 );
 		}
 
@@ -444,18 +444,27 @@ final class Attachments {
 	/**
 	 * Czy biezacy uzytkownik ma dostep do zalacznika sprawy (bramka IDOR).
 	 *
-	 * Personel (mp_agent/coordinator/system_admin) — kazdy. Klient — TYLKO
+	 * Personel: prawo do zalacznika = prawo do SPRAWY, tym samym kodem, ktorym
+	 * bramkuja lista i karta (CaseRepo::can_current_user_see — koordynator/admin
+	 * widza wszystko, pracownik TYLKO sprawy przydzielone jemu). Klient — TYLKO
 	 * gdy sprawa verified i konto WP nalezy do wlasciciela sprawy. Sprawa
-	 * niepotwierdzona / bez klienta => tylko personel.
+	 * niepotwierdzona / bez klienta => tylko personel z prawem do sprawy.
+	 *
+	 * M2 (2026-08-05): wczesniej KAZDY mp_agent przechodzil ta bramka do
+	 * zalacznika DOWOLNEJ sprawy, choc karte cudzej sprawy odbijal
+	 * NOT_CASE_OWNER (CaseRepo.php:751) — zalacznik byl boczna furtka do
+	 * cudzych danych (zdjecia, skany dokumentow zakupu). Drugiego, wlasnego
+	 * sposobu sprawdzania nie budujemy — lekcja z audytu 2.24.
 	 *
 	 * @param int    $customer_id     ID klienta sprawy (0 gdy brak).
 	 * @param string $identity_status pending|verified.
 	 * @param bool   $no_customer     Czy sprawa nie ma jeszcze klienta.
+	 * @param int    $case_id         ID sprawy zalacznika.
 	 * @return bool
 	 */
-	public static function can_access( int $customer_id, string $identity_status, bool $no_customer ): bool {
+	public static function can_access( int $customer_id, string $identity_status, bool $no_customer, int $case_id ): bool {
 		if ( current_user_can( 'mp_agent' ) || current_user_can( 'mp_system_admin' ) || current_user_can( 'mp_coordinator' ) ) {
-			return true;
+			return CaseRepo::can_current_user_see( $case_id );
 		}
 
 		if ( 'verified' !== $identity_status || $no_customer || 0 === $customer_id ) {
@@ -496,7 +505,8 @@ final class Attachments {
 		return self::can_access(
 			null === $row['customer_id'] ? 0 : (int) $row['customer_id'],
 			(string) $row['identity_status'],
-			null === $row['customer_id']
+			null === $row['customer_id'],
+			$case_id
 		);
 	}
 
