@@ -277,17 +277,21 @@ final class Plugin {
 
 		// Kontrakt B->C: liczba AKTYWNYCH (nie-terminalnych) spraw produktu. Registry
 		// (Archive.php) pyta PRZED archiwizacja/usunieciem produktu — >0 => odmawia.
+		// M3: trzeci argument = „licze pod zamkiem, bo zaraz archiwizuje". Odczyt idzie
+		// wtedy z FOR UPDATE, wiec rownolegle zalozenie sprawy TEMU produktowi czeka na
+		// koniec transakcji Registry — dotad sprawa miescila sie w oknie miedzy odczytem
+		// licznika a zapisem flagi i produkt szedl do archiwum mimo aktywnej sprawy.
 		// FAIL-CLOSED: gdy Intake nieaktywny, listenera brak => has_filter() false =>
 		// Registry odmawia „na slowo". B5 (specyfikacja: brak usuniecia produktu z aktywna sprawa).
 		add_filter(
 			'mp_product_active_cases_count',
-			static function ( $result, $product_registry_id ) {
+			static function ( $result, $product_registry_id, $for_update = false ) {
 				unset( $result );
 
-				return CaseRepo::active_cases_count_for_product( (int) $product_registry_id );
+				return CaseRepo::active_cases_count_for_product( (int) $product_registry_id, (bool) $for_update );
 			},
 			10,
-			2
+			3
 		);
 
 		// Kontrakt B->C: rozbicie liczby spraw produktu {total,active,closed,rejected}.

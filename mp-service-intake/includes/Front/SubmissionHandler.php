@@ -278,6 +278,33 @@ final class SubmissionHandler {
 			self::redirect_back( array( 'notice' => self::duplicate_message() ) );
 		}
 
+		// M1 (recenzja zewnetrzna 1.3.12): ATOMOWA rezerwacja miejsca w limicie
+		// dobowym. `check()` wyzej tylko czyta licznik — i tak ma byc (szybka,
+		// grzeczna odmowa z wypelnionym formularzem), ale sama nie wystarcza:
+		// miedzy odczytem a inkrementem po utworzeniu sprawy przechodzil drugi
+		// rownolegly POST i limit „3 na dobe" konczyl sie czterema sprawami.
+		// Tutaj o wyniku decyduje JEDEN zapis, wiec z rownoleglych zadan przechodzi
+		// dokladnie tyle, ile jest wolnych miejsc.
+		$przekroczony = RateLimit::reserve_submission( $email, $serial );
+
+		if ( null !== $przekroczony ) {
+			// Rezerwacja dedup nie ma juz czego pilnowac — zgloszenie nie powstanie,
+			// a klient nie moze przez nia dostac „duplikatu" przy kolejnej probie.
+			RateLimit::release_claim( $email, $serial, $kind );
+
+			// Ten sam komunikat co przy odmowie z `check()` (S4 #3 + Z8): mowi, ktory
+			// zakres blokuje i kiedy znow mozna, a formularz wraca wypelniony.
+			self::redirect_back(
+				array(
+					'notice' => self::rate_limited_message(
+						RateLimit::retry_after( $ip, $email, $serial ),
+						$przekroczony
+					),
+					'values' => self::echo_values( $values, $kind, $category, $email, $customer ),
+				)
+			);
+		}
+
 		$result = CaseRepo::create(
 			array(
 				'kind'     => $kind,
@@ -290,8 +317,10 @@ final class SubmissionHandler {
 
 		if ( isset( $result['error'] ) ) {
 			// D5: odrzucone zgloszenie zwalnia rezerwacje — poprawiony retry
-			// nie jest duplikatem i nie czeka 15 min.
+			// nie jest duplikatem i nie czeka 15 min. Tak samo oddajemy miejsce
+			// w limicie dobowym (M1): sprawa nie powstala, wiec nie ma za co placic.
 			RateLimit::release_claim( $email, $serial, $kind );
+			RateLimit::release_submission( $email, $serial );
 
 			self::redirect_back(
 				array(
@@ -325,6 +354,7 @@ final class SubmissionHandler {
 		if ( 0 === $zgoda_id ) {
 			CaseRepo::purge_pending_cases( array( (int) $result['case_id'] ) );
 			RateLimit::release_claim( $email, $serial, $kind );
+			RateLimit::release_submission( $email, $serial );
 
 			self::redirect_back(
 				array(
@@ -345,9 +375,10 @@ final class SubmissionHandler {
 			$att_errors = $att['errors'];
 		}
 
-		// D5: liczniki e-mail/serial + marker dedup DOPIERO teraz (udane zgloszenie) —
-		// literowka/blad walidacji nie zjada limitu dobowego; retry nie jest duplikatem.
-		RateLimit::record_submission( $email, $serial, $kind );
+		// D5: marker dedup DOPIERO teraz (udane zgloszenie) — okno 15 min liczy sie
+		// od sukcesu, a retry po bledzie walidacji nie jest duplikatem. Liczniki
+		// dobowe sa juz zabookowane atomowo wyzej (M1) i zostaja: sprawa powstala.
+		RateLimit::mark_submitted( $email, $serial, $kind );
 
 		$mail_ok = Mailer::send_magic_link( $email, (string) $result['token'], (int) $result['case_id'] );
 

@@ -194,6 +194,11 @@ final class Sweep {
 			$table = Tables::full( Tables::CASE_SLA );
 			$now   = gmdate( 'Y-m-d H:i:s' );
 
+			// M4: granica „proba starsza niz odstep ponowien" — liczona RAZ na przebieg,
+			// zeby kolejne rundy tej samej zamiatarki nie zabieraly sprawy, ktorej mail
+			// wlasnie padl (dotad komplet prob wypalal sie w kilka sekund).
+			$retry_od = gmdate( 'Y-m-d H:i:s', time() - Sla::RETRY_INTERVAL );
+
 			// Audyt #13: zaleglosci nadrabiane PETLA paczek (max MAX_ROUNDS na
 			// przebieg) zamiast jednej paczki na 5 minut.
 			$rounds       = 0;
@@ -229,12 +234,18 @@ final class Sweep {
 				 * Zapytanie jest to samo co dotad, tylko przesuniete wyzej — liczba
 				 * zapytan na runde sie NIE zmienia (poz. 2.22).
 				 */
+				// M4: sprawa, ktorej wysylka wlasnie padla, wraca do gry dopiero po
+				// `Sla::RETRY_INTERVAL`. Bez tego kolejna runda TEGO SAMEGO przebiegu
+				// brala ja natychmiast (marker pusty) i komplet prob spalal sie
+				// w kilka sekund — patrz komentarz przy stalej.
 				$escalations = $wpdb->get_col(
 					$wpdb->prepare(
 						"SELECT case_id FROM {$table}
 						WHERE deadline_at IS NOT NULL AND deadline_at <= %s AND escalated_at IS NULL
+							AND ( escalation_attempt_at IS NULL OR escalation_attempt_at <= %s )
 						ORDER BY deadline_at ASC LIMIT %d",
 						$now,
+						$retry_od,
 						self::ESCALATION_BATCH
 					)
 				);
@@ -253,9 +264,11 @@ final class Sweep {
 						"SELECT case_id FROM {$table}
 						WHERE deadline_at IS NOT NULL AND warning_at IS NOT NULL
 							AND warning_at <= %s AND reminder_sent_at IS NULL AND deadline_at > %s
+							AND ( reminder_attempt_at IS NULL OR reminder_attempt_at <= %s )
 						ORDER BY warning_at ASC LIMIT %d",
 						$now,
 						$now,
+						$retry_od,
 						self::BATCH
 					)
 				);

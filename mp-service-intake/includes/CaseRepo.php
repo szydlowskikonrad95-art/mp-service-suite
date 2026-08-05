@@ -1548,20 +1548,30 @@ final class CaseRepo {
 	 * = status poza TERMINAL_STATUSES (lub NULL). Sprawy bez produktu
 	 * (product_registry_id NULL) NIE licza sie. Zwraca int (hak wymaga is_numeric).
 	 *
-	 * @param int $product_id ID produktu w rejestrze.
+	 * M3 (recenzja zewnetrzna 1.3.12): `$for_update` = odczyt POD ZAMKIEM. Registry
+	 * wola tak z wnetrza wlasnej transakcji, tuz przed zapisem flagi archiwum. Blokada
+	 * zakresu na indeksie `product_registry_id` sprawia, ze rownolegle ZALOZENIE sprawy
+	 * temu produktowi czeka na COMMIT Registry — dotad sprawa miescila sie w oknie
+	 * miedzy odczytem licznika a zapisem flagi i produkt szedl do archiwum mimo
+	 * aktywnej sprawy. Zamek zaklada C na WLASNEJ tabeli (kontrakt bez wyjatkow: B nie
+	 * dotyka tabel C, tylko prosi hakiem o mocniejszy odczyt).
+	 *
+	 * @param int  $product_id ID produktu w rejestrze.
+	 * @param bool $for_update Czy odczyt ma zalozyc blokade do konca transakcji wolajacego.
 	 * @return int
 	 */
-	public static function active_cases_count_for_product( int $product_id ): int {
+	public static function active_cases_count_for_product( int $product_id, bool $for_update = false ): int {
 		global $wpdb;
 
 		$table    = Tables::full( Tables::CASES );
 		$terminal = self::TERMINAL_STATUSES;
 		$in       = implode( ',', array_fill( 0, count( $terminal ), '%s' ) );
+		$lock     = $for_update ? ' FOR UPDATE' : '';
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; lista %s z count(), sprawa aktywna = status poza terminalnymi.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- tabela wlasna; lista %s z count(), sprawa aktywna = status poza terminalnymi; klauzula blokady ze stalej.
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d AND ( status IS NULL OR status NOT IN ({$in}) )",
+				"SELECT COUNT(*) FROM {$table} WHERE product_registry_id = %d AND ( status IS NULL OR status NOT IN ({$in}) ){$lock}",
 				array_merge( array( $product_id ), $terminal )
 			)
 		);

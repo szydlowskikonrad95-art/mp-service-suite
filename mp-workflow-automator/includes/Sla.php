@@ -41,6 +41,20 @@ final class Sla {
 	public const MAX_ATTEMPTS = 3;
 
 	/**
+	 * Najkrotszy ODSTEP miedzy dwiema probami wysylki tego samego powiadomienia.
+	 *
+	 * ⛔ M4 (recenzja zewnetrzna 1.3.12): sam licznik prob nie wystarcza. Przebieg
+	 * zamiatarki nadrabia zaleglosci PETLA (do MAX_ROUNDS rund pod rzad), a kazda
+	 * runda bierze te same sprawy, dopoki marker jest pusty — wiec przy pelnej paczce
+	 * wymagalnych przypomnien trzy proby spalaly sie w JEDNYM przebiegu, w kilka
+	 * sekund. Kilkusekundowa czkawka SMTP wyczerpywala wtedy caly budzet ponowien:
+	 * marker szedl „na sile", alarm sie zapalal, a mail nie wychodzil NIGDY.
+	 * Odstep krotszy od okresu zamiatarki (5 min), zeby kolejny przebieg zawsze
+	 * zabral sprawe od razu — proby maja byc rozsuniete, nie odwleczone.
+	 */
+	public const RETRY_INTERVAL = 4 * MINUTE_IN_SECONDS;
+
+	/**
 	 * Prog digestu eskalacji (SLA-3, „bez lawiny"): gdy jeden sweep ma WIECEJ niz
 	 * tyle wymagalnych eskalacji (reaktywacja / pierwsza instalacja / masa zaleglosci)
 	 * — zamiast serii osobnych maili idzie JEDEN zbiorczy digest do koordynatora.
@@ -1183,12 +1197,16 @@ final class Sla {
 		global $wpdb;
 
 		$col   = ( self::KIND_REMINDER === $kind ) ? 'reminder_attempts' : 'escalation_attempts';
+		$stamp = ( self::KIND_REMINDER === $kind ) ? 'reminder_attempt_at' : 'escalation_attempt_at';
 		$table = Tables::full( Tables::CASE_SLA );
 
+		// M4: razem z licznikiem stemplujemy MOMENT proby — to on rozsuwa ponowienia
+		// w czasie (sam licznik pozwalal spalic komplet prob w jednym przebiegu).
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; nazwa kolumny z zamknietej listy.
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET {$col} = {$col} + 1, updated_at = %s WHERE case_id = %d",
+				"UPDATE {$table} SET {$col} = {$col} + 1, {$stamp} = %s, updated_at = %s WHERE case_id = %d",
+				gmdate( 'Y-m-d H:i:s' ),
 				gmdate( 'Y-m-d H:i:s' ),
 				$case_id
 			)

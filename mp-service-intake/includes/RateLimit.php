@@ -260,8 +260,131 @@ final class RateLimit {
 	}
 
 	/**
-	 * D5: rejestruje UDANE zgloszenie — inkrementuje liczniki e-mail/serial i
-	 * ustawia marker dedup. Wolane PO utworzeniu sprawy (nie na kazda probe).
+	 * ATOMOWA REZERWACJA miejsca w limicie dobowym (M1, recenzja zewnetrzna 1.3.12).
+	 *
+	 * ⛔ CZEMU NIE WYSTARCZA `check()`. `check()` tylko CZYTA licznik, a inkrement
+	 * szedl dopiero po utworzeniu sprawy (`record_submission`). Miedzy odczytem
+	 * a zapisem miescil sie drugi POST: dwa rownolegle zgloszenia widzialy „2 z 3
+	 * wykorzystane" i OBA przechodzily, po czym oba podbijaly licznik do 4. Limit
+	 * dany klientowi na pismie („3 zgloszenia na dobe") dawal sie w ten sposob
+	 * przekroczyc dokladnie tak, jak dawny transientowy licznik IP — ta sama klasa
+	 * bledu, ktora refaktor atomowych licznikow domknal dla IP, a pominal tutaj.
+	 *
+	 * Tu decyduje JEDEN zapis: `hit()` inkrementuje i zwraca NOWA wartosc w tej
+	 * samej kwerendzie (LAST_INSERT_ID), wiec z N rownoleglych zadan dokladnie
+	 * jedno moze dostac wartosc rowna limitowi. Kto dostal wiecej — oddaje swoje
+	 * trafienie (`give_back`) i wychodzi z odmowa.
+	 *
+	 * D5 ZACHOWANE: rezerwacje robimy PO walidacji, tuz przed utworzeniem sprawy,
+	 * a kazda sciezka bledu ponizej oddaje ja przez `release_submission()`. Literowka
+	 * w formularzu nadal NIE zjada limitu dobowego.
+	 *
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @return string|null Zakres, ktory zablokowal (SCOPE_EMAIL|SCOPE_SERIAL), albo null gdy miejsce zarezerwowane.
+	 */
+	public static function reserve_submission( string $email, string $serial ): ?string {
+		$email  = strtolower( trim( $email ) );
+		$serial = trim( $serial );
+		$limits = self::limits();
+
+		$email_key  = '' !== $email ? self::email_counter_key( $email ) : '';
+		$serial_key = '' !== $serial ? self::serial_counter_key( $serial ) : '';
+
+		// 2.31: okno NIERUCHOME, liczone od pierwszego zgloszenia. Klient dostal na
+		// pismie „3 zgloszenia na dobe" — przy oknie przesuwanym kazde udane
+		// zgloszenie odsuwalo koniec doby i limit dzialal jak „trzy pod rzad".
+		if ( '' !== $email_key ) {
+			$hits = self::hit( $email_key, (int) $limits['email_window'], false );
+
+			if ( $hits > (int) $limits['email_max'] ) {
+				self::give_back( $email_key );
+
+				return self::SCOPE_EMAIL;
+			}
+		}
+
+		if ( '' !== $serial_key ) {
+			$hits = self::hit( $serial_key, (int) $limits['serial_window'], false );
+
+			if ( $hits > (int) $limits['serial_max'] ) {
+				self::give_back( $serial_key );
+
+				// Adres zdazyl juz zarezerwowac swoje miejsce — oddajemy je, bo
+				// zgloszenie i tak nie powstanie (inaczej odmowa z powodu numeru
+				// seryjnego zjadalaby budzet dobowy adresu).
+				if ( '' !== $email_key ) {
+					self::give_back( $email_key );
+				}
+
+				return self::SCOPE_SERIAL;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Oddaje rezerwacje z `reserve_submission()`, gdy sprawa ostatecznie NIE powstala.
+	 *
+	 * D5: odrzucone zgloszenie (blad walidacji w `CaseRepo::create`, nieudany zapis
+	 * zgody) nie moze zjesc limitu dobowego — czlowiek poprawia literowke i wysyla
+	 * ponownie tym samym budzetem.
+	 *
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @return void
+	 */
+	public static function release_submission( string $email, string $serial ): void {
+		$email  = strtolower( trim( $email ) );
+		$serial = trim( $serial );
+
+		if ( '' !== $email ) {
+			self::give_back( self::email_counter_key( $email ) );
+		}
+
+		if ( '' !== $serial ) {
+			self::give_back( self::serial_counter_key( $serial ) );
+		}
+	}
+
+	/**
+	 * Cofa JEDNO trafienie licznika (bez ruszania okna).
+	 *
+	 * Okno zostaje nietkniete celowo: „doba" liczy sie od PIERWSZEGO zgloszenia
+	 * (2.31), a cofniete trafienie nie jest zgloszeniem. Wiersz zbity do zera
+	 * kasujemy — dzieki temu stan po nieudanej probie jest taki sam jak przed nia
+	 * (warunek `hits <= 0` w tym samym zapisie chroni przed skasowaniem wiersza,
+	 * ktory w miedzyczasie przejal ktos inny).
+	 *
+	 * @param string $key Klucz licznika.
+	 * @return void
+	 */
+	private static function give_back( string $key ): void {
+		global $wpdb;
+
+		$table = Tables::full( Tables::RATE_COUNTERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; cofniecie trafienia licznika.
+		$wpdb->query(
+			$wpdb->prepare( "UPDATE {$table} SET hits = hits - 1 WHERE rl_key = %s AND hits > 0", $key )
+		);
+
+		$wpdb->query(
+			$wpdb->prepare( "DELETE FROM {$table} WHERE rl_key = %s AND hits <= 0", $key )
+		);
+		// phpcs:enable
+	}
+
+	/**
+	 * D5: rejestruje UDANE zgloszenie — rezerwuje miejsce w limitach e-mail/serial
+	 * i ustawia marker dedup, jednym wywolaniem.
+	 *
+	 * ⛔ Sciezka formularza NIE uzywa juz tej metody: tam rezerwacja musi paść PRZED
+	 * utworzeniem sprawy (M1), a marker dopiero po sukcesie. Metoda zostaje jako
+	 * JEDNO gardlo dla wolajacych, ktorzy nie przechodza calej sciezki (WP-CLI,
+	 * zywe dowody e2e) — dzieki temu liczy limit dokladnie tymi samymi zapytaniami
+	 * co produkcja, a nie wlasna kopia regul.
 	 *
 	 * @param string $email  E-mail.
 	 * @param string $serial Numer seryjny (moze byc pusty).
@@ -269,21 +392,7 @@ final class RateLimit {
 	 * @return void
 	 */
 	public static function record_submission( string $email, string $serial, string $kind ): void {
-		$email  = strtolower( trim( $email ) );
-		$serial = trim( $serial );
-		$limits = self::limits();
-
-		// 2.31: okno NIERUCHOME, liczone od pierwszego zgloszenia. Klient dostal na
-		// pismie „3 zgloszenia na dobe" — przy oknie przesuwanym kazde udane
-		// zgloszenie odsuwalo koniec doby i limit dzialal jak „trzy pod rzad".
-		if ( '' !== $email ) {
-			self::hit( self::email_counter_key( $email ), (int) $limits['email_window'], false );
-		}
-
-		if ( '' !== $serial ) {
-			self::hit( self::serial_counter_key( $serial ), (int) $limits['serial_window'], false );
-		}
-
+		self::reserve_submission( $email, $serial );
 		self::mark_submitted( $email, $serial, $kind );
 	}
 
