@@ -26,7 +26,7 @@ final class Schema {
 	/**
 	 * Najwyzsza wersja migracji (docelowy schemat). Gate dla maybe_upgrade.
 	 */
-	public const LATEST = 2;
+	public const LATEST = 3;
 
 	/**
 	 * Uruchamia zalegle migracje.
@@ -39,7 +39,47 @@ final class Schema {
 			array(
 				1 => array( self::class, 'migration_1_tables' ),
 				2 => array( self::class, 'migration_2_warning_at' ),
+				3 => array( self::class, 'migration_3_attempt_at' ),
 			)
+		);
+	}
+
+	/**
+	 * V3 (M4): kolumny `reminder_attempt_at` / `escalation_attempt_at` — MOMENT
+	 * ostatniej proby wysylki. Sam licznik prob nie rozsuwal ponowien w czasie:
+	 * zamiatarka nadrabia zaleglosci petla rund, wiec przy pelnej paczce wymagalnych
+	 * przypomnien komplet trzech prob spalal sie w jednym przebiegu (kilka sekund)
+	 * i kilkusekundowa czkawka SMTP kasowala powiadomienie na stale. Zapytania
+	 * wybierajace pomijaja teraz sprawy z proba mlodsza niz `Sla::RETRY_INTERVAL`.
+	 * Bez indeksu celowo: kolumna zaweza wynik, po ktorym i tak filtruje indeks
+	 * `warning_at` / `deadline_at`, a kazdy indeks kosztuje przy zapisie markerow.
+	 *
+	 * @return void
+	 */
+	public static function migration_3_attempt_at(): void {
+		global $wpdb;
+
+		$charset = $wpdb->get_charset_collate();
+		$sla     = Tables::full( Tables::CASE_SLA );
+
+		Migrations::db_delta(
+			"CREATE TABLE {$sla} (
+				case_id BIGINT UNSIGNED NOT NULL,
+				status VARCHAR(20) NOT NULL DEFAULT '',
+				sla_policy_version INT UNSIGNED NOT NULL DEFAULT 1,
+				deadline_at DATETIME NULL,
+				warning_at DATETIME NULL,
+				reminder_sent_at DATETIME NULL,
+				escalated_at DATETIME NULL,
+				reminder_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+				escalation_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+				reminder_attempt_at DATETIME NULL,
+				escalation_attempt_at DATETIME NULL,
+				updated_at DATETIME NOT NULL,
+				PRIMARY KEY  (case_id),
+				KEY deadline_at (deadline_at),
+				KEY warning_at (warning_at)
+			) {$charset};"
 		);
 	}
 

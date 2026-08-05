@@ -45,6 +45,13 @@ WACOL=$(q "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DA
 WAIDX=$(q "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_sla' AND index_name='warning_at'")
 [ "$WAIDX" -ge 1 ] 2>/dev/null && ok "case_sla indeks warning_at (sweep SARGABLE)" || bad "brak indeksu warning_at"
 
+# case_sla v3 (M4): stemple ostatniej proby wysylki — na nich stoi ODSTEP miedzy
+# ponowieniami (bez nich komplet prob palil sie w jednym przebiegu zamiatarki).
+for K in reminder_attempt_at escalation_attempt_at; do
+	KOL=$(q "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_sla' AND column_name='$K'")
+	[ "$KOL" = "1" ] && ok "case_sla kolumna $K (migracja v3)" || bad "brak kolumny $K"
+done
+
 # case_checklists: UNIQUE (case_id,template_id,step_key) — wiersz per krok, zero wyscigu o blob.
 CLU=$(q "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='${PREFIX}mp_case_checklists' AND index_name='case_step' AND non_unique=0")
 [ "$CLU" -ge 1 ] 2>/dev/null && ok "case_checklists UNIQUE (case_id,template_id,step_key)" || bad "brak UNIQUE case_step"
@@ -63,12 +70,62 @@ echo "$PAY" | grep -qE '@[a-z]+\.' && bad "payload zawiera adres e-mail (zlamana
 wp db query "DELETE FROM ${PREFIX}mp_workflow_events" >/dev/null 2>&1
 
 # ── 4. Migracja IDEMPOTENTNA: wersja == LATEST, drugi przebieg nie sypie ──────
+# ⛔ WERSJE BIERZEMY Z KODU, NIE Z LICZBY WPISANEJ W TEST. Twarda „2" siedziala tu
+# do 1.3.13 i zaswiecila czerwono przy PIERWSZEJ poprawnej migracji, jaka po niej
+# przyszla (v3, rozsuniecie prob SLA) — test mowil „wersja schematu != 2", choc
+# produkt zachowal sie dokladnie tak, jak powinien. Taki test nie pilnuje niczego,
+# tylko nakazuje, zeby schemat nigdy sie nie zmienil. Ta sama lekcja jest juz
+# zastosowana w `c22-indeks-przydzialu.sh` i `migration.sh`.
+LATEST=$(wp eval 'echo (int) MP\Automator\Schema::LATEST;' 2>/dev/null | tr -d '[:space:]')
+[ -n "$LATEST" ] && [ "$LATEST" -ge 1 ] 2>/dev/null \
+	&& ok "Schema::LATEST odczytane z kodu ($LATEST)" \
+	|| { bad "nie udalo sie odczytac Schema::LATEST z kodu"; LATEST=""; }
+
 VER=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
-[ "$VER" = "2" ] && ok "mp_automator_schema_version = $VER (== LATEST)" || bad "wersja schematu != 2 (jest: $VER)"
+{ [ -n "$LATEST" ] && [ "$VER" = "$LATEST" ]; } \
+	&& ok "mp_automator_schema_version = $VER (== Schema::LATEST)" \
+	|| bad "wersja schematu = $VER, oczekiwana $LATEST (== Schema::LATEST)"
 
 wp eval 'MP\Automator\Schema::migrate();' >/dev/null 2>&1
 VER2=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
-[ "$VER2" = "2" ] && ok "ponowny migrate() idempotentny (wersja nadal $VER2)" || bad "ponowny migrate zmienil wersje na $VER2"
+{ [ -n "$LATEST" ] && [ "$VER2" = "$LATEST" ]; } \
+	&& ok "ponowny migrate() idempotentny (wersja nadal $VER2)" \
+	|| bad "ponowny migrate zmienil wersje na $VER2 (oczekiwana $LATEST)"
+
+# ── 5. Doganianie zaleglej migracji: instalacja starsza o jedna wersje ────────
+# Nie wystarczy, ze SWIEZA instalacja ma komplet kolumn — u klienta migracja
+# dobiega z wersji POPRZEDNIEJ, na tabeli pelnej danych. Cofamy wiec znacznik
+# wersji o jeden i sprawdzamy, czy przebieg dogania schemat, NIE gubiac wiersza.
+if [ -n "$LATEST" ] && [ "$LATEST" -ge 2 ] 2>/dev/null; then
+	POPRZEDNIA=$(( LATEST - 1 ))
+	wp db query "INSERT INTO ${PREFIX}mp_case_sla (case_id, status, deadline_at, warning_at, updated_at)
+		VALUES (999901, 'nowe', UTC_TIMESTAMP(), UTC_TIMESTAMP(), UTC_TIMESTAMP())
+		ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP();" >/dev/null 2>&1
+	wp option update mp_automator_schema_version "$POPRZEDNIA" >/dev/null 2>&1
+
+	wp eval 'MP\Automator\Schema::migrate();' >/dev/null 2>&1
+	VER3=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
+	[ "$VER3" = "$LATEST" ] \
+		&& ok "zalegla migracja v$POPRZEDNIA -> v$LATEST dogoniona przy wejsciu do panelu" \
+		|| bad "migracja z v$POPRZEDNIA nie dogonila (wersja: $VER3)"
+
+	ZOSTAL=$(q "SELECT COUNT(*) FROM ${PREFIX}mp_case_sla WHERE case_id = 999901")
+	[ "$ZOSTAL" = "1" ] \
+		&& ok "wiersz sprzed migracji PRZEZYL (migracja nie przebudowuje tabeli od zera)" \
+		|| bad "migracja zgubila istniejacy wiersz — to utrata danych klienta"
+
+	# Drugi przebieg TEJ SAMEJ migracji na doganianej instalacji: zero zmian, zero bledu.
+	wp eval 'MP\Automator\Schema::migrate();' >/dev/null 2>&1
+	VER4=$(wp option get mp_automator_schema_version 2>/dev/null | tr -d '[:space:]')
+	ZOSTAL2=$(q "SELECT COUNT(*) FROM ${PREFIX}mp_case_sla WHERE case_id = 999901")
+	{ [ "$VER4" = "$LATEST" ] && [ "$ZOSTAL2" = "1" ]; } \
+		&& ok "powtorzony przebieg po doganianiu tez idempotentny (wersja $VER4, dane nietkniete)" \
+		|| bad "powtorzony przebieg zmienil stan (wersja $VER4, wierszy $ZOSTAL2)"
+
+	wp db query "DELETE FROM ${PREFIX}mp_case_sla WHERE case_id = 999901" >/dev/null 2>&1
+else
+	ok "pominieto doganianie zaleglej migracji (schemat ma tylko jedna wersje)"
+fi
 
 # ── Podsumowanie ─────────────────────────────────────────────────────────────
 echo ""

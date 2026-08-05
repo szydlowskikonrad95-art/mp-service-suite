@@ -171,9 +171,17 @@ Wyszukiwarka „po kliencie" w B mechaniką odwróconą (C zna mapping klient→
 array( 'schema_version' => 1, 'ids' => array( 42, 57 ), 'truncated' => false, 'limit' => 200 );
 ```
 
-### `mp_product_active_cases_count( $count, $product_registry_id )` — pyta B, odpowiada C → int
+### `mp_product_active_cases_count( $count, $product_registry_id, $for_update = false )` — pyta B, odpowiada C → int
 Blokada usunięcia I archiwizacji produktu z aktywną sprawą. **FAIL‑CLOSED**: brak słuchacza →
 B odmawia operacji z komunikatem.
+
+`$for_update = true` znaczy **„liczę pod zamkiem, bo zaraz archiwizuję"**: C wykonuje odczyt
+z `FOR UPDATE`, więc blokada trzyma się do końca transakcji **wołającego** (B), a równoległe
+założenie sprawy temu produktowi czeka na jej `COMMIT`. Bez tego odczyt licznika i zapis flagi
+archiwum były dwoma osobnymi krokami — sprawa zakładana w oknie między nimi nie zatrzymywała
+już archiwizacji (M3). Zamka **nie zakłada B** — prosi o niego właściciela tabeli hakiem,
+więc granica własności danych zostaje nienaruszona. Wołający MUSI być w transakcji; poza nią
+blokada zwalnia się natychmiast i argument nic nie zmienia.
 
 ### `mp_case_count_by_product( $result, $product_registry_id )` — pyta B, odpowiada C
 ```php

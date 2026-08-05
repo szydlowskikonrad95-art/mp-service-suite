@@ -39,6 +39,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   klient, ani administrator. Teraz odroczone żądanie kończy **dobowy przebieg porządkowy**, zaraz po
   zamknięciu sprawy. Nowe zgłoszenie tej samej osoby przed wykonaniem anuluje odroczenie.
 
+### Naprawione — współbieżność i niezawodność (recenzja zewnętrzna 1.3.12: M1, M3, M4)
+- **Dobowy limit zgłoszeń trzyma także przy dwóch zgłoszeniach naraz.** Sprawdzenie limitu tylko
+  CZYTAŁO licznik, a doliczenie zgłoszenia szło dopiero po założeniu sprawy — dwa żądania wysłane
+  w tej samej chwili widziały ten sam stan i **oba przechodziły**, więc limit „3 na dobę" kończył się
+  czterema sprawami (przy sześciu równoległych — sześcioma; zmierzone). Teraz miejsce w limicie
+  rezerwuje się jednym, niepodzielnym zapisem, zanim sprawa powstanie. Komunikaty odmowy bez zmian:
+  nadal mówią, KTÓRY limit blokuje i KIEDY można wrócić, i nie czyszczą formularza. Zgłoszenie
+  odrzucone przy walidacji **oddaje** zajęte miejsce — literówka nadal nie zjada limitu na dobę.
+- **Produktu z aktywną sprawą nie da się zarchiwizować także wtedy, gdy sprawa powstaje w tej samej
+  sekundzie.** Liczenie spraw i zapis flagi archiwum były dwoma osobnymi krokami — sprawa założona
+  między nimi nie zatrzymywała już archiwizacji, a ekran meldował sukces. Teraz oba kroki dzieją się
+  w jednej transakcji, a liczenie odbywa się pod zamkiem po stronie modułu spraw (właściciela danych);
+  odmowa mówi człowiekowi to samo zdanie co zwykle: „Produkt ma 1 aktywną sprawę — najpierw ją zamknij".
+- **Chwilowa awaria poczty nie kasuje już przypomnienia SLA na stałe.** Przy większej liczbie zaległości
+  jeden przebieg zamiatarki nadrabia je pętlą rund — a każda runda brała te same sprawy, więc komplet
+  trzech prób wysyłki palił się w kilka sekund: powiadomienie było spisywane na straty, choć poczta
+  wracała minutę później. Zmierzone: 55 zaległych przypomnień, jeden przebieg z padniętą pocztą →
+  **20 przypomnień przepadło**. Teraz próby są rozsunięte w czasie (kolejna dopiero w następnym
+  przebiegu), więc po powrocie poczty wychodzą wszystkie.
+
+#### Zmiany techniczne
+- Schemat Automatora **v3**: kolumny `reminder_attempt_at` / `escalation_attempt_at` w `wp_mp_case_sla`
+  (migracja dokłada je automatycznie; nowa instalacja dostaje je od razu).
+- Hak `mp_product_active_cases_count` przyjmuje trzeci argument `$for_update` (odczyt pod zamkiem);
+  starsi słuchacze z dwoma argumentami działają bez zmian.
+- Nowe żywe dowody: `testy/e2e/c-m1-limit-dobowy-wyscig.sh`, `testy/e2e/b-m3-archiwizacja-wyscig.sh`,
+  `testy/e2e/d-m4-proby-sla-rozsuniete.sh` — każdy skalibrowany (pada na kodzie sprzed naprawy).
+
 ### Zmienione — komunikaty i ekrany
 - **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit.** Klient słyszał
   zawsze „z tego adresu wysłano zbyt wiele zgłoszeń" — także wtedy, gdy blokada wynikała z limitu

@@ -133,7 +133,10 @@ witryny wyłącznie przy prezentacji).
   z bazy**; indeks `(trigger_type, enabled, priority)`.
 - **`wp_mp_case_sla`**: `case_id` PK · `status` (kopia do zapytań) · `sla_policy_version` ·
   `deadline_at` (INDEKS; terminalne → NULL) · `reminder_sent_at` · `escalated_at` ·
-  `reminder_attempts` / `escalation_attempts` TINYINT · `updated_at`.
+  `reminder_attempts` / `escalation_attempts` TINYINT ·
+  `reminder_attempt_at` / `escalation_attempt_at` DATETIME NULL (moment OSTATNIEJ próby wysyłki —
+  zamiatarka pomija sprawę, dopóki nie minie `Sla::RETRY_INTERVAL`; bez tego komplet prób palił się
+  w jednym przebiegu, bo pętla rund brała te same sprawy co kilka sekund — M4) · `updated_at`.
   ⚠️ **`sla_policy_version` jest kolumną ZAREZERWOWANĄ, obecnie NIEUŻYWANĄ.** Wiersz dostaje
   stempel przy zapisie, ale **żadne miejsce w kodzie tej wartości nie odczytuje**, a opcja
   `mp_automator_sla_policy_version` nigdy nie jest podnoszona (akcja „Przelicz terminy obsługi" tego nie robi

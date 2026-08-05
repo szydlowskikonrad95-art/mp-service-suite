@@ -154,8 +154,17 @@ domyślne (`RateLimit::limits()`), nadpisywalne filtrem **`mp_intake_rate_limits
 Przy oknie przesuwanym każde udane zgłoszenie odsuwało koniec doby, więc limit „3 na dobę" działał
 w praktyce jak „trzy pod rząd" i **klient zablokowany wieczorem nie odblokowywał się rano**, choć
 instrukcja kazała mu „poczekać do następnego dnia". Dziś doba biegnie od PIERWSZEGO z trzech zgłoszeń.
-📌 Liczniki e‑mail/serial rosną **wyłącznie po UDANYM zgłoszeniu** (`record_submission`, D5) — literówka
+📌 Liczniki e‑mail/serial rosną **wyłącznie za zgłoszenie, które naprawdę powstaje** (D5) — literówka
 w formularzu albo błąd walidacji nie zjada klientowi limitu. Licznik IP liczy KAŻDĄ próbę (anty‑flood).
+
+🔒 **Miejsce w limicie REZERWUJE SIĘ ATOMOWO, przed utworzeniem sprawy** (`RateLimit::reserve_submission`,
+M4 z recenzji zewnętrznej 1.3.12 → tu M1). Wcześniej `check()` tylko CZYTAŁ licznik, a inkrement szedł
+dopiero po zapisaniu sprawy — między jednym a drugim mieścił się drugi POST, więc dwa równoległe
+zgłoszenia widziały „2 z 3 wykorzystane" i **oba przechodziły**. Limit dany klientowi na piśmie dawał
+się przekroczyć dokładnie tak, jak dawny transientowy licznik IP. Dziś o wyniku decyduje JEDEN zapis
+(`INSERT … ON DUPLICATE KEY UPDATE` z `LAST_INSERT_ID`), więc z N równoległych żądań przechodzi tyle,
+ile jest wolnych miejsc; ścieżki błędu oddają miejsce (`release_submission`), żeby semantyka D5 została
+nienaruszona. `check()` zostaje jako szybka, grzeczna odmowa **przed** walidacją — nie jako bramka.
 
 🔑 **Klucz licznika jest NORMALIZOWANY — inaczej limit da się obejść w sekundę.** `jan+1@`, `jan+2@`
 i `jan@` to dla licznika **jeden adres** (`RateLimit::normalize_email_for_key`), bo poczta i tak trafia
