@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.12
+Stable tag: 1.3.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,7 +64,7 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 == Changelog ==
 
 = 1.3.13 =
-Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+Wydanie po zewnętrznym przeglądzie 1.3.12 i własnym przeszukaniu produktu. Poniżej zmiany w TYM module.
 
 Bezpieczeństwo danych klienta:
 * **Załącznik cudzej sprawy przestał być boczną furtką.** Pracownik serwisu widział na liście
@@ -73,8 +73,9 @@ Bezpieczeństwo danych klienta:
   o to samo, o co pyta karta. Koordynator, administrator i klient bez zmian.
 
 Historia sprawy:
-* **Zmiany statusu bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii się nie
-  udał, status i tak się zmieniał — sprawa dostawała nowy stan, a oś czasu o tym milczała. Teraz
+* **Żadnej zmiany sprawy bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii się
+  nie udał, zmiana i tak wchodziła — sprawa dostawała nowy stan, a oś czasu o tym milczała.
+  Dotyczyło to zmiany statusu, przydziału pracownika i zmiany priorytetu. Teraz
   nieudany zapis wycofuje całą zmianę, a administrator dostaje sygnał w „Stan witryny".
 * **Komunikat po zmianie statusu mówi tylko o mailach, które naprawdę wyszły** — nie twierdzi już,
   że powiadomiono przypisanego pracownika, gdy to on sam zmienił status albo gdy sprawa nie ma
@@ -90,6 +91,14 @@ Komunikaty:
 * **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit** — adresu e-mail,
   numeru seryjnego albo łącza internetowego. Dotąd zawsze obwiniała adres, także wtedy, gdy był
   zupełnie nowy i niewinny.
+
+Limity przy równoczesnych zgłoszeniach:
+* **Dobowy limit zgłoszeń trzyma także wtedy, gdy dwa zgłoszenia przyjdą w tej samej chwili.**
+  Sprawdzenie limitu tylko czytało licznik, a doliczenie zgłoszenia szło dopiero po założeniu
+  sprawy — dwa żądania wysłane równocześnie widziały ten sam stan i oba przechodziły, więc limit
+  „3 na dobę" kończył się czterema sprawami. Teraz miejsce w limicie rezerwuje się jednym,
+  niepodzielnym zapisem, zanim sprawa powstanie. Zgłoszenie odrzucone przy sprawdzaniu danych
+  oddaje zajęte miejsce — literówka nadal nie zjada limitu na dobę.
 
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.

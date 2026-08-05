@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.12
+Stable tag: 1.3.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,7 @@ Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8. Additionally
 == Changelog ==
 
 = 1.3.13 =
-Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+Wydanie po zewnętrznym przeglądzie 1.3.12 i własnym przeszukaniu produktu. Poniżej zmiany w TYM module.
 
 Reguły i powiadomienia:
 * **Reguła powiadomienia utworzona dokładnie tak, jak podpowiada ekran, nie wyśle już wewnętrznej
@@ -42,6 +42,13 @@ Opis wtyczki:
 * **Opis modułu nie obiecuje już przydziału według kraju ani języka.** Produkt tych danych nigdzie
   nie zbiera, więc reguła oparta na nich nie dopasowałaby żadnej sprawy — działają kategoria
   produktu i priorytet. Ekran ustawień i instrukcje mówiły to od dawna, opis wtyczki nie.
+
+Terminy i przypomnienia:
+* **Chwilowa awaria poczty nie kasuje już przypomnienia o terminie na stałe.** Przy większej liczbie
+  zaległości jeden przebieg nadrabia je rundami — a każda runda brała te same sprawy, więc komplet
+  trzech prób wysyłki palił się w kilka sekund i powiadomienie było spisywane na straty, choć poczta
+  wracała minutę później. Teraz próby są rozsunięte w czasie, więc po powrocie poczty wychodzą
+  wszystkie. Wymaga to dwóch nowych kolumn w tabeli terminów — migracja dokłada je automatycznie.
 
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
