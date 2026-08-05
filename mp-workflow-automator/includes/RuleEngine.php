@@ -635,7 +635,22 @@ final class RuleEngine {
 	private static function do_notify( int $case_id, array $ctx, array $rule, int $depth, string $trigger ): void {
 		$config       = json_decode( (string) $rule['action_config_json'], true );
 		$template_key = is_array( $config ) && isset( $config['template_key'] ) ? (string) $config['template_key'] : '';
-		$recipient    = is_array( $config ) && isset( $config['recipient'] ) ? (string) $config['recipient'] : 'client';
+
+		/*
+		 * D1 (2026-08-05): podpowiedz ekranu regul uczy klucza `recipient_ref`
+		 * (SettingsScreen, placeholder JSON), a silnik czytal TYLKO `recipient`
+		 * z domyslna 'client' — regula utworzona wg podpowiedzi wysylala
+		 * wewnetrzny szablon pracowniczy DO KLIENTA. `recipient_ref` jest wiec
+		 * pelnoprawnym aliasem; jawny `recipient` wygrywa, gdy podano oba,
+		 * a regula bez zadnego klucza dziala jak dotad (domyslnie 'client').
+		 */
+		$recipient = 'client';
+
+		if ( is_array( $config ) && isset( $config['recipient'] ) ) {
+			$recipient = (string) $config['recipient'];
+		} elseif ( is_array( $config ) && isset( $config['recipient_ref'] ) ) {
+			$recipient = (string) $config['recipient_ref'];
+		}
 
 		$resolved = self::resolve_recipient( $recipient, $ctx );
 		$addr     = $resolved[0];
