@@ -51,12 +51,21 @@ final class SettingsScreen {
 	public const CAP = 'mp_system_admin';
 
 	/**
+	 * Hook suffix tej podstrony — po nim poznajemy, ze arkusz ma sie zaladowac
+	 * WYLACZNIE tutaj (porownanie po slugu zlapaloby tez cudze ekrany).
+	 *
+	 * @var string
+	 */
+	private static $hook_suffix = '';
+
+	/**
 	 * Rejestruje menu i handler przelacznika (wolane addytywnie z Plugin::boot).
 	 *
 	 * @return void
 	 */
 	public static function register(): void {
 		add_action( 'admin_menu', array( self::class, 'add_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 
 		// Przelacznik kasowania danych jest WSPOLNY dla trzech wtyczek (lib/mp-common) —
 		// trzy kopie decyzji, ktora kasuje dane bezpowrotnie, rozjechalyby sie.
@@ -100,13 +109,46 @@ final class SettingsScreen {
 	 * @return void
 	 */
 	public static function add_menu(): void {
-		add_submenu_page(
+		self::$hook_suffix = (string) add_submenu_page(
 			PanelScreen::PAGE_SLUG,
 			__( 'Ustawienia automatyzacji', 'mp-workflow-automator' ),
 			__( 'Ustawienia', 'mp-workflow-automator' ),
 			self::CAP,
 			self::PAGE_SLUG,
 			array( self::class, 'render' )
+		);
+	}
+
+	/**
+	 * Laduje arkusz modulu WYLACZNIE na tej podstronie.
+	 *
+	 * ⛔ TU SIEDZIALA WADA S4 nr 6, i nie byla nia zla regula CSS — byl nia BRAK
+	 * ZALADOWANIA ARKUSZA W OGOLE. Ekran od poczatku pisany byl pod styl panelu
+	 * (`mp-automator-panel`, `-intro`, `-h2`, `-h3` sa w jego markupie), ale
+	 * `PanelScreen::enqueue()` wypuszcza plik tylko na SWOJ hook, a ta klasa
+	 * zadnego `enqueue` nie miala. Skutkiem bylo m.in. to, ze naprawa poz. 2.6
+	 * (region przewijany `.mp-automator-table-scroll`) tutaj nie obowiazywala,
+	 * wiec trzy szerokie tabele rozpychaly CALA strone: przy 390 px widac bylo
+	 * z „Statusow wlasnych" wylacznie pierwsza kolumne, a przy 1440 px strona
+	 * przewijala sie w bok o 148 px.
+	 *
+	 * Porownanie po hook suffiksie, a nie po `$_GET['page']`, jest tu istotne:
+	 * slug w adresie da sie dopisac do dowolnego ekranu admina, a wtedy styl
+	 * wyciekalby na cudze strony — m.in. na liste spraw i karte sprawy.
+	 *
+	 * @param string $hook Hook suffix biezacej strony admina.
+	 * @return void
+	 */
+	public static function enqueue( string $hook ): void {
+		if ( '' === self::$hook_suffix || $hook !== self::$hook_suffix ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'mp-automator-admin',
+			plugin_dir_url( MP_AUTOMATOR_FILE ) . 'assets/css/admin-automator.css',
+			array(),
+			PanelScreen::asset_ver( 'assets/css/admin-automator.css' )
 		);
 	}
 
@@ -215,6 +257,8 @@ final class SettingsScreen {
 			<input type="hidden" name="action" value="<?php echo esc_attr( StatusDefs::ACTION_CONFIG ); ?>" />
 			<input type="hidden" name="mp_config_rev" value="<?php echo esc_attr( StatusDefs::config_rev() ); ?>" />
 			<?php wp_nonce_field( StatusDefs::ACTION_CONFIG ); ?>
+			<?php // Region przewijany — ten sam wzorzec co panel (poz. 2.6). Bez niego siedem kolumn rozpychalo CALA strone i przy 390 px widac bylo wylacznie „Klucz techniczny". ?>
+			<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela statusów własnych', 'mp-workflow-automator' ); ?>">
 			<table class="widefat striped">
 				<thead>
 					<tr>
@@ -269,6 +313,7 @@ final class SettingsScreen {
 					</tr>
 				</tbody>
 			</table>
+			</div>
 			<p class="description">
 				<?php esc_html_e( 'Klucz techniczny: małe litery, cyfry, myślnik lub podkreślenie, najwyżej 20 znaków — tyle mieści kolumna statusu sprawy. Termin 0 = ten status nie jest pilnowany.', 'mp-workflow-automator' ); ?>
 			</p>
@@ -294,6 +339,7 @@ final class SettingsScreen {
 			<input type="hidden" name="action" value="<?php echo esc_attr( SlaConfig::ACTION_CONFIG ); ?>" />
 			<input type="hidden" name="mp_config_rev" value="<?php echo esc_attr( SlaConfig::config_rev() ); ?>" />
 			<?php wp_nonce_field( SlaConfig::ACTION_CONFIG ); ?>
+			<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela godzin terminów', 'mp-workflow-automator' ); ?>">
 			<table class="widefat striped">
 				<thead>
 					<tr>
@@ -322,6 +368,7 @@ final class SettingsScreen {
 				?>
 				</tbody>
 			</table>
+			</div>
 			<p class="description">
 				<?php esc_html_e( 'UWAGA: zmiana godzin dotyczy terminów liczonych OD TERAZ. Sprawy już otwarte zachowują stare terminy do czasu użycia przycisku „Przelicz terminy obsługi" w panelu automatyzacji.', 'mp-workflow-automator' ); ?>
 			</p>
@@ -351,6 +398,8 @@ final class SettingsScreen {
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( Rules::ACTION_CONFIG ); ?>" />
 			<?php wp_nonce_field( Rules::ACTION_CONFIG ); ?>
+			<?php // Osiem kolumn — to ta tabela robila poziome przewijanie CALEJ strony takze przy 1440 px (1406 px w polu tresci szerokim na 1280 px). ?>
+			<div class="mp-automator-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela reguł przydziału i powiadomień', 'mp-workflow-automator' ); ?>">
 			<table class="widefat striped">
 				<thead>
 					<tr>
@@ -427,6 +476,7 @@ final class SettingsScreen {
 				<?php endforeach; ?>
 				</tbody>
 			</table>
+			</div>
 
 			<h3 class="mp-automator-h3"><?php esc_html_e( 'Nowa reguła', 'mp-workflow-automator' ); ?></h3>
 			<table class="form-table" role="presentation">
