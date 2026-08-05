@@ -47,6 +47,16 @@ for N in 1 2 3 4; do
 	CID=$(mkcase "petla-$N@example.com" "PETLA-$N")
 	SPRAWY="$SPRAWY $CID"
 done
+# ── 0a. ROZGRZEWKA: doszyj slady po SASIADACH. Po podziale CI na czesci ten test
+# ma innych poprzednikow niz w pelnym sekwencyjnym przebiegu — sprawa bez terminu
+# zostawiona przez INNY test zafalszowalaby pomiar (mierzylby doszywanie, nie przeglad).
+# Doszycie zastanych NIE oslabia bramki: sedno (koszt nie rosnie) mierzone nizej.
+for _ in 1 2 3; do
+	ZASTANE=$(q "SELECT COUNT(*) FROM wp_mp_service_cases c LEFT JOIN wp_mp_case_sla s ON s.case_id=c.id WHERE c.identity_status='verified' AND s.case_id IS NULL")
+	[ "${ZASTANE:-0}" = "0" ] && break
+	wp eval 'MP\Automator\Sla::reconcile_untracked( 500 );' >/dev/null 2>&1
+done
+
 BEZ_TERMINU=$(q "SELECT COUNT(*) FROM wp_mp_service_cases c LEFT JOIN wp_mp_case_sla s ON s.case_id=c.id WHERE c.identity_status='verified' AND s.case_id IS NULL")
 [ "${BEZ_TERMINU:-1}" = "0" ] \
 	&& ok "wszystkie sprawy maja wiersz terminu (przeglad nie ma czego doszywac)" \
