@@ -47,6 +47,33 @@ final class CaseActions {
 	}
 
 	/**
+	 * ⛔ 2.24, TRZECIA CZESC: akcja NA sprawie wymaga prawa DO TEJ SPRAWY.
+	 *
+	 * Sam `is_staff()` nie wystarcza i to byla dziura grozniejsza od podgladu:
+	 * karte cudzej sprawy pracownik tylko OGLADAL, a przez zadanie POST mogl jej
+	 * zmienic status, dopisac notatke albo NAPISAC DO KLIENTA, ktorego nie obsluguje.
+	 *
+	 * ⛔ Pytamy `CaseRepo::can_current_user_see()` — TEN SAM warunek co lista i karta.
+	 * Rozstrzyga dokumentacja produktu, nie nasze przeczucie: `PRACOWNIK.md` sekcja 2
+	 * wymienia jako prace pracownika dokladnie te trzy czynnosci (wiadomosci, zmiana
+	 * statusu, notatka), a zasady na koncu mowia „na liscie spraw sa wylacznie sprawy
+	 * przydzielone Tobie. Wszystkie sprawy widzi koordynator i administrator systemu".
+	 *
+	 * ⚠️ PRZYDZIALU to NIE dotyczy — ten ma wlasny, wezszy warunek `can_assign()`.
+	 * `PRACOWNIK.md` mowi „obslugujesz sprawy, ktore system (albo koordynator) Ci
+	 * przydzielil", a `KOORDYNATOR.md` przy sprawie nieprzydzielonej kaze poprosic
+	 * administratora — pracownik nie bierze sobie sprawy sam i nigdy nie mial tego prawa.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return void
+	 */
+	private static function deny_if_not_visible( int $case_id ): void {
+		if ( 0 === $case_id || ! CaseRepo::can_current_user_see( $case_id ) ) {
+			self::deny();
+		}
+	}
+
+	/**
 	 * Czy moze przydzielac (koordynator / administrator systemu).
 	 *
 	 * @return bool
@@ -74,6 +101,9 @@ final class CaseActions {
 		$expected = isset( $_POST['expected_status'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['expected_status'] ) ) : '';
 		$reason   = isset( $_POST['rejection_reason_code'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['rejection_reason_code'] ) ) : '';
 		// phpcs:enable
+
+		// ⛔ prawo DO TEJ SPRAWY, nie tylko „jestem personelem" — patrz deny_if_not_visible().
+		self::deny_if_not_visible( $case_id );
 
 		if ( 0 === $case_id || '' === $new ) {
 			self::back( $case_id, __( 'Brak danych zmiany statusu.', 'mp-service-intake' ) );
@@ -129,6 +159,9 @@ final class CaseActions {
 		$body    = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['body'] ) ) : '';
 		// phpcs:enable
 
+		// ⛔ prawo DO TEJ SPRAWY, nie tylko „jestem personelem" — patrz deny_if_not_visible().
+		self::deny_if_not_visible( $case_id );
+
 		if ( 0 === $case_id ) {
 			self::back( $case_id, __( 'Brak sprawy.', 'mp-service-intake' ) );
 		}
@@ -169,6 +202,9 @@ final class CaseActions {
 		$case_id = isset( $_POST['case_id'] ) ? absint( $_POST['case_id'] ) : 0;
 		$body    = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['body'] ) ) : '';
 		// phpcs:enable
+
+		// ⛔ prawo DO TEJ SPRAWY, nie tylko „jestem personelem" — patrz deny_if_not_visible().
+		self::deny_if_not_visible( $case_id );
 
 		if ( 0 === $case_id ) {
 			self::back( $case_id, __( 'Brak sprawy.', 'mp-service-intake' ) );
