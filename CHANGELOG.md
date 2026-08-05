@@ -6,6 +6,59 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [1.3.12] — 2026-08-04
 
+### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0) — żądanie usunięcia sięga głębiej
+- 🔴 **Żądanie usunięcia danych obejmuje teraz „Powód zwrotu" i NAZWĘ PLIKU nadaną przez klienta.**
+  Powód zwrotu to pole, w którym człowiek pisze własnymi słowami — potrafi tam trafić nazwisko,
+  adres albo numer telefonu — a redakcja danych go pomijała. Osobno: kasowanie załącznika
+  zostawiało w bazie **nazwę pliku**, a skany dowodów zakupu ludzie nazywają swoim imieniem
+  i nazwiskiem. Jedno i drugie znika teraz razem z resztą danych.
+- ⛔ **Poprawka obejmuje także zgłoszenia LEŻĄCE JUŻ W BAZIE**, nie tylko nowe. Bez tego kroku
+  chroniłaby wyłącznie klientów, którzy zgłoszą się po aktualizacji.
+- **Nowe pole tekstowe dokładane przez administratora jest domyślnie traktowane jako wrażliwe.**
+  Wcześniej każde nowo dołożone pole z automatu wypadało z usuwania danych.
+
+### Naprawione — bezpieczeństwo (wydanie 1.3.12, grupa 1)
+- **Dobowego limitu zgłoszeń nie da się obejść „plus-adresowaniem".** Adresy w rodzaju
+  `jan+1@poczta.pl` i `jan+2@poczta.pl` to ta sama skrzynka, a produkt liczył je jako różne
+  osoby — wystarczyło dopisać znak plus, żeby wysyłać bez ograniczeń.
+
+### Zmienione — terminy obsługi (wydanie 1.3.12, grupa 2)
+- **Licznik terminu STOI, gdy sprawa czeka na klienta.** Dotąd zegar biegł także wtedy, gdy
+  serwis nie mógł nic zrobić, bo czekał na zdjęcie albo odpowiedź — i sprawa robiła się
+  „po terminie" z winy klienta. To standard branżowy, nie nasz wymysł.
+- **Na liście spraw taka sprawa pokazuje napis „czeka na klienta"** zamiast pustego terminu.
+  Puste miejsce miało w produkcie kilka różnych znaczeń i nie dało się ich odróżnić.
+- **Reguła zmiany statusu działa tak, jak podpowiada ekran** — wcześniej podpowiedź i zachowanie
+  rozjeżdżały się przy statusach dokładanych przez administratora.
+
+### Naprawione — kontrakt programistyczny i bramki (wydanie 1.3.12, grupa 3)
+- **Zwrotki niosą wersję kształtu danych w KAŻDEJ gałęzi zwrotu**, także tam, gdzie zwracana jest
+  wartość pusta. Kto podpina się do produktu czwartym modułem, wie, z jakim kształtem rozmawia.
+- **Tłumaczenia nie zostają wersję w tyle za wtyczką** — i pilnuje tego bramka, więc nie zdarzy się
+  to po cichu przy kolejnym wydaniu.
+- **Druga bramka dokumentów wykrywa, że któraś z jej własnych kontroli w ogóle nie wystartowała.**
+  Kontrola, która cicho nie rusza, świeci na zielono i wygląda jak porządek.
+
+### Naprawione — paczka i dokumenty dla klienta (wydanie 1.3.12, grupa 4)
+- **Paczka zawiera plik licencji**, którego wcześniej w niej nie było, choć każdy `readme.txt`
+  deklarował GPLv2 — to jeden z najczęstszych powodów odrzucenia wtyczki przez recenzentów.
+- **Zniknęły martwe odsyłacze** do dokumentu, którego w paczce nie ma, **poprawione wersje plików
+  tłumaczeń** oraz **nasze wewnętrzne ślady** (numery robocze i notatki z budowy), które nie
+  powinny trafiać do klienta.
+- **Instrukcje dla klienta, koordynatora i pracownika mówią to, co produkt naprawdę robi** po
+  wszystkich powyższych naprawach — łącznie z ważnością linku potwierdzającego, obsługą powodów
+  odrzucenia i ekranem ustawień.
+- **Zrzuty ekranu w instrukcji pokazują formularz, który klient widzi dzisiaj**, a nie sprzed napraw.
+- **Dokumentacja techniczna** (kontrakt, model zdarzeń, opis bazy, model bezpieczeństwa) opisuje
+  stan po tych naprawach, a nie zamiar sprzed nich.
+- **Raport z audytu mówi wprost, co zostało sprawdzone na działającym systemie, a co tylko od
+  zaplecza** — razem z rzeczami, których ta runda nie objęła.
+
+### Naprawione — odinstalowanie (wydanie 1.3.12, grupa 5)
+- **Własne powody odrzucenia znikają przy odinstalowaniu ZA ZGODĄ, a bez zgody zostają.**
+  Dotąd zachowywały się inaczej niż reszta konfiguracji, więc odinstalowanie zostawiało po
+  produkcie ślad albo kasowało za dużo — zależnie od tego, czego administrator się spodziewał.
+
 ### Naprawione — dostęp ról (wydanie 1.3.12, grupa 1)
 - **Koordynator serwisu przestaje mieć dostęp do MNIEJ ekranów niż podległy mu pracownik.**
   Role MP nie mają hierarchii (to projekt: kod sprawdza wyłącznie uprawnienia, nigdy nazwy roli),
