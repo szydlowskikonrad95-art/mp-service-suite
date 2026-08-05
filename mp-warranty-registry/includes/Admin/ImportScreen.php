@@ -427,15 +427,28 @@ final class ImportScreen {
 	 * @return string
 	 */
 	public static function report_url( int $job_id ): string {
-		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'action' => 'mp_import_report',
-					'job'    => $job_id,
-				),
-				admin_url( 'admin-post.php' )
+		/*
+		 * ⛔ NIE `wp_nonce_url()` — ta funkcja zwraca adres PO `esc_html()`, czyli
+		 * z `&amp;` zamiast `&`. Dla linku renderowanego w HTML to bez znaczenia
+		 * (przeglądarka i tak odkręca encje), ale TEN adres jedzie także do JS:
+		 * raz w konfiguracji ekranu (`js_config()`, klucz `job.reportUrl`), raz
+		 * w zwrotce wznowienia importu (`ImportEndpoints::ajax_reclaim`).
+		 * `WP_Scripts::localize()` odkręca encje WYŁĄCZNIE dla skalarów najwyższego
+		 * poziomu — nasz adres siedzi w zagnieżdżonej tablicy, a zwrotka AJAX idzie
+		 * przez JSON, który encji nie tyka w ogóle. JS wstawiał więc do `href` adres,
+		 * w którym separatorem jest `&amp;`; przeglądarka czytała parametry jako
+		 * `amp;job` i `amp;_wpnonce`, więc `job` i `_wpnonce` NIE DOCIERAŁY i klik
+		 * kończył się komunikatem „Wybrany odnośnik jest nieaktualny" — dopóki
+		 * operator nie odświeżył strony. Adres budujemy SUROWY; escapowanie należy
+		 * do miejsca renderowania (`esc_url()` w tabeli historii niżej).
+		 */
+		return add_query_arg(
+			array(
+				'action'   => 'mp_import_report',
+				'job'      => $job_id,
+				'_wpnonce' => wp_create_nonce( 'mp_import_report_' . $job_id ),
 			),
-			'mp_import_report_' . $job_id
+			admin_url( 'admin-post.php' )
 		);
 	}
 }
