@@ -40,7 +40,21 @@
 | `mp_intake_withdraw` | login + nonce (tylko własne zgody/dane) |
 | `mp_intake_attachment` | nonce + **ownership** (`Attachments::can_access`: personel LUB właściciel sprawy) |
 
-### Personel (capability W PARZE z nonce)
+### Personel (capability W PARZE z nonce — ORAZ, przy sprawach, prawo do KONKRETNEJ sprawy)
+
+⛔ **Samo uprawnienie NIE wystarcza do obejrzenia ani zmiany sprawy.** Karta sprawy i **każde**
+działanie na niej (zmiana statusu, odpowiedź do klienta, notatka, przydział) pytają najpierw
+`CaseRepo::can_current_user_see( $case_id )` — tę samą bramkę, z której korzysta lista spraw.
+Pracownik serwisu dociera wyłącznie do spraw ze swojego przydziału; koordynator i administrator
+systemu widzą wszystkie.
+
+⚠️ **To zachowanie weszło w 1.3.12.** We wcześniejszych wydaniach lista pokazywała pracownikowi
+tylko jego sprawy, ale **karta otwierała się po samym numerze sprawy w adresie** — razem
+z danymi klienta, którego nie obsługuje — i tą samą drogą dało się sprawę zmienić. Kto wdraża
+wersję starszą niż 1.3.12, ma tę lukę u siebie.
+📌 **Wniosek dla utrzymania:** bramkę stawia się **jedną funkcją**, nigdy własnym warunkiem
+w ekranie. Ta wada powstała dokładnie tak — lista dostała ograniczenie, karta nie.
+
 | Endpoint | Wymagana capability |
 |----------|---------------------|
 | `mp_intake_resend` | `mp_agent` |
@@ -59,6 +73,18 @@ Każdy endpoint personelu jest zarejestrowany także jako `nopriv` → ten sam h
 | wszystkie endpointy personelu (9 w Intake + 4 AJAX Automatora) | **403** | **403** | **403** |
 
 Żadna nieuprawniona rola nie wykonuje akcji ani nie odczytuje cudzych danych.
+
+⛔ **Czego ta macierz NIE bada — i dlaczego to ważne.** Sprawdza wyłącznie role **spoza**
+personelu (anonim, subskrybent, klient). Wada znaleziona przed wydaniem 1.3.12 siedziała
+**wewnątrz uprawnionej roli**: pracownik miał komplet uprawnień, a mimo to nie powinien był
+oglądać sprawy spoza swojego przydziału. Macierz „kto nie może" była zielona i pozostawała
+prawdziwa — po prostu nie zadawała tego pytania. Granicę **wewnątrz** personelu badają osobno
+`testy/e2e/c-karta-sprawy-widocznosc.sh` (karta) i `testy/e2e/c-case-actions.sh` (działania),
+obok `testy/e2e/c-2-24-widocznosc-spraw.sh` (lista). Wszystkie sprawdzają **obie strony**:
+odmowę na cudzej sprawie i niezmienioną obsługę własnej oraz pełny dostęp koordynatora.
+Test karty ma dodatkowo próbę kontrolną na wyciek informacji — komunikat dla sprawy cudzej
+i dla nieistniejącej musi brzmieć **tak samo**, inaczej sama różnica zdradzałaby, że sprawa
+o danym numerze istnieje.
 
 ## 4. Załączniki — deny katalogu jest SERWER-ZALEŻNY (flaga #4)
 
