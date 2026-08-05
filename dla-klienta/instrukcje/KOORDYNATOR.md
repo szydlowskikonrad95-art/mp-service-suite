@@ -27,7 +27,7 @@ rejestrze, poproś **administratora systemu** o nadanie wyjątku gwarancyjnego. 
 wyłącznie administrator — koordynator ich nie nadaje.
 
 Uwaga przy przydzielaniu: na liście „Przydziel do" są **tylko pracownicy serwisu**. Koordynatorzy
-i administratorzy nie prowadzą spraw, więc nie da się na nich przydzielić sprawy.
+i administratorzy nie prowadzą spraw, więc nie da się im przydzielić sprawy.
 
 ## 2. Zgłoszenia niepotwierdzone
 
@@ -88,7 +88,7 @@ zamykającym sprawę** — obie strony mówią o tym samym.
   terminów** dla każdego statusu. Programista nie jest do tego potrzebny.
 - **Rejestr zdarzeń** — co automat zrobił i dlaczego (np. `ASSIGNMENT_UNMATCHED` = nie umiał
   przydzielić). Przycisk „Pokaż wpisy automatycznego przeglądu" odsłania też wpisy cyklicznego sprawdzania.
-- **Checklisty i szablony odpowiedzi** — kroki obsługi per rodzaj sprawy i gotowe treści maili;
+- **Checklisty i szablony odpowiedzi** — kroki obsługi dla każdego rodzaju sprawy i gotowe treści maili;
   w treściach działają wyłącznie markery z listy pod edytorem (np. `{{numer_sprawy}}`,
   `{{status}}`) — inne są pomijane.
 
@@ -100,7 +100,7 @@ służy do uwag dla innego pracownika serwisu (podejrzenie ingerencji, ustalenia
 🔴 **Ale klient może ją przeczytać.** Wniosek o dostęp do danych (art. 15 RODO) obejmuje także
 **opinie o osobie**, więc notatka o kliencie jest jego daną i **wchodzi do paczki**, którą
 administrator wydaje na taki wniosek. **Powiedz to zespołowi wprost:** notatka ma być rzeczowa
-i dotyczyć sprawy, a nie zawierać ocen, których nie da się obronić w oczy.
+i dotyczyć sprawy, a nie zawierać ocen, których nie dałoby się powtórzyć klientowi w oczy.
 
 ## 4. Terminy zespołu (SLA)
 

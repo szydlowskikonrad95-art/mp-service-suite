@@ -7,7 +7,7 @@
 
 Wejdź na stronę **„Zgłoszenie serwisowe"**. U góry, w polu **„Rodzaj zgłoszenia"**, wybierz typ
 sprawy — formularz sam dopasuje pola (reklamacja pyta o numer seryjny, dokument i datę zakupu;
-pytanie techniczne — tylko o opis).
+zapytanie techniczne — tylko o opis).
 
 ![Formularz zgłoszenia](zdjecia/02-formularz-pusty.jpg)
 
@@ -23,7 +23,7 @@ usterki) i zaznacz zgodę na przetwarzanie danych. Kliknij **„Wyślij zgłosze
 
 Dla kategorii **AGD drobne** i **Elektronarzędzia** załącznik jest **wymagany** — dodaj zdjęcie
 tabliczki znamionowej (albo numeru partii), inaczej serwis nie ustali modelu ani mocy urządzenia.
-Dla **Elektroniki audio** i **Inne** załącznik jest opcjonalny. Dozwolone formaty: JPG, PNG,
+Dla kategorii **Elektronika audio** i **Inne** załącznik jest opcjonalny. Dozwolone formaty: JPG, PNG,
 WebP, PDF, maksymalnie 5 plików. Jeśli zdjęcie jest za duże, system napisze wprost, **do ilu
 megabajtów** ten serwer przyjmuje pliki — wyślij mniejsze (np. pomniejsz zdjęcie w telefonie).
 Przy kategorii z wymaganym załącznikiem zgłoszenie poczeka na poprawny plik; przy pozostałych
@@ -51,7 +51,7 @@ Kliknij link → otworzy się strona z przyciskiem **„Potwierdzam"**:
 ![Ekran potwierdzenia](zdjecia/06-ekran-potwierdz-zgloszenie.jpg)
 ![Zgłoszenie potwierdzone](zdjecia/07-zgloszenie-potwierdzone.jpg)
 
-Po potwierdzeniu dostaniesz mail z **numerem sprawy** (np. `SRV/2026/00012`) — zachowaj go.
+Po potwierdzeniu dostaniesz mail z **numerem sprawy** (np. `SRV/2026/0012`) — zachowaj go.
 
 ## 3. Panel klienta — status i rozmowa z serwisem
 
