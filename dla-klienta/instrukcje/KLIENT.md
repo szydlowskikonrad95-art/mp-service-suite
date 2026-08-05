@@ -5,9 +5,9 @@
 
 ## 1. Wyślij zgłoszenie
 
-Wejdź na stronę **„Zgłoszenie serwisowe"**. U góry wybierz **rodzaj sprawy** — formularz sam
-dopasuje pola (reklamacja pyta o numer seryjny, dokument i datę zakupu; pytanie techniczne —
-tylko o opis).
+Wejdź na stronę **„Zgłoszenie serwisowe"**. U góry, w polu **„Rodzaj zgłoszenia"**, wybierz typ
+sprawy — formularz sam dopasuje pola (reklamacja pyta o numer seryjny, dokument i datę zakupu;
+pytanie techniczne — tylko o opis).
 
 ![Formularz zgłoszenia](zdjecia/02-formularz-pusty.jpg)
 
@@ -19,7 +19,7 @@ wysłane z tej skrzynki**, także innych osób. Kto ma dostęp do skrzynki, ten 
 jeśli zgłoszenia mają być rozdzielone, każda osoba powinna podać **własny adres**.
 
 Wypełnij pozostałe pola, w razie potrzeby **dodaj zdjęcie lub PDF** (np. dowód zakupu, zdjęcie
-usterki) i zaznacz zgodę na przetwarzanie danych. Kliknij **Wyślij**.
+usterki) i zaznacz zgodę na przetwarzanie danych. Kliknij **„Wyślij zgłoszenie"**.
 
 Dla kategorii **AGD drobne** i **Elektronarzędzia** załącznik jest **wymagany** — dodaj zdjęcie
 tabliczki znamionowej (albo numeru partii), inaczej serwis nie ustali modelu ani mocy urządzenia.
@@ -91,7 +91,7 @@ jest „Anuluj":
 
 | Pytanie | Odpowiedź |
 |---|---|
-| Nie dostałem maila potwierdzającego | Sprawdź spam; upewnij się, że adres był poprawny. Możesz wysłać zgłoszenie jeszcze raz. |
+| Nie dostałem maila potwierdzającego | Sprawdź spam; upewnij się, że adres był poprawny. Możesz wysłać zgłoszenie jeszcze raz — ale **identyczne** ponowienie w ciągu 15 minut system odbije jako duplikat, więc odczekaj kwadrans albo minimalnie zmień opis. |
 | Link do logowania „nieaktualny" | Link żyje 20 minut i działa raz — poproś o nowy na stronie panelu. |
 | Wysłałem zgłoszenie dwa razy | System sam łapie duplikaty — drugie identyczne zgłoszenie w krótkim czasie nie tworzy nowej sprawy. |
 | „Zbyt wiele zgłoszeń" — nie mogę wysłać kolejnego | To ochrona przed spamem, nie awaria. Z jednego adresu e-mail można wysłać **3 zgłoszenia na dobę**, a dla jednego numeru seryjnego — 5. **Doba liczy się od pierwszego z tych zgłoszeń**, więc jeśli wysłałeś je wieczorem, odblokujesz się następnego dnia **o tej samej porze**, a nie rano. Nie czekaj bezczynnie — **napisz wiadomość w sprawie, którą już masz założoną**; to trafia do serwisu od razu i nie podlega limitowi. |

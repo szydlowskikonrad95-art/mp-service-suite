@@ -54,7 +54,9 @@ z niepełnosprawnościami — i czym to sprawdziliśmy. Nie jest to deklaracja: 
 
 - **Narzędzie:** `axe-core` — otwarty, powszechnie używany silnik testów dostępności.
 - **Zakres reguł:** WCAG 2.1, poziomy **A i AA**.
-- **Sposób:** badanie na **żywej stronie w prawdziwej przeglądarce**, po HTTPS. Nie na samym
+- **Sposób:** badanie na **żywej stronie w prawdziwej przeglądarce** — bieżący pomiar po zwykłym
+  HTTP (instalacja stała lokalnie; poprzednie badanie, na środowisku pokazowym, szło po HTTPS —
+  szczegóły w „Czego ten raport NIE obejmuje"). Nie na samym
   kodzie: tylko tak da się sprawdzić rzeczy widoczne dopiero po wyrenderowaniu, czyli kontrast
   kolorów i pełne reguły ARIA.
 - **Badaliśmy trzy razy, na trzech różnych środowiskach** — i podajemy wszystkie wyniki, bo razem
