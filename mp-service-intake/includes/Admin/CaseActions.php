@@ -111,18 +111,32 @@ final class CaseActions {
 
 		$result = CaseRepo::change_status( $case_id, $new, $expected, get_current_user_id(), '' !== $reason ? $reason : null );
 
-		self::back( $case_id, self::status_notice( $result ) );
+		self::back( $case_id, self::status_notice( $result, $case_id ) );
 	}
 
 	/**
 	 * Mapuje wynik change_status na komunikat dla personelu.
 	 *
-	 * @param array<string, mixed> $result Wynik CaseRepo::change_status.
+	 * @param array<string, mixed> $result  Wynik CaseRepo::change_status.
+	 * @param int                  $case_id ID sprawy (do wariantu komunikatu W6).
 	 * @return string
 	 */
-	private static function status_notice( array $result ): string {
+	private static function status_notice( array $result, int $case_id ): string {
 		if ( ! empty( $result['success'] ) ) {
-			return __( 'Status zmieniony (klient i przypisany pracownik powiadomieni).', 'mp-service-intake' );
+			/*
+			 * W6 (polowanie 2026-08-05): komunikat mowil ZAWSZE „klient i przypisany
+			 * pracownik powiadomieni" — a automator CELOWO nie mailuje autora zmiany
+			 * (self-skip, RuleEngine::resolve_recipient). Gdy status zmienia SAM
+			 * przypisany pracownik (najczestszy przypadek!) albo sprawa nie ma
+			 * przypisanego, zdanie o pracowniku bylo klamstwem. Komunikat mowi teraz
+			 * tylko o mailach, ktore NAPRAWDE wychodza.
+			 */
+			$ctx      = CaseRepo::get_context( $case_id );
+			$assigned = is_array( $ctx ) && isset( $ctx['assigned_to'] ) ? (int) $ctx['assigned_to'] : 0;
+
+			return $assigned > 0 && get_current_user_id() !== $assigned
+				? __( 'Status zmieniony (klient i przypisany pracownik powiadomieni).', 'mp-service-intake' )
+				: __( 'Status zmieniony (klient powiadomiony).', 'mp-service-intake' );
 		}
 
 		$code = isset( $result['error_code'] ) ? (string) $result['error_code'] : '';
