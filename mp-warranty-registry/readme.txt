@@ -72,7 +72,10 @@ Ekrany i praca administratora:
 * Wspólna dla pakietu warstwa ustawień: administrator ustawia statusy, terminy i reguły bez
   programisty.
 
-Z kontroli na działającej instalacji (dotyczy tego modułu):
+Z kontroli na działającej instalacji (dwie dotyczą tego modułu):
+* **Koordynator widział w menu pozycję „Rejestr MP", która go nie wpuszczała.** Jest ukryta
+  temu, kto nie ma do niej prawa, zamiast otwierać drzwi i odsyłać z kwitkiem. ⚠️ Po aktualizacji
+  koordynator, który tej pozycji nie miał używać, przestanie ją widzieć — to zmiana zamierzona.
 * **Ekrany wyjątków gwarancyjnych i importu rozjeżdżały się na wąskim oknie.** Tabele przewijają
   się teraz w swoim obszarze, z zaczepem klawiatury, i mieszczą się na telefonie i na monitorze.
   Kolumn nie schowaliśmy: schowanie dałoby w pomiarze identyczny wynik co poprawne przewijanie,
