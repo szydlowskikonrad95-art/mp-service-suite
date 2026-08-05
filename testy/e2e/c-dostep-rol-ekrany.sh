@@ -52,7 +52,48 @@ echo "== 3. EKRANY, KTORE MIALY CAP NA SZTYWNO =="
 NIEPOTW=$(wp eval "echo MP\\Intake\\Admin\\UnverifiedScreen::CAP;" 2>/dev/null | tr -d '[:space:]')
 [ "$NIEPOTW" = "mp_agent" ] && ok "stala zgodnosci wstecz zachowana ($NIEPOTW)" || bad "stala CAP zmieniona ($NIEPOTW) — sprawdz zgodnosc wstecz"
 grep -q "Roles::menu_cap_for_current_user()" "$REPO"/mp-service-intake/includes/Admin/UnverifiedScreen.php 2>/dev/null && ok "ekran niepotwierdzonych: cap menu dynamiczny" || bad "ekran niepotwierdzonych nadal z capem na sztywno"
-grep -q "Roles::menu_cap_for_current_user()" "$REPO"/mp-warranty-registry/includes/Admin/ProductsScreen.php 2>/dev/null && ok "rejestr produktow: cap menu dynamiczny" || bad "rejestr produktow nadal z capem na sztywno"
+
+# ⛔ REJESTR PRODUKTOW MA WLASNA, WEZSZA LISTE — i to NIE jest wyjatek od naprawy 2.25,
+#    tylko granica, ktora ta naprawa przekroczyla.
+#
+#    Do 5.08 stalo tu `grep "Roles::menu_cap_for_current_user()"` po pliku ekranu. Ta
+#    kontrola pilnowala NAZWY FUNKCJI, a nie zachowania — i zadala rzeczy sprzecznej
+#    z kontraktem: `menu_cap_for_current_user()` zwraca cap z listy CALEGO personelu,
+#    wiec koordynatorowi zwracalo jego wlasny i pozycja „Rejestr MP" mu sie pokazywala.
+#    Tyle ze ekran rejestru wpuszcza wylacznie `mp_agent`/`mp_system_admin` — tak stoi
+#    w `dokumentacja-techniczna/SECURITY.md:51` („Ekran «Rejestr MP» (lista produktow) |
+#    `mp_agent` lub `mp_system_admin`"), wpisane w PR #24, czyli PRZED obiema naprawami,
+#    i tak samo mowi instrukcja klienta (`dla-klienta/instrukcje/ADMIN.md:4`: administrator
+#    ma „wszystko, co koordynator, PLUS rejestr produktow"). Koordynator dostawal wiec
+#    drzwi, ktore go odsylaly `wp_die` — soczewka S4, znalezisko 5, widziane na zywej
+#    instancji. Kontrola po nazwie funkcji utrwalala te wade jako wymog.
+#
+#    Dlatego pytamy teraz o ZACHOWANIE i o obie strony naraz: cap, z ktorym pozycja
+#    menu by sie zarejestrowala, ma zgadzac sie z bramka ekranu — dla KAZDEJ roli.
+#    Reguła 2.25 („koordynator nie ma mniej ekranow niz podwladny") obowiazuje dalej
+#    tam, gdzie ekran koordynatora WPUSZCZA — pilnuje tego pkt 3b nizej.
+#    ⛔ Pytamy EKRAN, nie pomocnika. Pierwsza wersja tej kontroli wolala
+#    `Roles::registry_menu_cap()` wprost — i przechodzilaby na zielono nawet wtedy, gdyby
+#    `ProductsScreen::add_menu()` wpisal do menu zupelnie inny cap. Mierzymy wiec to, co
+#    ekran faktycznie rejestruje: `add_menu_page()` wklada pozycje do `$menu` ZAWSZE, a
+#    o tym, czy czlowiek ja zobaczy, decyduje cap zapisany w tej pozycji.
+rej_menu()  { wp eval "wp_set_current_user( get_user_by( 'login', 'test-$1' )->ID );
+	global \$menu; \$menu = array();
+	MP\\Registry\\Admin\\ProductsScreen::add_menu();
+	\$cap = '';
+	foreach ( (array) \$menu as \$poz ) { if ( ( \$poz[2] ?? '' ) === MP\\Registry\\Admin\\ProductsScreen::PAGE_SLUG ) { \$cap = \$poz[1] ?? ''; } }
+	echo ( '' !== \$cap && current_user_can( \$cap ) ) ? 'tak' : 'nie';" 2>/dev/null | tr -d '[:space:]'; }
+rej_ekran() { wp eval "wp_set_current_user( get_user_by( 'login', 'test-$1' )->ID ); echo MP\\Registry\\Common\\Roles::can_current_user_see_registry() ? 'tak' : 'nie';" 2>/dev/null | tr -d '[:space:]'; }
+
+for R in mp_agent mp_coordinator; do
+	M=$(rej_menu "$R"); E=$(rej_ekran "$R")
+	[ -n "$M" ] && [ "$M" = "$E" ] \
+		&& ok "rejestr produktow, $R: menu i ekran mowia TO SAMO ($M) — zero drzwi, ktore odsylaja" \
+		|| bad "rejestr produktow, $R: menu mowi '$M', ekran '$E' — rozjazd wrocil"
+done
+# Proba kontrolna kierunku: gdyby menu chowalo sie WSZYSTKIM, powyzsze przeszloby
+# (dwa razy „nie" = zgodnosc), a produkt stracilby ekran. Pracownik ma widziec.
+[ "$(rej_menu mp_agent)" = "tak" ] && ok "[kontrolna] pracownik DALEJ widzi rejestr (naprawa nie poszla za daleko)" || bad "[kontrolna] pracownik stracil rejestr — zgodnosc wyzej nic nie znaczy"
 
 echo "== 3b. POMIAR ZACHOWANIA: MENU REJESTRUJE SIE DLA KOORDYNATORA =="
 MENU=$(wp eval "wp_set_current_user( get_user_by( 'login', 'test-mp_coordinator' )->ID ); global \$menu; \$menu = array(); MP\\Intake\\Admin\\UnverifiedScreen::add_menu(); MP\\Intake\\Admin\\CasesScreen::add_menu(); \$slugi = array(); foreach ( (array) \$menu as \$poz ) { \$slugi[] = \$poz[2] ?? ''; } echo implode( ',', \$slugi );" 2>/dev/null)
@@ -77,4 +118,13 @@ ZOSTALO=$(wp user list --role=mp_coordinator --field=user_login 2>/dev/null | gr
 
 echo "----"
 echo "PASS=$PASS FAIL=$FAIL"
+# ⛔ STRAZNIK KOMPLETU (lekcja z 4.08: „bramka, ktora cicho nie startuje, swieci zielono").
+# Kontrole ida przez `wp eval` — gdy klasa sie nie zaladuje albo `wp` padnie, wynik jest
+# pusty i caly blok potrafi przemknac bez ani jednego OK ani FAIL. Liczba ZMIERZONA na
+# przebiegu z tej zmiany: 1 (pkt 0) + 3 (pkt 1) + 3 (pkt 2) + 5 (pkt 3) + 2 (pkt 3b)
+# + 2 (pkt 4) + 1 (sprzatanie) = 17.
+if [ "$(( PASS + FAIL ))" -lt 17 ]; then
+	echo "  BLAD PRZEBIEGU: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. 17."
+	exit 2
+fi
 [ "$FAIL" -eq 0 ] || exit 1
