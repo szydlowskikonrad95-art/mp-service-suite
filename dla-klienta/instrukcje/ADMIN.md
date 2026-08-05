@@ -114,7 +114,7 @@ celowo nie przechowuje notatek ani danych osobowych; powód znajdziesz na liści
 - Wnioski o **eksport/usunięcie danych**: wbudowane narzędzia WordPressa
   (**Narzędzia → Eksport / Usuwanie danych osobowych**) obejmują dane systemu serwisowego.
 - Usuwanie = **anonimizacja**, czyli dane osobowe znikają, ale sprawa zostaje. Konkretnie
-  **znika**: imię i nazwa klienta, telefon, adres e-mail (zastąpiony technicznym `anon-…@removed.invalid`),
+  **znika**: imię i nazwisko klienta, telefon, adres e-mail (zastąpiony technicznym `anon-…@removed.invalid`),
   powiązanie z kontem na stronie, treść wiadomości oraz pola zgłoszenia zawierające dane osobowe
   (w ich miejscu widać `[ZREDAGOWANO-RODO]`). **Zostaje**: sama sprawa, jej numer, statusy, daty
   i oś zdarzeń — dzięki temu statystyki i historia serwisu dalej się zgadzają, ale nie da się już

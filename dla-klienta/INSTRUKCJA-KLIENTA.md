@@ -238,7 +238,7 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
   sekcja „Godziny terminów (statusy wbudowane)" → **Zapisz godziny terminów**.
   Termin statusu WŁASNEGO ustawia się przy nim samym, w sekcji „Statusy własne". Wartości domyślne: nowe zgłoszenie —
   24 h na pierwszą reakcję, „w analizie" — 48 h, „zaakceptowane" — 24 h, „w naprawie" — 120 h.
-  Przypomnienie wychodzi po upływie 75 % czasu. Priorytet wysoki skraca termin o połowę, niski
+  Przypomnienie wychodzi po upływie 75% czasu. Priorytet wysoki skraca termin o połowę, niski
   podwaja.
 - ⏸️ **Status „do uzupełnienia" nie ma terminu — i tak ma być.** To jedyny status, w którym
   czekamy na ruch klienta (zdjęcie, dokument, odpowiedź), więc **zegar stoi**: serwis nie dostaje
@@ -272,8 +272,8 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
   **Spis wszystkich dostępnych pól wraz ze znaczeniem jest na tym samym ekranie, pod edytorem
   szablonów** (tabela „Dostępne markery szablonów"). Pole spoza tej listy zostaje w treści
   niezmienione, więc literówka nie wyśle klientowi przypadkowych danych.
-- w tej samej sekcji **checklisty per typ sprawy** — lista kroków obsługi dla każdego rodzaju sprawy; pracownik odhacza
-  kroki na karcie sprawy, każde odhaczenie zostaje w historii.
+- **W tej samej sekcji są checklisty dla każdego rodzaju sprawy** — listy kroków obsługi; pracownik
+  odhacza kroki na karcie sprawy, a każde odhaczenie zostaje w historii.
 
 **Raporty:**
 - **Automatyzacje MP → Eksport CSV** — zestawienie: ile spraw, jak długo trwała obsługa, powody odrzuceń;
@@ -317,7 +317,7 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
 > To jedyny krok z tego rozdziału, którego pominięcie da się zauważyć dopiero po czasie —
 > dlatego sprawdź w **Narzędzia → Stan witryny**, czy nie świeci na czerwono przy terminach.
 >
-> ⏱️ **Ile to zajmie:** samo wgranie i włączenie wtyczek (rozdziały 3-6) to około **30-45 minut**.
+> ⏱️ **Ile to zajmie:** samo wgranie i włączenie wtyczek (rozdziały 3–6) to około **30–45 minut**.
 > Rozdział 7 to zwykle jedna wiadomość do hostingu i czekanie na odpowiedź.
 
 ### 7.1 Dostarczanie maili (SMTP)
@@ -374,7 +374,7 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 - Zgody klienta są zapisywane z treścią i wersją; klient może **wycofać zgodę** i **poprosić o usunięcie danych** z panelu.
 - Usunięcie danych wymaga **dwóch kliknięć**: pierwsze pokazuje ekran z informacją, co zniknie, co
   zostaje i że operacji nie da się cofnąć — dopiero przycisk na tym ekranie ją wykonuje. Dzięki temu
-  klient nie skasuje sobie danych przypadkiem (np. pudłem kciukiem na telefonie).
+  klient nie skasuje sobie danych przypadkiem (np. przypadkowym stuknięciem kciuka na telefonie).
 - **Wyjątek — wspólny adres e-mail** (np. sekretariat zgłaszający za kilka osób): system prowadzi
   wtedy **osobne kartoteki** dla każdej osoby, a samodzielna edycja i usuwanie danych z panelu są
   wyłączone — wniosek składa się wiadomością w sprawie i rozpatruje go pracownik (żeby jedna osoba
@@ -406,8 +406,8 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 
 ## 10. Gdy coś nie działa — do kogo się zwrócić
 
-Systemy dzielą się na trzy części i **każdą naprawia ktoś inny**. Zanim gdzieś zadzwonisz, ustal,
-z którą masz kłopot:
+System (Twoja strona z serwisem) dzieli się na trzy części i **każdą naprawia ktoś inny**.
+Zanim gdzieś zadzwonisz, ustal, z którą masz kłopot:
 
 | Objaw | Do kogo | Co powiedzieć |
 |---|---|---|
