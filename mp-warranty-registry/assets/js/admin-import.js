@@ -90,13 +90,14 @@
 		}
 	}
 
-	function paint( processed, total, errors ) {
+	function paint( processed, total, errors, success ) {
 		if ( progress ) {
 			progress.max = Math.max( 1, total );
 			progress.value = processed;
 		}
 
-		show( sprintf( cfg.i18n.progress, [ processed, total, errors ] ) );
+		// Postep I wynik w jednym zdaniu — patrz komentarz przy „done" w ImportScreen.php.
+		show( sprintf( cfg.i18n.progress, [ processed, total, success, errors ] ) );
 		announceProgress( processed, total );
 	}
 
@@ -129,6 +130,18 @@
 	 * @param {number} jobId Job, ktory wlasnie sie zakonczyl.
 	 * @param {Object} data  Zwrotka batcha (processed/total/errors).
 	 */
+	/**
+	 * Ile wierszy PRZYJAL REJESTR. Serwer podaje to wprost (`success`); starsza
+	 * zwrotka bez tego pola dopelniana jest arytmetycznie — kazdy przetworzony
+	 * wiersz konczy albo sukcesem, albo bledem, wiec roznica jest dokladna.
+	 *
+	 * @param {Object} data Zwrotka batcha.
+	 * @return {number} Liczba zaimportowanych wierszy.
+	 */
+	function zaimportowane( data ) {
+		return typeof data.success === 'number' ? data.success : ( data.processed - data.errors );
+	}
+
 	function updateHistoryRow( jobId, data ) {
 		var row = document.querySelector( '.mp-import-history tr[data-job="' + jobId + '"]' );
 
@@ -146,9 +159,7 @@
 		}
 
 		if ( counts ) {
-			// Zaimportowane = przetworzone minus bledy (kazdy wiersz konczy jako
-			// jedno albo drugie) — ta sama liczba, ktora tabela pokazuje po F5.
-			counts.textContent = ( data.processed - data.errors ) + ' / ' + data.total;
+			counts.textContent = zaimportowane( data ) + ' / ' + data.total;
 		}
 
 		if ( errors ) {
@@ -171,7 +182,9 @@
 			progress.value = progress.max;
 		}
 
-		var text = sprintf( cfg.i18n.done, [ data.processed, data.total, data.errors ] );
+		// Z2: baner podaje ZAIMPORTOWANE (przyjete do rejestru), tak jak kolumna
+		// „Zaimportowane / wszystkie" — nie „przetworzone", ktore obejmuja odrzucone.
+		var text = sprintf( cfg.i18n.done, [ data.processed, data.total, zaimportowane( data ), data.errors ] );
 		var extra = data.errors > 0 ? cfg.i18n.doneErrors : '';
 
 		show( text, extra );
@@ -214,7 +227,7 @@
 						return;
 					}
 
-					paint( json.data.processed, json.data.total, json.data.errors );
+					paint( json.data.processed, json.data.total, json.data.errors, zaimportowane( json.data ) );
 
 					if ( 'processing' === json.data.status ) {
 						next();
@@ -279,7 +292,7 @@
 					reportUrls[ jobId ] = json.data.report_url;
 				}
 
-				paint( json.data.processed, json.data.total, json.data.errors );
+				paint( json.data.processed, json.data.total, json.data.errors, zaimportowane( json.data ) );
 				loop( jobId, json.data.token );
 			} )
 			.catch( function () {
@@ -306,7 +319,7 @@
 	}
 
 	if ( cfg.job && cfg.job.token && 'processing' === cfg.job.status ) {
-		paint( cfg.job.processed, cfg.job.total, cfg.job.errors );
+		paint( cfg.job.processed, cfg.job.total, cfg.job.errors, zaimportowane( cfg.job ) );
 		loop( cfg.job.id, cfg.job.token );
 	} else if ( cfg.job && 'processing' === cfg.job.status && resumeBtn ) {
 		// Żywy job bez tokenu w tym oknie (np. odświeżona karta) — pokaż „Wznów".

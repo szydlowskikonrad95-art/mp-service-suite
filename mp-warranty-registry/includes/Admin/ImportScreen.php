@@ -136,6 +136,9 @@ final class ImportScreen {
 				'id'        => (int) $live['id'],
 				'status'    => (string) $live['status'],
 				'processed' => (int) $live['processed_rows'],
+				// Wynik obok postepu: napis na ekranie ma podawac obie liczby naraz,
+				// zeby „przetworzono" nie dalo sie przeczytac jako „zaimportowano".
+				'success'   => (int) $live['success_rows'],
 				'total'     => (int) $live['total_rows'],
 				'errors'    => (int) $live['error_rows'],
 				'token'     => $token,
@@ -144,10 +147,22 @@ final class ImportScreen {
 				'reportUrl' => self::report_url( (int) $live['id'] ),
 			),
 			'i18n'    => array(
-				/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow. */
-				'progress'   => __( 'Przetworzono %1$s z %2$s wierszy (błędy: %3$s).', 'mp-warranty-registry' ),
-				/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow. */
-				'done'       => __( 'Import zakończony: %1$s z %2$s wierszy, błędy: %3$s.', 'mp-warranty-registry' ),
+				/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: zaimportowane, 4: liczba bledow. */
+				'progress'   => __( 'Przetworzono %1$s z %2$s wierszy — zaimportowano %3$s, błędy: %4$s.', 'mp-warranty-registry' ),
+
+				/*
+				 * ⛔ TA SAMA PULAPKA, KTORA RAZ JUZ NAPRAWILISMY W TABELI (patrz komentarz
+				 * przy naglowku „Zaimportowane / wszystkie" nizej): NAPIS OBIECYWAL WYNIK,
+				 * A POKAZYWAL POSTEP. Tam poprawilismy egzemplarz, tu zostala cala klasa.
+				 * Komunikat brzmial „Import zakonczony: 4 z 4 wierszy, bledy: 3" — liczby
+				 * byly PRAWDZIWE (4 wiersze przerobione), ale „4 z 4 wierszy" czyta sie jako
+				 * „wszystko weszlo", zwlaszcza ze przy pliku bez bledow brzmi identycznie.
+				 * Tabela obok pokazywala w tej samej chwili „1 / 4" i operator widzial
+				 * sprzecznosc, ktorej nie bylo. Napis mowi teraz WPROST, ze liczy przetworzone,
+				 * i od razu podaje wynik — zeby nie trzeba bylo zestawiac go z tabela.
+				 */
+				/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: zaimportowane, 4: liczba bledow. */
+				'done'       => __( 'Import zakończony: przetworzono %1$s z %2$s wierszy — zaimportowano %3$s, błędy: %4$s.', 'mp-warranty-registry' ),
 				'doneErrors' => __( 'Pobierz raport błędów poniżej (tabela „Ostatnie importy").', 'mp-warranty-registry' ),
 				'netError'   => __( 'Błąd połączenia — import NIE przepadł. Kliknij „Wznów import", żeby kontynuować od miejsca przerwania.', 'mp-warranty-registry' ),
 				'resuming'   => __( 'Wznawiam import…', 'mp-warranty-registry' ),
@@ -228,10 +243,11 @@ final class ImportScreen {
 					<?php
 					if ( null !== $live ) {
 						printf(
-							/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow. */
-							esc_html__( 'Przetworzono %1$s z %2$s wierszy (błędy: %3$s).', 'mp-warranty-registry' ),
+							/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: zaimportowane, 4: liczba bledow. */
+							esc_html__( 'Przetworzono %1$s z %2$s wierszy — zaimportowano %3$s, błędy: %4$s.', 'mp-warranty-registry' ),
 							esc_html( number_format_i18n( (int) $live['processed_rows'] ) ),
 							esc_html( number_format_i18n( (int) $live['total_rows'] ) ),
+							esc_html( number_format_i18n( (int) $live['success_rows'] ) ),
 							esc_html( number_format_i18n( (int) $live['error_rows'] ) )
 						);
 					}
@@ -284,7 +300,7 @@ final class ImportScreen {
 						<?php
 						printf(
 							/* translators: 1: numer joba, 2: przetworzone, 3: wszystkie wiersze. */
-							esc_html__( 'Import #%1$s został przerwany (%2$s z %3$s wierszy). Możesz go wznowić — ruszy od miejsca przerwania.', 'mp-warranty-registry' ),
+							esc_html__( 'Import #%1$s został przerwany (przetworzono %2$s z %3$s wierszy). Możesz go wznowić — ruszy od miejsca przerwania.', 'mp-warranty-registry' ),
 							esc_html( (string) (int) $stale['id'] ),
 							esc_html( number_format_i18n( (int) $stale['processed_rows'] ) ),
 							esc_html( number_format_i18n( (int) $stale['total_rows'] ) )
