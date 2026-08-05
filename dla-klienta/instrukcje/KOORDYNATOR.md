@@ -51,12 +51,13 @@ wysyłkę dla tej samej sprawy można wywołać **raz na 5 minut**.
 
 ![Panel Automatyzacje MP](zdjecia/admin-07-automatyzacje.png)
 
-- **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). Pod nią
-  jest sekcja **„Kto dostaje zgłoszenia"** z listą pracowników do zaznaczenia — **ustawia ją
-  administrator systemu** (tak samo jak pozostałe konfiguracje). **Pusta lista = sprawy zostają
-  nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
-- **Akcje**: „Przelicz terminy obsługi" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
-  powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
+- **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). **Pusta lista
+  pracowników = sprawy zostają nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to
+  ostrzeżenie, poproś administratora: sekcję **„Kto dostaje zgłoszenia"** z listą pracowników do
+  zaznaczenia widzi i ustawia **wyłącznie administrator systemu** — w Twoim panelu jej nie ma.
+- **Akcje**: u Ciebie jest **„Eksport CSV"** (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
+  Przycisk **„Przelicz terminy obsługi"** (uruchamiany po zmianie konfiguracji terminów; nie wysyła
+  ponownie starych powiadomień) **widzi wyłącznie administrator systemu** — to, że go nie masz, nie jest błędem.
 
 ### ⏱️ Dwie kolumny czasu w eksporcie — i dlaczego dwie
 
