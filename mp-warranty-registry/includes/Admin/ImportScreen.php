@@ -90,6 +90,16 @@ final class ImportScreen {
 			Assets::ver( 'assets/css/admin-import.css' )
 		);
 
+		// Region przewijany tabeli historii importow (S4 nr 6, czesc druga). Wspolny,
+		// maly arkusz dzielony z ekranem wyjatkow — jedna definicja klasy zamiast
+		// dwoch kopii, ktore rozjechalyby sie przy pierwszej zmianie.
+		wp_enqueue_style(
+			'mp-registry-tabele',
+			$base . 'assets/css/admin-tabele.css',
+			array(),
+			Assets::ver( 'assets/css/admin-tabele.css' )
+		);
+
 		wp_enqueue_script(
 			'mp-import-admin',
 			$base . 'assets/js/admin-import.js',
@@ -343,6 +353,7 @@ final class ImportScreen {
 			'failed'     => __( 'nieudany', 'mp-warranty-registry' ),
 		);
 		?>
+		<div class="mp-registry-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela historii importów', 'mp-warranty-registry' ); ?>">
 		<table class="widefat striped mp-import-history">
 			<thead>
 				<tr>
@@ -375,6 +386,7 @@ final class ImportScreen {
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		</div>
 		<p class="description">
 			<?php esc_html_e( 'Godziny w kolumnie „Utworzony” podane są w czasie uniwersalnym (UTC) — w Polsce zegar jest o 1 godzinę (zimą) lub 2 godziny (latem) do przodu.', 'mp-warranty-registry' ); ?>
 		</p>
