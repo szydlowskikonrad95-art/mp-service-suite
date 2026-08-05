@@ -47,20 +47,19 @@ for N in 1 2 3 4; do
 	CID=$(mkcase "petla-$N@example.com" "PETLA-$N")
 	SPRAWY="$SPRAWY $CID"
 done
-# ── 0a. ROZGRZEWKA: doszyj slady po SASIADACH. Po podziale CI na czesci ten test
-# ma innych poprzednikow niz w pelnym sekwencyjnym przebiegu — sprawa bez terminu
-# zostawiona przez INNY test zafalszowalaby pomiar (mierzylby doszywanie, nie przeglad).
-# Doszycie zastanych NIE oslabia bramki: sedno (koszt nie rosnie) mierzone nizej.
-for _ in 1 2 3; do
-	ZASTANE=$(q "SELECT COUNT(*) FROM wp_mp_service_cases c LEFT JOIN wp_mp_case_sla s ON s.case_id=c.id WHERE c.identity_status='verified' AND s.case_id IS NULL")
-	[ "${ZASTANE:-0}" = "0" ] && break
-	wp eval 'MP\Automator\Sla::reconcile_untracked( 500 );' >/dev/null 2>&1
+# ── 0a. ROZGRZEWKA: doszyj slady po SASIADACH — wyrocznia jest SAM PRZEGLAD.
+# Po podziale CI na czesci ten test ma innych poprzednikow niz w pelnym przebiegu
+# i potrafi zastac sprawe bez terminu. Rownolegly SQL mierzyl co innego niz przeglad
+# (liczyl tez sprawy poza jego oknem/filtrem — te pomiaru NIE ruszaja, dowod: koszt
+# byl staly przy takiej sierocie). Warunek wstepny = przeglad melduje 0 doszytych.
+DOSZYTE=-1
+for _ in 1 2 3 4 5; do
+	DOSZYTE=$(wp eval 'echo (int) MP\Automator\Sla::reconcile_untracked( 500 );' 2>/dev/null | tr -d '[:space:]')
+	[ "${DOSZYTE:-1}" = "0" ] && break
 done
-
-BEZ_TERMINU=$(q "SELECT COUNT(*) FROM wp_mp_service_cases c LEFT JOIN wp_mp_case_sla s ON s.case_id=c.id WHERE c.identity_status='verified' AND s.case_id IS NULL")
-[ "${BEZ_TERMINU:-1}" = "0" ] \
-	&& ok "wszystkie sprawy maja wiersz terminu (przeglad nie ma czego doszywac)" \
-	|| bad "$BEZ_TERMINU spraw bez terminu — pomiar mierzylby doszywanie, nie przeglad"
+[ "${DOSZYTE:-1}" = "0" ] \
+	&& ok "przeglad nie ma czego doszywac (ostatnia rozgrzewka doszyla 0)" \
+	|| bad "przeglad po rozgrzewkach wciaz doszywa ($DOSZYTE) — brak stabilnego punktu startu pomiaru"
 
 # ── 1. Pomiar bazowy ────────────────────────────────────────────────────────
 KOSZT_1=$(koszt_przegladu)
