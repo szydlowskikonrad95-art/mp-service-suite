@@ -7,7 +7,7 @@
 
 Panel WordPress → **MP: Sprawy**. Filtr **„Moje sprawy"** (lista rozwijana obok wyszukiwarki) pokazuje tylko Twoje sprawy.
 Kolumny: numer sprawy, czego dotyczy, klient, rodzaj, status (kolorowa plakietka), przydzielony,
-termin SLA (czerwony = po terminie lub blisko), utworzono. **Priorytet sprawy widzisz po jej
+termin SLA (**czerwony** = po terminie, **bursztynowy** = blisko terminu, mniej niż 24 h), utworzono. **Priorytet sprawy widzisz po jej
 otwarciu** — na karcie, nie na liście.
 
 > **SLA** to umówiony czas na zajęcie się sprawą (np. 24 godziny na pierwszą reakcję). System
@@ -33,8 +33,8 @@ Kliknij numer sprawy. Na karcie masz wszystko:
 - **Wiadomości** — rozmowa z klientem; możesz użyć gotowego szablonu odpowiedzi (pola typu numer
   sprawy podstawiają się same),
 - **Zmiana statusu** — prowadź sprawę po statusach (nowe → w analizie → … → zamknięte).
-  **Odrzucenie wymaga wybrania powodu** z listy — pole powodu pojawia się przy statusie
-  „odrzucone" i bez niego zapis się nie uda. Lista jest gotowa od instalacji; jeśli brakuje w niej
+  **Odrzucenie wymaga wybrania powodu** z listy — pole powodu jest widoczne na stałe obok
+  listy statusów, a wypełnić trzeba je przy statusie „odrzucone": bez tego zapis się nie uda. Lista jest gotowa od instalacji; jeśli brakuje w niej
   powodu, który u Was występuje, poproś administratora systemu o dopisanie
   (**MP: Sprawy → Ustawienia**).
 
@@ -44,7 +44,8 @@ z góry karty, rzuć okiem na oś: jeśli klient go poprawił, dzwonisz pod star
 
 ## 3. Terminy (SLA)
 
-- Przy każdej otwartej sprawie widzisz **termin pierwszej reakcji**.
+- Przy każdej otwartej sprawie widzisz **termin bieżącego statusu** — „pierwsza reakcja" dotyczy
+  statusu „nowe"; każdy kolejny status (np. „w analizie", „w naprawie") ma własną liczbę godzin.
 - **Przed terminem** system wyśle Ci przypomnienie mailem. **Po terminie** sprawa eskaluje
   do koordynatora — nie chowaj trudnych spraw, po prostu pisz do klienta i zmieniaj statusy.
 - ⏸️ **Gdy przestawisz sprawę na „do uzupełnienia", zegar STAJE** — czekamy wtedy na klienta

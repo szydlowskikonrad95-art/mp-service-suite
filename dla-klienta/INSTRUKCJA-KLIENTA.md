@@ -260,7 +260,7 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
   Dopasujesz ją do siebie w **MP: Sprawy → Ustawienia**, sekcja „Powody odrzucenia sprawy" →
   **Zapisz powody odrzucenia**. ⚠️ **Pustej listy system nie przyjmie** — bez powodów nie dałoby się
   w ogóle odrzucić sprawy, więc zapis pustki jest odrzucany.
-- **Wznowić zamkniętą sprawę może tylko koordynator** (i tylko do statusu „w analizie").
+- **Wznowić zamkniętą sprawę może koordynator lub administrator systemu** (i tylko do statusu „w analizie").
 
 **Szablony i checklisty:**
 - **Automatyzacje MP → sekcja „Checklisty i szablony odpowiedzi"** — gotowe treści maili z podstawianymi polami (numer sprawy,

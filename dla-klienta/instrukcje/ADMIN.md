@@ -62,9 +62,11 @@ na ekranie jest przykładowy plik do pobrania i lista kolumn:
 
 ![Import CSV](zdjecia/admin-05-import-csv.png)
 
-Produktu z **aktywną sprawą nie da się usunąć** — system celowo na to nie pozwala, żeby otwarta
-sprawa nie została bez produktu, którego dotyczy (nazywamy to blokadą integralności). Najpierw
-zamknij sprawę albo zarchiwizuj produkt (archiwalny nie przyjmuje nowych zgłoszeń).
+Produktów **nie usuwa się z rejestru w ogóle** — dostępne akcje to: historia, wyjątki, poprawa
+danych i **archiwizacja**. Produktu z **aktywną sprawą nie da się zarchiwizować** — system celowo
+na to nie pozwala, żeby otwarta sprawa nie została bez produktu, którego dotyczy (nazywamy to
+blokadą integralności). Najpierw zamknij sprawę, dopiero potem archiwizuj (produkt archiwalny
+nie przyjmuje nowych zgłoszeń).
 
 ### Poprawianie danych produktu
 
@@ -92,8 +94,9 @@ Produkt w archiwum jest zablokowany do edycji — najpierw go przywróć.
 ## 3. Wyjątki gwarancyjne (tylko Ty)
 
 Ręczne przyznanie lub cofnięcie gwarancji dla produktu albo konkretnej sprawy (np. gest dobrej
-woli po terminie). Każdy wyjątek ma powód (notatka wewnętrzna — klient jej nie widzi) i zostaje
-w historii produktu.
+woli po terminie). Każdy wyjątek ma powód (notatka wewnętrzna — klient jej nie widzi). W historii
+produktu zostaje wpis o nadaniu i cofnięciu wyjątku, ale **bez treści powodu** — dziennik zdarzeń
+celowo nie przechowuje notatek ani danych osobowych; powód znajdziesz na liście wyjątków.
 
 **Jak tu wejść:** wyjątek dotyczy zawsze **konkretnego produktu**, więc otwiera się go z listy —
 **Rejestr MP → Rejestr MP**, znajdź produkt i w kolumnie **Akcje** kliknij **„wyjątki"**.

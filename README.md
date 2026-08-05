@@ -126,6 +126,7 @@ dokumentacja-techniczna/  kontrakt hooków, baza, bezpieczeństwo, maszyna stan�
 testy/                    phpunit (czysta logika) + ponad 140 skryptów e2e na ŻYWYM WordPressie
                           (cały zestaw w każdym przebiegu; bramka pada, gdy zestaw się kurczy)
 build/                    budowa ZIP-ów + linter zakazu dotykania cudzych tabel
+docker/                   środowisko testowo-deweloperskie (czysty WordPress do budowy i testów)
 PONAD-SPECYFIKACJE.md           co wykracza ponad specyfikację i którą jej literę realizuje
 ```
 
