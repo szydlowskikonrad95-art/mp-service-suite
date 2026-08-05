@@ -54,6 +54,18 @@ asg() { q "SELECT IFNULL(assigned_to,'NULL') FROM wp_mp_service_cases WHERE id=$
 CID=$(mk akcje@example.com AKC-1)
 [ -n "$CID" ] && ok "seed: sprawa gotowa (id=$CID, status=$(st "$CID"))" || bad "seed: brak case_id"
 
+# ⛔ WARUNEK WSTEPNY DOPISANY (2.24, druga polowa): sprawa musi byc PRZYDZIELONA
+#    pracownikowi, zanim on na niej zadziala. Wczesniej ten test kazal pracownikowi
+#    zmieniac status sprawy przydzielonej NIKOMU i przechodzil — bo handlery pytaly
+#    tylko „czy jestes personelem". To bylo dokladnie te wejscie, ktorym pracownik
+#    mogl zmienic cudza sprawe i napisac do obcego klienta.
+#    ⚠️ Przydziela KOORDYNATOR, bo tak mowi dokumentacja klienta: `PRACOWNIK.md`
+#    („obslugujesz sprawy, ktore system albo koordynator Ci przydzielil"). Test
+#    chodzi teraz sciezka, ktora produkt naprawde obiecuje — kontrole ponizej sa
+#    bez zmian, zmienil sie tylko stan wyjsciowy.
+do_assign "$COORD" "$CID" "$AGENT" valid
+[ "$(asg "$CID")" = "$AGENT" ] && ok "seed: koordynator przydzielil sprawe pracownikowi ($AGENT)" || bad "seed: przydzial nie przeszedl ($(asg "$CID"))"
+
 # ── 1. ZMIANA STATUSU ────────────────────────────────────────────────────────
 # 1a. staff (agent) + valid: nowe -> w analizie
 do_status "$AGENT" "$CID" "w analizie" "nowe" "" valid
@@ -94,8 +106,13 @@ do_reply "$SUB" "$CID" "Haker-probuje-pisac" valid
 
 # ── 3. PRZYDZIAL (rola: TYLKO koordynator/admin) ─────────────────────────────
 # 3a. PRACOWNIK (mp_agent) = staff, ale NIE moze przydzielac => 403, bez zmiany
-do_assign "$AGENT" "$CID" "$AGENT" valid
-[ "$(asg "$CID")" = "NULL" ] && ok "assign: mp_agent = 403 (pracownik nie przydziela — rola/ownership)" || bad "assign: agent przydzielil!! ($(asg "$CID"))"
+# ⛔ Pracownik probuje PRZE-przydzielic sprawe na KOGOS INNEGO (koordynatora),
+#    a nie na siebie. Po dopisaniu warunku wstepnego sprawa jest juz przydzielona
+#    jemu, wiec proba „przydziel sobie" nie odroznialaby skutku od stanu wyjsciowego
+#    i kontrola swiecilaby na czerwono bez winy produktu. Sprawdzamy, ze przydzial
+#    NIE DRGNAL — to jest sedno: pracownik nie rozdziela spraw.
+do_assign "$AGENT" "$CID" "$COORD" valid
+[ "$(asg "$CID")" = "$AGENT" ] && ok "assign: mp_agent = 403 (pracownik nie przydziela — rola/ownership)" || bad "assign: agent przydzielil!! ($(asg "$CID"))"
 
 # 3b. koordynator + valid => przydzial ustawiony + CASE_ASSIGNED
 do_assign "$COORD" "$CID" "$AGENT" valid
