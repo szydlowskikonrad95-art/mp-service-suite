@@ -2,7 +2,7 @@
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.12
+Stable tag: 1.3.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,7 +41,7 @@ No. The import ADDS products. A serial number already present in the registry is
 == Changelog ==
 
 = 1.3.13 =
-Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+Wydanie po zewnętrznym przeglądzie 1.3.12 i własnym przeszukaniu produktu. Poniżej zmiany w TYM module.
 
 Ekran importu:
 * **Tabela „Ostatnie importy" nadąża za banerem.** Po zakończeniu importu baner mówił
@@ -51,6 +51,13 @@ Ekran importu:
 Menu:
 * **„Rejestr MP" stoi w menu bocznym obok pozostałych ekranów MP**, a nie na samym dole, pod
   ustawieniami WordPressa — instrukcja wymienia cztery ekrany jednym tchem i teraz tak też wyglądają.
+
+Archiwizacja produktu:
+* **Produktu z aktywną sprawą nie da się zarchiwizować także wtedy, gdy sprawa powstaje w tej samej
+  sekundzie.** Liczenie spraw i zapis do archiwum były dwoma osobnymi krokami — sprawa złożona
+  między nimi już nie zatrzymywała archiwizacji, a ekran mimo to meldował sukces. Teraz oba kroki
+  dzieją się razem, a odmowa mówi to samo zdanie co zwykle: „Produkt ma 1 aktywną sprawę — najpierw
+  ją zamknij".
 
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.

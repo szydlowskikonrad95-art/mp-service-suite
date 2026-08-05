@@ -4,96 +4,113 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
-## [1.3.13] — w przygotowaniu
+## [1.3.13] — 2026-08-05
 
-> Numer wydania nie jest jeszcze wycięty: nagłówki wtyczek, `Stable tag` w `readme.txt`
-> i pliki tłumaczeń nadal mówią 1.3.12 i podbije je osobny krok wydania. Poniżej jest komplet
-> zmian scalonych do gałęzi głównej po wydaniu 1.3.12.
+Wydanie po zewnętrznym przeglądzie wydania 1.3.12 i po własnym przeszukaniu produktu pod kątem
+miejsc, w których **instrukcja obiecywała co innego, niż robi program**. Aktualizuje się jak
+poprzednie: wgraj trzy pliki ZIP, a brakującą kolumnę w bazie system dołoży sam przy pierwszym
+wejściu do panelu — nie trzeba nic przeklikiwać ani niczego przeliczać ręcznie.
 
-### Naprawione — bezpieczeństwo danych klienta
+### Naprawione — bezpieczeństwo i dane osobowe
+
 - 🔴 **Załącznik cudzej sprawy przestał być boczną furtką.** Pracownik serwisu widział na liście
   i na karcie **wyłącznie swoje** sprawy, ale załącznik — zdjęcie usterki, skan dokumentu zakupu —
-  pobierał z **dowolnej** sprawy, także takiej, której nie obsługuje. Bramka załącznika pyta teraz
-  o to samo, o co pyta karta: pracownik wchodzi tylko do spraw przydzielonych jemu, koordynator
-  i administrator systemu — do wszystkich, klient — do swoich. Nikt uprawniony nie stracił dostępu.
+  pobierał z **dowolnej** sprawy, także takiej, której nie obsługuje. Załącznik przechodzi teraz
+  przez tę samą bramkę co karta sprawy: pracownik wchodzi tylko do spraw przydzielonych jemu,
+  koordynator i administrator systemu — do wszystkich, klient — do swoich. Nikt uprawniony nie
+  stracił dostępu, który miał.
+- 🔴 **Wewnętrzna wiadomość dla pracownika nie trafi już do klienta.** Podpowiedź na ekranie reguł
+  uczyła jednego sposobu wskazania odbiorcy powiadomienia, a program rozumiał wyłącznie drugi —
+  reguła ułożona **dokładnie tak, jak podpowiada ekran**, wysyłała klientowi treść napisaną dla
+  serwisanta. Oba zapisy działają teraz tak samo; reguły utworzone wcześniej zachowują się bez zmian.
+- 🔴 **Obietnica „dane usuniemy po zakończeniu zgłoszenia" wykonuje się sama.** Klient, który wycofał
+  zgodę przy otwartej sprawie, dostawał tę odpowiedź — i na tym się kończyło: po zamknięciu sprawy
+  dane leżały w bazie bezterminowo, dopóki ktoś nie kliknął drugi raz. Nie wiedział o tym ani klient,
+  ani administrator. Teraz odroczone żądanie kończy **dobowy przebieg porządkowy**, zaraz po
+  zamknięciu sprawy. Jeśli ta sama osoba wyśle w międzyczasie nowe zgłoszenie, odroczone usunięcie
+  zostaje anulowane.
+- 🔴 **Żadnej zmiany sprawy bez śladu w historii już nie będzie.** Gdy zapis wpisu do historii się nie
+  udał, zmiana i tak wchodziła — sprawa dostawała nowy stan, a oś czasu o tym milczała, choć produkt
+  obiecuje historię nieusuwalną i kompletną. Dotyczyło to **zmiany statusu, przydziału pracownika
+  i zmiany priorytetu**. Teraz nieudany zapis **wycofuje całą zmianę**: personel widzi, że operacja
+  się nie powiodła, a administrator dostaje sygnał w **Narzędzia → Stan witryny**. Lepiej odmówić
+  zmiany, niż zmienić stan po cichu.
 
-### Naprawione — historia sprawy i powiadomienia
-- 🔴 **Żadnej zmiany sprawy bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii
-  się nie udał, zmiana i tak wchodziła — sprawa dostawała nowy stan, a oś czasu o tym milczała,
-  choć produkt obiecuje historię nieusuwalną i kompletną. Dotyczyło to **zmiany statusu, przydziału
-  pracownika i zmiany priorytetu**. Teraz nieudany zapis **wycofuje całą zmianę**: personel widzi,
-  że operacja się nie powiodła, a administrator dostaje sygnał w **Narzędzia → Stan witryny**.
-  Lepiej odmówić zmiany, niż zmienić stan po cichu.
-- 🔴 **Reguła powiadomienia utworzona dokładnie tak, jak podpowiada ekran, nie wyśle już
-  wewnętrznej wiadomości do klienta.** Podpowiedź w polu „Szczegóły akcji" uczy jednego zapisu
-  odbiorcy, a silnik reguł rozumiał tylko drugi — i cicho wysyłał **klientowi** treść napisaną dla
-  pracownika. Oba zapisy działają teraz tak samo; reguły już istniejące zachowują się bez zmian.
+### Naprawione — co widać w codziennej pracy
+
+- **Dobowy limit zgłoszeń trzyma także wtedy, gdy dwa zgłoszenia przyjdą w tej samej chwili.**
+  Sprawdzenie limitu tylko **czytało** licznik, a doliczenie zgłoszenia szło dopiero po założeniu
+  sprawy — dwa żądania wysłane równocześnie widziały ten sam stan i **oba przechodziły**, więc limit
+  „3 na dobę" kończył się czterema sprawami (przy sześciu naraz — sześcioma; zmierzone). Teraz
+  miejsce w limicie rezerwuje się jednym, niepodzielnym zapisem, zanim sprawa powstanie. Komunikaty
+  odmowy bez zmian, a zgłoszenie odrzucone przy sprawdzaniu danych **oddaje** zajęte miejsce —
+  literówka nadal nie zjada limitu na dobę.
+- **Produktu z aktywną sprawą nie da się zarchiwizować także wtedy, gdy sprawa powstaje w tej samej
+  sekundzie.** Liczenie spraw i zapis do archiwum były dwoma osobnymi krokami — sprawa złożona
+  między nimi już nie zatrzymywała archiwizacji, a ekran mimo to meldował sukces. Teraz oba kroki
+  dzieją się razem, a odmowa mówi to samo zdanie co zwykle: „Produkt ma 1 aktywną sprawę — najpierw
+  ją zamknij".
+- **Chwilowa awaria poczty nie kasuje już przypomnienia o terminie na stałe.** Przy większej liczbie
+  zaległości jeden przebieg nadrabia je rundami — a każda runda brała te same sprawy, więc komplet
+  trzech prób wysyłki palił się w kilka sekund i powiadomienie było spisywane na straty, choć poczta
+  wracała minutę później. Zmierzone: 55 zaległych przypomnień i jeden przebieg z niedziałającą pocztą
+  → **20 przypomnień przepadło**. Teraz próby są rozsunięte w czasie, więc po powrocie poczty
+  wychodzą wszystkie.
+- **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit.** Klient słyszał zawsze
+  „z tego adresu wysłano zbyt wiele zgłoszeń" — także wtedy, gdy blokada wynikała z limitu **numeru
+  seryjnego** albo **łącza internetowego**. Człowiek z zupełnie nowym adresem zmieniał go wtedy bez
+  skutku albo uznawał system za zepsuty. Każdy przypadek ma teraz własne zdanie.
 - **Komunikat po zmianie statusu mówi tylko o mailach, które naprawdę wyszły.** Dotąd zawsze
   twierdził, że powiadomiono klienta **i** przypisanego pracownika — także wtedy, gdy status zmieniał
-  sam przypisany pracownik (nie wysyłamy komu maila o jego własnej akcji) albo gdy sprawa nie miała
+  sam przypisany pracownik (nie wysyłamy nikomu maila o jego własnej akcji) albo gdy sprawa nie miała
   przypisanego. W tych przypadkach pisze teraz po prostu: powiadomiono klienta.
-
-### Naprawione — RODO
-- 🔴 **Obietnica „dane usuniemy po zakończeniu zgłoszenia" wykonuje się sama.** Klient, który
-  wycofał zgodę przy aktywnej sprawie, dostawał tę odpowiedź — i na tym się kończyło: po zamknięciu
-  sprawy dane leżały w bazie bezterminowo, dopóki ktoś nie kliknął drugi raz. O tym nie wiedział ani
-  klient, ani administrator. Teraz odroczone żądanie kończy **dobowy przebieg porządkowy**, zaraz po
-  zamknięciu sprawy. Nowe zgłoszenie tej samej osoby przed wykonaniem anuluje odroczenie.
-
-### Naprawione — współbieżność i niezawodność (recenzja zewnętrzna 1.3.12: M1, M3, M4)
-- **Dobowy limit zgłoszeń trzyma także przy dwóch zgłoszeniach naraz.** Sprawdzenie limitu tylko
-  CZYTAŁO licznik, a doliczenie zgłoszenia szło dopiero po założeniu sprawy — dwa żądania wysłane
-  w tej samej chwili widziały ten sam stan i **oba przechodziły**, więc limit „3 na dobę" kończył się
-  czterema sprawami (przy sześciu równoległych — sześcioma; zmierzone). Teraz miejsce w limicie
-  rezerwuje się jednym, niepodzielnym zapisem, zanim sprawa powstanie. Komunikaty odmowy bez zmian:
-  nadal mówią, KTÓRY limit blokuje i KIEDY można wrócić, i nie czyszczą formularza. Zgłoszenie
-  odrzucone przy walidacji **oddaje** zajęte miejsce — literówka nadal nie zjada limitu na dobę.
-- **Produktu z aktywną sprawą nie da się zarchiwizować także wtedy, gdy sprawa powstaje w tej samej
-  sekundzie.** Liczenie spraw i zapis flagi archiwum były dwoma osobnymi krokami — sprawa założona
-  między nimi nie zatrzymywała już archiwizacji, a ekran meldował sukces. Teraz oba kroki dzieją się
-  w jednej transakcji, a liczenie odbywa się pod zamkiem po stronie modułu spraw (właściciela danych);
-  odmowa mówi człowiekowi to samo zdanie co zwykle: „Produkt ma 1 aktywną sprawę — najpierw ją zamknij".
-- **Chwilowa awaria poczty nie kasuje już przypomnienia SLA na stałe.** Przy większej liczbie zaległości
-  jeden przebieg zamiatarki nadrabia je pętlą rund — a każda runda brała te same sprawy, więc komplet
-  trzech prób wysyłki palił się w kilka sekund: powiadomienie było spisywane na straty, choć poczta
-  wracała minutę później. Zmierzone: 55 zaległych przypomnień, jeden przebieg z padniętą pocztą →
-  **20 przypomnień przepadło**. Teraz próby są rozsunięte w czasie (kolejna dopiero w następnym
-  przebiegu), więc po powrocie poczty wychodzą wszystkie.
-
-#### Zmiany techniczne
-- Schemat Automatora **v3**: kolumny `reminder_attempt_at` / `escalation_attempt_at` w `wp_mp_case_sla`
-  (migracja dokłada je automatycznie; nowa instalacja dostaje je od razu).
-- Hak `mp_product_active_cases_count` przyjmuje trzeci argument `$for_update` (odczyt pod zamkiem);
-  starsi słuchacze z dwoma argumentami działają bez zmian.
-- Nowe żywe dowody: `testy/e2e/c-m1-limit-dobowy-wyscig.sh`, `testy/e2e/b-m3-archiwizacja-wyscig.sh`,
-  `testy/e2e/d-m4-proby-sla-rozsuniete.sh` — każdy skalibrowany (pada na kodzie sprzed naprawy).
-
-### Zmienione — komunikaty i ekrany
-- **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit.** Klient słyszał
-  zawsze „z tego adresu wysłano zbyt wiele zgłoszeń" — także wtedy, gdy blokada wynikała z limitu
-  **numeru seryjnego** albo **łącza internetowego**. Człowiek z zupełnie nowym adresem zmieniał go
-  wtedy bez skutku albo uznawał system za zepsuty. Każdy zakres ma teraz własne zdanie.
 - **Tabela „Ostatnie importy" nadąża za banerem.** Po imporcie baner mówił „zakończony 8 z 8",
   a tabela tuż pod nim dalej „w trakcie, 0/8" — aż do ręcznego odświeżenia strony. Wiersz importu
-  odświeża się teraz sam.
+  odświeża się teraz sam, razem z liczbami i odnośnikiem do raportu błędów.
 - **Rejestr zdarzeń automatu nie odsyła do reguły, której nie ma.** Wpisy pochodzące z mechanizmów
   wbudowanych (powiadomienie o przydziale, cykliczny przegląd terminów) pokazywały „reguła nr: 0",
-  a tabela reguł numeruje od jedynki — czytelnik szukał reguły-widma. Teraz piszą wprost: wbudowana.
+  a tabela reguł numeruje od jedynki — czytelnik szukał reguły, która nie istnieje. Teraz piszą
+  wprost: wbudowana.
 - **„Rejestr MP" stoi w menu bocznym obok pozostałych ekranów MP**, a nie na samym dole, pod
-  ustawieniami WordPressa.
+  ustawieniami WordPressa. Instrukcja wymienia cztery ekrany jednym tchem — teraz tak też wyglądają.
 
-### Naprawione — dokumenty dla klienta
-- **Instrukcje i diagramy mówią to, co produkt naprawdę robi** po powyższych naprawach: realny limit
-  importu CSV (mniejsza z dwóch wartości — wtyczki i serwera; ekran zawsze pokazuje właściwą),
-  panel koordynatora bez przycisków, które widzi wyłącznie administrator, aktualny numer telefonu na
-  karcie sprawy, załączniki przy odinstalowaniu (znikają tylko za zgodą), raport końcowy wysyłany
-  przy zamknięciu sprawy, własny status mogący kończyć sprawę, brak zmiany priorytetu z karty
-  i brak maila do klienta przy samym przydziale.
+### Naprawione — instrukcje, dokumentacja i paczka
+
+- **Instrukcje i diagramy mówią to, co produkt naprawdę robi.** Poprawione zostały m.in.: realny
+  limit wielkości pliku przy imporcie (obowiązuje **mniejsza** z dwóch wartości — wtyczki i serwera,
+  a ekran zawsze pokazuje właściwą), opis panelu koordynatora bez przycisków, które widzi wyłącznie
+  administrator, numer telefonu na karcie sprawy (jest zawsze aktualny — instrukcja radziła
+  odwrotnie), załączniki przy odinstalowaniu (znikają tylko za wyraźną zgodą, nie zawsze), raport
+  końcowy wysyłany przy zamknięciu sprawy (nie przy odrzuceniu), własny status mogący kończyć
+  sprawę, brak zmiany priorytetu z karty oraz brak maila do klienta przy samym przydziale.
+- **Ważność linku potwierdzającego przestała być mylona z oknem na potwierdzenie.** Instrukcje raz
+  mówiły o 24 godzinach, raz o 72 — teraz wszędzie stoi to samo: pojedynczy link żyje 24 godziny,
+  a całe okno na potwierdzenie zgłoszenia to 72 godziny i w tym czasie personel może wysłać świeży link.
+- **Siedem doprecyzowań w instrukcjach ról** — nazwy przycisków i pól zgodne z ekranem, ostrzeżenie
+  o oknie duplikatów, prawdziwe kolory terminów, archiwizacja zamiast nieistniejącego usuwania
+  produktu, wznowienie sprawy także przez administratora, spójny opis badania dostępności.
 - **Korekta językowa całego kompletu instrukcji** — format przykładowego numeru sprawy, nazwy
   rodzajów zgłoszeń zgodne z etykietami formularza, poprawiona odmiana i interpunkcja.
+- **Opis modułu automatyzacji nie obiecuje już przydziału według kraju ani języka.** Produkt tych
+  danych nigdzie nie zbiera, więc reguła oparta na nich nie dopasowałaby żadnej sprawy — działają
+  kategoria produktu i priorytet. Ekran ustawień i instrukcje mówiły to od dawna, opis wtyczki nie.
+- **Liczby w dokumentach (testy, kontrole, tabele) są pilnowane bramką**, a nie wpisane na sztywno —
+  rozjazd między dokumentem a stanem repozytorium zatrzymuje zmianę, zanim wyjdzie do klienta.
 - **Dokumentacja techniczna** (kontrakt programistyczny, model zdarzeń, maszyna stanów, model
   bezpieczeństwa, własność danych) opisuje stan po tych naprawach — łącznie z granicami gwarancji,
-  które kod egzekwuje, i tymi, których nie egzekwuje.
+  które program egzekwuje, i tymi, których nie egzekwuje.
+- **Z paczki dla klienta zniknęła nasza notatka robocza**, która nie powinna była się w niej znaleźć.
+
+#### Zmiany techniczne (dla osoby technicznej)
+
+- **Schemat bazy modułu automatyzacji: wersja 3** — w tabeli terminów doszły dwie kolumny na znaczniki
+  prób wysyłki (`reminder_attempt_at`, `escalation_attempt_at`). Migracja dokłada je automatycznie
+  przy pierwszym wejściu do panelu; nowa instalacja dostaje je od razu.
+- **Punkt zaczepienia `mp_product_active_cases_count` przyjmuje trzeci argument** (`$for_update` —
+  odczyt pod blokadą bazy). Wcześniejsi odbiorcy z dwoma argumentami działają bez zmian.
+- **Kontrola jakości**: pełny zestaw testów na żywym WordPressie chodzi teraz w czterech równoległych
+  częściach (z bramką pilnującą, że suma się zgadza), a każda naprawa z tego wydania ma własny,
+  skalibrowany test — sprawdzony tak, że **czerwieni się na kodzie sprzed naprawy**.
 
 ## [1.3.12] — 2026-08-04
 
