@@ -23,9 +23,12 @@ Dane systemu to **tabele `wp_mp_*`** (klienci, sprawy, rejestr produktów, regu�
 ```bash
 wp db export backup-przed-wdrozeniem-$(date +%F).sql
 # lub tylko tabele MP (mniejszy plik):
-wp db export backup-mp-$(date +%F).sql --tables=$(wp db tables 'wp_mp_*' --format=csv)
+wp db export backup-mp-$(date +%F).sql --tables=$(wp db tables 'wp_mp_*' --all-tables-with-prefix --format=csv)
+# ⚠️ Flaga --all-tables-with-prefix jest KONIECZNA: bez niej wp-cli nie widzi wlasnych tabel
+#    wtyczek (zwraca "Error: Couldn't find any tables matching"), a eksport i tak konczy sie
+#    "Success" — tyle ze plik powstaje BEZ danych MP. Sprawdz po eksporcie: grep -c "wp_mp_" plik.sql
 # ⚠️ Wariant dla AKTUALIZACJI. Przy PIERWSZEJ instalacji tabel wp_mp_* jeszcze nie ma
-#    i to polecenie zwroci "Error: Couldn't find any tables matching" — uzyj pelnego eksportu wyzej.
+#    i to polecenie zwroci ten sam blad — uzyj pelnego eksportu wyzej.
 ```
 **B. Baza (bez wp-cli):** panel hostingu / phpMyAdmin → eksport bazy do `.sql`.
 
