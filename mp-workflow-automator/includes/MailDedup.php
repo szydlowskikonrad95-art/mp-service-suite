@@ -1,6 +1,6 @@
 <?php
 /**
- * Dedup-okno maili ZDARZENIOWYCH (P3.3) — tlumi IDENTYCZNY mail w krotkim oknie.
+ * Dedup-okno maili ZDARZENIOWYCH — tlumi IDENTYCZNY mail w krotkim oknie.
  *
  * KLUCZ = hash(adresat + WYRENDEROWANA tresc): łapie WYLACZNIE prawdziwe duplikaty
  * — dwie rozne informacje (np. dwa rozne statusy w 60 s) NIGDY nie sa dedupowane.
@@ -22,7 +22,7 @@
  * a wyscig przepuszcza dubel maila ZDARZENIOWEGO.
  *
  * Gwarancje RAZ-TYLKO (przypomnienie/eskalacja/digest SLA) NIE siedza tutaj —
- * ida przez CLAIM w tabeli wp_mp_case_sla (P3.4), nigdy w transiencie.
+ * ida przez CLAIM w tabeli wp_mp_case_sla, nigdy w transiencie.
  *
  * @package MP\Automator
  */

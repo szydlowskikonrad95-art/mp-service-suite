@@ -51,7 +51,7 @@ final class FormConfig {
 
 	/**
 	 * Dozwolone kategorie produktu (spojne z Registry\Categories — slownik klepniety 21.07).
-	 * Formularz P1.2: pola zaleza od WYBRANEJ kategorii (specyfikacja). Pusta = brak kategorii (fallback).
+	 * Formularz pola zaleza od WYBRANEJ kategorii (specyfikacja). Pusta = brak kategorii (fallback).
 	 */
 	public const CATEGORY_SLUGS = array( 'audio', 'agd', 'elektronarzedzia', 'inne' );
 
@@ -153,7 +153,7 @@ final class FormConfig {
 
 	/**
 	 * Zwraca liste pol dla rodzaju (z nadpisania w opcji albo domyslna), plus
-	 * dodatkowe pola kategorii gdy $category niepuste (P1.2).
+	 * dodatkowe pola kategorii gdy $category niepuste.
 	 *
 	 * @param string $kind     Rodzaj sprawy.
 	 * @param string $category Slug kategorii (pusty = tylko pola rodzaju).
@@ -351,7 +351,7 @@ final class FormConfig {
 	}
 
 	/**
-	 * Domyslne dodatkowe pola per kategoria (P1.2 — sensowne domyslne, konfigurowalne).
+	 * Domyslne dodatkowe pola per kategoria (— sensowne domyslne, konfigurowalne).
 	 * PLASKI schemat jak pola rodzaju, ZERO logiki warunkowej.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>
@@ -415,12 +415,12 @@ final class FormConfig {
 	}
 
 	/**
-	 * Domyslne reguly ZALACZNIKOW per kategoria (druga polowa P1.2).
+	 * Domyslne reguly ZALACZNIKOW per kategoria (druga polowa ).
 	 *
 	 * Specyfikacja, Plugin 1: „wymagane pola I ZALACZNIKI zalezne od wybranej
 	 * kategorii produktu". Pola robil `category_fields()` od poczatku,
 	 * zalaczniki NIE — we wszystkich kategoriach byly identyczne i zawsze
-	 * opcjonalne (wlasny GAP-TRACKER trzymal P1.2 na 🔨, nie ✅).
+	 * opcjonalne (wlasny GAP-TRACKER trzymal na 🔨, nie ✅).
 	 *
 	 * Regula klepnieta 28.07: sprzet z tabliczka znamionowa (AGD,
 	 * elektronarzedzia) wymaga zdjecia — bez niego serwis nie ustali modelu
@@ -498,7 +498,7 @@ final class FormConfig {
 	}
 
 	/**
-	 * Etykieta pola zalacznikow gdy nic nie jest wymagane (tresc sprzed P1.2 —
+	 * Etykieta pola zalacznikow gdy nic nie jest wymagane (tresc sprzed —
 	 * kategorie bez wymogu wygladaja dokladnie jak przed zmiana).
 	 *
 	 * @return string

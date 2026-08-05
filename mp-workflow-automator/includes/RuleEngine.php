@@ -1,13 +1,13 @@
 <?php
 /**
- * Silnik regul (P3.1): reaguje na mp_case_created, dopasowuje reguly przydzialu,
+ * Silnik regul: reaguje na mp_case_created, dopasowuje reguly przydzialu,
  * wykonuje auto-przydzial round-robinem i WOLA mp_case_assign w C (assigned_to
  * nalezy do C — OWNERSHIP; D nie pisze cudzej tabeli).
  *
  * Guard petli (r.D1): mutacje TYLKO na glebokosci 0 (zdarzenie zewnetrzne).
- * P3.1 ma tylko akcje przydzialu na case_created (D nie emituje case_created),
+ * ma tylko akcje przydzialu na case_created (D nie emituje case_created),
  * wiec petla nie wystepuje jeszcze — depth przekazywany, twardy guard dochodzi
- * z akcjami zmiany statusu (P3.2).
+ * z akcjami zmiany statusu.
  *
  * @package MP\Automator
  */
@@ -490,7 +490,7 @@ final class RuleEngine {
 					continue;
 				}
 
-				// Dyspozytor akcji: change_status (mutacja) / notify (mail P3.3).
+				// Dyspozytor akcji: change_status (mutacja) / notify (mail ).
 				// Nieznana akcja = ignoruj (nie zuzywa budzetu).
 				if ( Rules::ACTION_CHANGE_STATUS !== $action && Rules::ACTION_NOTIFY !== $action ) {
 					continue;
@@ -603,7 +603,7 @@ final class RuleEngine {
 			return false;
 		}
 
-		// „odrzucone" bez kodu = odmowa (UI reguł wymusi kod przy zapisie — admin P3.6).
+		// „odrzucone" bez kodu = odmowa (UI reguł wymusi kod przy zapisie — admin ).
 		if ( 'odrzucone' === $new && ( null === $code || '' === trim( $code ) ) ) {
 			$log( 'failed_reason_required' );
 
@@ -620,7 +620,7 @@ final class RuleEngine {
 	}
 
 	/**
-	 * Akcja notify (P3.3): renderuje szablon i wysyla mail przez Mailer (jedyna
+	 * Akcja notify: renderuje szablon i wysyla mail przez Mailer (jedyna
 	 * brama egress). Odbiorca bez adresu (klient zanonimizowany / agent
 	 * nieprzydzielony) = LEGALNE pominiecie (MAIL_SKIPPED_NO_RECIPIENT, nie awaria).
 	 * Log NO-PII: {template_key, recipient_ref=kategoria} — NIGDY adres ani tresc.

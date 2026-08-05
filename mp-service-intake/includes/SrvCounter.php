@@ -34,7 +34,7 @@ final class SrvCounter {
 		// LAST_INSERT_ID(1) w VALUES ustawia sesyjny LAST_INSERT_ID takze na
 		// PIERWSZYM wierszu roku (galaz ON DUPLICATE odpala dopiero od drugiego);
 		// bez tego pierwszy numer roku bylby 0 zamiast 1.
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowy init+podbicie licznika (kontrakt P1.3).
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; jedna kwerenda = atomowy init+podbicie licznika (kontrakt ).
 		$wpdb->query(
 			$wpdb->prepare(
 				"INSERT INTO {$table} (year, value) VALUES (%d, LAST_INSERT_ID(1))

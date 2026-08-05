@@ -6,7 +6,7 @@
  *
  * Model B: zmiana statusu / odpowiedz — dowolny personel; PRZYDZIAL — tylko
  * koordynator / administrator (pracownik nie przydziela innym). Wszystkie akcje
- * ida przez metody repo/hooki => audyt w case_events + maile P3.3 (RuleEngine
+ * ida przez metody repo/hooki => audyt w case_events + maile (RuleEngine
  * slucha mp_case_status_changed / mp_case_message_added). PRG na karte z notka.
  *
  * @package MP\Intake\Admin
@@ -84,7 +84,7 @@ final class CaseActions {
 
 	/**
 	 * Zmiana statusu: cap personelu + nonce; optimistic-lock (expected_status);
-	 * powod przy „odrzucone". change_status loguje event + emituje maile P3.3.
+	 * powod przy „odrzucone". change_status loguje event + emituje maile .
 	 *
 	 * @return void
 	 */
@@ -143,7 +143,7 @@ final class CaseActions {
 
 	/**
 	 * Odpowiedz do klienta: cap personelu + nonce; Messages::add('staff') emituje
-	 * mp_case_message_added => regula powiadamia klienta (P3.3). Sprawa musi istniec.
+	 * mp_case_message_added => regula powiadamia klienta. Sprawa musi istniec.
 	 *
 	 * @return void
 	 */

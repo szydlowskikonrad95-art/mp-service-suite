@@ -1,6 +1,6 @@
 <?php
 /**
- * Definicje statusow WLASNYCH (P3.2 — D = ZRODLO definicji, C = walidator przejsc).
+ * Definicje statusow WLASNYCH (— D = ZRODLO definicji, C = walidator przejsc).
  *
  * Rdzen 7 nalezy do C (Statuses::CORE) i jest NIEUSUWALNY — D go NIE definiuje ani
  * nie hardkoduje (dzieki temu zero ryzyka rozjazdu slugow, np. pulapka

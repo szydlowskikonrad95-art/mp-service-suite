@@ -1,6 +1,6 @@
 <?php
 /**
- * Stan checklist per sprawa (P3.5) — toggle pozycji + odczyt. Tabela wlasna D
+ * Stan checklist per sprawa — toggle pozycji + odczyt. Tabela wlasna D
  * `case_checklists`. KOLEJNOSC KONTRAKTU: najpierw hook `mp_case_checklist_authorize`
  * (C waliduje wlasnosc/role + emituje CHECKLIST_ITEM_TOGGLED), PO OK D zapisuje stan.
  *

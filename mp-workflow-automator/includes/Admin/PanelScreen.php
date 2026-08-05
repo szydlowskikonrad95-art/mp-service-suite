@@ -5,7 +5,7 @@
  * TU `add_menu_page` JEST wlasciwe: to menu spina istniejace handlery
  * backend-only (Przelicz SLA — SlaRecalcAction; Eksport CSV — CsvExport) oraz
  * daje read-only podglad regul/statusow/rejestru zdarzen. Checklisty+szablony
- * (P3.5) maja tu SLOT (placeholder) — doszyje builder #2.
+ * maja tu SLOT (placeholder) — doszyje builder #2.
  *
  * Bezpieczenstwo warstwowe: menu za cap coordinator|system_admin; przyciski
  * per-rola; nonce w kazdym formularzu (handlery i tak maja check_admin_referer);
@@ -887,8 +887,31 @@ final class PanelScreen {
 			return (string) $ctx['case_number'];
 		}
 
-		/* translators: %d = wewnetrzny numer sprawy (gdy Intake nie odpowiada). */
-		return sprintf( __( 'sprawa #%d', 'mp-workflow-automator' ), $case_id );
+		/*
+		 * ⛔ TU BYLA WADA W3 (kontrola na zywej instalacji): 18 z 20 wpisow pokazywalo
+		 * „sprawa #35834", czyli WEWNETRZNY numer wiersza, ktorego nie ma na zadnym
+		 * innym ekranie — czlowiek nie mial jak powiazac wpisu ze sprawa.
+		 *
+		 * ⛔ I DLACZEGO NIE WOLNO NAPISAC PO PROSTU „sprawa usunieta": `mp_case_get_context`
+		 * z zalozenia odpowiada WYLACZNIE o sprawach zweryfikowanych (kontrakt D->C w module
+		 * zgloszen), wiec brak odpowiedzi ma DWIE rozne przyczyny: sprawy nie ma juz w bazie
+		 * ALBO sprawa istnieje, tylko klient nie potwierdzil jej mailem. Napis „usunieta"
+		 * na sprawie niepotwierdzonej bylby klamstwem — i to takim, ktore wyszloby dopiero
+		 * przy reklamacji.
+		 *
+		 * Dlatego pytamy osobno o samo ISTNIENIE wiersza (`mp_case_exists` po weryfikacji
+		 * NIE filtruje) i rozrozniamy trzy stany. Wewnetrzne ID zostaje w nawiasie, bo jest
+		 * jedynym zaczepem przy zglaszaniu awarii.
+		 */
+		$istnieje = (bool) apply_filters( 'mp_case_exists', false, $case_id );
+
+		if ( $istnieje ) {
+			/* translators: %d = wewnetrzny numer sprawy. */
+			return sprintf( __( 'sprawa niepotwierdzona (#%d)', 'mp-workflow-automator' ), $case_id );
+		}
+
+		/* translators: %d = wewnetrzny numer sprawy. */
+		return sprintf( __( 'sprawa usunięta (#%d)', 'mp-workflow-automator' ), $case_id );
 	}
 
 	/**
@@ -923,18 +946,51 @@ final class PanelScreen {
 		$data = json_decode( $payload, true );
 
 		if ( ! is_array( $data ) ) {
-			return self::truncate( $payload );
+			/*
+			 * ⛔ WADA W4: tu szedl SUROWY tekst deweloperski, przyciety w polowie slowa
+			 * („…result=succes…"). Dla koordynatora to szum, ktory na dodatek wyglada
+			 * jak awaria. Kolumna ma mowic po polsku albo nic — wiec nic.
+			 */
+			return '—';
 		}
+
+		/*
+		 * Klucze payloadu sa nazwami technicznymi (`rule_id`, `template_key`) i tak
+		 * zostaja w bazie — tlumaczymy je WYLACZNIE na ekranie. Klucza spoza slownika
+		 * NIE pokazujemy: lepiej krotsza prawda niz pelny surowy zapis, ktorego i tak
+		 * nikt tu nie czyta. Kolumna „Zdarzenie" obok mowi, CO sie stalo; ta mowi tylko,
+		 * czego dotyczylo.
+		 */
+		$slownik = array(
+			'rule_id'       => __( 'reguła nr', 'mp-workflow-automator' ),
+			'template_key'  => __( 'szablon', 'mp-workflow-automator' ),
+			'recipient_ref' => __( 'odbiorca', 'mp-workflow-automator' ),
+			'trigger'       => __( 'wyzwalacz', 'mp-workflow-automator' ),
+			'action'        => __( 'akcja', 'mp-workflow-automator' ),
+			'object'        => __( 'ustawienie', 'mp-workflow-automator' ),
+			'value'         => __( 'wartość', 'mp-workflow-automator' ),
+			'error_code'    => __( 'powód niepowodzenia', 'mp-workflow-automator' ),
+			'status'        => __( 'status', 'mp-workflow-automator' ),
+			'new_status'    => __( 'nowy status', 'mp-workflow-automator' ),
+			'priority'      => __( 'priorytet', 'mp-workflow-automator' ),
+			'count'         => __( 'liczba', 'mp-workflow-automator' ),
+		);
 
 		$parts = array();
 
 		foreach ( $data as $k => $v ) {
-			if ( is_scalar( $v ) ) {
-				$parts[] = $k . '=' . (string) $v;
+			if ( ! is_scalar( $v ) || ! isset( $slownik[ $k ] ) ) {
+				continue;
 			}
+
+			$wartosc = is_bool( $v )
+				? ( $v ? __( 'tak', 'mp-workflow-automator' ) : __( 'nie', 'mp-workflow-automator' ) )
+				: (string) $v;
+
+			$parts[] = $slownik[ $k ] . ': ' . $wartosc;
 		}
 
-		return self::truncate( implode( ', ', $parts ) );
+		return array() === $parts ? '—' : self::truncate( implode( ' · ', $parts ) );
 	}
 
 	/**
@@ -944,7 +1000,20 @@ final class PanelScreen {
 	 * @return string
 	 */
 	private static function truncate( string $s ): string {
-		return mb_strlen( $s ) > 120 ? mb_substr( $s, 0, 117 ) . '…' : $s;
+		if ( mb_strlen( $s ) <= 120 ) {
+			return $s;
+		}
+
+		// ⛔ Cofamy sie do ostatniej spacji, zeby nie urwac w POLOWIE SLOWA — to byla
+		// polowa wady W4: „…result=succes…" wyglada jak uszkodzone dane, a nie jak skrot.
+		$ciety  = mb_substr( $s, 0, 117 );
+		$spacja = mb_strrpos( $ciety, ' ' );
+
+		if ( false !== $spacja && $spacja > 60 ) {
+			$ciety = mb_substr( $ciety, 0, $spacja );
+		}
+
+		return rtrim( $ciety, ' ·,' ) . '…';
 	}
 
 	/**
@@ -991,7 +1060,7 @@ final class PanelScreen {
 	}
 
 	/**
-	 * SLOT na checklisty + szablony (P3.5, builder #2). Placeholder — nie budujemy tu tej funkcji.
+	 * SLOT na checklisty + szablony ( , builder #2). Placeholder — nie budujemy tu tej funkcji.
 	 *
 	 * @return void
 	 */
@@ -999,7 +1068,7 @@ final class PanelScreen {
 		?>
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Checklisty i szablony odpowiedzi', 'mp-workflow-automator' ); ?></h2>
 		<?php
-		// Konfiguracja = poziom system-config (spojne z handlerami P3.5: cap mp_system_admin).
+		// Konfiguracja = poziom system-config (spojne z handlerami cap mp_system_admin).
 		// Obrona warstwowa: sekcja UKRYTA dla nie-adminow, a handlery i tak maja wlasna bramke.
 		if ( ! current_user_can( 'mp_system_admin' ) ) {
 			?>
@@ -1036,7 +1105,7 @@ final class PanelScreen {
 	}
 
 	/**
-	 * Wspolny formularz konfiguracji P3.5 (checklisty/szablony) — payload JSON POST-owany
+	 * Wspolny formularz konfiguracji (checklisty/szablony) — payload JSON POST-owany
 	 * na handler admin-post danej akcji z nonce zgodnym z jego check_admin_referer.
 	 *
 	 * @param string             $action    Nazwa akcji admin-post (= akcja nonce).

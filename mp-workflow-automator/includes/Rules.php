@@ -21,7 +21,7 @@ final class Rules {
 	public const TRIGGER_CASE_CREATED = 'case_created';
 
 	/**
-	 * Trigger zmiany statusu (emitowany przez C PO COMMIT — P3.2).
+	 * Trigger zmiany statusu (emitowany przez C PO COMMIT — ).
 	 */
 	public const TRIGGER_STATUS_CHANGED = 'status_changed';
 
@@ -31,7 +31,7 @@ final class Rules {
 	public const TRIGGER_MESSAGE_ADDED = 'message_added';
 
 	/**
-	 * Akcje (zamknieta lista). P3.1 = przydzial; P3.2 = zmiana statusu.
+	 * Akcje (zamknieta lista). = przydzial = zmiana statusu.
 	 */
 	public const ACTION_ASSIGN = 'assign';
 
@@ -41,7 +41,7 @@ final class Rules {
 	public const ACTION_CHANGE_STATUS = 'change_status';
 
 	/**
-	 * Akcja: powiadomienie e-mail z szablonu (P3.3). NIEMUTUJACA — przechodzi
+	 * Akcja: powiadomienie e-mail z szablonu. NIEMUTUJACA — przechodzi
 	 * przez guard petli na kazdej glebokosci (powiadomienie o zmianie MUSI wyjsc).
 	 */
 	public const ACTION_NOTIFY = 'notify';
@@ -54,7 +54,7 @@ final class Rules {
 
 	/**
 	 * Akcje MUTUJACE stan sprawy — objete GUARDEM PETLI (mutacja tylko na
-	 * glebokosci 0). Akcje spoza tej listy (mailowe — P3.3) przechodza na kazdej
+	 * glebokosci 0). Akcje spoza tej listy (mailowe — ) przechodza na kazdej
 	 * glebokosci. Zamknieta lista w kodzie (ZAKAZ eval).
 	 *
 	 * @var string[]
@@ -92,24 +92,24 @@ final class Rules {
 	public const SYSTEM_KEY_DEFAULT_ASSIGN = 'default_assign';
 
 	/**
-	 * Klucz systemowy domyslnej reguly: mail do klienta przy zmianie statusu (P3.3).
+	 * Klucz systemowy domyslnej reguly: mail do klienta przy zmianie statusu.
 	 */
 	public const SYSTEM_KEY_STATUS_MAIL_CLIENT = 'status_changed_client_mail';
 
 	/**
 	 * Klucz systemowy: mail do PRZYPISANEGO pracownika przy zmianie statusu
-	 * (P3.3 — spec „klient i pracownik po kazdej waznej zmianie"; self-skip gdy
+	 * (— spec „klient i pracownik po kazdej waznej zmianie"; self-skip gdy
 	 * pracownik sam zmienil status — nie mailuje o wlasnej akcji).
 	 */
 	public const SYSTEM_KEY_STATUS_MAIL_STAFF = 'status_changed_staff_mail';
 
 	/**
-	 * Klucz systemowy: wiadomosc KLIENTA => mail do przypisanego agenta (P3.3).
+	 * Klucz systemowy: wiadomosc KLIENTA => mail do przypisanego agenta.
 	 */
 	public const SYSTEM_KEY_MSG_CLIENT_TO_AGENT = 'msg_client_to_agent';
 
 	/**
-	 * Klucz systemowy: wiadomosc STAFF => mail do klienta (P3.3; C sam nie maili).
+	 * Klucz systemowy: wiadomosc STAFF => mail do klienta ( ; C sam nie maili).
 	 */
 	public const SYSTEM_KEY_MSG_STAFF_TO_CLIENT = 'msg_staff_to_client';
 

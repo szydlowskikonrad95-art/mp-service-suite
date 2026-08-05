@@ -1,6 +1,6 @@
 <?php
 /**
- * Szablony odpowiedzi per RODZAJ sprawy (P3.5) — personel wybiera szablon
+ * Szablony odpowiedzi per RODZAJ sprawy — personel wybiera szablon
  * odpowiadajac klientowi. Opcja-tresc konfigurowalna (admin_post, capability
  * system-admin + nonce, BEZ menu). Markery podmieniane z kontekstu sprawy;
  * WHITELIST markerow jest WIDOCZNA (markers_whitelist) — admin wie co wstawic,

@@ -4,7 +4,7 @@
  *
  * Zasady kontraktu:
  * - kazdy LIKE przez $wpdb->esc_like (serial z '_'/'%' NIE daje falszywych trafien),
- * - "po kliencie" mechanika ODWROCONA (P2.6): B pyta filtrem
+ * - "po kliencie" mechanika ODWROCONA: B pyta filtrem
  *   mp_customer_find_products, C oddaje {ids, truncated, limit}; B robi zwykle
  *   IN(...) z paginacja/COUNT u siebie; truncated => komunikat "doprecyzuj",
  * - degraded bez C: pole "klient" nieaktywne (customer_mode = unavailable),

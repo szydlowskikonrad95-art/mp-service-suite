@@ -16,7 +16,7 @@ namespace MP\Common;
 final class Common {
 
 	/**
-	 * Wersja zrodla mp-common (hash builda trafia do BUILD-INFO w ZIP).
+	 * Wersja zrodla mp-common (uzywana do cache-bustu assetow).
 	 */
 	public const VERSION = '0.1.0';
 

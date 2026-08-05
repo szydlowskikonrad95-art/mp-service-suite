@@ -4,7 +4,7 @@
  *
  * Wyszukiwarka wg karty B: serial / klient / faktura / model.
  * Pole "klient" dziala TYLKO z zywym modulem spraw (C) — degraded mode:
- * pole nieaktywne z komunikatem (kontrakt P2.6).
+ * pole nieaktywne z komunikatem (kontrakt ).
  *
  * @package MP\Registry
  */

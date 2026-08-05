@@ -359,7 +359,22 @@ final class ImportScreen {
 				<tr>
 					<th scope="col"><?php esc_html_e( 'Import', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Status', 'mp-warranty-registry' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Wiersze', 'mp-warranty-registry' ); ?></th>
+					<?php
+					/*
+					 * ⛔ WADA W5 (kontrola na zywej instalacji): ten sam import pokazywal
+					 * jednoczesnie „8 / 8 wierszy" i „8 bledow", co czyta sie jak sprzecznosc.
+					 * W danych sprzecznosci nie bylo — `processed_rows` liczy wiersze
+					 * PRZETWORZONE (udane RAZEM z bledami), wiec „8 z 8" znaczylo „wszystkie
+					 * osiem przerobione", a nie „osiem dodanych". Sprzecznosc siedziala
+					 * w NAPISIE: naglowek „Wiersze" obiecywal wynik, a pokazywal postep.
+					 *
+					 * Tabela ma juz kolumne `success_rows` i to jej klient szuka. Pokazujemy
+					 * ZAIMPORTOWANE z wszystkich — wtedy dla tamtego importu wychodzi
+					 * „0 / 8" i „8 bledow", czyli zdanie prawdziwe i zgodne samo ze soba
+					 * na kazdym etapie (zaimportowane + bledy <= wszystkie).
+					 */
+					?>
+					<th scope="col"><?php esc_html_e( 'Zaimportowane / wszystkie', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Błędy', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Utworzony', 'mp-warranty-registry' ); ?></th>
 					<th scope="col"><?php esc_html_e( 'Raport błędów', 'mp-warranty-registry' ); ?></th>
@@ -370,7 +385,7 @@ final class ImportScreen {
 					<tr>
 						<td>#<?php echo esc_html( (string) (int) $job['id'] ); ?></td>
 						<td><?php echo esc_html( $labels[ (string) $job['status'] ] ?? (string) $job['status'] ); ?></td>
-						<td><?php echo esc_html( number_format_i18n( (int) $job['processed_rows'] ) . ' / ' . number_format_i18n( (int) $job['total_rows'] ) ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( (int) $job['success_rows'] ) . ' / ' . number_format_i18n( (int) $job['total_rows'] ) ); ?></td>
 						<td><?php echo esc_html( number_format_i18n( (int) $job['error_rows'] ) ); ?></td>
 						<td><?php echo esc_html( (string) $job['created_at'] ); ?></td>
 						<td>

@@ -82,7 +82,7 @@ final class FormRenderer {
 			$errors
 		);
 
-		// Kategoria produktu (P1.2 — pola zaleza od wyboru; brak wyboru = pola bazowe).
+		// Kategoria produktu (— pola zaleza od wyboru; brak wyboru = pola bazowe).
 		$out .= self::field_wrap(
 			'category',
 			esc_html( $etykiety['category'] ),
@@ -117,7 +117,7 @@ final class FormRenderer {
 		}
 
 		// Zalaczniki (JPG/PNG/WebP/PDF, do 5 plikow) — etykieta I wymagalnosc
-		// zaleza od KATEGORII produktu (P1.2 ze specyfikacji). JS przelacza jedno
+		// zaleza od KATEGORII produktu (ze specyfikacji). JS przelacza jedno
 		// i drugie przy zmianie kategorii; serwer waliduje niezaleznie
 		// (SubmissionHandler: bramka przed utworzeniem sprawy).
 		$attachments = FormConfig::attachments_for( $category );
@@ -193,7 +193,7 @@ final class FormRenderer {
 			array(
 				'kinds'              => FormConfig::kind_field_map(),
 				'categories'         => FormConfig::category_field_map(),
-				// P1.2: reguly zalacznika per kategoria + wariant „bez kategorii"
+				// reguly zalacznika per kategoria + wariant „bez kategorii"
 				// (JS musi umiec wrocic do stanu opcjonalnego, gdy klient cofnie
 				// wybor na „— wybierz —").
 				'attachments'        => FormConfig::category_attachment_map(),
@@ -312,7 +312,7 @@ final class FormRenderer {
 	}
 
 	/**
-	 * Select kategorii produktu (P1.2). Pusty wybor = pola bazowe (fallback).
+	 * Select kategorii produktu. Pusty wybor = pola bazowe (fallback).
 	 *
 	 * @param string $selected Wybrana kategoria (slug).
 	 * @return string
@@ -487,7 +487,7 @@ final class FormRenderer {
 			'INVALID_TEL'         => __( 'Podaj poprawny numer telefonu.', 'mp-service-intake' ),
 			'KIND_INVALID'        => __( 'Wybierz poprawny rodzaj zgłoszenia.', 'mp-service-intake' ),
 			'TOO_LONG'            => __( 'Ten tekst jest za długi — skróć go i wyślij ponownie.', 'mp-service-intake' ),
-			// P1.2: obejmuje OBA przypadki — brak pliku i plik odrzucony (za duży
+			// obejmuje OBA przypadki — brak pliku i plik odrzucony (za duży
 			// albo w innym formacie). Klient nie zgaduje, dlaczego nie przeszło.
 			'ATTACHMENT_REQUIRED' => __( 'Do wybranej kategorii trzeba dołączyć załącznik: JPG, PNG, WebP lub PDF. Plik w innym formacie albo za duży nie został przyjęty.', 'mp-service-intake' ),
 		);

@@ -2,7 +2,7 @@
 /**
  * Silnik statusu gwarancji (czysta logika, testowalna jednostkowo).
  *
- * 4 statusy ze spec P2.2: aktywna | wygasla | brak_danych | weryfikacja.
+ * 4 statusy ze: aktywna | wygasla | brak_danych | weryfikacja.
  * Wyjatek gwarancyjny i archiwizacja to NIE statusy (osobne pola zwrotki).
  *
  * @package MP\Registry
@@ -23,7 +23,7 @@ final class WarrantyStatus {
 	/**
 	 * Status gwarancji dla danych produktu.
 	 *
-	 * Regula kontraktu (karta B + spec P2.2):
+	 * Regula kontraktu (karta B +):
 	 * - produkt nieznaleziony lub bez daty gwarancji -> brak_danych,
 	 * - niezgodnosc danych zakupu (ktorykolwiek match === false) -> weryfikacja
 	 *   (niezgodnosc NIE blokuje zgloszenia — snapshot dostaje ten status),

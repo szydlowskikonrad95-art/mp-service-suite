@@ -1,6 +1,6 @@
 <?php
 /**
- * Konfiguracja SLA per status (P3.4): godziny + okno ostrzegawcze + terminalnosc,
+ * Konfiguracja SLA per status: godziny + okno ostrzegawcze + terminalnosc,
  * oraz wyliczenie deadline z modyfikatorem priorytetu.
  *
  * Zrodla godzin:

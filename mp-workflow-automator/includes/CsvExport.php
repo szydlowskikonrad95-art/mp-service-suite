@@ -1,6 +1,6 @@
 <?php
 /**
- * Eksport CSV spraw + zestawienie (P3.6) — BACKEND-HANDLER-ONLY (bez menu/ekranu;
+ * Eksport CSV spraw + zestawienie — BACKEND-HANDLER-ONLY (bez menu/ekranu;
  * przycisk podepnie osobne zadanie „panel admina D", decyzja testu pilnujacego 23.07).
  *
  * Bezpieczenstwo (bulk egress danych osobowych): capability `mp_coordinator` /
