@@ -923,7 +923,26 @@ final class CaseRepo {
 			$payload['rejection_reason_code'] = $rejection_reason_code;
 		}
 
-		CaseEvents::log( $case_id, CaseEvents::STATUS_CHANGED, $payload, $actor_id );
+		$zapisano = CaseEvents::log( $case_id, CaseEvents::STATUS_CHANGED, $payload, $actor_id );
+
+		/*
+		 * D2 (2026-08-05): wynik logu byl ignorowany, a COMMIT szedl bezwarunkowo —
+		 * przy nieudanym insercie zdarzenia status zmienial sie BEZ wpisu na osi,
+		 * a README obiecuje os nieusuwalna i kompletna. Lepiej odmowic zmiany, niz
+		 * zmienic stan po cichu bez sladu: nieudany zapis wycofuje cala transakcje.
+		 * (EventWrite sam podnosi alarm w Stanie witryny — tu tylko decyzja o stanie.)
+		 */
+		if ( ! $zapisano ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- rollback.
+			$wpdb->query( 'ROLLBACK' );
+			// phpcs:enable
+
+			return array(
+				'schema_version' => self::SCHEMA_VERSION,
+				'success'        => false,
+				'error_code'     => 'EVENT_LOG_FAILED',
+			);
+		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- commit.
 		$wpdb->query( 'COMMIT' );
