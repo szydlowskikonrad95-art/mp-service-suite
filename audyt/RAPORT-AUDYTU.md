@@ -15,8 +15,10 @@ a przy większości podaje nazwę testu, który ją pilnuje.
 ⛔ **Poprzednie brzmienie tego nagłówka było jedną z wad, które ta runda znalazła.** Stało tu
 zdanie *„Stan na wydanie 1.3.11: znalezisk krytycznych 0, dużych 0"* — **bez daty i bez zakresu**,
 więc czytało się jak stan produktu, a nie jak wynik jednego przebiegu z określonego dnia. Sama
-liczba nie wzięła się znikąd: audyt końcowy przed oddaniem (1.08, [`AUDYT-RAPORT.md`](../AUDYT-RAPORT.md)
-w korzeniu repozytorium) **w swoim zakresie** nie znalazł pozycji krytycznych ani dużych. Audyt
+liczba nie wzięła się znikąd: audyt końcowy przed oddaniem (1.08; protokół tej rundy stoi niżej
+w tym dokumencie — „Runda przy 1.3.9 — audyt końcowy przed przekazaniem", a naprawy po niej
+dokumentuje [`CHANGELOG.md`](../CHANGELOG.md)) **w swoim zakresie** nie znalazł pozycji
+krytycznych ani dużych. Audyt
 działu, z innymi kątami patrzenia, znalazł w tym samym kodzie trzy pozycje krytyczne — dwie z nich
 dotyczą danych osobowych. **Obie liczby są prawdziwe i żadnej nie wycofujemy — dlatego każda musi
 stać przy swojej dacie i swoim zakresie.**

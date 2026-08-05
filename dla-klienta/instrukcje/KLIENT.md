@@ -13,7 +13,10 @@ tylko o opis).
 
 Podaj **imię i nazwisko** oraz **e-mail** — po nich serwis rozpozna, czyja to sprawa. Ma to
 znaczenie zwłaszcza wtedy, gdy kilka osób zgłasza z jednej wspólnej skrzynki (np. sekretariat):
-każda z nich dostaje wtedy własną kartotekę i widzi w panelu **tylko swoje** zgłoszenia.
+każda osoba ma wtedy **własną kartotekę** (rozróżniamy po imieniu i nazwisku), ale panel jest
+przypięty do **adresu e-mail** — po zalogowaniu wspólną skrzynką zobaczysz **wszystkie zgłoszenia
+wysłane z tej skrzynki**, także innych osób. Kto ma dostęp do skrzynki, ten widzi jej sprawy —
+jeśli zgłoszenia mają być rozdzielone, każda osoba powinna podać **własny adres**.
 
 Wypełnij pozostałe pola, w razie potrzeby **dodaj zdjęcie lub PDF** (np. dowód zakupu, zdjęcie
 usterki) i zaznacz zgodę na przetwarzanie danych. Kliknij **Wyślij**.

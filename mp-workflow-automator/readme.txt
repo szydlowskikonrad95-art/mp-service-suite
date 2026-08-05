@@ -22,7 +22,7 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 * HTTPS -- the suite handles passwordless (magic-link) login and customer personal data.
 * WP-Cron enabled -- scheduled tasks rely on it: SLA deadlines, reminders and escalations (Workflow Automator), background CSV imports (Registry) and data-retention cleanup (Intake).
 
-Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8.
+Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8. Additionally, on 2026-07-27 the release package passed a from-scratch control installation on WordPress 7.0.2 (PHP 8.2).
 
 == Changelog ==
 

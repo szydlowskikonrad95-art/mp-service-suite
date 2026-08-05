@@ -1,5 +1,9 @@
 # API-KONTRAKT.md — hooki między pluginami (ZAMROŻONY)
 
+Oznaczenia modułów używane w całym dokumencie: **B** = MP Warranty & Serial Registry,
+**C** = MP Service Intake, **D** = MP Workflow Automator (litery pochodzą z wewnętrznej
+kolejności budowy modułów).
+
 > Jedyny dozwolony kanał komunikacji między pluginami MP. **Zakaz dotykania cudzych tabel
 > (czytanie I pisanie)** — pilnuje linter w CI. Przez hooki przechodzą WYŁĄCZNIE **skalary
 > i tablice** (nigdy obiekty — stemplowane namespace Common = obce typy = TypeError).
