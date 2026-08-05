@@ -381,7 +381,9 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
 - Historia zdarzeń sprawy jest **nieusuwalna, ale bez danych osobowych** (same fakty/daty/decyzje).
 - **Porzucone zgłoszenia kasują się same.** Jeśli ktoś wypełni formularz i nigdy nie kliknie linku
   potwierdzającego, zgłoszenie po **30 dniach** znika razem z jego danymi kontaktowymi i załącznikami
-  (link potwierdzający jest ważny 24 godziny, więc takie zgłoszenie i tak nie może już ruszyć).
+  (pojedynczy link potwierdzający jest ważny 24 godziny, a okno potwierdzenia zgłoszenia —
+  72 godziny, w którym personel może wysłać świeży link; po upływie okna zgłoszenie nie może
+  już ruszyć).
   Sprawy **potwierdzone** — czyli realna praca serwisu — nie są przez to ruszane. Jeśli chcesz inny
   okres, powiedz: to jedna linijka w konfiguracji.
 - **Żądanie usunięcia danych obejmuje także takie porzucone zgłoszenia** — nie trzeba czekać tych
