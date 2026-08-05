@@ -141,6 +141,71 @@ final class RateLimit {
 	}
 
 	/**
+	 * Kiedy blokada rate-limit puszcza — moment (unix ts), od ktorego znow mozna
+	 * wyslac. Liczony z okna licznika, ktory FAKTYCZNIE blokuje (e-mail/serial na
+	 * limicie albo IP ponad limitem). Gdy blokuje wiecej niz jeden — bierzemy
+	 * PoZNIEJSZY moment (wszystkie musza puscic). Null, gdy nic nie blokuje albo
+	 * okno juz wygaslo. Sluzy komunikatowi „wroc po HH:MM" (znalezisko S4 #3):
+	 * odmowa ma mowic KIEDY, a nie „za jakis czas".
+	 *
+	 * @param string $ip     Adres IP (jak w check()).
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @return int|null Unix timestamp konca blokady albo null.
+	 */
+	public static function retry_after( string $ip, string $email, string $serial ): ?int {
+		$email  = strtolower( trim( $email ) );
+		$serial = trim( $serial );
+		$limits = self::limits();
+		$when   = 0;
+
+		if ( '' !== $email && self::current_count( self::email_counter_key( $email ) ) >= (int) $limits['email_max'] ) {
+			$when = max( $when, (int) self::window_expires_at( self::email_counter_key( $email ) ) );
+		}
+
+		if ( '' !== $serial && self::current_count( self::serial_counter_key( $serial ) ) >= (int) $limits['serial_max'] ) {
+			$when = max( $when, (int) self::window_expires_at( self::serial_counter_key( $serial ) ) );
+		}
+
+		if ( '' !== $ip && self::current_count( 'mp_rl_ip_' . md5( $ip ) ) > (int) $limits['ip_max'] ) {
+			$when = max( $when, (int) self::window_expires_at( 'mp_rl_ip_' . md5( $ip ) ) );
+		}
+
+		return $when > 0 ? $when : null;
+	}
+
+	/**
+	 * Moment wygasniecia okna licznika (unix ts) albo null gdy brak/wygaslo.
+	 * Odczyt bez inkrementu.
+	 *
+	 * @param string $key Klucz licznika.
+	 * @return int|null
+	 */
+	private static function window_expires_at( string $key ): ?int {
+		global $wpdb;
+
+		$table = Tables::full( Tables::RATE_COUNTERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabela wlasna; odczyt okna licznika.
+		$expires = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT window_expires_at FROM {$table} WHERE rl_key = %s AND window_expires_at > %s",
+				$key,
+				gmdate( 'Y-m-d H:i:s' )
+			)
+		);
+		// phpcs:enable
+
+		if ( null === $expires ) {
+			return null;
+		}
+
+		$ts = strtotime( (string) $expires . ' UTC' );
+
+		return false === $ts ? null : $ts;
+	}
+
+	/**
 	 * D5: rejestruje UDANE zgloszenie — inkrementuje liczniki e-mail/serial i
 	 * ustawia marker dedup. Wolane PO utworzeniu sprawy (nie na kazda probe).
 	 *
