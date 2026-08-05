@@ -75,6 +75,21 @@ MENU=$(grep -c "Roles::registry_menu_cap()" "$REPO/mp-warranty-registry/includes
 [ "$MENU" -ge 1 ] && ok "menu bierze cap z listy rejestru, nie z listy całego personelu" \
 	|| bad "menu dalej liczy cap z STAFF_CAPS"
 
+# ⛔⛔ KONTROLA ZRODLA — najwazniejsza w tym pliku.
+#    `mp-*/includes/Common/` jest GENEROWANE przez build/build.sh i GITIGNOROWANE.
+#    Edycja kopii dziala na stanowisku i znika przy pierwszym buildzie — czyli test
+#    swieci na zielono, a do klienta nie trafia nic. Raz juz w to wdepnelismy (5.08).
+#    Dlatego pytamy o ZRODLO: lib/mp-common/src/Roles.php.
+grep -q "REGISTRY_CAPS" "$REPO/lib/mp-common/src/Roles.php" \
+	&& ok "zmiana stoi w ŹRÓDLE (lib/mp-common/src/Roles.php), a nie w kopii generowanej" \
+	|| bad "zmiany NIE MA w źródle — build ją skasuje, a klient jej nie zobaczy"
+# ⚠️ Pytamy o ZNACZNIK, nie o gita — `git` nie istnieje w kontenerze testowym
+#    (zmierzone: „git: command not found"). Znacznik `@generated` wstawia sam build,
+#    wiec jego obecnosc dowodzi, ze to KOPIA, a nie plik zrodlowy.
+grep -q "@generated" "$REPO/mp-warranty-registry/includes/Common/Roles.php" \
+	&& ok "[kontrolna] kopia w includes/Common niesie znacznik @generated — test pytał o właściwy plik" \
+	|| bad "[kontrolna] kopia bez znacznika @generated — założenie tej kontroli upadło"
+
 # ⛔ PROBA KONTROLNA: lista rejestru NIE zawezila sie ponad to, co bylo w ekranie.
 LISTA=$(wp eval 'echo implode( ",", MP\Registry\Common\Roles::REGISTRY_CAPS );' 2>/dev/null)
 [ "$LISTA" = "mp_agent,mp_system_admin" ] \
@@ -83,8 +98,8 @@ LISTA=$(wp eval 'echo implode( ",", MP\Registry\Common\Roles::REGISTRY_CAPS );' 
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"
-if [ "$(( PASS + FAIL ))" -lt 13 ]; then
-	echo "  BLAD PRZEBIEGU: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. 13."
+if [ "$(( PASS + FAIL ))" -lt 15 ]; then
+	echo "  BLAD PRZEBIEGU: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. 15."
 	exit 2
 fi
 [ "$FAIL" -eq 0 ] || exit 1

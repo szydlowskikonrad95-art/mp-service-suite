@@ -33,6 +33,58 @@ final class Roles {
 	public const STAFF_CAPS = array( 'mp_system_admin', 'mp_coordinator', 'mp_agent' );
 
 	/**
+	 * Uprawnienia, ktore WPUSZCZAJA do rejestru produktow — JEDNO zrodlo prawdy.
+	 *
+	 * ⛔ PO CO OSOBNA LISTA, SKORO JEST `STAFF_CAPS`: bo do rejestru wchodzi WEZSZY
+	 * krag niz „personel". Menu rejestru bralo cap z `menu_cap_for_current_user()`,
+	 * ktory zwraca PIERWSZE uprawnienie z calego personelu — koordynatorowi zwracal
+	 * jego wlasne, wiec pozycja w menu byla widoczna. Ekran dwadziescia linii nizej
+	 * sprawdzal CO INNEGO (`mp_agent` albo `mp_system_admin`) i konczyl `wp_die()`.
+	 * Koordynator widzial drzwi, otwieral je i dostawal odmowe — nie wiedzac, czy to
+	 * awaria, czy tak ma byc. Dwa warunki na jedne drzwi, w jednym pliku.
+	 *
+	 * ⚠️ Ta lista NIE zmienia tego, KTO ma dostep — jest przepisana z warunku, ktory
+	 * juz stal w `ProductsScreen::render()`. Zawezanie dostepu ponad to, co obiecuje
+	 * dokumentacja klienta, byloby wada tej samej klasy, tylko w druga strone.
+	 */
+	public const REGISTRY_CAPS = array( 'mp_agent', 'mp_system_admin' );
+
+	/**
+	 * Czy biezacy uzytkownik ma prawo wejsc do rejestru produktow.
+	 *
+	 * @return bool
+	 */
+	public static function can_current_user_see_registry(): bool {
+		foreach ( self::REGISTRY_CAPS as $cap ) {
+			if ( current_user_can( $cap ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Cap dla `add_menu_page()` rejestru — z TEJ SAMEJ listy co bramka ekranu.
+	 *
+	 * `add_menu_page()` przyjmuje JEDEN cap, a role MP nie dziedzicza po sobie,
+	 * wiec podajemy to, ktore biezacy uzytkownik faktycznie ma. Gdy nie ma zadnego,
+	 * zwracamy cap spoza jego zasiegu — pozycja w menu sie NIE POKAZUJE, zamiast
+	 * wpuszczac i odsylac z kwitkiem.
+	 *
+	 * @return string
+	 */
+	public static function registry_menu_cap(): string {
+		foreach ( self::REGISTRY_CAPS as $cap ) {
+			if ( current_user_can( $cap ) ) {
+				return $cap;
+			}
+		}
+
+		return 'mp_system_admin';
+	}
+
+	/**
 	 * Tworzy brakujace role (idempotentnie — wolane przy KAZDEJ aktywacji,
 	 * takze po awaryjnym zdjeciu rol; runda W: aktywacja zawsze odtwarza).
 	 *
