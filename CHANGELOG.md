@@ -4,6 +4,68 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 
 ## [Unreleased]
 
+## [1.3.13] — w przygotowaniu
+
+> Numer wydania nie jest jeszcze wycięty: nagłówki wtyczek, `Stable tag` w `readme.txt`
+> i pliki tłumaczeń nadal mówią 1.3.12 i podbije je osobny krok wydania. Poniżej jest komplet
+> zmian scalonych do gałęzi głównej po wydaniu 1.3.12.
+
+### Naprawione — bezpieczeństwo danych klienta
+- 🔴 **Załącznik cudzej sprawy przestał być boczną furtką.** Pracownik serwisu widział na liście
+  i na karcie **wyłącznie swoje** sprawy, ale załącznik — zdjęcie usterki, skan dokumentu zakupu —
+  pobierał z **dowolnej** sprawy, także takiej, której nie obsługuje. Bramka załącznika pyta teraz
+  o to samo, o co pyta karta: pracownik wchodzi tylko do spraw przydzielonych jemu, koordynator
+  i administrator systemu — do wszystkich, klient — do swoich. Nikt uprawniony nie stracił dostępu.
+
+### Naprawione — historia sprawy i powiadomienia
+- 🔴 **Zmiany statusu bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii się
+  nie udał, status i tak się zmieniał — sprawa dostawała nowy stan, a oś czasu o tym milczała,
+  choć produkt obiecuje historię nieusuwalną i kompletną. Teraz nieudany zapis **wycofuje całą
+  zmianę**: personel widzi „Nie udało się zmienić statusu", a administrator dostaje sygnał
+  w **Narzędzia → Stan witryny**. Lepiej odmówić zmiany, niż zmienić stan po cichu.
+- 🔴 **Reguła powiadomienia utworzona dokładnie tak, jak podpowiada ekran, nie wyśle już
+  wewnętrznej wiadomości do klienta.** Podpowiedź w polu „Szczegóły akcji" uczy jednego zapisu
+  odbiorcy, a silnik reguł rozumiał tylko drugi — i cicho wysyłał **klientowi** treść napisaną dla
+  pracownika. Oba zapisy działają teraz tak samo; reguły już istniejące zachowują się bez zmian.
+- **Komunikat po zmianie statusu mówi tylko o mailach, które naprawdę wyszły.** Dotąd zawsze
+  twierdził, że powiadomiono klienta **i** przypisanego pracownika — także wtedy, gdy status zmieniał
+  sam przypisany pracownik (nie wysyłamy komu maila o jego własnej akcji) albo gdy sprawa nie miała
+  przypisanego. W tych przypadkach pisze teraz po prostu: powiadomiono klienta.
+
+### Naprawione — RODO
+- 🔴 **Obietnica „dane usuniemy po zakończeniu zgłoszenia" wykonuje się sama.** Klient, który
+  wycofał zgodę przy aktywnej sprawie, dostawał tę odpowiedź — i na tym się kończyło: po zamknięciu
+  sprawy dane leżały w bazie bezterminowo, dopóki ktoś nie kliknął drugi raz. O tym nie wiedział ani
+  klient, ani administrator. Teraz odroczone żądanie kończy **dobowy przebieg porządkowy**, zaraz po
+  zamknięciu sprawy. Nowe zgłoszenie tej samej osoby przed wykonaniem anuluje odroczenie.
+
+### Zmienione — komunikaty i ekrany
+- **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit.** Klient słyszał
+  zawsze „z tego adresu wysłano zbyt wiele zgłoszeń" — także wtedy, gdy blokada wynikała z limitu
+  **numeru seryjnego** albo **łącza internetowego**. Człowiek z zupełnie nowym adresem zmieniał go
+  wtedy bez skutku albo uznawał system za zepsuty. Każdy zakres ma teraz własne zdanie.
+- **Tabela „Ostatnie importy" nadąża za banerem.** Po imporcie baner mówił „zakończony 8 z 8",
+  a tabela tuż pod nim dalej „w trakcie, 0/8" — aż do ręcznego odświeżenia strony. Wiersz importu
+  odświeża się teraz sam.
+- **Rejestr zdarzeń automatu nie odsyła do reguły, której nie ma.** Wpisy pochodzące z mechanizmów
+  wbudowanych (powiadomienie o przydziale, cykliczny przegląd terminów) pokazywały „reguła nr: 0",
+  a tabela reguł numeruje od jedynki — czytelnik szukał reguły-widma. Teraz piszą wprost: wbudowana.
+- **„Rejestr MP" stoi w menu bocznym obok pozostałych ekranów MP**, a nie na samym dole, pod
+  ustawieniami WordPressa.
+
+### Naprawione — dokumenty dla klienta
+- **Instrukcje i diagramy mówią to, co produkt naprawdę robi** po powyższych naprawach: realny limit
+  importu CSV (mniejsza z dwóch wartości — wtyczki i serwera; ekran zawsze pokazuje właściwą),
+  panel koordynatora bez przycisków, które widzi wyłącznie administrator, aktualny numer telefonu na
+  karcie sprawy, załączniki przy odinstalowaniu (znikają tylko za zgodą), raport końcowy wysyłany
+  przy zamknięciu sprawy, własny status mogący kończyć sprawę, brak zmiany priorytetu z karty
+  i brak maila do klienta przy samym przydziale.
+- **Korekta językowa całego kompletu instrukcji** — format przykładowego numeru sprawy, nazwy
+  rodzajów zgłoszeń zgodne z etykietami formularza, poprawiona odmiana i interpunkcja.
+- **Dokumentacja techniczna** (kontrakt programistyczny, model zdarzeń, maszyna stanów, model
+  bezpieczeństwa, własność danych) opisuje stan po tych naprawach — łącznie z granicami gwarancji,
+  które kod egzekwuje, i tymi, których nie egzekwuje.
+
 ## [1.3.12] — 2026-08-04
 
 ### Naprawione — dane osobowe (wydanie 1.3.12, grupa 0) — żądanie usunięcia sięga głębiej

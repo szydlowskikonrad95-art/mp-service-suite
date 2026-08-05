@@ -118,7 +118,11 @@ celowo nie przechowuje notatek ani danych osobowych; powód znajdziesz na liści
   powiązanie z kontem na stronie, treść wiadomości oraz pola zgłoszenia zawierające dane osobowe
   (w ich miejscu widać `[ZREDAGOWANO-RODO]`). **Zostaje**: sama sprawa, jej numer, statusy, daty
   i oś zdarzeń — dzięki temu statystyki i historia serwisu dalej się zgadzają, ale nie da się już
-  ustalić, czyja to była sprawa. Przy aktywnej sprawie — odroczenie do jej zamknięcia.
+  ustalić, czyja to była sprawa. Przy aktywnej sprawie — odroczenie do jej zamknięcia, przy czym
+  **odroczone usunięcie wykonuje się samo**: przy najbliższym dobowym przebiegu porządkowym po
+  zamknięciu sprawy. Ani klient nie musi klikać drugi raz, ani Ty nie musisz nic uruchamiać ręcznie —
+  potrzebne jest tylko działające zadanie cykliczne (patrz `INSTRUKCJA-KLIENTA.md` §7.3). Jeśli
+  ta sama osoba wyśle nowe zgłoszenie, zanim to nastąpi, odroczone usunięcie zostaje anulowane.
 - **Wspólny adres wielu osób** (sekretariat): narzędzie WordPressa „Usuń dane osobowe" działa po adresie e-mail i obejmie wszystkie kartoteki
   z tego adresu — przed uruchomieniem potwierdź tożsamość i zakres wniosku.
 - 🔴 **Notatki wewnętrzne personelu WCHODZĄ do paczki wydawanej klientowi.** Wniosek o dostęp

@@ -30,7 +30,18 @@ weryfikacji, z referencjami do już istniejących rekordów).
 | actor | user_id / `system` |
 | `created_at` | UTC |
 
-Zapis eventu i mutacja stanu = JEDNA transakcja (status bez eventu NIGDY); akcje `mp_*` po commit.
+Zapis eventu i mutacja stanu = JEDNA transakcja; akcje `mp_*` po commit.
+
+⛔ **„Status bez eventu NIGDY" — od 1.3.13 EGZEKWOWANE, nie tylko deklarowane (D2).** Sama transakcja
+tego nie załatwia: nieudany INSERT eventu jej nie przerywa, więc do 1.3.12 COMMIT szedł mimo braku
+wpisu i status zmieniał się po cichu, bez śladu na osi, którą README obiecuje jako nieusuwalną
+i kompletną. `CaseRepo::change_status` sprawdza teraz wynik `CaseEvents::log()` i przy porażce
+**wycofuje całą transakcję** (zwrotka `EVENT_LOG_FAILED`) — lepiej odmówić zmiany, niż zmienić stan
+bez śladu. **Zakres:** gwarancja obowiązuje dla `STATUS_CHANGED`. `CASE_ASSIGNED` i `PRIORITY_CHANGED`
+mają event w tej samej transakcji, ale wyniku zapisu nie sprawdzają — przy nieudanym INSERT mutacja
+zostaje, a alarm podnosi `Common\EventWrite` („Stan witryny"). `wp_mp_workflow_events` (D) nigdy nie
+idzie w transakcji z mutacją C: to dziennik operacji automatu zapisywany PO commit C, z założenia
+best‑effort.
 
 ## 3. Typy zdarzeń — `wp_mp_case_events` (C)
 

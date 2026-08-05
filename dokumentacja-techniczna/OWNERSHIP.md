@@ -11,7 +11,7 @@
 | Klienci, zgody | customers, consents | **C** | — (tylko C) | erasery/eksportery C |
 | Sprawy | service_cases | **C** | `mp_case_change_status` · `mp_case_assign` · `mp_case_set_priority` · `mp_case_add_system_message` | `mp_case_get_context` · `mp_cases_query` |
 | Oś czasu sprawy | case_events (append‑only) | **C** | pośrednio: funkcje kontraktowe C + listenery C (`mp_warranty_exception_changed`, `mp_sla_notified`) | — (UI C) |
-| Wiadomości, załączniki | messages, attachments | **C** | `mp_case_add_system_message` (D: raport końcowy) | konto klienta / karta sprawy C |
+| Wiadomości, załączniki | messages, attachments | **C** | `mp_case_add_system_message` (D: raport końcowy) | konto klienta / karta sprawy C — **załącznik przez tę samą bramkę co karta** (`CaseRepo::can_current_user_see`: `mp_agent` tylko swoje sprawy; koordynator/admin wszystkie), patrz `SECURITY.md` §4 |
 | Licznik SRV | srv_counters (techniczna) | **C** | — | — |
 | Rejestr produktów | product_registry, product_events | **B** | — | `mp_warranty_check` · `mp_serial_usage_count` |
 | Wyjątki gwarancyjne | warranty_exceptions | **B** | — (zatwierdza WYŁĄCZNIE `mp_system_admin` w UI B) | pola exception_* w zwrotce `mp_warranty_check` |

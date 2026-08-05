@@ -285,10 +285,18 @@ filtrem, ale **nie woła go żaden inny moduł**.
 Wszystkie: walidacja + event w historii + kody błędów wg ERROR_MODEL. UPDATE + event w JEDNEJ
 transakcji, akcje PO commit. `mp_cases_query` respektuje ROLĘ wołającego (mp_agent → tylko swoje).
 
+⛔ **Co znaczy „w jednej transakcji" — dokładnie (D2, 2026‑08‑05).** Jedna transakcja to jeszcze nie
+gwarancja: nieudany INSERT eventu sam z siebie NIE przerywa transakcji, więc COMMIT szedł mimo braku
+wpisu na osi. Od 1.3.13 `mp_case_change_status` **sprawdza wynik zapisu zdarzenia i przy porażce
+wycofuje całą transakcję** (`EVENT_LOG_FAILED`) — zmiana statusu bez wpisu na osi jest niemożliwa.
+`mp_case_assign` i `mp_case_set_priority` trzymają event w tej samej transakcji, ale wyniku zapisu
+NIE sprawdzają: przy nieudanym INSERT eventu mutacja zostaje zatwierdzona, a `Common\EventWrite`
+podnosi alarm w „Stan witryny". Ta różnica jest świadomie opisana, nie przemilczana.
+
 | Funkcja | Kontrakt |
 |---|---|
 | `mp_case_get_context( $case_id )` | → `{status, rodzaj, priority, assigned_to, kategoria, kraj, język, verified_at, status_changed_at, case_number, rejection_reason_code, kontakt}`; kontakt = runtime do maili, NIGDY do logów; nieistniejąca sprawa → `'not_found'` |
-| `mp_case_change_status( $case_id, $new_status, $expected_status, $actor_id, $rejection_reason_code = null )` | optimistic‑lock (`WHERE status = expected`); „odrzucone" WYMAGA kodu; emituje `mp_case_status_changed` PO commit |
+| `mp_case_change_status( $case_id, $new_status, $expected_status, $actor_id, $rejection_reason_code = null )` | optimistic‑lock (`WHERE status = expected`); „odrzucone" WYMAGA kodu; emituje `mp_case_status_changed` PO commit. **Nieudany zapis zdarzenia na osi → ROLLBACK całej transakcji, `error_code: 'EVENT_LOG_FAILED'`, status NIE zmienia się** (D2) |
 | `mp_case_assign( $case_id, $user_id, $actor_id )` | walidacja (istnienie, verified, rola przydzielanego) + event `CASE_ASSIGNED {from, to, actor}`. **Sprawa TERMINALNA (zamknięte/odrzucone) → `error_code: 'CASE_CLOSED'`**, transakcja wycofana, zero eventu i zero maila — do pracy sprawa wraca przez wznowienie |
 | `mp_case_set_priority( $case_id, $priority, $actor_id )` | + event `PRIORITY_CHANGED`. **Sprawa TERMINALNA → `error_code: 'CASE_CLOSED'`** (jak przy przydziale) |
 | `mp_case_checklist_authorize( $case_id, $step_key, $completed, $actor_id )` | walidacja własności/roli + event `CHECKLIST_ITEM_TOGGLED`; KOLEJNOŚĆ: najpierw ta funkcja, po OK → D zapisuje stan u siebie |

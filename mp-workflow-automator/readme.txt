@@ -10,7 +10,7 @@ Rules engine for service cases: automatic assignment, statuses, e-mail notificat
 
 == Description ==
 
-Automates the service workflow: assigns cases to staff based on product category, country, language or priority, manages configurable case statuses, sends e-mail notifications to customers and staff on every relevant change, tracks SLA deadlines with reminders before and escalations after the deadline, provides per-type checklists and response templates, and exports CSV reports.
+Automates the service workflow: assigns cases to staff based on product category or priority, manages configurable case statuses, sends e-mail notifications to customers and staff on every relevant change, tracks SLA deadlines with reminders before and escalations after the deadline, provides per-type checklists and response templates, and exports CSV reports.
 
 Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
 
@@ -25,6 +25,23 @@ Part of the MP Service Suite (three cooperating plugins; each one also works sta
 Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8. Additionally, on 2026-07-27 the release package passed a from-scratch control installation on WordPress 7.0.2 (PHP 8.2).
 
 == Changelog ==
+
+= 1.3.13 =
+Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+
+Reguły i powiadomienia:
+* **Reguła powiadomienia utworzona dokładnie tak, jak podpowiada ekran, nie wyśle już wewnętrznej
+  wiadomości do klienta.** Podpowiedź w polu „Szczegóły akcji" uczy jednego zapisu odbiorcy,
+  a silnik reguł rozumiał wyłącznie drugi — i cicho wysyłał klientowi treść napisaną dla pracownika.
+  Oba zapisy działają teraz tak samo; reguły już istniejące zachowują się bez zmian.
+* **Rejestr zdarzeń nie odsyła do reguły, której nie ma.** Wpisy z mechanizmów wbudowanych
+  (powiadomienie o przydziale, cykliczny przegląd terminów) pokazywały „reguła nr: 0", a tabela
+  reguł numeruje od jedynki — czytelnik szukał reguły-widma. Teraz piszą wprost: wbudowana.
+
+Opis wtyczki:
+* **Opis modułu nie obiecuje już przydziału według kraju ani języka.** Produkt tych danych nigdzie
+  nie zbiera, więc reguła oparta na nich nie dopasowałaby żadnej sprawy — działają kategoria
+  produktu i priorytet. Ekran ustawień i instrukcje mówiły to od dawna, opis wtyczki nie.
 
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.

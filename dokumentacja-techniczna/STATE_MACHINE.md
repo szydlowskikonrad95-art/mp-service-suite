@@ -3,6 +3,9 @@
 > Statusy = zamknięta lista: rdzeń 7 ze specyfikacji + statusy własne (definicje z filtra
 > `mp_registered_statuses` od D). Zmiana statusu WYŁĄCZNIE funkcją kontraktową
 > `mp_case_change_status()` w C (optimistic‑lock; UPDATE + event w jednej transakcji, akcja po commit).
+> **Przejście jest ODRZUCANE także wtedy, gdy nie uda się zapisać wpisu na osi zdarzeń** — transakcja
+> wraca, status zostaje stary, wołający dostaje `EVENT_LOG_FAILED`, personel na karcie widzi
+> „Nie udało się zmienić statusu" (D2, 1.3.13; szczegóły w `EVENT_MODEL.md` §2).
 
 ## 0. Narodziny sprawy: `status = NULL` (unverified)
 

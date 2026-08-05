@@ -38,7 +38,7 @@
 | `mp_intake_message` | login + nonce + **ownership** (`case_id` ∈ sprawy zalogowanego) |
 | `mp_intake_update_contact` | login + nonce (dotyka tylko rekordów bieżącego usera) |
 | `mp_intake_withdraw` | login + nonce (tylko własne zgody/dane) |
-| `mp_intake_attachment` | nonce + **ownership** (`Attachments::can_access`: personel LUB właściciel sprawy) |
+| `mp_intake_attachment` | nonce + **ownership** (`Attachments::can_access`: personel Z PRAWEM DO TEJ SPRAWY — `CaseRepo::can_current_user_see`, ten sam kod co lista i karta — LUB klient‑właściciel sprawy) |
 
 ### Personel (capability W PARZE z nonce — ORAZ, przy sprawach, prawo do KONKRETNEJ sprawy)
 
@@ -90,6 +90,14 @@ o danym numerze istnieje.
 
 - Katalog `uploads/mp-attachments/` ma `.htaccess deny` + `index.php` — **działa TYLKO na Apache/LiteSpeed. nginx `.htaccess` IGNORUJE.**
 - **Realna brama** (każdy serwer) = odczyt WYŁĄCZNIE przez endpoint PHP `mp_intake_attachment` z nonce + ownership. Bezpośredni URL pliku na nginx nie jest chroniony `.htaccess`.
+- ⛔ **Ownership załącznika = ownership SPRAWY, jednym kodem (M2, 2026‑08‑05).** Do 1.3.12 bramka
+  przepuszczała KAŻDEGO `mp_agent` do załącznika DOWOLNEJ sprawy, choć kartę cudzej sprawy odbijał
+  już `NOT_CASE_OWNER` — załącznik (zdjęcie usterki, skan dokumentu zakupu) był boczną furtką do
+  danych klienta, którego pracownik nie obsługuje. Personel przechodzi teraz przez
+  `CaseRepo::can_current_user_see()`, czyli TĘ SAMĄ funkcję, którą bramkują lista i karta:
+  `mp_agent` → wyłącznie sprawy przydzielone jemu, koordynator i `mp_system_admin` → wszystkie.
+  Drugiego, własnego sposobu sprawdzania świadomie nie budujemy (lekcja z audytu 2.24: rozjechałby
+  się po raz trzeci).
 - **Nota dla wdrożenia na nginx** — dodaj do konfiguracji serwera:
   ```nginx
   location ^~ /wp-content/uploads/mp-attachments/ { deny all; return 403; }
