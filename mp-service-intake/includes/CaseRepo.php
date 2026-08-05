@@ -959,15 +959,6 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Regeneruje token weryfikacji dla sprawy niepotwierdzonej (resend admina).
-	 *
-	 * KAZDY resend = swiezy token, stary uniewazniony (nadpisanie hasha). TYLKO
-	 * sprawy `pending` (zweryfikowanej nie ruszamy). Zwraca surowy token albo null.
-	 *
-	 * @param int $case_id ID sprawy.
-	 * @return string|null Surowy token do magic-linka albo null (nie pending).
-	 */
-	/**
 	 * Wspolna reakcja na NIEUDANY zapis sladu w OTWARTEJ transakcji (D2 + blizniaki).
 	 *
 	 * ⛔ SLAD JEST CZESCIA OPERACJI, NIE DODATKIEM. Sama transakcja tego nie zalatwia:
@@ -1005,6 +996,15 @@ final class CaseRepo {
 		);
 	}
 
+	/**
+	 * Regeneruje token weryfikacji dla sprawy niepotwierdzonej (resend admina).
+	 *
+	 * KAZDY resend = swiezy token, stary uniewazniony (nadpisanie hasha). TYLKO
+	 * sprawy `pending` (zweryfikowanej nie ruszamy). Zwraca surowy token albo null.
+	 *
+	 * @param int $case_id ID sprawy.
+	 * @return string|null Surowy token do magic-linka albo null (nie pending).
+	 */
 	public static function regenerate_token( int $case_id ): ?string {
 		global $wpdb;
 
