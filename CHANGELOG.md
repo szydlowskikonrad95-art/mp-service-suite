@@ -111,6 +111,47 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
   ze strona autora nie zdradza ani adresu, ani nazwiska.
 - Testy jednostkowe `TozsamoscKlientaTest` (granica dlugosci liczona w znakach, nie bajtach).
 
+### Naprawione — sześć wad z kontroli na działającej instalacji (wydanie 1.3.12, grupa 6)
+
+Ostatnia kontrola przed wydaniem polegała na obejrzeniu **działającego systemu oczami
+użytkownika**, ekran po ekranie, zamiast czytania kodu. Wykryła sześć rzeczy, których nie było
+na liście audytu. Wszystkie zamknięte w tym wydaniu.
+
+- 🔴 **Pracownik serwisu docierał do spraw spoza swojego przydziału — razem z danymi klienta.**
+  Lista pokazywała mu wyłącznie jego sprawy, ale **karta sprawy otwierała się po samym numerze
+  w adresie**. Ta sama luka pozwalała **zmienić cudzą sprawę**: status, odpowiedź wysyłaną do
+  klienta, notatkę. Karta i każde działanie na niej pytają teraz o prawo do **tej konkretnej
+  sprawy**, dokładnie tak jak lista. Przydzielanie spraw zostaje u koordynatora i administratora,
+  zgodnie z zamówieniem.
+  ⚠️ **Wada jest obecna w 1.3.11 i wcześniejszych** — kto ma którąś z nich postawioną, zamyka
+  ją samą aktualizacją; nic poza tym nie jest potrzebne.
+- **Zbyt duży załącznik kończył się pustą białą stroną** — zgłaszający nie wiedział, czy wysłał,
+  a wpisane dane znikały. Teraz dostaje czytelny komunikat i wraca na formularz.
+- **Przekroczenie dobowego limitu zgłoszeń czyściło cały formularz** — opis usterki i załącznik
+  trzeba było wpisywać od nowa. Wartości zostają, a komunikat mówi, **kiedy** będzie można
+  wysłać ponownie.
+- **Treść z adresu strony trafiała na ekran jako komunikat panelu.** Spreparowanym odnośnikiem
+  dało się pokazać na prawdziwej stronie serwisu dowolne zdanie — np. o odrzuceniu sprawy
+  i numerze premium. Skryptu uruchomić się nie dało; ciężar polegał na wiarygodności, jakiej
+  taki odnośnik użyczał od domeny serwisu. Ekran przyjmuje teraz **wyłącznie znane komunikaty**.
+- **Koordynator widział w menu pozycję, która go nie wpuszczała.** Jest ukryta temu, kto nie ma
+  do niej prawa, zamiast otwierać drzwi i odsyłać z kwitkiem.
+- **Ekrany ustawień i Rejestru rozjeżdżały się na wąskim oknie** — z tabeli statusów widać było
+  jedną kolumnę. Tabele **przewijają się** w swoim obszarze (z zaczepem klawiatury) i mieszczą
+  się na telefonie i na monitorze. ⛔ Nie schowaliśmy kolumn: schowanie dałoby w pomiarze
+  identyczny wynik co poprawne przewijanie, a kasowałoby kolumny na zawsze.
+
+### Dowody — sześć wad
+- Kontrola prowadzona na **żywej instalacji pod adresem, którym wchodzi klient**, nie przez
+  `localhost`, i w tempie człowieka — formularz ma pułapkę czasową, więc automat klikający
+  natychmiast mierzy tę pułapkę, a nie produkt.
+- Naprawa dostępu do spraw sprawdzona **w obie strony**: przed poprawką wszystkie cztery próby
+  (odczyt karty, zmiana statusu, wysyłka maila do cudzego klienta, notatka) przechodziły;
+  po poprawce „Sprawa niedostępna" i trzykrotna odmowa, żaden mail nie wyszedł — a **własną
+  sprawę** pracownik obsługuje bez zmian i koordynator robi wszystko, co robił.
+- Testy przeglądarkowe układu tabel (w CI) mierzą także, czy tabela jest **dostępna, a nie tylko
+  schowana**, i kończą się „pomiar nieważny" tam, gdzie ekran nie ma danych do pokazania.
+
 ### Naprawione — dostępność (WCAG 2.1 AA)
 - **Błąd formularza prowadzi do konkretnego pola.** Podsumowanie błędów jest listą odnośników,
   a pole z błędem dostaje `aria-invalid`; komunikat i pole są spięte `aria-describedby`. Dotąd
