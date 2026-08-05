@@ -31,8 +31,10 @@ i administratorzy nie prowadzą spraw, więc nie da się na nich przydzielić sp
 ## 2. Zgłoszenia niepotwierdzone
 
 **MP: Niepotwierdzone** — zgłoszenia, których klient jeszcze nie potwierdził mailem. Nie obsługuje
-się ich (mogą być pomyłką lub spamem). Link potwierdzający jest ważny **24 godziny**, więc po tym
-czasie takie zgłoszenie i tak nie może już ruszyć, a **po 30 dniach znika razem z danymi**.
+się ich (mogą być pomyłką lub spamem). Pojedynczy link potwierdzający jest ważny **24 godziny**,
+ale **okno potwierdzenia zgłoszenia trwa 72 godziny** — w tym czasie możesz wysłać klientowi
+świeży link akcją **„Wyślij ponownie"** na tej liście. Po upływie okna zgłoszenie nie może już
+ruszyć, a **po 30 dniach znika razem z danymi**.
 
 Kolumna **„Poczta"** pokazuje, czy link potwierdzający w ogóle wyszedł. Oznaczenie
 **„⚠ Link NIE doszedł"** znaczy, że wysyłka maila padła po stronie serwera — klient nie dostał
@@ -66,7 +68,8 @@ Eksport podaje **dwie różne wielkości**, każdą z podstawą wypisaną w nag�
 | **Wiek sprawy od złożenia (godz.)** | od wysłania formularza przez klienta | ile sprawa trwała łącznie, z czekaniem na potwierdzenie |
 
 Różnica między nimi to **czas, przez który zgłoszenie czekało na potwierdzenie przez klienta —
-do 24 godzin** (tyle jest ważny link potwierdzający). Przy sprawie potwierdzonej po dwóch dniach
+do 72 godzin** (tyle trwa okno potwierdzenia zgłoszenia; pojedynczy link żyje krócej, ale w oknie
+można wysłać świeży — patrz §2). Przy sprawie potwierdzonej po dwóch dniach
 jedna liczba będzie o kilkadziesiąt godzin większa od drugiej, mimo że serwis pracował tyle samo.
 
 **Czas obsługi liczony od potwierdzenia to ta sama liczba, którą klient widzi we wpisie
