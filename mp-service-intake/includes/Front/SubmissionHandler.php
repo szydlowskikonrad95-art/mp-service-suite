@@ -55,6 +55,87 @@ final class SubmissionHandler {
 		add_action( 'admin_post_nopriv_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
 		add_action( 'admin_post_mp_intake_verify_confirm', array( self::class, 'handle_verify_confirm' ) );
 		add_action( 'admin_post_mp_intake_attachment', array( self::class, 'handle_attachment' ) );
+
+		// S4 #1: zaladunek wiekszy niz post_max_size => PHP wyrzuca $_POST i $_FILES,
+		// wiec 'action' ginie i admin-post.php odpala hook BEZ akcji, ktorego nikt
+		// nie obsluguje => biala pusta strona (handle_submit nawet nie startuje).
+		// Lapiemy TEN jeden przypadek i wracamy na formularz z komunikatem o limicie.
+		add_action( 'admin_post_nopriv', array( self::class, 'guard_oversized_post' ) );
+		add_action( 'admin_post', array( self::class, 'guard_oversized_post' ) );
+	}
+
+	/**
+	 * Strażnik zaladunku przekraczajacego post_max_size (S4 #1).
+	 *
+	 * Wpiety w admin-post.php BEZ akcji (jedyny hook, ktory wtedy leci). Reaguje
+	 * WYLACZNIE gdy: POST, $_POST i $_FILES puste, Content-Length > post_max_size,
+	 * a zrodlem jest nasza strona formularza. Wtedy zamiast bialej pustki wraca na
+	 * formularz z komunikatem, do ilu megabajtow serwer przyjmuje pliki. Kazdy inny
+	 * bezakcyjny POST zostawiamy nietkniety (return) — nie przejmujemy cudzego ruchu.
+	 *
+	 * @return void
+	 */
+	public static function guard_oversized_post(): void {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REQUEST_METHOD'] ) ) : '';
+
+		if ( 'POST' !== $method ) {
+			return;
+		}
+
+		// Oversized-POST: PHP zostawia $_POST i $_FILES puste mimo niezerowego ciala.
+		$content_length = isset( $_SERVER['CONTENT_LENGTH'] ) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- oversized-POST: cialo (w tym nonce) PHP juz wyrzucil; sprawdzamy WYLACZNIE pustosc $_POST/$_FILES, nie przetwarzamy zadnej wartosci.
+		if ( array() !== $_POST || array() !== $_FILES || $content_length <= 0 ) {
+			return;
+		}
+
+		$post_max = wp_convert_hr_to_bytes( (string) ini_get( 'post_max_size' ) );
+
+		if ( $post_max <= 0 || $content_length <= $post_max ) {
+			return;
+		}
+
+		// Tylko dla NASZEGO formularza — inaczej przechwycilibysmy cudzy bezakcyjny
+		// POST. Referer jest jedynym tropem (body przepadlo razem z 'action').
+		// Porownujemy caly adres BEZ schematu (odpornosc na http/https), zeby dzialalo
+		// i przy ladnych permalinkach (/zgloszenie-serwisowe/), i przy zwyklych (?page_id=N),
+		// gdzie sama sciezka to „/" i nie odroznilaby stron.
+		$strip    = static fn( string $u ): string => (string) preg_replace( '#^https?://#i', '', $u );
+		$referer  = $strip( (string) wp_get_referer() );
+		$form_url = $strip( self::form_page_url() );
+
+		if ( '' === $referer || '' === $form_url || 0 !== strpos( $referer, $form_url ) ) {
+			return;
+		}
+
+		// Komunikat podaje limit REALNIE egzekwowany na pliki (min(upload,post)).
+		self::redirect_back(
+			array(
+				'notice' => sprintf(
+					/* translators: %s: rozmiar z jednostka, np. „2 MB". */
+					__( 'Załącznik jest za duży — ten serwer przyjmuje pliki do %s. Zmniejsz zdjęcie (np. w telefonie) i wyślij zgłoszenie ponownie; wpisane dane wpisz jeszcze raz.', 'mp-service-intake' ),
+					size_format( wp_max_upload_size() )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Adres strony formularza zgloszenia (permalink auto-strony) albo ''.
+	 *
+	 * @return string
+	 */
+	private static function form_page_url(): string {
+		$page_id = (int) get_option( 'mp_intake_form_page_id', 0 );
+
+		if ( $page_id <= 0 ) {
+			return '';
+		}
+
+		$url = get_permalink( $page_id );
+
+		return false === $url ? '' : (string) $url;
 	}
 
 	/**
