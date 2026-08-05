@@ -15,8 +15,9 @@ której automat nie umiał przydzielić (najczęściej pusta pula — patrz §3)
 
 ![Lista spraw](zdjecia/admin-01-sprawy.png)
 
-Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status i priorytet,
+Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status,
 pisać do klienta. Ponowne przydzielenie tej samej osobie nic nie wysyła (bez spamu).
+Priorytet widzisz w nagłówku karty — nadaje go automat według reguł, z karty się go nie zmienia.
 
 Wynik sprawdzenia gwarancji ma cztery statusy: aktywna / wygasła / brak danych / **wymagana
 weryfikacja**. Ten ostatni znaczy, że numer dokumentu zakupu albo data zakupu od klienta nie
