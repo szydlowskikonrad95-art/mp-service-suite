@@ -5,7 +5,7 @@
 # produktu wyswietlala wyjasnienie i przycisk „Przejdz do Rejestru MP". Pod spodem
 # siedzial prawdziwy brak — KAZDE zapytanie do tabeli wyjatkow filtrowalo po jednym
 # produkcie, wiec administrator, ktory przyznal ich dwadziescia, nie mial jak ich
-# przejrzec. Kartka wymaga „historii zmian danych produktu i decyzji gwarancyjnych".
+# przejrzec. Specyfikacja wymaga „historii zmian danych produktu i decyzji gwarancyjnych".
 #
 # Ten test pilnuje, ze:
 #   1. czytnik widzi wyjatki z ROZNYCH produktow w jednym wyniku,

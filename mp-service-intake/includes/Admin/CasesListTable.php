@@ -1,6 +1,6 @@
 <?php
 /**
- * Lista spraw serwisowych dla PERSONELU (WP_List_Table) — kartka krok 7.
+ * Lista spraw serwisowych dla PERSONELU (WP_List_Table) — specyfikacja krok 7.
  * Model B: caly personel widzi WSZYSTKIE zweryfikowane sprawy. Kolumny: SRV
  * (link do karty) / klient / rodzaj / status / przydzielony / termin SLA / data.
  * Filtry: status, rodzaj, przydzielony + wyszukiwarka (SRV/klient). Sortowanie

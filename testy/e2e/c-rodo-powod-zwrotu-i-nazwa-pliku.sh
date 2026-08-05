@@ -155,7 +155,7 @@ wykonaj "DELETE FROM wp_mp_service_cases WHERE id IN ($ID_A, $ID_B)"
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
-# ⛔ STRAZNIK KOMPLETU: kontrola, ktora cicho NIE wystartuje (literowka, rozbity
+# ⛔ TEST PILNUJACY KOMPLETU: kontrola, ktora cicho NIE wystartuje (literowka, rozbity
 # cudzyslow w komunikacie), nie zglasza sie jako FAIL — po prostu jej nie ma,
 # a bramka swieci zielono. Zlapane wlasna kalibracja: polskie cudzyslowy w tresci
 # komunikatu rozbijaly argument i sedno (a) nie wykonywalo sie ani razu.

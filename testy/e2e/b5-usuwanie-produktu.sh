@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZYWY DOWOD B5 (kartka l.50: „brak mozliwosci usuniecia produktu powiazanego z aktywna sprawa").
+# ZYWY DOWOD B5 (specyfikacja l.50: „brak mozliwosci usuniecia produktu powiazanego z aktywna sprawa").
 # Registry Archive::archive() pyta hakiem `mp_product_active_cases_count` (listener w Intake, C).
 #   >0 aktywnych spraw => ODMOWA · 0 => archiwizacja (soft-delete: archived=1 + deleted_at)
 #   brak listenera (Intake off) => FAIL-CLOSED (has_filter false => odmowa „na slowo").

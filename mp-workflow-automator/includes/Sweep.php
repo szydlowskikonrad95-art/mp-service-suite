@@ -84,7 +84,7 @@ final class Sweep {
 	 * PO CO OSOBNA OPCJA, skoro jest rejestr zdarzen (audyt 2.21): odpowiedz na
 	 * pytanie „czy cron w ogole chodzi" wyciagalismy z ostatniego wpisu SWEEP_RUN,
 	 * czyli z tabeli, ktora z ZALOZENIA nigdy nic nie kasuje (dziennik rozliczalnosci,
-	 * wymog z kartki). To dawalo 105 tysiecy wierszy rocznie na instalacji, gdzie
+	 * wymog ze specyfikacji). To dawalo 105 tysiecy wierszy rocznie na instalacji, gdzie
 	 * nikt nie zlozyl ani jednego zgloszenia — RUCH WLASNY PRODUKTU, nie klienta.
 	 * Jedna nadpisywana wartosc odpowiada na to samo pytanie i nie rosnie.
 	 */

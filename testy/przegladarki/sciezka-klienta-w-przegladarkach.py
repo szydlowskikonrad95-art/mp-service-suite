@@ -1,6 +1,6 @@
-"""Zgodnosc przegladarek (wymog kartki: Chrome, Edge, Firefox).
+"""Zgodnosc przegladarek (wymog specyfikacji: Chrome, Edge, Firefox).
 
-Kartka zamawiajacego wymaga testow w Chrome, Edge i Firefoksie. Chrome i Edge stoja
+Specyfikacja zamawiajacego wymaga testow w Chrome, Edge i Firefoksie. Chrome i Edge stoja
 na TYM SAMYM silniku (Blink/Chromium), wiec realnie sa dwa silniki do sprawdzenia:
 Blink i Gecko. Ten test przechodzi sciezke KLIENTA w obu.
 

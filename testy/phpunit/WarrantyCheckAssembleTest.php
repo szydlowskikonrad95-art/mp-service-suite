@@ -53,7 +53,7 @@ final class WarrantyCheckAssembleTest extends TestCase {
 	}
 
 	/**
-	 * OGNIWO PARTII (kontrola strazenika, kartka: sprawa "dziedziczy dane
+	 * OGNIWO PARTII (kontrola strazenika, specyfikacja: sprawa "dziedziczy dane
 	 * gwarancji, modelu i partii"): zwrotka niesie batch => snapshot sprawy
 	 * (= pelna zwrotka) dziedziczy partie.
 	 */

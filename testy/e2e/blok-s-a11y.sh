@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # BLOK-S — a11y/WCAG sweep (klient = INSTYTUCJA PUBLICZNA => a11y to WYMOG).
-# Uzupelnia a11y-forms.sh (DoD C par.7: labelki/role=alert na formularzu) o:
+# Uzupelnia a11y-forms.sh (kryteria odbioru C par.7: labelki/role=alert na formularzu) o:
 #  (1) GUARD img-alt w ZRODLE — kazdy <img>/wp_get_attachment_image z alt (grep
 #      BRAMKA par.7); dzis 0 obrazow => guard trzyma regresje na przyszlosc,
 #  (2) WCAG-lite render sweep WSZYSTKICH powierzchni (formularz + panel wylogowany
 #      + panel zalogowany + admin): kazdy <img> z alt, kazdy przycisk z NAZWA
 #      dostepna, ZERO duplikatow id (regula axe duplicate-id).
 # Warstwa statyczna/strukturalna. Pelny axe-core (przebieg DOM w przegladarce)
-# = osobny krok (Node+Chromium) — do decyzji straznika (CI vs manual przed oddaniem);
+# = osobny krok (Node+Chromium) — do decyzji testu pilnujacego (CI vs manual przed oddaniem);
 # tu NIE udajemy ze axe sie odpalilo (dowod nie slowo).
 #
 # CLI (render przez eval). Chodzi na poligonie i w CI. Exit 0 = zero FAIL.

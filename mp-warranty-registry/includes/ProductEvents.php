@@ -34,7 +34,7 @@ final class ProductEvents {
 	 *
 	 * ⛔ Dziennik rejestru jako JEDYNY z trzech tego pola nie zapisywal. Dziennik
 	 * jest append-only, wiec przy pierwszej zmianie ksztaltu wpisu nie dalo by sie
-	 * odroznic starych zapisow od nowych — a mowa o wpisach, ktore kartka wymienia
+	 * odroznic starych zapisow od nowych — a mowa o wpisach, ktore specyfikacja wymienia
 	 * wprost: „historia zmian danych produktu i decyzji gwarancyjnych".
 	 */
 	public const SCHEMA_VERSION = 1;

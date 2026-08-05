@@ -1,6 +1,6 @@
 <?php
 /**
- * Slownik kategorii produktu (kartka P1.2/P3.1 — os przydzialu + pola formularza).
+ * Slownik kategorii produktu (specyfikacja P1.2/P3.1 — os przydzialu + pola formularza).
  *
  * Whitelist 4 kategorii (klepniete 21.07). Konfigurowalny przez filtr
  * `mp_product_categories` (slug => etykieta PL). Walidacja wejscia:

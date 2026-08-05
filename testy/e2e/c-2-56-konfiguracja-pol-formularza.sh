@@ -9,7 +9,7 @@
 # Dodatkowo `uninstall.php` tej opcji nie kasowal, choc naglowek zaliczal ja do
 # warstwy TRESCI, a OWNERSHIP.md mowi, ze warstwa tresci ginie za zgoda admina.
 #
-# ⛔ UCZCIWIE: to NIE jest brak wobec zamowienia. Kartka wymaga „wymaganych pol
+# ⛔ UCZCIWIE: to NIE jest brak wobec zamowienia. Specyfikacja wymaga „wymaganych pol
 # i zalacznikow zaleznych od kategorii produktu" — i to JEST zrobione
 # (`category_fields`, `attachments_for`). Edytowania pol z panelu zamawiajacy nie
 # zamawial, wiec ekranu NIE dokladamy. Zglaszamy rozbieznosc kodu z jego wlasnym

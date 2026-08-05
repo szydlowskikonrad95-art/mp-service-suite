@@ -1,6 +1,6 @@
 <?php
 /**
- * Linter-straznik cudzych tabel (CI + pre-commit).
+ * Linter pilnujacy cudzych tabel (CI + pre-commit).
  *
  * Zasada kontraktu (OWNERSHIP): kod pluginu NIE MOZE zawierac nazw tabel
  * INNEGO pluginu — komunikacja wylacznie hookami mp_*. Skan po tokenach

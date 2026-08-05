@@ -21,7 +21,7 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-    # PHPUnit 13 wymaga PHP >= 8.4, a kartka klienta deklaruje „PHP 8.1 lub nowszy"
+    # PHPUnit 13 wymaga PHP >= 8.4, a specyfikacja klienta deklaruje „PHP 8.1 lub nowszy"
     # i matryca CI testuje 8.1-8.5. Przyjecie takiego skoku oznaczaloby utrate testow
     # na trzech wersjach PHP, ktore klient ma prawo miec na serwerze (PR #152, zamkniety).
     # Blokujemy WYLACZNIE skoki glownej wersji — poprawki bezpieczenstwa i drobne

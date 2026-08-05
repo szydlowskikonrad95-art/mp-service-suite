@@ -1,7 +1,7 @@
 <?php
 /**
  * Eksport CSV spraw + zestawienie (P3.6) — BACKEND-HANDLER-ONLY (bez menu/ekranu;
- * przycisk podepnie osobne zadanie „panel admina D", decyzja straznika 23.07).
+ * przycisk podepnie osobne zadanie „panel admina D", decyzja testu pilnujacego 23.07).
  *
  * Bezpieczenstwo (bulk egress danych osobowych): capability `mp_coordinator` /
  * `mp_system_admin` PIERWSZA => jawne 403 dla anon/subscriber/klient/pracownik;

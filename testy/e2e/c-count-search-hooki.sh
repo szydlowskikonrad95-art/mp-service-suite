@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD kontraktu B->C (klaster listenerow C dla Rejestru):
 #   mp_case_count_by_product  -> kolumna „Sprawy" (przez B-owy mp_serial_usage_count)
-#   mp_customer_find_products -> wyszukiwarka „po kliencie" (kartka P2.6)
+#   mp_customer_find_products -> wyszukiwarka „po kliencie" (specyfikacja P2.6)
 # Bez listenerow C: kolumna pokazuje „modul spraw nieaktywny", search po kliencie WYLACZONY.
 # Sprawy UNVERIFIED nie licza sie (anty-wektor „spamer blokuje produkty"). Exit 0 = OK.
 set -u

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD C sekcja 4 — DIRTY-ENV: brudny WP, nie sterylny lab.
+# kryteria odbioru C sekcja 4 — DIRTY-ENV: brudny WP, nie sterylny lab.
 # - niestandardowy prefiks bazy (cms_x9_)
 # - WP_DEBUG=true => ZERO notice/warning/deprecated/Fatal z NASZEGO kodu przy przeklikaniu
 # - persistent object-cache ON (drop-in) => nasz kod nie Fataluje przy cache

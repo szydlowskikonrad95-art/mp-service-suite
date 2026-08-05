@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# STRAZNIK: API-KONTRAKT.md i SECURITY.md musza opisywac TEN kod, ktory jest.
+# TEST PILNUJACY: API-KONTRAKT.md i SECURITY.md musza opisywac TEN kod, ktory jest.
 #
 # Trzy pozycje audytu 1.3.12, wszystkie tej samej klasy „dokument mowi co innego
 # niz kod" — ale w strone ODWROTNA niz zwykle: tu kod jest LEPSZY niz dokument.
@@ -31,7 +31,7 @@
 #    Gdyby kod wrocil na transienty albo lista przestala wolac wariant hurtowy,
 #    ten test ma zaczerwienic sie tak samo, jak gdy sklamie dokument.
 #
-# ⛔ STRAZNIK KOMPLETU (lekcja z 04.08: „kontrola, ktora cicho nie startuje,
+# ⛔ TEST PILNUJACY KOMPLETU (lekcja z 04.08: „kontrola, ktora cicho nie startuje,
 #    swieci zielono") — DWA, bo sa dwa sposoby na ciche zero:
 #    1. ekstraktor nazw musi znalezc co najmniej MIN_PUNKTOW punktow kontraktu.
 #       Zepsuty regex = blad przebiegu, nie zielone zero.
@@ -165,7 +165,7 @@ PUNKTY_MAPA=$(grep -hoE "^\| [^|]*mp_[a-z0-9_]+[^|]*\|" "$KONTRAKT" \
 PUNKTY=$(printf '%s\n%s\n' "$PUNKTY" "$PUNKTY_MAPA" | grep -E "^mp_" | sort -u)
 LICZBA_PUNKTOW=$(printf '%s\n' "$PUNKTY" | grep -c . || true)
 
-# STRAZNIK KOMPLETU — zepsuty ekstraktor ma byc bledem, nie zielonym zerem.
+# TEST PILNUJACY KOMPLETU — zepsuty ekstraktor ma byc bledem, nie zielonym zerem.
 if [ "$LICZBA_PUNKTOW" -lt "$MIN_PUNKTOW" ]; then
 	echo "BLAD PRZEBIEGU: ekstraktor znalazl tylko $LICZBA_PUNKTOW punktow kontraktu (< $MIN_PUNKTOW)."
 	echo "Kontrola widm NIE wykonala sie — to wada przyrzadu, nie zielone zero."
@@ -204,7 +204,7 @@ done
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 
-# ── STRAZNIK KOMPLETU: czy wszystkie kontrole w ogole wystartowaly ──────────
+# ── TEST PILNUJACY KOMPLETU: czy wszystkie kontrole w ogole wystartowaly ──────────
 if [ "$(( PASS + FAIL ))" -lt "$MIN_KONTROLI" ]; then
 	echo "  BLAD BRAMKI: wykonalo sie $(( PASS + FAIL )) kontroli, oczekiwane min. $MIN_KONTROLI."
 	echo "  Ktoras cicho NIE wystartowala — sprawdz stderr i czy nie znikl caly blok if/else."

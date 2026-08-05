@@ -142,7 +142,7 @@ TABELE=$(wp eval '
 	&& ok "tabele modulu odtworzone po ponownej aktywacji ($TABELE)" \
 	|| bad "po ponownej aktywacji brakuje tabel ([$TABELE])"
 
-# ⛔ STRAZNIK KOMPLETU (lekcja z 4.08: „kontrola, ktora cicho nie startuje,
+# ⛔ TEST PILNUJACY KOMPLETU (lekcja z 4.08: „kontrola, ktora cicho nie startuje,
 # swieci zielono"). Gdyby ktorykolwiek `wp eval` zwrocil smiec i kontrola nie
 # wykonala sie ANI RAZ, suma bylaby mniejsza — a wynik wygladalby na zielony.
 WYKONANE=$(( PASS + FAIL ))

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD C sekcja 7 — a11y/WCAG 2.1 (strukturalnie): klient = instytucja publiczna.
+# kryteria odbioru C sekcja 7 — a11y/WCAG 2.1 (strukturalnie): klient = instytucja publiczna.
 # Sprawdza WCAG-lite na renderach: label spiety z KAZDYM polem, bledy w role=alert
 # + aria-describedby, potwierdzenia w role=status, pola wymagane oznaczone.
 # CLI (render przez eval). Chodzi na poligonie i w CI (e2e-import).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Testy DoD klocka B (karta B + K-C2): import 10k, kill-POLOWA-wznowienie,
+# Testy kryteria odbioru modułu B (karta B + K-C2): import 10k, kill-POLOWA-wznowienie,
 # partia CSV->check, negatywne uprawnienia, snapshot-uninstall.
 # Wymaga dzialajacego `wp` (żywy WP + baza). Chodzi tak samo na poligonie
 # Dockera i w CI (job e2e-import). Exit 0 = wszystkie asercje przeszly.
@@ -91,7 +91,7 @@ echo (file_exists($d."/d2-orphan.csv")?"ZOSTAL":"SKASOWANA")."|".((file_exists($
 ' 2>/dev/null)
 [ "$SWDEL" = "SKASOWANA|GUARD-OK" ] && ok "D2: cron sweep kasuje sierote >24h, chroni guardy katalogu" || bad "D2: sweep zle zadzialal ($SWDEL)"
 
-# ── 5. Partia: CSV -> rejestr -> zwrotka mp_warranty_check (test partii DoD) ──
+# ── 5. Partia: CSV -> rejestr -> zwrotka mp_warranty_check (test partii kryteria odbioru) ──
 BATCH=$(wp eval "\$c = apply_filters('mp_warranty_check', null, 'DOD-000001', null, null); echo \$c['batch'];" 2>/dev/null)
 [ "$BATCH" = "PARTIA-DOD-7" ] && ok "partia z CSV wraca w mp_warranty_check (dziedziczona przez sprawe)" || bad "partia: '$BATCH'"
 
@@ -237,5 +237,5 @@ VOPT=$(q "SELECT COUNT(*) FROM wp_options WHERE option_name LIKE 'mp\\_registry\
 wp plugin activate mp-warranty-registry >/dev/null 2>&1
 
 echo
-echo "WYNIK DoD: $PASS ok, $FAIL fail"
+echo "WYNIK kryteria odbioru: $PASS ok, $FAIL fail"
 [ "$FAIL" -eq 0 ]

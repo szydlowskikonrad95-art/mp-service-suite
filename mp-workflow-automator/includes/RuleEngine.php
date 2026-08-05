@@ -51,7 +51,7 @@ final class RuleEngine {
 
 	/**
 	 * Glebokosc przetwarzania per case_id (0 = zdarzenie zewnetrzne, >=1 = re-entrant
-	 * z akcji reguły). Strażnik petli: mutacje TYLKO na glebokosci 0.
+	 * z akcji reguły). Test pilnujący petli: mutacje TYLKO na glebokosci 0.
 	 *
 	 * @var array<int, int>
 	 */
@@ -423,7 +423,7 @@ final class RuleEngine {
 	}
 
 	/**
-	 * Ewaluacja regul danego triggera ze STRAŻNIKIEM PETLI (wspolna dla
+	 * Ewaluacja regul danego triggera z BEZPIECZNIKIEM PETLI (wspolna dla
 	 * status_changed i message_added).
 	 *
 	 * Glebokosc per case_id: 0 = zdarzenie zewnetrzne (mutacje dozwolone),
@@ -471,7 +471,7 @@ final class RuleEngine {
 				$action = (string) $rule['action_type'];
 				$is_mut = Rules::is_mutating( $action );
 
-				// STRAŻNIK PETLI: mutacja WYLACZNIE na glebokosci 0.
+				// TEST PILNUJĄCY PETLI: mutacja WYLACZNIE na glebokosci 0.
 				if ( $is_mut && $depth >= 1 ) {
 					WorkflowEvents::log(
 						WorkflowEvents::RULE_LOOP_BLOCKED,

@@ -2,8 +2,8 @@
 /**
  * Testy danych zakupu przekazywanych do sprawdzenia gwarancji.
  *
- * Kartka P1.4: „walidacja numeru dokumentu zakupu, numeru seryjnego i daty zakupu".
- * Kartka P2.2: status gwarancji ma miec CZTERY wartosci — aktywna / wygasla /
+ * Specyfikacja P1.4: „walidacja numeru dokumentu zakupu, numeru seryjnego i daty zakupu".
+ * Specyfikacja P2.2: status gwarancji ma miec CZTERY wartosci — aktywna / wygasla /
  * brak danych / WYMAGANA WERYFIKACJA. Czwarta powstaje wylacznie wtedy, gdy
  * rejestr dostanie dokument i date DO POROWNANIA (`WarrantyCheck::assemble`
  * liczy `purchase_doc_match` / `purchase_date_match` tylko przy niepustym

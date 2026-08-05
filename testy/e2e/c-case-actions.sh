@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD (karta sprawy — AKCJE personelu): handlery admin-post CaseActions z
-# BRAMKA capability + nonce (kartka krok 7 „kazda decyzja zapisuje sie w historii").
+# BRAMKA capability + nonce (specyfikacja krok 7 „kazda decyzja zapisuje sie w historii").
 # Macierz uprawnien/nonce:
 #  - mp_intake_case_status: staff (agent/koord/admin) zmienia status; optimistic-lock
 #    (STATUS_CONFLICT przy nieaktualnym expected); NIE-staff=403 bez zmiany; zly nonce=bez zmiany.

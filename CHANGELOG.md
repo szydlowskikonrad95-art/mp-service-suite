@@ -525,7 +525,7 @@ biznesowej i w interfejsie — raport dostępności z 1.3.0 obowiązuje bez zmia
 
 ## [1.2.0] - 2026-07-29
 
-Domknięcie kroku 5 przebiegu z kartki: **„silnik reguł nadaje priorytet i przydziela sprawę
+Domknięcie kroku 5 przebiegu ze specyfikacji: **„silnik reguł nadaje priorytet i przydziela sprawę
 do właściwego pracownika"**. Silnik działał od początku, ale **pula pracowników wychodziła
 z instalacji pusta i nie było jej jak wypełnić** — ani ekranem, ani komendą wiersza poleceń.
 Świeżo wdrożony system przyjmował zgłoszenia i zostawiał je nieprzydzielone, a instrukcja
@@ -550,7 +550,7 @@ kazała „wskazać pracowników w regule" jako pierwszy krok wdrożenia.
 
 ## [1.1.0] - 2026-07-28
 
-Domknięcie wymogu z kartki: **„historia zmian danych produktu i decyzji gwarancyjnych"**.
+Domknięcie wymogu ze specyfikacji: **„historia zmian danych produktu i decyzji gwarancyjnych"**.
 Decyzje gwarancyjne były zapisywane od początku, ale danych produktu **nie dało się zmienić** —
 wchodziły wyłącznie importem, a ponowny import odrzucał ten sam numer seryjny jako duplikat.
 Historia zmian danych nie miała więc czego zapisywać, a błąd w pliku (np. zła data gwarancji)
@@ -566,7 +566,7 @@ był nie do poprawienia bez ręcznej ingerencji w bazę.
 
 ### Security
 - Numer seryjny **wyłączony z edycji** (`Repo::EDITABLE_FIELDS`). Jest kluczem relacji
-  sprawa → produkt z kartki; podmiana przepisałaby cudzą historię serwisową na inny egzemplarz.
+  sprawa → produkt ze specyfikacji; podmiana przepisałaby cudzą historię serwisową na inny egzemplarz.
 - Dokument zakupu trafia do historii **bez wartości** (lista PII w `ProductEvents::PII_FIELDS`) —
   zapisujemy sam fakt zmiany.
 - Zapis chroniony tokenem `nonce` per produkt i sprawdzeniem uprawnień; produkt archiwalny
@@ -718,12 +718,12 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
   importu linkuje do niego („Pobierz przykładowy plik CSV"). Ekran wymienia teraz też **kolumny opcjonalne**
   (dotąd tylko wymaganą `serial`), formaty dat, listę kategorii **czytaną z `Categories::slugs()`** (nie
   przepisaną ręcznie — nie może się rozjechać) oraz jawnie mówi, że import DODAJE produkty i nie nadpisuje
-  duplikatu serialu. Test-strażnik `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
+  duplikatu serialu. Test pilnujący `test_dolaczony_przyklad_csv_importuje_sie_bez_bledow` przepuszcza dołączony
   plik przez realny parser — przykład nie może cicho przestać się importować.
 
 ### Changed
 - **Numer sprawy ma format ze specyfikacji: `SRV/RRRR/NNNN` (cztery cyfry).** Dotąd kod nadawał
-  pięć cyfr (`SRV/2026/00001`), mimo że kartka zamawiającego mówi `SRV/RRRR/NNNN`. Rozjazd
+  pięć cyfr (`SRV/2026/00001`), mimo że specyfikacja zamawiającego mówi `SRV/RRRR/NNNN`. Rozjazd
   utrwalił się, bo wcześniej „poprawiono literówkę" **w dokumentacji, dopasowując ją do kodu**
   zamiast odwrotnie — a komentarz w kodzie twierdził, że pięć cyfr to „spec klienta". Wyszło
   w audycie odbiorczym czytającym surową specyfikację. Po zmianie: pierwsza sprawa roku to
@@ -840,7 +840,7 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
   cały plik do pamięci (`file_get_contents` + `to_utf8` + `preg_split` w tablicę), co przy ~20 MB mogło
   przekroczyć domyślny `memory_limit` 128 MB. Limit obniżony do 8 MB (bezpieczny zapas); większe importy
   klient dzieli na części. Właściwe przetwarzanie (`process_batch`) i tak streamuje przez `fgetcsv`.
-  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (strażnik przed przyszłym bumpem).
+  Test `ImportEndpointsTest::test_import_limit_is_memory_safe` (test pilnujący przed przyszłym bumpem).
 - Intake (C) — **honeypot czasowy: brak/za stary `mp_ts` też odrzucany** (#D11). Wcześniej pominięcie pola
   `mp_ts` omijało pułapkę czasu (warunek `$started > 0`) — bot mógł nie wysyłać znacznika. Teraz brak,
   zbyt szybkie (<2 s) i zbyt stare (>3 h, replay) znaczniki wpadają w cichy odrzut. Warstwa bonusowa —
@@ -891,20 +891,20 @@ i eskalacją, raporty. Poniżej pełna lista zmian od wersji 0.5.0.
 ### Added
 - Intake (C) — **rate-limit żądań magic-linku (logowanie)** (`RateLimit::check_login`, osobne liczniki od
   formularza zgłoszeń): domyślnie 5 żądań/15 min na IP + 5/godz. na e-mail. Chroni skrzynki klientów przed
-  zalewem linkami i endpoint przed nadużyciem (OWASP anti-automation — hardening poza kartką, standard
+  zalewem linkami i endpoint przed nadużyciem (OWASP anti-automation — hardening poza specyfikacją, standard
   bezpieczeństwa). Komunikat neutralny (zero enumeracji kont), progi nadpisywalne filtrem
   `mp_intake_login_rate_limits`, źródło IP przez `mp_intake_client_ip`. Test `c17-rate-limit-login` (5/5).
 
 ### Changed
 - Automator (D) — **konfiguracja checklist i szablonów: surowy JSON → formularz** (poprawka #2 z audytu:
-  UX/profeska, poza kartką — kartka wymaga funkcji, nie sposobu konfiguracji). Panel „Automatyzacje MP"
+  UX/profeska, poza specyfikacją — specyfikacja wymaga funkcji, nie sposobu konfiguracji). Panel „Automatyzacje MP"
   renderuje **builder per rodzaj sprawy** (pola klucz/etykieta[/treść] + „+ dodaj" / „×" usuń) zamiast
   wklejania JSON. **Kontrakt backendu NIETKNIĘTY** — JS składa te same dane do ukrytego pola `payload`,
   ten sam handler + walidacja (zero regresji: `d-p35` 20/0). Surowy JSON zostaje jako fallback w sekcji
   „Zaawansowane: edytuj jako JSON" (działa też bez JS). Testy: `c18-config-form-render` (14/0) + żywy test
   serializacji JS (Playwright: edycja+dodanie wiersza → poprawny JSON, 4 rodzaje).
 - Wymagania środowiska doprecyzowane wg specyfikacji klienta: `Requires at least` obniżone **6.9 → 6.0**
-  (kartka: „WordPress 6.x" = 6.0 i nowsze; kod używa tylko stabilnych API). Dodana sekcja **Requirements**
+  (specyfikacja: „WordPress 6.x" = 6.0 i nowsze; kod używa tylko stabilnych API). Dodana sekcja **Requirements**
   w readme (WordPress 6.x, PHP 8.1+, MySQL 8.0+/MariaDB 10.6+, **HTTPS** — passwordless login + dane klienta,
   **WP-Cron** — SLA/przypomnienia/eskalacje, importy, retencja). `Tested up to` bez zmian (6.9).
   Poprawka literówki formatu numeru w readme intake: `SRV/YYYY/NNNNN` (5 cyfr, spójnie z v0.5.0).
@@ -942,7 +942,7 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
   gwarancji liczony z daty** aktywna/wygasła/brak-danych, flaga zarchiwizowany). Karta nie siega w
   tabele B (luzne wiazanie). `mp_case_get_context` wystawia teraz `product_registry_id` (bylo czytane
   wewnetrznie, nie zwracane). Degraduje gdy modul B nieaktywny / sprawa bez produktu. Test `b-product-details`.
-- Intake (C): **ekran pracy personelu „MP: Sprawy" — karta sprawy (kartka krok 7)**. Domkniecie luki #1
+- Intake (C): **ekran pracy personelu „MP: Sprawy" — karta sprawy (specyfikacja krok 7)**. Domkniecie luki #1
   audytu adwersaryjnego (2026-07-24): personel nie mial GDZIE obslugiwac potwierdzonej sprawy. Teraz:
   **lista spraw** (`WP_List_Table`, kolumny nr/klient/rodzaj/status/przydzielony/termin-SLA/utworzono,
   filtry status/rodzaj/przydzielony + „moje"/„nieprzydzielone", wyszukiwarka po nr/kliencie, sortowanie,
@@ -956,7 +956,7 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
   / `mp_case_deadline` (karta nie siega w tabele D). Nowe metody read C: `CaseRepo::query_for_staff` /
   `form_data_for_case`, `CaseEvents::for_case`. Testy e2e `c-case-card` (19) + `c-case-actions` (16, macierz
   capability+nonce). Zweryfikowane na zywo: klikacz admin + `mp_agent` (panel przydzialu ukryty pracownikowi).
-- Registry (B): **kategoria produktu** (domkniecie kartki P1.2/P3.1 po stronie danych) — kolumna `category`
+- Registry (B): **kategoria produktu** (domkniecie specyfikacji P1.2/P3.1 po stronie danych) — kolumna `category`
   (migracja v2 `maybe_upgrade`, BEZ reaktywacji; istniejace wiersze => `inne`), slownik 4 kategorii
   (audio / agd / elektronarzedzia / inne; konfigurowalny filtrem `mp_product_categories`), import CSV z kolumna
   `kategoria` (WSTECZNIE ZGODNY — stary CSV bez niej => `inne`; nieznana => `inne`, bez przerwania importu),
@@ -966,7 +966,7 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
   kategoria (sensowne domyslne + konfigurowalne filtrem `mp_intake_category_fields`); `fields_for($kind, $category)`
   ADDYTYWNIE (bez kategorii = pola rodzaju, ZERO regresji #15); zapis pol kategorii do `form_data`; walidacja serwera
   + JS-dynamika (pokazuje pola wg rodzaju ORAZ kategorii). Test e2e `c-kategoria-formularz`.
-- Intake (C): **listener `mp_product_active_cases_count`** — domkniecie kartki l.50 (B5: „brak mozliwosci
+- Intake (C): **listener `mp_product_active_cases_count`** — domkniecie specyfikacji l.50 (B5: „brak mozliwosci
   usuniecia produktu powiazanego z aktywna sprawa"). Registry (B) mial juz blokade (`Archive.php`) + akcje
   w adminie, ale brakowalo strony C odpowiadajacej liczba spraw => archiwizacja ODMAWIALA ZAWSZE (fail-closed
   bez listenera, nawet dla produktu bez spraw). Teraz Intake liczy sprawy NIE-TERMINALNE produktu
@@ -992,19 +992,19 @@ z audytu. Projekt NADAL w rozwoju — kolejne poprawki przed v1.0.0 (oddanie).
   `{{data}}` (`wp_date('Y-m-d H:i')`, granica minuty). Dwie IDENTYCZNE notyfikacje sekundy od siebie na granicy
   minuty → różny body → różny hash → dedup gubił duplikat (~1/60 runów). Fix W PRZYCZYNIE: `MailTemplates::render`
   zwraca dodatkowo `dedup_key` = treść BEZ zmiennego `{{data}}` (numer/status/rodzaj podstawione, data pominięta);
-  `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-strażnik
+  `RuleEngine` dedupuje po `dedup_key`, nie po `body`. Mail do wysłania dalej niesie prawdziwą datę. Asercja-test pilnujący
   w `d-p33d-dedup`.
 
 - Intake (C): **kolumna „Sprawy" i wyszukiwarka po kliencie w Rejestrze** — Intake nie rejestrował listenerów
   kontraktowych `mp_case_count_by_product` i `mp_customer_find_products` → kolumna „Sprawy" pokazywała „moduł
-  spraw nieaktywny" mimo aktywnego Intake, a wyszukiwarka po kliencie (kartka **P2.6**) była WYŁĄCZONA. Dodane
+  spraw nieaktywny" mimo aktywnego Intake, a wyszukiwarka po kliencie (specyfikacja **P2.6**) była WYŁĄCZONA. Dodane
   `CaseRepo::case_count_by_product` (`{total,active,closed,rejected}`, unverified wykluczone) +
   `find_products_for_customer` (`{ids,truncated,limit}`) + rejestracja obu filtrów. Test `c-count-search-hooki`.
   Znalezione KLIKACZEM admina (bramka) — automaty testowały haki osobno, nie zintegrowany panel.
 
 ## [0.4.0] - 2026-07-23
 
-Klocek D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
+Moduł D (Automator) kompletny: silnik reguł + auto-przydział, statusy, maile, SLA (1–4),
 checklisty + szablony, eksport CSV, panel admina — spięte z Intake (C) i Registry (B)
 kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
 
@@ -1019,7 +1019,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   (2) Arkusz `assets/css/intake.css` (enqueue wersjonowany) — etykiety nad polami, pola pełnej szerokości,
   czytelne karty panelu (koniec „etykieta[pole]"). (3) CTA „Przejdź do panelu zgłoszeń" na stronie
   potwierdzenia (URL panelu dynamicznie z `AccountPage::url()`, nie hardkod). Test c16. Flaga #16.
-- Intake (C): formularz zgłoszenia dynamiczny wg rodzaju po stronie klienta (kartka wymóg #1). Render
+- Intake (C): formularz zgłoszenia dynamiczny wg rodzaju po stronie klienta (specyfikacja wymóg #1). Render
   UNII pól wszystkich rodzajów (każde pole raz, `data-mp-field`) — m.in. `return_reason` (zwrot) jest w
   DOM od razu, więc zwrot składa się za 1. razem (wcześniej pole renderowane dopiero PO błędzie). Nowy
   skrypt `assets/js/intake-form.js` (enqueue wersjonowany, config przez `wp_localize_script`) pokazuje/
@@ -1037,7 +1037,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   (nota: SECURITY.md §7). Nie ufamy ślepo `X-Forwarded-For` (spoofowalny). Test c6c §4. Flaga #10.
 - Intake (C): RODO — poprawny terminalny status „zamknięte" (był bez ogonka `zamkniete` w
   `TERMINAL_STATUSES` → `has_active_case()` nigdy nie widziała zamkniętej sprawy jako terminalnej →
-  eraser odraczał anonimizację klienta w nieskończoność, łamiąc §4 kartki). Realny slug to `zamknięte`
+  eraser odraczał anonimizację klienta w nieskończoność, łamiąc §4 specyfikacji). Realny slug to `zamknięte`
   (z ę, jedyna droga zapisu = `change_status`). Testy c5-rodo/c6b/c6b2b przepięte na REALNĄ
   `change_status` (seed literówki maskował błąd — zielone kłamały). Flaga #14. (pre-release v0.3.0)
 
@@ -1045,7 +1045,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
 - Automator (D): schemat D — 4 tabele (`wp_mp_workflow_rules`, `wp_mp_case_sla`,
   `wp_mp_case_checklists`, `wp_mp_workflow_events` = rejestr operacji APPEND-ONLY, NO-PII);
   migracje bez reaktywacji (`maybe_upgrade`), uninstall opt-in kasuje wszystkie artefakty D
-  i nic cudzego (kanarki + role współdzielone nietknięte). Test d1-schema + DoD D.
+  i nic cudzego (kanarki + role współdzielone nietknięte). Test d1-schema + kryteria odbioru D.
 - Automator (D): P3.1 silnik reguł + auto-przydział round-robin — reguły STRUKTURALNE
   (trigger/warunek/akcja, zero eval), kursor RR per reguła, nasłuch `mp_case_created`;
   seed reguły domyślnej przydziału przy aktywacji (jednorazowo, skasowana nie wraca).
@@ -1082,7 +1082,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   chunk 500, respekt roli, pola zminimalizowane), `mp_case_checklist_authorize`
   (ownership + event `CHECKLIST_ITEM_TOGGLED`), `mp_all_statuses` (read-only lista statusów
   C→D, degrade gdy Intake OFF).
-- Testy klocka D w CI: seria `d-*` (schemat, hooki, P3.1–P3.6), DoD D (uninstall zero-śladu +
+- Testy modułu D w CI: seria `d-*` (schemat, hooki, P3.1–P3.6), kryteria odbioru D (uninstall zero-śladu +
   kanarki + tryb degraded C/B OFF + macierz uprawnień NEGATYWNA anon/subscriber/klient/agent),
   panel admina (widoczność per rola); odślepione niezmienniki BLOK-S (E2E/tabletop/bug-hunt/
   a11y) na P3.1/P3.2.
@@ -1157,7 +1157,7 @@ kontraktem hooków. Plus szlif i naprawy Intake (C) z fazy pre-release.
   przyznanie + cofniecie) i archiwizacja za `mp_system_admin`; import przeniesiony do submenu
   Rejestru MP; CLI `wp mp product-archive` / `product-restore`.
 - Registry (B): `wp mp import-resume <job>` (wznowienie przerwanego importu z CLI — ta sama
-  mechanika co "Wznow" w UI) oraz testy DoD klocka B w CI (job e2e-import na zywym WP 6.9.4
+  mechanika co "Wznow" w UI) oraz testy kryteria odbioru modułu B w CI (job e2e-import na zywym WP 6.9.4
   + MariaDB 11.8): import 10 000 wierszy, kill -9 klienta w polowie + wznowienie z offsetu
   (ksiegowosc joba == wiersze w bazie, zero duplikatow), partia CSV->mp_warranty_check,
   negatywne uprawnienia, snapshot-uninstall (default OFF: dane zostaja; opt-in: tabele znikaja,

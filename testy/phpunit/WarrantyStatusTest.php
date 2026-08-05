@@ -1,6 +1,6 @@
 <?php
 /**
- * Testy silnika statusu gwarancji — daty graniczne (DoD P2.2).
+ * Testy silnika statusu gwarancji — daty graniczne (kryteria odbioru P2.2).
  *
  * @package MP\Testy
  */

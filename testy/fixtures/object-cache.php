@@ -3,7 +3,7 @@
  * TEST-FIXTURE: minimalny drop-in object-cache (persistent object cache ON).
  *
  * Sprawia, ze `wp_using_ext_object_cache()` == true — testujemy sciezke
- * „zewnetrzny cache obecny" (dirty-env DoD C §4): nasz kod nie moze Fatalowac
+ * „zewnetrzny cache obecny" (dirty-env kryteria odbioru C §4): nasz kod nie moze Fatalowac
  * ani sypac notice, gdy transienty ida przez cache zamiast wp_options.
  * In-memory (per-request) — wystarczy do wykrycia Fatal/notice; NIE wchodzi
  * do artefaktu pluginu (to fixture testowy).

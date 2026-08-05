@@ -1,6 +1,6 @@
 <?php
 /**
- * Ekran „MP: Sprawy" — warsztat pracy personelu nad sprawami (kartka krok 7).
+ * Ekran „MP: Sprawy" — warsztat pracy personelu nad sprawami (specyfikacja krok 7).
  * Lista wszystkich zweryfikowanych spraw (WP_List_Table) + wejscie w KARTE
  * sprawy (case_id). Model B: caly personel (agent/koordynator/admin) widzi
  * wszystkie sprawy. Cap = personel (OR rol — role NIE hierarchiczne).
