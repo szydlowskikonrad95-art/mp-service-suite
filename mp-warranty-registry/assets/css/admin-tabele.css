@@ -1,0 +1,30 @@
+/*
+ * Region przewijany dla szerokich tabel Rejestru (S4 nr 6, czesc druga).
+ *
+ * DLACZEGO OSOBNY, MALY PLIK, a nie regula dopisana do `admin-registry.css`:
+ * ten arkusz laduja DWA ekrany, ktore wczesniej nie mialy zadnego wlasnego stylu
+ * (wyjatki gwarancyjne) albo mialy tylko swoj wasko-tematyczny (import). Wciagniecie
+ * na nie calego `admin-registry.css` przyniosloby tam ROWNIEZ styl listy produktow —
+ * czyli zmiane wygladu w miejscach, ktorych to zgloszenie nie dotyczy. W czesci
+ * pierwszej (PR #269, ekran ustawien automatu) tak wlasnie wyszlo i trzeba to bylo
+ * zglaszac osobno. Tutaj plik niesie DOKLADNIE to, co naprawia — i nic wiecej.
+ *
+ * ⛔ ZERO SELEKTOROW GLOBALNYCH: zadnego `.wrap`, zadnego golego `table`. Regula
+ * dziala wylacznie na wlasnej klasie, a arkusz ladowany jest po hook suffiksie
+ * konkretnej podstrony, wiec nie ma jak wyciec na liste spraw ani karte sprawy.
+ *
+ * Tabela danych ma prawo przewijac sie w poziomie (WCAG 1.4.10 wyjmuje uklady
+ * dwuwymiarowe), ale MUSI robic to WEWNATRZ swojego kawalka strony, a nie rozpychac
+ * calej strony z menu i naglowkiem. `tabindex="0"` w markupie jest czescia naprawy,
+ * nie ozdoba: w tych tabelach nie ma nic klikalnego, wiec bez wlasnego zaczepu
+ * klawiatury osoba bez myszki nie miala jak ich przesunac (WCAG 2.1.1).
+ *
+ * ⛔ `overflow-x` MUSI zostac `auto`. Podmiana na `hidden` daje ten sam zerowy
+ * nadmiar strony w pomiarze, ale kolumny znikaja NA ZAWSZE zamiast przewijac sie
+ * w ramce — dlatego test pyta o wyliczony styl, nie o sam nadmiar.
+ */
+.mp-registry-table-scroll { max-width: 100%; overflow-x: auto; }
+.mp-registry-table-scroll:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}

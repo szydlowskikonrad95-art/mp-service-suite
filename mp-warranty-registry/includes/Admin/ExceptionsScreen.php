@@ -12,6 +12,7 @@
 
 namespace MP\Registry\Admin;
 
+use MP\Registry\Assets;
 use MP\Registry\Repo;
 use MP\Registry\Tables;
 use MP\Registry\WarrantyExceptions;
@@ -37,12 +38,21 @@ final class ExceptionsScreen {
 	public const PER_PAGE = 20;
 
 	/**
+	 * Hook suffix tej podstrony — po nim poznajemy, ze arkusz ma sie zaladowac
+	 * WYLACZNIE tutaj (porownanie po slugu z adresu zlapaloby cudze ekrany).
+	 *
+	 * @var string
+	 */
+	private static string $hook_suffix = '';
+
+	/**
 	 * Rejestruje hooki admina.
 	 *
 	 * @return void
 	 */
 	public static function register(): void {
 		add_action( 'admin_menu', array( self::class, 'add_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 		add_action( 'admin_post_mp_exception_add', array( self::class, 'handle_add' ) );
 		add_action( 'admin_post_mp_exception_revoke', array( self::class, 'handle_revoke' ) );
 		// nopriv -> ten sam handler: anon dostaje JAWNE 403 (security-sweep kryteria odbioru sekcja 3).
@@ -56,13 +66,36 @@ final class ExceptionsScreen {
 	 * @return void
 	 */
 	public static function add_menu(): void {
-		add_submenu_page(
+		self::$hook_suffix = (string) add_submenu_page(
 			ProductsScreen::PAGE_SLUG,
 			__( 'Wyjątki gwarancyjne', 'mp-warranty-registry' ),
 			__( 'Wyjątki gwarancyjne', 'mp-warranty-registry' ),
 			'mp_system_admin',
 			self::PAGE_SLUG,
 			array( self::class, 'render' )
+		);
+	}
+
+	/**
+	 * Laduje arkusz regionow przewijanych WYLACZNIE na tej podstronie.
+	 *
+	 * Ten ekran nie mial dotad zadnego `enqueue()` — dokladnie ta sama klasa wady,
+	 * co na ekranie ustawien automatu (S4 nr 6, czesc pierwsza): dwie szerokie
+	 * tabele (5 i 8 kolumn) rozpychaly przy 390 px cala strone o 94 px.
+	 *
+	 * @param string $hook Hook suffix biezacej strony admina.
+	 * @return void
+	 */
+	public static function enqueue( string $hook ): void {
+		if ( '' === self::$hook_suffix || $hook !== self::$hook_suffix ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'mp-registry-tabele',
+			plugin_dir_url( MP_REGISTRY_FILE ) . 'assets/css/admin-tabele.css',
+			array(),
+			Assets::ver( 'assets/css/admin-tabele.css' )
 		);
 	}
 
@@ -130,6 +163,7 @@ final class ExceptionsScreen {
 				?>
 			</h2>
 
+			<div class="mp-registry-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela wyjątków gwarancyjnych produktu', 'mp-warranty-registry' ); ?>">
 			<table class="widefat striped">
 				<thead>
 					<tr>
@@ -172,6 +206,7 @@ final class ExceptionsScreen {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+			</div>
 
 			<h2><?php esc_html_e( 'Przyznaj wyjątek', 'mp-warranty-registry' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -277,6 +312,8 @@ final class ExceptionsScreen {
 				?>
 			</p>
 
+			<?php // Osiem kolumn — to ta tabela rozpychala strone przy 390 px. ?>
+			<div class="mp-registry-table-scroll" role="region" tabindex="0" aria-label="<?php echo esc_attr__( 'Tabela wszystkich wyjątków gwarancyjnych', 'mp-warranty-registry' ); ?>">
 			<table class="widefat striped">
 				<thead>
 					<tr>
@@ -353,6 +390,7 @@ final class ExceptionsScreen {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+			</div>
 
 			<?php if ( $strony > 1 ) : ?>
 				<p>
