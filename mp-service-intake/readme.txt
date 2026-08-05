@@ -63,6 +63,34 @@ Regardless of the web server, files are always served through a PHP endpoint tha
 
 == Changelog ==
 
+= 1.3.13 =
+Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+
+Bezpieczeństwo danych klienta:
+* **Załącznik cudzej sprawy przestał być boczną furtką.** Pracownik serwisu widział na liście
+  i na karcie wyłącznie swoje sprawy, ale załącznik — zdjęcie usterki, skan dokumentu zakupu —
+  pobierał z dowolnej sprawy, także takiej, której nie obsługuje. Bramka załącznika pyta teraz
+  o to samo, o co pyta karta. Koordynator, administrator i klient bez zmian.
+
+Historia sprawy:
+* **Zmiany statusu bez śladu na osi zdarzeń już nie będzie.** Gdy zapis wpisu do historii się nie
+  udał, status i tak się zmieniał — sprawa dostawała nowy stan, a oś czasu o tym milczała. Teraz
+  nieudany zapis wycofuje całą zmianę, a administrator dostaje sygnał w „Stan witryny".
+* **Komunikat po zmianie statusu mówi tylko o mailach, które naprawdę wyszły** — nie twierdzi już,
+  że powiadomiono przypisanego pracownika, gdy to on sam zmienił status albo gdy sprawa nie ma
+  przypisanego.
+
+RODO:
+* **Obietnica „dane usuniemy po zakończeniu zgłoszenia" wykonuje się sama.** Po wycofaniu zgody
+  przy aktywnej sprawie dane leżały w bazie bezterminowo, dopóki ktoś nie kliknął drugi raz. Teraz
+  odroczone żądanie kończy dobowy przebieg porządkowy zaraz po zamknięciu sprawy; nowe zgłoszenie
+  tej samej osoby przed wykonaniem anuluje odroczenie.
+
+Komunikaty:
+* **Odmowa przy zbyt wielu zgłoszeniach mówi, czego naprawdę dotyczy limit** — adresu e-mail,
+  numeru seryjnego albo łącza internetowego. Dotąd zawsze obwiniała adres, także wtedy, gdy był
+  zupełnie nowy i niewinny.
+
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
 

@@ -40,6 +40,18 @@ No. The import ADDS products. A serial number already present in the registry is
 
 == Changelog ==
 
+= 1.3.13 =
+Poprawki po przeglądzie kontrolnym. Numer wydania podbije osobny krok — poniżej zmiany w TYM module.
+
+Ekran importu:
+* **Tabela „Ostatnie importy" nadąża za banerem.** Po zakończeniu importu baner mówił
+  „zakończony 8 z 8", a tabela tuż pod nim dalej „w trakcie, 0/8" — aż do ręcznego odświeżenia
+  strony. Wiersz importu odświeża się teraz sam, razem z liczbami i odnośnikiem do raportu błędów.
+
+Menu:
+* **„Rejestr MP" stoi w menu bocznym obok pozostałych ekranów MP**, a nie na samym dole, pod
+  ustawieniami WordPressa — instrukcja wymienia cztery ekrany jednym tchem i teraz tak też wyglądają.
+
 = 1.3.12 =
 Wydanie po zewnętrznym audycie całego pakietu. Poniżej to, co zmieniło się w TYM module.
 

@@ -66,6 +66,9 @@ przez osobę, która za to odpowiada. Potrzebujesz zestawienia — poproś koord
 
 - Nie zobaczysz spraw, których nie masz prawa widzieć — na liście spraw są **wyłącznie
   sprawy przydzielone Tobie**. Wszystkie sprawy widzi koordynator i administrator systemu.
+- **To samo dotyczy załączników.** Zdjęcie ani skan dołączony do cudzej sprawy nie otworzy się
+  nawet z bezpośredniego odnośnika — zobaczysz odmowę dostępu. Potrzebujesz zajrzeć do sprawy,
+  której nie prowadzisz? Poproś koordynatora, żeby ją przydzielił Tobie.
 - Zamkniętej sprawy nie wznowisz — to decyzja koordynatora.
 - Wiadomość klienta na zamkniętej sprawie jest dozwolona i trafi do Ciebie mailem — status się
   nie zmienia.
