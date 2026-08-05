@@ -1006,14 +1006,14 @@ final class PanelScreen {
 
 		// ⛔ Cofamy sie do ostatniej spacji, zeby nie urwac w POLOWIE SLOWA — to byla
 		// polowa wady W4: „…result=succes…" wyglada jak uszkodzone dane, a nie jak skrot.
-		$ciety = mb_substr( $s, 0, 117 );
+		$ciety  = mb_substr( $s, 0, 117 );
 		$spacja = mb_strrpos( $ciety, ' ' );
 
 		if ( false !== $spacja && $spacja > 60 ) {
 			$ciety = mb_substr( $ciety, 0, $spacja );
 		}
 
-		return rtrim( $ciety, " ·," ) . '…';
+		return rtrim( $ciety, ' ·,' ) . '…';
 	}
 
 	/**
