@@ -1,6 +1,6 @@
 <?php
 /**
- * Walidacja zgloszenia — SYNCHRONICZNIE PRZED insertem (P1.4).
+ * Walidacja zgloszenia — SYNCHRONICZNIE PRZED insertem.
  *
  * Odmowa = zwrot bledow do warstwy HTTP (NIE event — unverified sprawa nie
  * pisze do osi czasu). Bledy jako kody {field, reason_code}, nigdy surowe

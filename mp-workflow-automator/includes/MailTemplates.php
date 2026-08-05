@@ -1,6 +1,6 @@
 <?php
 /**
- * Szablony maili powiadomien (P3.3) — opcja-tresc (warstwa ii uninstalla).
+ * Szablony maili powiadomien — opcja-tresc (warstwa ii uninstalla).
  *
  * Szablon = {subject, body} z MARKERAMI `{{numer_sprawy}}` itd. Markery
  * podmieniane wartosciami z kontekstu sprawy; kazda wartosc przechodzi

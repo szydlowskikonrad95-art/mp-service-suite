@@ -1,6 +1,6 @@
 <?php
 /**
- * Panel klienta „moje zgłoszenia" (P1.5) + strona logowania passwordless.
+ * Panel klienta „moje zgłoszenia" + strona logowania passwordless.
  *
  * Jedna strona `[mp_account]`: niezalogowany widzi formularz „wyślij link
  * logowania", zalogowany widzi WŁASNE sprawy (status na żywo). Wlascicielstwo

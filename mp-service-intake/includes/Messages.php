@@ -1,6 +1,6 @@
 <?php
 /**
- * Wiadomosci sprawy — wp_mp_messages (P1.5: historia wiadomosci klient<->serwis).
+ * Wiadomosci sprawy — wp_mp_messages ( historia wiadomosci klient<->serwis).
  *
  * Komunikacja NIE JEST audit-logiem: wiadomosci sa REDAGOWALNE przy RODO
  * (kwazi-identyfikatory), a events zostaja nietkniete. Event `mp_case_message_added`

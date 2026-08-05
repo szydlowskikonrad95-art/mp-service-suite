@@ -187,7 +187,7 @@ final class SubmissionHandler {
 		$consent  = isset( $_POST['mp_consent'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['mp_consent'] ) );
 		$values   = self::collect_values( $kind, $category );
 
-		// Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy. Po honeypocie,
+		// Ochrona zgloszen: rate-limit warstwowy + dedup twardy. Po honeypocie,
 		// przed tworzeniem sprawy. Marker dedup dopiero po sukcesie (mark_submitted).
 		// IP klienta z RateLimit::client_ip() (filtr mp_intake_client_ip; domyslnie
 		// REMOTE_ADDR) — za reverse-proxy wszyscy = 1 IP proxy = blok wszystkich (flaga #10).
@@ -228,7 +228,7 @@ final class SubmissionHandler {
 			$gate_errors['customer_name'] = $name_error;
 		}
 
-		// P1.2 (specyfikacja: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
+		// (specyfikacja: „wymagane pola I ZALACZNIKI zalezne od wybranej kategorii
 		// produktu"). Bramka PRZED utworzeniem sprawy i PRZED rezerwacja dedup:
 		// sprawa nie moze powstac bez obowiazkowego zdjecia, bo klient dostalby
 		// wtedy tylko notke „czesc zalacznikow nie zostala dolaczona", a serwis
@@ -332,7 +332,7 @@ final class SubmissionHandler {
 
 		// Zalaczniki na sprawe niepotwierdzona (CAP pending chroni dysk; sieroty
 		// sprzatane cronem sierot razem ze sprawa). `$files` zebrane wyzej przy
-		// bramce P1.2 — jedno czytanie $_FILES na zgloszenie.
+		// bramce — jedno czytanie $_FILES na zgloszenie.
 		$att_errors = array();
 
 		if ( array() !== $files ) {
@@ -509,7 +509,7 @@ final class SubmissionHandler {
 	 * Po co osobno: `collect_values()` zwraca tylko pola z `fields_for()`,
 	 * a rodzaj, kategoria i e-mail polami nie sa. Kategoria wypadala z odbicia
 	 * — po bledzie walidacji lista wracala do „— wybierz —", razem z nia znikaly
-	 * pola kategorii (P1.2) i oznaczenie wymaganego zalacznika. Klient poprawial
+	 * pola kategorii i oznaczenie wymaganego zalacznika. Klient poprawial
 	 * jedno pole i dostawal formularz o innym ksztalcie niz wyslal.
 	 *
 	 * @param array<string, mixed> $values   Wartosci pol z formularza.

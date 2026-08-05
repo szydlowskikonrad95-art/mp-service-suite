@@ -1,6 +1,6 @@
 <?php
 /**
- * Ksiega SLA (P3.4 / SLA-1): utrzymuje wiersz wp_mp_case_sla per sprawa
+ * Ksiega SLA (/ SLA-1): utrzymuje wiersz wp_mp_case_sla per sprawa
  * (deadline + markery) oraz atomowa jednostke powiadomienia SEND-THEN-CLAIM.
  *
  * Wiersz zakladany na mp_case_created (pierwszy termin od status_changed_at =
@@ -741,7 +741,9 @@ final class Sla {
 	 * czas kazdego mozliwego POJEDYNCZEGO przejscia przez maszyne stanow. Skoro
 	 * nadal nie jest zamknieta, to znaczy, ze po tej maszynie KRAZY.
 	 *
-	 * Przy domyslnej konfiguracji: (24+72+48+24+120) × 2,0 = 576 godzin = 24 dni.
+	 * Przy domyslnej konfiguracji: (24+0+48+24+120) × 2,0 = 432 godziny = 18 dni.
+	 * (Status „do uzupelnienia" ma od 4.08 termin 0 — czeka na klienta, wiec jego
+	 * czas nie obciaza serwisu. Wczesniej stalo tu 72 i suma wychodzila 576.)
 	 * Prog IDZIE ZA konfiguracja — administrator, ktory wydluzy terminy statusow,
 	 * automatycznie przesuwa i te granice. Filtr `mp_sla_stale_hours` pozwala go
 	 * nadpisac, ale domyslna wartosc nie jest niczyim pomyslem, tylko rachunkiem.

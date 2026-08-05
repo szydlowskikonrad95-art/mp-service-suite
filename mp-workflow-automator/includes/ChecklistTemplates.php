@@ -1,6 +1,6 @@
 <?php
 /**
- * Szablony checklist per RODZAJ sprawy (P3.5) — opcja-tresc konfigurowalna.
+ * Szablony checklist per RODZAJ sprawy — opcja-tresc konfigurowalna.
  *
  * Szablon = lista krokow {key, label} per rodzaj (reklamacja/naprawa/zapytanie/
  * zwrot). `template_id` = rodzaj sprawy (checklista dobierana do rodzaju). Stan

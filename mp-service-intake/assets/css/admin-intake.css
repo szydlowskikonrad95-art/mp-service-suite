@@ -16,6 +16,28 @@
 .mp-intake-table-scroll {
 	max-width: 100%;
 	overflow-x: auto;
+
+	/*
+	 * ⛔ WADA W2 (kontrola rol na zywej instalacji): przycisk „Wyślij ponownie" stal
+	 * przy oknie 1440 px na pozycji 1614 px, czyli POZA EKRANEM, we wszystkich
+	 * 25 wierszach. Region przewijany byl tu juz wczesniej i dzialal — dojechac
+	 * bokiem sie DALO. Wada polegala na czym innym: NIC nie sygnalizowalo, ze dalej
+	 * cokolwiek jest, wiec czlowiek nie wiedzial, ze ta akcja w ogole istnieje.
+	 * Przewijalnosc bez sygnalu jest warta tyle co jej brak.
+	 *
+	 * Cien przy krawedzi pojawia sie TYLKO wtedy, gdy jest co przewijac, i robi to
+	 * sam CSS, bez JavaScriptu: dwie warstwy tla przyklejone do krawedzi (`scroll`)
+	 * zaslaniaja dwie przewijane razem z trescia (`local`). Gdy tresc miesci sie
+	 * w calosci, warstwy nakladaja sie i cienia nie widac.
+	 */
+	background:
+		linear-gradient( to right, #fff 30%, rgba( 255, 255, 255, 0 ) ) left center,
+		linear-gradient( to left, #fff 30%, rgba( 255, 255, 255, 0 ) ) right center,
+		radial-gradient( farthest-side at 0 50%, rgba( 0, 0, 0, .18 ), rgba( 0, 0, 0, 0 ) ) left center,
+		radial-gradient( farthest-side at 100% 50%, rgba( 0, 0, 0, .18 ), rgba( 0, 0, 0, 0 ) ) right center;
+	background-repeat: no-repeat;
+	background-size: 3em 100%, 3em 100%, 1em 100%, 1em 100%;
+	background-attachment: local, local, scroll, scroll;
 }
 
 /*

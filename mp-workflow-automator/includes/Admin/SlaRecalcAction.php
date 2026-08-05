@@ -1,6 +1,6 @@
 <?php
 /**
- * Akcja admina „Przelicz SLA" (P3.4 / SLA-4) — BACKEND-HANDLER-ONLY.
+ * Akcja admina „Przelicz SLA" (/ SLA-4) — BACKEND-HANDLER-ONLY.
  *
  * Handler `admin_post_mp_automator_recalc_sla`: przelicza terminy WSZYSTKICH
  * otwartych spraw wg biezacego SlaConfig (Sla::recompute_open), bez resetu markerow

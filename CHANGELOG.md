@@ -62,10 +62,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/) · wersjonowani
 ### Naprawione — dostęp ról (wydanie 1.3.12, grupa 1)
 - **Koordynator serwisu przestaje mieć dostęp do MNIEJ ekranów niż podległy mu pracownik.**
   Role MP nie mają hierarchii (to projekt: kod sprawdza wyłącznie uprawnienia, nigdy nazwy roli),
-  a dwa ekrany — „Zgłoszenia niepotwierdzone" i „Rejestr produktów" — miały uprawnienie pracownika
-  **wpisane na sztywno**, więc odbijały przełożonego osoby, która na nich pracuje. Dwa inne ekrany
-  rozwiązały to samo poprawnie już wcześniej; **rozciągnęliśmy ten wzorzec**, zamiast dokładać
-  uprawnienia rolom (to ruszyłoby wszystkie bramki naraz).
+  a ekran „Zgłoszenia niepotwierdzone" miał uprawnienie pracownika **wpisane na sztywno**, więc
+  odbijał przełożonego osoby, która na nim pracuje. Dwa inne ekrany rozwiązały to samo poprawnie
+  już wcześniej; **rozciągnęliśmy ten wzorzec**, zamiast dokładać uprawnienia rolom (to ruszyłoby
+  wszystkie bramki naraz).
+- **„Rejestr MP" znika koordynatorowi z menu — i to jest naprawa, nie odebranie dostępu.**
+  Wcześniej widział tę pozycję, klikał i dostawał odmowę, nie wiedząc, czy to awaria, czy tak ma
+  być. Menu i bramka ekranu pytają teraz o **tę samą listę uprawnień**, więc pozycji nie widzi ten,
+  kogo ekran i tak nie wpuści. **Rejestr produktów zostaje przy pracowniku serwisu i administratorze
+  systemu** — zgodnie z zamówieniem, w którym wyjątki gwarancyjne zatwierdza uprawniony
+  administrator. Nikt nie stracił dostępu, który miał.
 - Bramka „czy to personel" i wybór uprawnienia do menu są teraz **jedną funkcją we wspólnej
   bibliotece**, a nie kopią warunku w każdym ekranie z osobna.
 - ⛔ **Granica naprawy pilnowana testem:** import i wyjątki gwarancyjne **zostają** za administratorem

@@ -1,6 +1,6 @@
 <?php
 /**
- * Procesor batchy importu CSV (spec P2.1 + karta B "import BEZPIECZNY").
+ * Procesor batchy importu CSV ( + karta B "import BEZPIECZNY").
  *
  * Batch = 100 wierszy w JEDNEJ transakcji DB razem z podbiciem offsetu
  * (processed_rows) — crash w polowie batcha => rollback calego => wznowienie
@@ -303,7 +303,7 @@ final class Importer {
 		$success        = 0;
 		$errors         = array();
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne; transakcja batcha (kontrakt P2.1).
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne; transakcja batcha (kontrakt ).
 		$wpdb->query( 'START TRANSACTION' );
 
 		foreach ( $rows as $index => $parsed ) {

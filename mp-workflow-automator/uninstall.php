@@ -5,7 +5,7 @@
  * Warstwa (i): opcje techniczne + wspolna mechanika rol (Common\Uninstall).
  * Warstwa (ii): dane biznesowe — domyslnie ZOSTAJA (default OFF); 4 tabele D
  * (workflow_rules, case_sla, case_checklists, workflow_events) + opcje-TRESCI
- * (szablony/definicje checklist/statusy wlasne — dochodza w P3.2/P3.3/P3.5)
+ * (szablony/definicje checklist/statusy wlasne — dochodza w )
  * kasowane WYLACZNIE za jawna zgoda admina (mp_automator_delete_data=1). Reguly
  * i ich szablony PRZEZYWAJA RAZEM (regula bez szablonu po reinstalacji = sierota).
  *
@@ -46,7 +46,7 @@ if ( $mp_automator_delete_data ) {
 	delete_option( MP\Automator\StatusDefs::OPTION );
 	// Szablony maili (opcja-tresc warstwy ii — przezywaja RAZEM z regulami).
 	delete_option( MP\Automator\MailTemplates::OPTION );
-	// Szablony checklist + szablony odpowiedzi per typ (opcje-tresc warstwy ii, P3.5).
+	// Szablony checklist + szablony odpowiedzi per typ (opcje-tresc warstwy ii).
 	delete_option( MP\Automator\ChecklistTemplates::OPTION );
 	delete_option( MP\Automator\ResponseTemplates::OPTION );
 	// Konfiguracja SLA rdzenia + wersja polityki (opcje-tresc warstwy ii).

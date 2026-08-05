@@ -1,6 +1,6 @@
 <?php
 /**
- * Ochrona zgloszen (P1.6): rate-limit warstwowy + dedup twardy waski.
+ * Ochrona zgloszen: rate-limit warstwowy + dedup twardy waski.
  *
  * Warstwy (domyslne, konfigurowalne filtrem `mp_intake_rate_limits`):
  *  - IP:     10 / 10 min   (anty-flood z jednego adresu; okno PRZESUWANE)

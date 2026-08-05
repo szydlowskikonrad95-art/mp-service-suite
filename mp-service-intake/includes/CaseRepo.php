@@ -46,7 +46,7 @@ final class CaseRepo {
 	/**
 	 * Tworzy sprawe NIEPOTWIERDZONA (status NULL) i zwraca surowy token.
 	 *
-	 * WALIDACJA SYNCHRONICZNA PRZED insertem (P1.4): odmowa = zwrot bledow
+	 * WALIDACJA SYNCHRONICZNA PRZED insertem: odmowa = zwrot bledow
 	 * {field, reason_code}, NIC nie ldauje w bazie ani w osi czasu. Snapshot
 	 * gwarancji: pelna zwrotka mp_warranty_check z chwili zgloszenia (niesie
 	 * model, gwarancje ORAZ PARTIE — specyfikacja linia 47). Bez serialu / bez
@@ -86,7 +86,7 @@ final class CaseRepo {
 			$product_id = (int) $snapshot['product_id'];
 		}
 
-		// Serial-reuse P2.3: ten sam produkt ma ZWERYFIKOWANA sprawe w 30 dni =>
+		// Serial-reuse ten sam produkt ma ZWERYFIKOWANA sprawe w 30 dni =>
 		// flaga possible_duplicate dla operatora (FLAGA, nie blokada — inaczej niz
 		// twardy dedup 15 min z RateLimit). Dotyczy tylko seriali w rejestrze.
 		$possible_duplicate = ( null !== $product_id && self::has_recent_verified_case_for_product( $product_id ) ) ? 1 : 0;
@@ -390,7 +390,7 @@ final class CaseRepo {
 			return 'not_found';
 		}
 
-		// kategoria = kategoria produktu z B (P1.2); brak produktu -> null.
+		// kategoria = kategoria produktu z B; brak produktu -> null.
 		$kategoria = null;
 
 		if ( ! empty( $row['product_registry_id'] ) ) {
@@ -1476,7 +1476,7 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Serial-reuse P2.3: czy produkt ma ZWERYFIKOWANA sprawe w oknie wykrywania.
+	 * Serial-reuse czy produkt ma ZWERYFIKOWANA sprawe w oknie wykrywania.
 	 *
 	 * @param int $product_id ID produktu w rejestrze.
 	 * @return bool
@@ -1501,7 +1501,7 @@ final class CaseRepo {
 	}
 
 	/**
-	 * Liczba ZWERYFIKOWANYCH spraw dla produktu (serial-reuse — admin/registry P2.3).
+	 * Liczba ZWERYFIKOWANYCH spraw dla produktu (serial-reuse — admin/registry ).
 	 *
 	 * @param int $product_id ID produktu w rejestrze.
 	 * @return int
@@ -1825,8 +1825,8 @@ final class CaseRepo {
 	 *
 	 * Czysta funkcja (testowana jednostkowo — `VerifyPayloadTest`).
 	 *
-	 * Po co: specyfikacja P1.4 zada „walidacji numeru dokumentu zakupu (...) i daty zakupu",
-	 * a specyfikacja P2.2 wymienia CZTERY statusy gwarancji. Czwarty („wymagana weryfikacja")
+	 * Po co: zada „walidacji numeru dokumentu zakupu (...) i daty zakupu",
+	 * a wymienia CZTERY statusy gwarancji. Czwarty („wymagana weryfikacja")
 	 * `WarrantyStatus::compute` zwraca WYLACZNIE gdy `purchase_doc_match` albo
 	 * `purchase_date_match` jest `false`, a `WarrantyCheck::assemble` liczy te flagi tylko
 	 * wtedy, gdy dostanie dane do porownania. Bez tego ladunku czwarty status byl

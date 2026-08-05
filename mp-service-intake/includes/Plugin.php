@@ -304,7 +304,7 @@ final class Plugin {
 			2
 		);
 
-		// Kontrakt B->C: wyszukiwarka „po kliencie" (specyfikacja P2.6) — C zna klient->sprawy
+		// Kontrakt B->C: wyszukiwarka „po kliencie" — C zna klient->sprawy
 		// ->produkty. Bez tego listenera search po kliencie w rejestrze jest wylaczony.
 		add_filter(
 			'mp_customer_find_products',

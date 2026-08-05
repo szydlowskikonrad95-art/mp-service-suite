@@ -47,13 +47,13 @@ final class Plugin {
 
 		add_action( 'admin_init', array( Lifecycle::class, 'maybe_upgrade' ) );
 
-		// Statusy wlasne (P3.2): D = zrodlo definicji => publikuje je do walidatora C.
+		// Statusy wlasne: D = zrodlo definicji => publikuje je do walidatora C.
 		add_filter( 'mp_registered_statuses', array( StatusDefs::class, 'register_statuses' ) );
 
-		// Silnik regul: nasluch triggerow C/B (P3.1 = auto-przydzial na case_created).
+		// Silnik regul: nasluch triggerow C/B (= auto-przydzial na case_created).
 		RuleEngine::register();
 
-		// Ksiega SLA (P3.4): wiersz terminu na created + przeliczenie przy zmianie statusu.
+		// Ksiega SLA: wiersz terminu na created + przeliczenie przy zmianie statusu.
 		Sla::register();
 
 		// Kontrakt C -> D (API-KONTRAKT.md §A): sprawy przestaly istniec => nasze
@@ -63,17 +63,17 @@ final class Plugin {
 		// odinstalowanie Intake jako dane wiszace na nieistniejacych sprawach.
 		add_action( 'mp_cases_data_erased', array( self::class, 'on_cases_data_erased' ) );
 
-		// Sweep SLA (P3.4/SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
+		// Sweep SLA ( /SLA-2): cron 5-min — przypomnienia przed / eskalacje po terminie.
 		Sweep::register();
 
 		// Raport koncowy (przebieg krok 8): przy zamknieciu sprawy wpis systemowy w C.
 		ClosingReport::register();
 
-		// Eksport CSV spraw + zestawienie (P3.6): handler admin-post (bez menu —
+		// Eksport CSV spraw + zestawienie: handler admin-post (bez menu —
 		// przycisk podepnie panel admina D). Capability + nonce + audyt + anti-injection.
 		CsvExport::register();
 
-		// Akcja admina „Przelicz SLA" (P3.4/SLA-4): backend-handler-only (bez menu).
+		// Akcja admina „Przelicz SLA" ( /SLA-4): backend-handler-only (bez menu).
 		Admin\SlaRecalcAction::register();
 
 		// Pula pracownikow reguly przydzialu (audyt 29.07): bez tego handlera pula
@@ -81,7 +81,7 @@ final class Plugin {
 		// trafialy do nikogo, a instrukcja kazala to ustawic w panelu jako krok 1.
 		AssignmentPool::register();
 
-		// Checklisty per typ + szablony odpowiedzi (P3.5): handlery admin-post
+		// Checklisty per typ + szablony odpowiedzi: handlery admin-post
 		// (bez menu — przycisk podepnie panel admina D). Toggle idzie przez hook C.
 		ChecklistTemplates::register();
 		Checklists::register();
@@ -92,7 +92,7 @@ final class Plugin {
 		CaseCardApi::register();
 
 		// Panel admina D: menu automatora spinajace akcje (Przelicz SLA / Eksport CSV)
-		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony (P3.5).
+		// + read-only podglad regul/statusow/rejestru; slot na checklisty+szablony.
 		Admin\PanelScreen::register();
 
 		// Warstwa ustawien (1.3.12): statusy wlasne, godziny terminow, reguly przydzialu

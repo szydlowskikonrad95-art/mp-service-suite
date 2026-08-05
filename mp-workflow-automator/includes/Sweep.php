@@ -1,6 +1,6 @@
 <?php
 /**
- * Sweep SLA (P3.4 / SLA-2): cykliczny przebieg co 5 min, ktory wybiera sprawy
+ * Sweep SLA (/ SLA-2): cykliczny przebieg co 5 min, ktory wybiera sprawy
  * wymagalne (przypomnienie / eskalacja) i wola atomowa jednostke Sla::notify()
  * (send-then-claim). Jednorazowosc przebiegu = GET_LOCK; markery w tabeli daja
  * idempotencje (druga wysylka odsiana przez reminder_sent_at/escalated_at).
@@ -96,7 +96,7 @@ final class Sweep {
 	 * @return void
 	 */
 	public static function register(): void {
-		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected, WordPress.WP.CronInterval.CronSchedulesInterval -- 5-min interwal to WYMOG spec P3.4 (sweep SLA co 5 min); swiadoma decyzja, nie przypadek.
+		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected, WordPress.WP.CronInterval.CronSchedulesInterval -- 5-min interwal to (sweep SLA co 5 min); swiadoma decyzja, nie przypadek.
 		add_filter( 'cron_schedules', array( self::class, 'add_interval' ) );
 		add_action( self::CRON_HOOK, array( self::class, 'run' ) );
 	}
@@ -133,13 +133,13 @@ final class Sweep {
 		 * `wp_schedule_event()` odrzuca harmonogram jako nieznany i zwraca
 		 * WP_Error — a poniewaz nikt tego nie sprawdzal, sweep SLA po prostu
 		 * NIGDY sie nie planowal. Skutek: terminy, przypomnienia i eskalacje
-		 * (P3.4) martwe, mimo ze system wyglada na sprawny.
+		 * martwe, mimo ze system wyglada na sprawny.
 		 *
 		 * Dlatego filtr dokladamy tu defensywnie — `schedule()` ma dzialac
 		 * niezaleznie od tego, czy plugin jest juz w pelni zaladowany.
 		 */
 		if ( ! has_filter( 'cron_schedules', array( self::class, 'add_interval' ) ) ) {
-			// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected, WordPress.WP.CronInterval.CronSchedulesInterval -- 5-min interwal to WYMOG spec P3.4.
+			// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected, WordPress.WP.CronInterval.CronSchedulesInterval -- 5-min interwal to
 			add_filter( 'cron_schedules', array( self::class, 'add_interval' ) );
 		}
 

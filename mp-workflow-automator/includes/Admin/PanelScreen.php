@@ -5,7 +5,7 @@
  * TU `add_menu_page` JEST wlasciwe: to menu spina istniejace handlery
  * backend-only (Przelicz SLA — SlaRecalcAction; Eksport CSV — CsvExport) oraz
  * daje read-only podglad regul/statusow/rejestru zdarzen. Checklisty+szablony
- * (P3.5) maja tu SLOT (placeholder) — doszyje builder #2.
+ * maja tu SLOT (placeholder) — doszyje builder #2.
  *
  * Bezpieczenstwo warstwowe: menu za cap coordinator|system_admin; przyciski
  * per-rola; nonce w kazdym formularzu (handlery i tak maja check_admin_referer);
@@ -1060,7 +1060,7 @@ final class PanelScreen {
 	}
 
 	/**
-	 * SLOT na checklisty + szablony (P3.5, builder #2). Placeholder — nie budujemy tu tej funkcji.
+	 * SLOT na checklisty + szablony ( , builder #2). Placeholder — nie budujemy tu tej funkcji.
 	 *
 	 * @return void
 	 */
@@ -1068,7 +1068,7 @@ final class PanelScreen {
 		?>
 		<h2 class="mp-automator-h2"><?php esc_html_e( 'Checklisty i szablony odpowiedzi', 'mp-workflow-automator' ); ?></h2>
 		<?php
-		// Konfiguracja = poziom system-config (spojne z handlerami P3.5: cap mp_system_admin).
+		// Konfiguracja = poziom system-config (spojne z handlerami cap mp_system_admin).
 		// Obrona warstwowa: sekcja UKRYTA dla nie-adminow, a handlery i tak maja wlasna bramke.
 		if ( ! current_user_can( 'mp_system_admin' ) ) {
 			?>
@@ -1105,7 +1105,7 @@ final class PanelScreen {
 	}
 
 	/**
-	 * Wspolny formularz konfiguracji P3.5 (checklisty/szablony) — payload JSON POST-owany
+	 * Wspolny formularz konfiguracji (checklisty/szablony) — payload JSON POST-owany
 	 * na handler admin-post danej akcji z nonce zgodnym z jego check_admin_referer.
 	 *
 	 * @param string             $action    Nazwa akcji admin-post (= akcja nonce).

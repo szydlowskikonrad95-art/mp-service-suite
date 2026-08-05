@@ -1,6 +1,6 @@
 <?php
 /**
- * Parser CSV rejestru — odporny na polskiego Excela (spec P2.1).
+ * Parser CSV rejestru — odporny na polskiego Excela.
  *
  * Windows-1250 -> UTF-8 (iconv), zdjecie BOM, separator ';' i ',',
  * naglowek mapowany po nazwach (z aliasami), daty Y-m-d oraz d.m.Y.
