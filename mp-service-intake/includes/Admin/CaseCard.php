@@ -82,6 +82,21 @@ final class CaseCard {
 	 * @return void
 	 */
 	public static function render( int $case_id, string $page_slug ): void {
+		// ⛔ 2.24, DRUGA POLOWA: karta bramkuje TYM SAMYM kontraktem co lista.
+		// Wczesniej `render()` szla wprost do `mp_case_get_context` z samym
+		// numerem sprawy — pracownik wpisywal numer w adresie i ogladal pelna
+		// karte klienta, ktorego nie obsluguje. Naprawa listy tego nie objela.
+		// ⚠️ Uzywamy `CaseRepo::can_current_user_see()`, a NIE wlasnego warunku:
+		// drugi sposob sprawdzania rozjechalby sie z lista przy pierwszej zmianie.
+		if ( ! CaseRepo::can_current_user_see( $case_id ) ) {
+			$back = add_query_arg( array( 'page' => $page_slug ), admin_url( 'admin.php' ) );
+			echo '<div class="wrap">';
+			echo '<a href="' . esc_url( $back ) . '">&laquo; ' . esc_html__( 'Wróć do listy spraw', 'mp-service-intake' ) . '</a>';
+			echo '<h1>' . esc_html__( 'Sprawa niedostępna', 'mp-service-intake' ) . '</h1>';
+			echo '<p>' . esc_html__( 'Sprawa nie istnieje lub nie została jeszcze potwierdzona przez klienta.', 'mp-service-intake' ) . '</p></div>';
+			return;
+		}
+
 		$ctx = apply_filters( 'mp_case_get_context', null, $case_id );
 
 		$back = add_query_arg( array( 'page' => $page_slug ), admin_url( 'admin.php' ) );
