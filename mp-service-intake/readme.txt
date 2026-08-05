@@ -6,60 +6,60 @@ Stable tag: 1.3.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Przyjmowanie zgłoszeń serwisowych i reklamacyjnych: dynamiczny formularz, numery spraw SRV, konto klienta, narzędzia RODO, ochrona przed spamem.
+Service and warranty claim intake: dynamic request form, SRV case numbers, customer account, RODO/GDPR tools, spam protection.
 
 == Description ==
 
-Przyjmuje zgłoszenia serwisowe i reklamacyjne przez formularz osadzony na stronie WordPressa. Pola formularza i wymagane załączniki dopasowują się do rodzaju zgłoszenia (reklamacja, naprawa, zapytanie techniczne, zwrot) oraz kategorii produktu. Każda sprawa dostaje odporny na wyścigi numer SRV/RRRR/NNNN.
+Accepts service and warranty requests through a front-end form embedded on a WordPress page. Form fields and required attachments adapt to the request type (complaint, repair, technical question, return) and product category. Every case receives a race-safe SRV/YYYY/NNNN number.
 
-Najważniejsze funkcje:
+Key features:
 
-* Dynamiczny formularz frontowy (blok Gutenberga + shortcode `[mp_intake_form]`) z walidacją zależną od rodzaju zgłoszenia.
-* Weryfikacja mailowa każdego zgłoszenia (jednorazowy magic-link, potwierdzenie przyciskiem — sam podgląd odnośnika nigdy nie potwierdza sprawy).
-* Konto klienta (`mp_client`) z logowaniem bez hasła: bieżący status sprawy, historia wiadomości, edycja danych kontaktowych (art. 16 RODO) oraz samoobsługowe wycofanie zgody i usunięcie danych (art. 7 ust. 3 / art. 17 RODO).
-* Utwardzone załączniki: typ MIME wykrywany po treści pliku (`finfo`), limity rozmiaru i liczby, usuwanie EXIF z obrazów, kontrola własności pliku przy każdym pobraniu.
-* Ochrona przed spamem: honeypot, pułapka czasowa, warstwowy limit zgłoszeń (IP / e-mail / numer seryjny) i twarda 15-minutowa blokada duplikatów.
-* Ekran personelu do zgłoszeń niepotwierdzonych (poprawa adresu e-mail + ponowna wysyłka świeżego linku, z ograniczeniem częstotliwości) wraz z rejestrem operacji.
-* Eraser i eksporter RODO wpięte w narzędzia prywatności WordPressa; treść zgody jest mrożona per wiersz dla rozliczalności.
+* Dynamic front-end form (Gutenberg block + `[mp_intake_form]` shortcode) with per-type validation.
+* E-mail verification of every submission (one-time magic link, confirmed by a button — a plain link preview never confirms the case).
+* Customer account (`mp_client`) with passwordless login: live case status, message history, contact-data editing (GDPR art. 16), and self-service consent withdrawal + data erasure (GDPR art. 7(3)/17).
+* Hardened attachments: MIME detected by content (`finfo`), size/count limits, EXIF stripped from images, per-file ownership check on every download.
+* Spam protection: honeypot, time trap, layered rate-limit (IP / e-mail / serial) and a hard 15-minute duplicate guard.
+* Staff screen for unverified submissions (fix e-mail + resend a fresh link, throttled) with an operation audit log.
+* GDPR eraser + exporter wired into WordPress privacy tools; consent text is frozen per row for accountability.
 
-Część pakietu MP Service Suite (trzy współpracujące wtyczki; każda działa też samodzielnie w trybie ograniczonym i nigdy nie powoduje błędów krytycznych). Interfejs i e-maile wtyczki są po polsku (język źródłowy); każdy napis jest umiędzynarodowiony przez text domain, więc wtyczkę można przetłumaczyć na inne języki. Osobnych plików .po/.mo nie dołączamy, bo polski jest językiem bazowym.
+Part of the MP Service Suite (three cooperating plugins; each one also works standalone in a reduced mode, never causing fatal errors). The plugin UI and e-mails are in Polish (source language); every string is internationalized via the text domain, so the plugin can be translated to other languages. No separate .po/.mo is bundled because Polish is the base language.
 
 == Requirements ==
 
-* WordPress 6.x (6.0 lub nowszy)
-* PHP 8.1 lub nowszy
-* MySQL 8.0+ lub MariaDB 10.6+
-* HTTPS -- pakiet obsługuje logowanie bez hasła (magic-link) i dane osobowe klientów.
-* Włączony WP-Cron -- na zadaniach cyklicznych stoją: terminy SLA, przypomnienia i eskalacje (Workflow Automator), importy CSV w tle (Registry) oraz retencyjne sprzątanie danych (Intake).
+* WordPress 6.x (6.0 or newer)
+* PHP 8.1 or newer
+* MySQL 8.0+ or MariaDB 10.6+
+* HTTPS -- the suite handles passwordless (magic-link) login and customer personal data.
+* WP-Cron enabled -- scheduled tasks rely on it: SLA deadlines, reminders and escalations (Workflow Automator), background CSV imports (Registry) and data-retention cleanup (Intake).
 
-Rozwijane i testowane na WordPressie 6.9.4, PHP 8.1-8.5, MariaDB 11.8; dodatkowo 27.07.2026 paczka przeszła kontrolną instalację od zera na WordPressie 7.0.2 (PHP 8.2).
+Developed and tested on WordPress 6.9.4, PHP 8.1-8.5, MariaDB 11.8. Additionally, on 2026-07-27 the release package passed a from-scratch control installation on WordPress 7.0.2 (PHP 8.2).
 
 == Installation ==
 
-1. Wgraj ZIP wtyczki w **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**, a potem ją aktywuj.
-2. Aktywacja tworzy automatycznie dwie strony: formularz zgłoszenia („Zgłoszenie serwisowe") i panel klienta („Panel zgłoszeń"). Można je przenosić i zmieniać ich nazwy.
-3. Ustaw **Ustawienia → Ogólne → Język witryny** na polski, a strefę czasową na `Europe/Warsaw`, żeby daty i komunikaty wyświetlały się poprawnie.
-4. Upewnij się, że hosting wysyła pocztę (patrz FAQ) — linki weryfikacyjne i logowania wychodzą przez `wp_mail()`.
-5. Do załączników wymagane jest rozszerzenie PHP `fileinfo` (przy jego braku wtyczka pokazuje ostrzeżenie w panelu).
+1. Upload the plugin ZIP in **Plugins → Add New → Upload Plugin**, then activate it.
+2. Activation creates two pages automatically: the request form (`Zgłoszenie serwisowe`) and the customer panel (`Panel zgłoszeń`). You can move or rename them.
+3. Set **Settings → General → Site Language** to Polish and the timezone to `Europe/Warsaw` so dates and messages display correctly.
+4. Make sure your hosting can send e-mail (see the FAQ) — the plugin relies on `wp_mail()` for verification and login links.
+5. The PHP extension `fileinfo` must be enabled for attachments (the plugin shows an admin notice if it is missing).
 
 == Frequently Asked Questions ==
 
-= Maile weryfikacyjne / logowania nie dochodzą =
+= Verification / login e-mails do not arrive =
 
-Wtyczka wysyła pocztę przez WordPressowe `wp_mail()`. Za niezawodne doręczanie odpowiada hosting / wtyczka SMTP — zainstaluj i skonfiguruj wtyczkę SMTP (np. wskazującą serwer SMTP Twojego dostawcy). Bez działającej poczty wychodzącej klienci nie potwierdzą zgłoszeń ani się nie zalogują.
+The plugin sends e-mail through WordPress `wp_mail()`. Reliable delivery is the responsibility of your hosting / an SMTP plugin — install and configure an SMTP plugin (e.g. one that points to your provider's SMTP server). Without working outgoing mail, customers cannot confirm submissions or log in.
 
-= Czy pliki załączników są chronione przed bezpośrednim dostępem po adresie URL? =
+= Are attachment files protected from direct URL access? =
 
-Tak na **Apache / LiteSpeed** (do katalogu wgrywek zapisywany jest `.htaccess` z regułą `deny`). **nginx ignoruje `.htaccess`** — na nginksie dodaj regułę serwera:
+Yes on **Apache / LiteSpeed** (a `.htaccess deny` is written to the upload folder). **nginx ignores `.htaccess`** — on nginx add a server rule:
 `location ^~ /wp-content/uploads/mp-attachments/ { deny all; return 403; }`
-Niezależnie od serwera WWW pliki zawsze są serwowane przez końcówkę PHP sprawdzającą własność, więc bezpośredni adres to tylko warstwa zapasowa. Patrz `dokumentacja-techniczna/SECURITY.md`.
+Regardless of the web server, files are always served through a PHP endpoint that checks ownership, so the direct URL is only a secondary layer. See `dokumentacja-techniczna/SECURITY.md`.
 
-= Czego ta wtyczka NIE robi? =
+= What does this plugin NOT do? =
 
-* **Nie** doręcza poczty sama z siebie — to zależy od hostingu/SMTP.
-* **Nie** usuwa metadanych z załączników PDF (czyszczone i przekodowywane są tylko obrazy).
-* **Nie** prowadzi automatyzacji obiegu (auto-przydział, SLA, maile statusowe) — to osobna wtyczka *MP Workflow Automator*.
-* Limit częstotliwości zgłoszeń stoi na transientach; przy trwałej pamięci podręcznej obiektów liczniki żyją w tej pamięci, a nie w bazie.
+* It does **not** deliver e-mail by itself — that depends on your hosting/SMTP.
+* It does **not** strip metadata from PDF attachments (only images are re-encoded/cleaned).
+* It does **not** run the workflow automation (auto-assignment, SLA, status e-mails) — that is the separate *MP Workflow Automator* plugin.
+* Its rate-limit uses transients; under a persistent object cache the counters live in the cache rather than the database.
 
 == Changelog ==
 
