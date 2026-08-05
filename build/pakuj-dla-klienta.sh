@@ -67,6 +67,10 @@ cp "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md" "$PACZK
 # powstal, ale do paczki nie trafial: klient mial obowiazek zrobic kopie i nie
 # mial gdzie przeczytac jak.
 cp dokumentacja-techniczna/MIGRATION_POLICY.md "$PACZKA/"
+# Plik licencji w KORZENIU paczki-matki (obok PRZECZYTAJ-MNIE.txt). Kazda wtyczka
+# wozi wlasny LICENSE w swoim ZIP-ie, ale katalog glowny paczki — z instrukcjami,
+# diagramami i dokumentacja — dotad zadnej licencji nie mial (znalezisko S3-01).
+cp LICENSE "$PACZKA/"
 # Czesc DLA PROGRAMISTY klienta — architektura, kontrakt miedzy wtyczkami, model
 # zdarzen, maszyna statusow, wlasnosc danych, bezpieczenstwo. Wczesniej te dokumenty
 # zylly TYLKO w repozytorium: kto dostal sam ZIP, nie dostawal nic technicznego.
@@ -107,7 +111,7 @@ zglos() { echo "  ✗ $1"; bledy=$((bledy + 1)); }
 
 # 5a. komplet plikow
 for f in "${PLUGINS[@]/%/.zip}" PRZECZYTAJ-MNIE.txt INSTRUKCJA-KLIENTA.md INSTRUKCJA-KLIENTA.pdf \
-         RAPORT-A11Y-WCAG.md MIGRATION_POLICY.md; do
+         RAPORT-A11Y-WCAG.md MIGRATION_POLICY.md LICENSE; do
   [ -s "$PACZKA/$f" ] || zglos "brak/pusty: $f"
 done
 for r in "${ROLE[@]}"; do

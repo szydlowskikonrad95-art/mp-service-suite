@@ -97,7 +97,10 @@ final class ProductsScreen {
 			Roles::registry_menu_cap(),
 			self::PAGE_SLUG,
 			array( self::class, 'render' ),
-			'dashicons-database'
+			'dashicons-database',
+			// Pozycja obok pozostalych ekranow MP (Sprawy 57, Niepotwierdzone 58,
+			// Automatyzacje 58) — bez niej WordPress doklejal Rejestr na sam dol menu.
+			59
 		);
 	}
 
