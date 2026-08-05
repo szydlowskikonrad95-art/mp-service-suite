@@ -2,7 +2,7 @@
 /**
  * Testy bramki zgloszenia: przepisanie wartosci po odbiciu + wymog zalacznika.
  *
- * Kartka P1.2: „wymagane pola i zalaczniki zalezne od wybranej kategorii
+ * Specyfikacja P1.2: „wymagane pola i zalaczniki zalezne od wybranej kategorii
  * produktu". Regula wymagalnosci siedzi w `FormConfig` (CategoryAttachmentsTest),
  * tu sprawdzamy dwa styki, na ktorych ta regula moglaby przeciec:
  *

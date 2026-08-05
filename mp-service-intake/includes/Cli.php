@@ -1,6 +1,6 @@
 <?php
 /**
- * Komendy WP-CLI Intake (napedzaja tez testy E2E/DoD rdzenia C).
+ * Komendy WP-CLI Intake (napedzaja tez testy E2E/kryteria odbioru rdzenia C).
  *
  * @package MP\Intake
  */

@@ -2,7 +2,7 @@
 /**
  * Slownik POWODOW ODRZUCENIA sprawy (cz. 1 pkt 5 audytu).
  *
- * ⛔ PO CO TO ISTNIEJE. Kartka klienta zada SIEDMIU statusow sprawy, ale jednego
+ * ⛔ PO CO TO ISTNIEJE. Specyfikacja klienta zada SIEDMIU statusow sprawy, ale jednego
  * z nich — „odrzucone" — nie dalo sie ustawic w interfejsie. Slepy zaulek dzialal
  * tak: karta sprawy pokazuje pole powodu odrzucenia WYLACZNIE wtedy, gdy lista
  * powodow nie jest pusta (`Admin\CaseCard::section_actions`), lista pochodzi

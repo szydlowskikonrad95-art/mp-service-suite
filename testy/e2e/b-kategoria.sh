@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Etap 1 KATEGORIA produktu (kartka P1.2/P3.1) — Registry: kolumna + slownik +
+# Etap 1 KATEGORIA produktu (specyfikacja P1.2/P3.1) — Registry: kolumna + slownik +
 # parser CSV + hak kontraktowy mp_product_category. Wymaga zywego `wp`.
 # Chodzi tak samo na poligonie Dockera i w CI. Exit 0 = wszystkie asercje OK.
 set -u

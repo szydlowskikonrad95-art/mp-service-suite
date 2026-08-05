@@ -1,6 +1,6 @@
 <?php
 /**
- * Testy parsera CSV — polski Excel (DoD P2.1).
+ * Testy parsera CSV — polski Excel (kryteria odbioru P2.1).
  *
  * @package MP\Testy
  */
@@ -124,7 +124,7 @@ final class CsvParserTest extends TestCase {
 	}
 
 	/**
-	 * STRAZNIK: plik-przyklad DOLACZONY DO WTYCZKI (przyklady/) musi realnie
+	 * TEST PILNUJACY: plik-przyklad DOLACZONY DO WTYCZKI (przyklady/) musi realnie
 	 * przechodzic przez parser — inaczej klient dostaje przyklad, ktory nie
 	 * importuje sie. Pilnuje tez, zeby zmiana parsera/slownika kategorii nie
 	 * uniewaznila cicho zalacznika.

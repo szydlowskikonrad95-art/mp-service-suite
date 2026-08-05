@@ -3,7 +3,7 @@
 # ale NIE traci przy tym odpowiedzi na pytanie „czy cron w ogole chodzi".
 #
 # BUG (audyt 2.21, waga srednia): rejestry zdarzen sa APPEND-ONLY z ZALOZENIA
-# i to jest wymog z kartki, nie przeoczenie — dziennik rozliczalnosci nie moze
+# i to jest wymog ze specyfikacji, nie przeoczenie — dziennik rozliczalnosci nie moze
 # miec kasowania. Wada nie polega wiec na braku DELETE, tylko na tym, ze produkt
 # sam ten dziennik zasypuje: zdarzenie przebiegu zamiatarki ksiegowane bylo
 # CO PIEC MINUT, czyli 105 120 wierszy rocznie na instalacji, na ktorej nikt nie

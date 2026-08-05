@@ -1,6 +1,6 @@
 <?php
 /**
- * Karta sprawy dla PERSONELU (kartka krok 7) — szczegoly + praca nad sprawa.
+ * Karta sprawy dla PERSONELU (specyfikacja krok 7) — szczegoly + praca nad sprawa.
  * Render sekcji: naglowek (status/rodzaj/priorytet/przydzielony/deadline) · klient ·
  * opis zgloszenia (form_data) · zalaczniki · os czasu (case_events) · wiadomosci ·
  * checklista (interaktywna — toggle przez istniejacy handler D). Akcje personelu
@@ -417,7 +417,7 @@ final class CaseCard {
 			'wygasla'     => array( __( 'wygasła', 'mp-service-intake' ), '#b32d2e' ),
 			'brak_danych' => array( __( 'brak danych', 'mp-service-intake' ), '#646970' ),
 			// Nazwa MUSI byc ta sama, co w rejestrze produktow (ProductsTable) i w
-			// kartce: ten sam stan pod dwiema nazwami („do weryfikacji" tutaj,
+			// specyfikacji: ten sam stan pod dwiema nazwami („do weryfikacji" tutaj,
 			// „wymagana weryfikacja" tam) czytalo sie jak dwa rozne statusy.
 			'weryfikacja' => array( __( 'wymagana weryfikacja', 'mp-service-intake' ), '#996800' ),
 		);

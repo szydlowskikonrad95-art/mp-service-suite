@@ -130,7 +130,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # E2E DoD klocka B na ZYWYM WP (sygnal #1): import 10k, kill-polowa-wznowienie,
+  # E2E kryteria odbioru modułu B na ZYWYM WP (sygnal #1): import 10k, kill-polowa-wznowienie,
   # partia CSV->check, negatywne uprawnienia, snapshot-uninstall.
   e2e-import:
     runs-on: ubuntu-latest
@@ -162,7 +162,7 @@ jobs:
           wp core download --version=6.9.4
           wp config create --dbname=wordpress --dbuser=wp --dbpass=wp --dbhost=127.0.0.1
           # URL == adres wbudowanego serwera (wp server) — front E2E bez 301 na canonical.
-          wp core install --url=http://127.0.0.1:8080 --title=DoD --admin_user=admin \
+          wp core install --url=http://127.0.0.1:8080 --title=Odbior --admin_user=admin \
             --admin_password=admin --admin_email=dod@example.com --skip-email
           cp -r "$GITHUB_WORKSPACE"/mp-service-intake "$GITHUB_WORKSPACE"/mp-warranty-registry \
             "$GITHUB_WORKSPACE"/mp-workflow-automator /tmp/wp/wp-content/plugins/
@@ -191,7 +191,7 @@ jobs:
       - name: Testy e2e (automatyczne wykrywanie — cały zestaw)
         run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/uruchom-wszystkie.sh
 
-  # DoD C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
+  # kryteria odbioru C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:
     runs-on: ubuntu-latest
     services:
@@ -233,10 +233,10 @@ jobs:
           wp plugin activate mp-service-intake mp-warranty-registry mp-workflow-automator
       - name: Dirty-env test (prefiks + WP_DEBUG zero-notice + object-cache + degraded)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/dirty-env.sh
-      - name: DoD D na dirty-env (uninstall zero-śladu + degraded pod cms_x9_ + object-cache + WP_DEBUG zero-notice)
+      - name: kryteria odbioru D na dirty-env (uninstall zero-śladu + degraded pod cms_x9_ + object-cache + WP_DEBUG zero-notice)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/d-dod.sh
 
-  # DoD C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi (upgrade bez reaktywacji)
+  # kryteria odbioru C sekcja 5 — MIGRACJA v0.2.0 -> v0.3.0 z realnymi danymi (upgrade bez reaktywacji)
   migration:
     runs-on: ubuntu-latest
     services:
@@ -277,7 +277,7 @@ jobs:
       - name: Test migracji v0.2.0 -> v0.3.0 (dane+schemat+cron+role+opcje)
         run: cd /tmp/wp && V020_SRC=/tmp/v020 V030_SRC="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE"/testy/e2e/migration.sh
 
-  # DoD C sekcja 4 — SILNIK BAZY: spec klienta wymienia MySQL 8 ORAZ MariaDB 10.6+,
+  # kryteria odbioru C sekcja 4 — SILNIK BAZY: spec klienta wymienia MySQL 8 ORAZ MariaDB 10.6+,
   # a caly pakiet testowaliśmy dotad WYLACZNIE na MariaDB. Ten przebieg dowodzi, ze
   # schemat, migracje i pelna sciezka zgloszenia dzialaja takze na MySQL 8 (inny
   # domyslny sql_mode, inne traktowanie DEFAULT i collation).
@@ -332,10 +332,10 @@ jobs:
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c1-rdzen.sh
       - name: Testy C5 (RODO — zgody, eraser, anonimizacja)
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/c5-rodo.sh
-      - name: DoD import + uninstall bez sladu na MySQL 8
+      - name: kryteria odbioru import + uninstall bez sladu na MySQL 8
         run: cd /tmp/wp && bash "$GITHUB_WORKSPACE"/testy/e2e/import-dod.sh
 
-  # DoD C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev
+  # kryteria odbioru C sekcja 6 — RELEASE-SMOKE: testuj ARTEFAKT (ZIP), nie katalog dev
   release-smoke:
     runs-on: ubuntu-latest
     services:

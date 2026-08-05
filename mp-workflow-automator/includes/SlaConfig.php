@@ -51,7 +51,7 @@ final class SlaConfig {
 		/*
 		 * ZERO ZNACZY: LICZNIK STOI, GDY CZEKAMY NA KLIENTA (standard branzowy, 4.08).
 		 *
-		 * „Do uzupelnienia" to jedyny status z kartki, w ktorym pilka jest po stronie
+		 * „Do uzupelnienia" to jedyny status ze specyfikacji, w ktorym pilka jest po stronie
 		 * KLIENTA — czekamy, az dosle dokument albo zdjecie. Do 1.3.12 status mial wlasne
 		 * okno 72 h, ktore bieglo przez caly czas oczekiwania: po trzech dobach sprawa byla
 		 * „po terminie" i ESKALOWALA DO KOORDYNATORA za to, ze klient nie odpisal. Falszywe

@@ -212,7 +212,7 @@ final class Privacy {
 	 * Exporter: dane klienta + sprawy + TRESCI Z FORMULARZA + wiadomosci + metadane zalacznikow.
 	 *
 	 * Zasada (audyt 28.07): co redagujemy przy USUWANIU jako dane wrazliwe, to musi
-	 * byc oddane przy ZADANIU DOSTEPU. Straznik: testy/e2e/c28-eksport-rodo-kompletny.sh.
+	 * byc oddane przy ZADANIU DOSTEPU. Test pilnujacy: testy/e2e/c28-eksport-rodo-kompletny.sh.
 	 *
 	 * @param string $email E-mail.
 	 * @param int    $page  Strona.
@@ -278,7 +278,7 @@ final class Privacy {
 				// seryjny, dokument zakupu, powod zwrotu, pola kategorii).
 				// Bez tego eksport art. 15 byl niespojny z eraserem: przy USUWANIU
 				// redagujemy te pola jako dane wrazliwe, a przy ZADANIU DOSTEPU
-				// ich nie oddawalismy (audyt 28.07, straznik: c28-eksport-rodo-kompletny.sh).
+				// ich nie oddawalismy (audyt 28.07, test pilnujacy: c28-eksport-rodo-kompletny.sh).
 				// Etykiety biore te same, ktore klient widzial w formularzu.
 				$pola_formularza = array();
 

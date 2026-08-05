@@ -66,7 +66,7 @@ final class StatusDefs {
 	 * samo, tylko maszynowo: `remove_accents()` zamienia ę na e, spacje staja sie
 	 * lacznikiem, a dopiero potem wchodzi ta sama funkcja co dotad.
 	 *
-	 * ⛔ Statusy RDZENIA (z kartki: „do uzupełnienia", „w naprawie", „zamknięte")
+	 * ⛔ Statusy RDZENIA (ze specyfikacji: „do uzupełnienia", „w naprawie", „zamknięte")
 	 * TA DROGA NIE IDA — sa zaszyte w module zgloszen i zapisane w tysiacach
 	 * wierszy spraw. Ich zmiana to migracja danych, nie poprawka nazwy, i nie
 	 * robi sie jej tydzien przed wydaniem. Zgodnosc statusow wlasnych z kontraktem

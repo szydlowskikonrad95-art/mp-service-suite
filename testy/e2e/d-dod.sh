@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DoD D — twardy audyt gotowosci automatora (3 sekcje). Prefix-agnostic (wp db prefix)
+# kryteria odbioru D — twardy audyt gotowosci automatora (3 sekcje). Prefix-agnostic (wp db prefix)
 # => chodzi na e2e-import (wp_) I na dirty-env (cms_x9_ + object-cache + WP_DEBUG).
 # (1) UNINSTALL ZERO-SLADU: opt-in delete_data kasuje WSZYSTKIE artefakty D (tabele+
 #     opcje+cron+marker) i NIC cudzego — kanarki (obca opcja/tabela/cron) + rodzenstwo
@@ -184,5 +184,5 @@ STAN=$(wp eval 'require_once ABSPATH . "wp-admin/includes/class-wp-site-health.p
 [ "$STAN" = "good" ] && ok "diagnostyka Stanu witryny potwierdza dzialajacy cron SLA" || bad "diagnostyka mowi: $STAN"
 
 echo ""
-echo "WYNIK DoD D: PASS=$PASS FAIL=$FAIL"
+echo "WYNIK kryteria odbioru D: PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

@@ -138,7 +138,7 @@ final class Schema {
 	}
 
 	/**
-	 * V2: kolumna `category` w product_registry (kartka P1.2/P3.1 — os przydzialu).
+	 * V2: kolumna `category` w product_registry (specyfikacja P1.2/P3.1 — os przydzialu).
 	 *
 	 * ADDYTYWNA. dbDelta na istniejacej tabeli dodaje TYLKO brakujaca kolumne
 	 * (nie tyka danych/innych kolumn). Istniejace wiersze dostaja DEFAULT 'inne'.

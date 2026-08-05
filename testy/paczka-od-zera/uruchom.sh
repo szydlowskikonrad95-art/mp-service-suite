@@ -26,7 +26,7 @@ sprzataj() { [ "${ZOSTAW:-0}" = "1" ] || docker compose -p "$PROJEKT" down -v --
 trap sprzataj EXIT
 
 # Sprzatanie poprzedniego przebiegu bez rekurencyjnego kasowania katalogu
-# (strażnik warsztatu blokuje `rm -rf` poza strefa bezpieczna — i slusznie).
+# (test pilnujący warsztatu blokuje `rm -rf` poza strefa bezpieczna — i slusznie).
 mkdir -p paczka
 find paczka -mindepth 1 -maxdepth 1 -exec rm -r {} + 2>/dev/null || true
 

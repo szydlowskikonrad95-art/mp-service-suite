@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# BLOK-S — E2E PELNY PRZEBIEG 8 KROKOW KARTKI (calosciowa sciezka sprawy).
+# BLOK-S — E2E PELNY PRZEBIEG 8 KROKOW SPECYFIKACJI (calosciowa sciezka sprawy).
 # Nie duplikuje c3-front (mechanika frontu) — spina B+C+D w JEDEN przebieg wg
-# oryginalnej kartki klienta (BRIEF-ODCZYT-KARTKI kroki 1-8) i mapuje kazdy krok
+# oryginalnej specyfikacji klienta (BRIEF-ODCZYT-SPECYFIKACJI kroki 1-8) i mapuje kazdy krok
 # 1:1. Kroki zalezne od write-path personelu / Automatora (D) — ktore jeszcze
 # nie istnieja w kodzie — sa SKIP z JAWNYM powodem (skip()), NIE fail; zaswieca
 # sie zielono automatycznie gdy funkcja/listener D wejdzie do kodu.
 #
-# 8 krokow kartki:
+# 8 krokow specyfikacji:
 #  1. Klient wybiera rodzaj + uzupelnia formularz            [LIVE — HTTP]
 #  2. System sprawdza kompletnosc + zalaczniki + duplikat     [LIVE — HTTP]
 #  3. Rejestr gwarancji weryfikuje serial/produkt/date (B)    [LIVE — snapshot B->C]
@@ -33,7 +33,7 @@ SITE_HOST=$(wp option get home 2>/dev/null | sed 's#^https\?://##;s#/.*##')
 HOSTHDR=(); [ -n "$SITE_HOST" ] && HOSTHDR=(-H "Host: $SITE_HOST")
 cget() { curl -s "${HOSTHDR[@]}" "$@"; }
 
-echo "== BLOK-S E2E: pelny przebieg 8 krokow kartki =="
+echo "== BLOK-S E2E: pelny przebieg 8 krokow specyfikacji =="
 
 # ── 0. Czysty stan (C + B produkt + przechwyt maila) ──────────────────────
 wp db query "DELETE FROM wp_mp_service_cases; DELETE FROM wp_mp_customers; DELETE FROM wp_mp_case_events; DELETE FROM wp_mp_srv_counters; DELETE FROM wp_mp_product_registry; DELETE FROM wp_mp_case_sla;" >/dev/null 2>&1

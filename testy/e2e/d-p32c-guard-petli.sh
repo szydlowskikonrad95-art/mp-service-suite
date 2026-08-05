@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ZYWY DOWOD P3.2 GUARD PETLI: akcja change_status odpala trigger status_changed,
-# wiec reguly A->B i B->A groza nieskonczona petla. Strażnik glebokosci: mutacje
+# wiec reguly A->B i B->A groza nieskonczona petla. Test pilnujący glebokosci: mutacje
 # TYLKO na glebokosci 0; na glebokosci 1 mutacja ZABLOKOWANA + RULE_LOOP_BLOCKED.
 # Ksiegowanie zdarzen dzieje sie ZAWSZE. Testuje REALNA droga (mp_case_change_status
 # + prawdziwy nasluch mp_case_status_changed). Exit 0 = OK.

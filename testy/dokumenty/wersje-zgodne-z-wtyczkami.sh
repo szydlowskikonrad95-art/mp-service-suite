@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# STRAZNIK: wersja wtyczki musi byc TA SAMA w naglowku, w stalej, w readme.txt
+# TEST PILNUJACY: wersja wtyczki musi byc TA SAMA w naglowku, w stalej, w readme.txt
 # i w pliku tlumaczen .pot. Trzy wtyczki, cztery zrodla kazda.
 #
 # POWOD ISTNIENIA — ta sama klasa bledu zlapana DWA RAZY w jednym tygodniu,
@@ -16,7 +16,7 @@
 #    podbiciu wersji i znowu zlapalby go przypadek — o ile ktos akurat spojrzy.
 #    Bramka patrzy zawsze i na wszystkie cztery zrodla naraz.
 #
-# ⛔ STRAZNIK KOMPLETU: ekstraktory musza zlozyc co najmniej MIN_PAR par do
+# ⛔ TEST PILNUJACY KOMPLETU: ekstraktory musza zlozyc co najmniej MIN_PAR par do
 #    porownania. Literowka w regeksie albo przemianowany plik = BLAD PRZEBIEGU,
 #    nie zielone zero. Kontrola, ktora cicho nie startuje, swieci zielono.
 #    ⭐ TA LICZBA JEST ZMIERZONA, NIE OSZACOWANA: 3 wtyczki × 3 porownania
@@ -97,7 +97,7 @@ for wpis in "${WTYCZKI[@]}"; do
 	PAR=$((PAR+1))
 done
 
-# STRAZNIK KOMPLETU — mniej par niz zmierzono znaczy, ze czesc kontroli nie ruszyla.
+# TEST PILNUJACY KOMPLETU — mniej par niz zmierzono znaczy, ze czesc kontroli nie ruszyla.
 if [ "$PAR" -lt "$MIN_PAR" ]; then
 	echo "BLAD PRZEBIEGU: zlozono tylko $PAR par do porownania (< $MIN_PAR)."
 	echo "Czesc wtyczek wypadla z przebiegu — to wada przyrzadu, nie zielone zero."

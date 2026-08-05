@@ -11,7 +11,7 @@
 # `elektronarzedzia` przy etykiecie „Elektronarzędzia" — ktos swiadomie napisal go
 # bez ogonka, zeby przezyl normalizacje. Robimy to samo, tylko maszynowo.
 #
-# ⛔ CZEGO TA POZYCJA NIE OBEJMUJE: siedmiu statusow RDZENIA z kartki („zamknięte",
+# ⛔ CZEGO TA POZYCJA NIE OBEJMUJE: siedmiu statusow RDZENIA ze specyfikacji („zamknięte",
 # „w naprawie"...). Sa zaszyte w module zgloszen i zapisane w wierszach spraw —
 # ich zmiana to MIGRACJA DANYCH, nie poprawka nazwy. Kontrola nr 5 pilnuje, ze
 # zostaly nietkniete, a kontrola nr 4 — ze nadal nie da sie ich nadpisac.
@@ -49,7 +49,7 @@ printf '%s' "$WYNIK" | grep -qE '^[a-z0-9_-]+$' \
 [ -z "$(slug '###')" ] && ok "same znaki specjalne => pusty identyfikator" || bad "smiec dal identyfikator [$(slug '###')]"
 
 # ── 4. KOLIZJA Z RDZENIEM nadal niemozliwa ────────────────────────────────
-# Nazwa statusu rdzenia z kartki po przejsciu przez regule daje INNY identyfikator,
+# Nazwa statusu rdzenia ze specyfikacji po przejsciu przez regule daje INNY identyfikator,
 # wiec status wlasny nie ma jak nadpisac rdzeniowego.
 [ "$(slug 'zamknięte')" != "zamknięte" ] \
 	&& ok "status wlasny nazwany jak rdzeniowy dostaje INNY identyfikator (brak nadpisania)" \
@@ -58,7 +58,7 @@ printf '%s' "$WYNIK" | grep -qE '^[a-z0-9_-]+$' \
 # ── 5. STATUSY RDZENIA NIETKNIETE (swiadomie poza zakresem tej naprawy) ───
 RDZEN=$(wp eval 'echo implode( ",", array_keys( MP\Intake\Statuses::all() ) );' 2>/dev/null)
 printf '%s' "$RDZEN" | grep -q "zamknięte" \
-	&& ok "statusy rdzenia z kartki nietkniete (zadnej migracji danych przy okazji)" \
+	&& ok "statusy rdzenia ze specyfikacji nietkniete (zadnej migracji danych przy okazji)" \
 	|| bad "zmienily sie identyfikatory rdzenia — to migracja, nie poprawka nazwy ($RDZEN)"
 
 echo ""

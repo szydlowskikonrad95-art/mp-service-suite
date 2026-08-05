@@ -52,7 +52,7 @@ final class SlaTerminyTest extends TestCase {
 	}
 
 	/**
-	 * Kazdy status rdzenia ma termin ZGODNY Z KARTKA, co do godziny.
+	 * Kazdy status rdzenia ma termin ZGODNY Z SPECYFIKACJA, co do godziny.
 	 *
 	 * To jest kontrola, ktorej brakowalo: skrocenie naprawy ze 120 godzin do
 	 * jednej przechodzilo przez warstwe jednostkowa bez sladu.
@@ -63,7 +63,7 @@ final class SlaTerminyTest extends TestCase {
 	 * @param int    $godziny   Obiecane godziny (STATE_MACHINE.md).
 	 * @param string|null $oczekiwany Deadline liczony od KOTWICA; NULL = status bez terminu.
 	 */
-	public function test_terminy_rdzenia_zgodne_z_kartka( string $status, int $godziny, ?string $oczekiwany ): void {
+	public function test_terminy_rdzenia_zgodne_ze_specyfikacja( string $status, int $godziny, ?string $oczekiwany ): void {
 		self::assertSame(
 			$oczekiwany,
 			SlaConfig::deadline_for( $status, self::KOTWICA, 'normal' ),

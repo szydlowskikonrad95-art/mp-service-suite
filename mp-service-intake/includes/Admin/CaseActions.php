@@ -1,6 +1,6 @@
 <?php
 /**
- * Akcje personelu na karcie sprawy (kartka krok 7 — „kazda decyzja zapisuje sie
+ * Akcje personelu na karcie sprawy (specyfikacja krok 7 — „kazda decyzja zapisuje sie
  * w historii"): zmiana statusu · odpowiedz do klienta · przydzial. Handlery
  * admin-post; KAZDY sam egzekwuje capability + nonce (metody repo NIE autoryzuja).
  *

@@ -62,7 +62,7 @@ mkdir -p "$PACZKA/instrukcje" "$PACZKA/diagramy" "$PACZKA/dla-informatyka" "$PAC
 # --- 2) wtyczki + dokumenty zrodlowe --------------------------------------------
 for p in "${PLUGINS[@]}"; do cp "$DIST/$p.zip" "$PACZKA/"; done
 cp "$ZRODLO_DOK/INSTRUKCJA-KLIENTA.md" "$ZRODLO_DOK/RAPORT-A11Y-WCAG.md" "$PACZKA/"
-# Polityka kopii i cofania migracji — kartka, sekcja 4 („Backup przed wdrozeniem
+# Polityka kopii i cofania migracji — specyfikacja, sekcja 4 („Backup przed wdrozeniem
 # oraz mozliwosc cofniecia migracji bazy na srodowisku testowym"). Dokument
 # powstal, ale do paczki nie trafial: klient mial obowiazek zrobic kopie i nie
 # mial gdzie przeczytac jak.

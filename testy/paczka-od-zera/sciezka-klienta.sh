@@ -28,7 +28,7 @@ NONCE=$(echo "$HTML" | grep -o 'name="_mp_nonce" value="[^"]*"' | head -1 | sed 
 [ -n "$NONCE" ] && ok "nonce formularza obecny" || bad "brak nonce"
 
 echo "== 2. Klient wysyla reklamacje =="
-# Kategoria AGD wymaga zalacznika (kartka P1.2: „wymagane pola i zalaczniki
+# Kategoria AGD wymaga zalacznika (specyfikacja P1.2: „wymagane pola i zalaczniki
 # zalezne od wybranej kategorii produktu"), wiec zgloszenie idzie jak
 # z przegladarki: multipart ze zdjeciem tabliczki znamionowej.
 ZDJECIE="$(mktemp /tmp/tabliczka-XXXXXX.jpg)"
@@ -54,7 +54,7 @@ wyslij_zgloszenie() { # $1=plik zalacznika (pusty = bez zalacznika)
 # Kontrola reguly: TA SAMA tresc bez zalacznika NIE moze zalozyc sprawy.
 wyslij_zgloszenie ""
 CNT0=$(ev 'global $wpdb; echo (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}mp_service_cases");')
-[ "${CNT0:-0}" -eq 0 ] && ok "AGD bez zalacznika odrzucone (wymog z kartki dziala)" \
+[ "${CNT0:-0}" -eq 0 ] && ok "AGD bez zalacznika odrzucone (wymog ze specyfikacji dziala)" \
   || bad "AGD bez zalacznika zalozylo sprawe — wymog zalacznika NIE dziala"
 
 wyslij_zgloszenie "$ZDJECIE"
@@ -87,7 +87,7 @@ UZYTY=$(ev 'global $wpdb; echo (string) $wpdb->get_var("SELECT verify_token_used
 STATUS=$(ev 'global $wpdb; $r=$wpdb->get_row("SELECT status, identity_status FROM {$wpdb->prefix}mp_service_cases ORDER BY id DESC LIMIT 1"); echo $r->status."/".$r->identity_status;')
 SRV=$(ev 'global $wpdb; echo (string) $wpdb->get_var("SELECT case_number FROM {$wpdb->prefix}mp_service_cases ORDER BY id DESC LIMIT 1");')
 [ -n "$SRV" ] && ok "numer sprawy nadany: $SRV (status: $STATUS)" || bad "brak numeru sprawy po potwierdzeniu"
-echo "$SRV" | grep -qE '^SRV/[0-9]{4}/[0-9]{4}$' && ok "format numeru zgodny z kartka klienta: SRV/RRRR/NNNN" || bad "format numeru NIEZGODNY z kartka: $SRV"
+echo "$SRV" | grep -qE '^SRV/[0-9]{4}/[0-9]{4}$' && ok "format numeru zgodny ze specyfikacją klienta: SRV/RRRR/NNNN" || bad "format numeru NIEZGODNY ze specyfikacją: $SRV"
 
 echo "== 4b. Drugi mail: numer sprawy =="
 sleep 3

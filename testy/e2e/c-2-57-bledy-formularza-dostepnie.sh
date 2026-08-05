@@ -89,7 +89,7 @@ ILE_INVALID=$(printf '%s' "$POWROT" | grep -o 'aria-invalid="true"' | grep -c . 
 	|| bad "wrocil tylko $ILE_LINKOW brak — bramki dalej sekwencyjne, klient krazy"
 
 # ── 5. CO ZOSTAJE NIETKNIETE: komunikat dalej jest ogloszany ──────────────
-# Kontrola-straznik, zeby naprawa nie zabrala tego, co produkt mial dobrze.
+# Kontrola-test pilnujacy, zeby naprawa nie zabrala tego, co produkt mial dobrze.
 printf '%s' "$POWROT" | grep -q 'role="alert"' \
 	&& ok "podsumowanie dalej ma role=alert (mocna strona produktu zachowana)" \
 	|| bad "naprawa zabrala komunikatowi role=alert — pogorszenie, nie poprawa"

@@ -2,7 +2,7 @@
 # ZYWY DOWOD: licznik terminu STOI, gdy sprawa czeka na klienta — i rusza z powrotem,
 # gdy wraca do pracy serwisu.
 #
-# CO BYLO ZLE: status „do uzupelnienia" (jeden z siedmiu z kartki klienta — czekamy, az
+# CO BYLO ZLE: status „do uzupelnienia" (jeden z siedmiu ze specyfikacji klienta — czekamy, az
 # klient cos dosle) mial WLASNE okno 72 h, liczone od zmiany statusu. Zegar bieglo przez
 # caly czas oczekiwania, wiec po trzech dobach sprawa byla „po terminie" i ESKALOWALA DO
 # KOORDYNATORA za to, ze klient nie odpisal. Falszywe przekroczenia to nie drobiazg: po nich

@@ -2,7 +2,7 @@
 /**
  * Testy regul ZALACZNIKOW zaleznych od kategorii produktu.
  *
- * Kartka P1.2 (Plugin 1, cytat 1:1): „wymagane pola i zalaczniki zalezne od
+ * Specyfikacja P1.2 (Plugin 1, cytat 1:1): „wymagane pola i zalaczniki zalezne od
  * wybranej kategorii produktu". Pola dzialaly (FormConfig::category_fields),
  * zalaczniki NIE — we wszystkich kategoriach identyczne, zawsze opcjonalne.
  *

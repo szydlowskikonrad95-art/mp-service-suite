@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZYWY DOWOD P3.1 wg KATEGORII (kartka: „auto-przydzial wg kategorii produktu").
+# ZYWY DOWOD P3.1 wg KATEGORII (specyfikacja: „auto-przydzial wg kategorii produktu").
 # Lancuch: produkt w rejestrze (kategoria) -> sprawa z serialem (podpina produkt)
 # -> get_context.kategoria (hak mp_product_category) -> regula condition_key=kategoria
 # -> przydzial. Kontrast: inna kategoria => regula nie pasuje => ASSIGNMENT_UNMATCHED.

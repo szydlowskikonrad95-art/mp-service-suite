@@ -124,7 +124,7 @@ fi
 echo
 echo "WYNIK: $PASS ok, $FAIL fail"
 
-# ⛔ STRAZNIK KOMPLETU: kontrola, ktora cicho nie wystartuje, nie zglasza sie jako FAIL.
+# ⛔ TEST PILNUJACY KOMPLETU: kontrola, ktora cicho nie wystartuje, nie zglasza sie jako FAIL.
 RAZEM=$(( PASS + FAIL ))
 if [ "$RAZEM" -lt 5 ]; then
 	echo "  BLAD PRZYRZADU: wykonalo sie $RAZEM kontroli, oczekiwane min. 5 — ktoras nie wystartowala."

@@ -99,7 +99,7 @@ done
 [ "$OSOBNE" = "0" ] && ok "zaden wariant nie zalozyl WLASNEGO licznika (osobnych: 0)" \
 	|| bad "powstalo $OSOBNE osobnych licznikow dla wariantow tego samego adresu"
 
-# Sedno obietnicy z kartki: czwarte zgloszenie z KOLEJNEGO wariantu ma sie odbic.
+# Sedno obietnicy ze specyfikacji: czwarte zgloszenie z KOLEJNEGO wariantu ma sie odbic.
 POWOD=$(wp eval "echo (string) MP\\Intake\\RateLimit::check( '198.51.100.7', '${BAZOWY%@*}+cztery@example.com', 'INNY-$STEMPEL', 'reklamacja' );" 2>/dev/null | tr -d '[:space:]')
 [ "$POWOD" = "rate" ] && ok "czwarte zgloszenie (kolejny wariant z plusem) ZABLOKOWANE — limit dobowy trzyma" \
 	|| bad "czwarte zgloszenie przeszlo (powod='${POWOD:-brak}') — obietnica '3 na dobe' nadal do obejscia"
