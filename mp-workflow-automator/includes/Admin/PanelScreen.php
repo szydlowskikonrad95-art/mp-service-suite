@@ -139,10 +139,13 @@ final class PanelScreen {
 	 * zmiana CSS/JS daje nowy `?ver` (przegladarka pobiera swiezy plik) bez recznego
 	 * bumpu wersji — usuwa pulapke „zmienilem CSS, a user widzi stary z cache".
 	 *
+	 * Publiczna, bo ten sam arkusz laduje takze `SettingsScreen` (S4 nr 6) — druga
+	 * kopia liczenia wersji rozjechalaby sie z ta przy pierwszej zmianie.
+	 *
 	 * @param string $rel_path Sciezka assetu wzgledem katalogu wtyczki.
 	 * @return string
 	 */
-	private static function asset_ver( string $rel_path ): string {
+	public static function asset_ver( string $rel_path ): string {
 		$file  = plugin_dir_path( MP_AUTOMATOR_FILE ) . $rel_path;
 		$mtime = file_exists( $file ) ? (int) filemtime( $file ) : 0;
 
