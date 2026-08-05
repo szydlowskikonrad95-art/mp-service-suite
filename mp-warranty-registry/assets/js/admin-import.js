@@ -117,7 +117,54 @@
 		);
 	}
 
-	function finish( data ) {
+	// Z1b (polowanie 2026-08-05): URL raportu bledow per job — z konfiguracji
+	// (upload) albo ze zwrotki wznowienia. Musi powstac w PHP (nonce).
+	var reportUrls = {};
+
+	/**
+	 * Z1b: baner mowil „Import zakończony: 8 z 8", a tabela „Ostatnie importy"
+	 * tuz pod nim dalej „w trakcie, 0/8" az do recznego F5 — dwa elementy
+	 * jednego ekranu przeczyly sobie. Po done odswiezamy wiersz tego importu.
+	 *
+	 * @param {number} jobId Job, ktory wlasnie sie zakonczyl.
+	 * @param {Object} data  Zwrotka batcha (processed/total/errors).
+	 */
+	function updateHistoryRow( jobId, data ) {
+		var row = document.querySelector( '.mp-import-history tr[data-job="' + jobId + '"]' );
+
+		if ( ! row ) {
+			return;
+		}
+
+		var status = row.querySelector( '.mp-import-h-status' );
+		var counts = row.querySelector( '.mp-import-h-counts' );
+		var errors = row.querySelector( '.mp-import-h-errors' );
+		var report = row.querySelector( '.mp-import-h-report' );
+
+		if ( status ) {
+			status.textContent = cfg.i18n.statusDone;
+		}
+
+		if ( counts ) {
+			// Zaimportowane = przetworzone minus bledy (kazdy wiersz konczy jako
+			// jedno albo drugie) — ta sama liczba, ktora tabela pokazuje po F5.
+			counts.textContent = ( data.processed - data.errors ) + ' / ' + data.total;
+		}
+
+		if ( errors ) {
+			errors.textContent = String( data.errors );
+		}
+
+		if ( report && data.errors > 0 && reportUrls[ jobId ] ) {
+			var link = document.createElement( 'a' );
+			link.href = reportUrls[ jobId ];
+			link.textContent = cfg.i18n.reportLink;
+			report.textContent = '';
+			report.appendChild( link );
+		}
+	}
+
+	function finish( data, jobId ) {
 		running = false;
 
 		if ( progress ) {
@@ -128,6 +175,7 @@
 		var extra = data.errors > 0 ? cfg.i18n.doneErrors : '';
 
 		show( text, extra );
+		updateHistoryRow( jobId, data );
 
 		// Zakonczenie ogłaszamy ZAWSZE, niezaleznie od progu 10% — to jest ten
 		// jeden komunikat, na ktory operator czeka.
@@ -173,7 +221,7 @@
 						return;
 					}
 
-					finish( json.data );
+					finish( json.data, jobId );
 				} )
 				.catch( function () {
 					fail( cfg.i18n.netError );
@@ -227,6 +275,10 @@
 					return;
 				}
 
+				if ( json.data.report_url ) {
+					reportUrls[ jobId ] = json.data.report_url;
+				}
+
 				paint( json.data.processed, json.data.total, json.data.errors );
 				loop( jobId, json.data.token );
 			} )
@@ -248,6 +300,10 @@
 			reclaim( Number( btn.getAttribute( 'data-job' ) ) );
 		} );
 	} );
+
+	if ( cfg.job && cfg.job.reportUrl ) {
+		reportUrls[ cfg.job.id ] = cfg.job.reportUrl;
+	}
 
 	if ( cfg.job && cfg.job.token && 'processing' === cfg.job.status ) {
 		paint( cfg.job.processed, cfg.job.total, cfg.job.errors );

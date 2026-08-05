@@ -139,6 +139,9 @@ final class ImportScreen {
 				'total'     => (int) $live['total_rows'],
 				'errors'    => (int) $live['error_rows'],
 				'token'     => $token,
+				// Z1b: po zakonczeniu importu JS odswieza wiersz tabeli historii,
+				// w tym link raportu bledow — URL z noncem musi powstac w PHP.
+				'reportUrl' => self::report_url( (int) $live['id'] ),
 			),
 			'i18n'    => array(
 				/* translators: 1: przetworzone wiersze, 2: wszystkie wiersze, 3: liczba bledow. */
@@ -148,6 +151,10 @@ final class ImportScreen {
 				'doneErrors' => __( 'Pobierz raport błędów poniżej (tabela „Ostatnie importy").', 'mp-warranty-registry' ),
 				'netError'   => __( 'Błąd połączenia — import NIE przepadł. Kliknij „Wznów import", żeby kontynuować od miejsca przerwania.', 'mp-warranty-registry' ),
 				'resuming'   => __( 'Wznawiam import…', 'mp-warranty-registry' ),
+				// Z1b: te same napisy, ktorymi tabele historii renderuje PHP —
+				// wiersz odswiezony JS-em nie moze mowic innym jezykiem niz reszta.
+				'statusDone' => __( 'zakończony', 'mp-warranty-registry' ),
+				'reportLink' => __( 'pobierz CSV', 'mp-warranty-registry' ),
 				// Teksty dla czytnika ekranu. Postep ogłaszany co 10%, a nie po
 				// kazdej paczce — inaczej czytnik zagadalby operatora na smierc
 				// i komunikat o BLEDZIE utonalby w strumieniu „przetworzono…".
@@ -381,14 +388,15 @@ final class ImportScreen {
 				</tr>
 			</thead>
 			<tbody>
+				<?php // Z1b: data-job + klasy komorek to zaczepy dla JS, ktory po zakonczeniu importu AJAX odswieza ten wiersz (admin-import.js). ?>
 				<?php foreach ( $jobs as $job ) : ?>
-					<tr>
+					<tr data-job="<?php echo esc_attr( (string) (int) $job['id'] ); ?>">
 						<td>#<?php echo esc_html( (string) (int) $job['id'] ); ?></td>
-						<td><?php echo esc_html( $labels[ (string) $job['status'] ] ?? (string) $job['status'] ); ?></td>
-						<td><?php echo esc_html( number_format_i18n( (int) $job['success_rows'] ) . ' / ' . number_format_i18n( (int) $job['total_rows'] ) ); ?></td>
-						<td><?php echo esc_html( number_format_i18n( (int) $job['error_rows'] ) ); ?></td>
+						<td class="mp-import-h-status"><?php echo esc_html( $labels[ (string) $job['status'] ] ?? (string) $job['status'] ); ?></td>
+						<td class="mp-import-h-counts"><?php echo esc_html( number_format_i18n( (int) $job['success_rows'] ) . ' / ' . number_format_i18n( (int) $job['total_rows'] ) ); ?></td>
+						<td class="mp-import-h-errors"><?php echo esc_html( number_format_i18n( (int) $job['error_rows'] ) ); ?></td>
 						<td><?php echo esc_html( (string) $job['created_at'] ); ?></td>
-						<td>
+						<td class="mp-import-h-report">
 							<?php if ( (int) $job['error_rows'] > 0 ) : ?>
 								<a href="<?php echo esc_url( self::report_url( (int) $job['id'] ) ); ?>">
 									<?php esc_html_e( 'pobierz CSV', 'mp-warranty-registry' ); ?>
@@ -411,10 +419,14 @@ final class ImportScreen {
 	/**
 	 * URL pobrania raportu bledow (przez PHP z capability, nie wprost z uploads).
 	 *
+	 * Publiczna, bo ten sam URL musi trafic do JS przy wznowieniu importu
+	 * (ImportEndpoints::ajax_reclaim) — inaczej wiersz odswiezany po done (Z1b)
+	 * nie mialby skad wziac linku raportu.
+	 *
 	 * @param int $job_id ID joba.
 	 * @return string
 	 */
-	private static function report_url( int $job_id ): string {
+	public static function report_url( int $job_id ): string {
 		return wp_nonce_url(
 			add_query_arg(
 				array(
