@@ -4,11 +4,20 @@
 produktu.** Każda runda niżej ma własną datę, własny zakres i własny wynik. Wynik jednej rundy
 nie rozciąga się ani na wydania późniejsze, ani na obszary, których ta runda nie obejmowała.
 
-**Ostatnia runda — audyt osobnego działu, lista złożona 3.08.2026, wersja audytowana 1.3.11.**
+**Ostatnia runda — pięć niezależnych przebiegów, 5.08.2026, wersja audytowana 1.3.13.**
+Zakres: dwa przeglądy **zewnętrzne** na kodzie wydawanym (surowa recenzja przedprodukcyjna oraz
+kontrola wdrożenia prowadzona wyłącznie na zawartości paczki), trzy przebiegi własne (repozytorium
+i paczka · wdrożenie i panel · dokumentacja, front i demo) oraz 16-punktowa kontrola oddania.
+**Wynik: 51 pozycji** — **5 dużych**, 26 średnich i drobnych, 20 obserwacji środowiska pokazowego
+i spraw oddanych do decyzji. **W wydaniu 1.3.13 zamknięto 17 pozycji**; co zostaje świadomie
+i dlaczego, wymienia protokół tej rundy niżej. Naprawy opisuje
+[`CHANGELOG.md`](../CHANGELOG.md) — wpis 1.3.13 podaje przy każdej test, który ją pilnuje.
+
+**Poprzednia runda — audyt osobnego działu, lista złożona 3.08.2026, wersja audytowana 1.3.11.**
 Zakres: trzy wtyczki, paczka dla klienta, dokumentacja i zgodność z **oryginalnym zamówieniem**
 (nie z naszym opracowaniem), bez prawa zmiany kodu. **Wynik: 61 żywych pozycji** — rozkład wag
 policzony z nagłówków listy: **3 krytyczne**, 16 dużych, 27 średnich, 15 drobnych — plus 5 miejsc
-w części pierwszej. Naprawy wchodzą w wydaniu **1.3.12**; co zamknięte i czym udowodnione, mówią
+w części pierwszej. Naprawy weszły w wydaniu **1.3.12**; co zamknięte i czym udowodnione, mówią
 [`CHANGELOG.md`](../CHANGELOG.md) — wpis 1.3.12 wymienia każdą naprawę wraz z dowodem,
 a przy większości podaje nazwę testu, który ją pilnuje.
 
@@ -43,6 +52,106 @@ błędy, a audytor nie wie, że trwa kalibracja. Kto ich nie znajdzie, tego „c
 jako wynik.
 
 ---
+
+## Runda przy 1.3.13 — dwa przeglądy zewnętrzne i trzy własne, na kodzie wydawanym
+
+Przegląd przed wydaniem 1.3.13, przeprowadzony **5.08.2026** na tym samym kodzie, który jedzie do
+klienta. Pięć niezależnych przebiegów w osobnych oknach: trzy własne (repozytorium i paczka ·
+wdrożenie i panel administratora · dokumentacja, front i środowisko pokazowe) oraz **dwa
+zewnętrzne, bez znajomości historii projektu i bez wglądu w nasze notatki** — surowa recenzja
+przedprodukcyjna czytająca wyłącznie kod i zamówienie oraz kontrola wdrożenia wykonana wyłącznie
+na zawartości paczki. Na koniec kontrola oddania: 16-punktowy scenariusz przeklikany na czystej
+instalacji, z wtyczkami branymi **z paczki**, nie z repozytorium.
+
+**Wynik łączny: 51 pozycji.** Rozkład wag policzony z nagłówków list: **5 dużych**, 26 średnich
+i drobnych, 20 obserwacji środowiska pokazowego i spraw wątpliwych oddanych do decyzji.
+**W wydaniu 1.3.13 zamknięto 17 pozycji**; reszta to świadome odstępstwa i dług projektowy opisane
+niżej. Co dokładnie naprawiono i czym udowodniono, wymienia [`CHANGELOG.md`](../CHANGELOG.md) —
+wpis 1.3.13 podaje przy każdej naprawie test, który ją pilnuje.
+
+### Co sprawdzono
+
+| Kąt | Zakres | Wynik |
+|---|---|---|
+| Recenzja przedprodukcyjna (zewnętrzna) | 30 969 linii kodu produkcyjnego, cztery niezależne przeglądy trzech wtyczek plus budowa i kontrola ciągła, paczka wydania, żywe demo | ocena łączna **8,3/10**; 5 pozycji dużych, około 20 drobnych |
+| Kontrola wdrożenia (zewnętrzna) | czysta instalacja z paczki na WordPressie 7.0.2 / PHP 8.3, pełna ścieżka zgłoszenia, aktualizacja z poprzedniego wydania, odinstalowanie i ponowna instalacja, porównanie ekranów ze zdjęciami z instrukcji | **z paczki da się wdrożyć działający produkt**; 1 pozycja wysoka, 2 średnie, 5 drobnych; zero błędów PHP w ~40 przejściach |
+| Repozytorium i paczka (własne) | wejście obcego czytelnika, strona wydania, zawartość archiwum, martwe odsyłacze, język i historia zmian | rozbieżności wyłącznie w opisach i materiałach, nie w kodzie |
+| Wdrożenie i panel administratora (własne) | instalacja od zera, pełna ścieżka zgłoszenia, kopia zapasowa i cofnięcie migracji, praca bez modułu rejestru, odinstalowanie, progi limitów zgłoszeń zmierzone na żywo | 2 pozycje duże, reszta drobna; kopia zapasowa i obie drogi cofnięcia migracji **potwierdzone** |
+| Dokumentacja, front i demo (własne) | około 150 twierdzeń z pięciu instrukcji porównanych z kodem, zdjęcia i diagramy, dokumenty techniczne, stan środowiska pokazowego | 1 pozycja duża, 12 drobnych, reszta to porządki na demie |
+| Kontrola oddania (16 punktów) | naprawy przeklikane na czystej instalacji, wtyczki wyłącznie z paczki, 31 zrzutów i wyjść poleceń jako dowód | **komplet przeszedł** po dwóch powtórkach opisanych niżej |
+
+### Co zamknięto w tym wydaniu
+
+Pozycje o największym ciężarze — każda z własnym testem, który czerwieni się na kodzie sprzed naprawy:
+
+- **Reguła powiadomienia utworzona według podpowiedzi ekranu wysyłała wewnętrzną wiadomość do
+  klienta.** Ekran uczył jednego zapisu odbiorcy, silnik rozumiał wyłącznie drugi. Znalezione
+  niezależnie przez recenzję zewnętrzną i potwierdzone na żywo w kontroli oddania.
+- **Zmiana sprawy mogła wejść bez wpisu na osi zdarzeń**, wbrew gwarancji z dokumentacji. Naprawa
+  objęła najpierw zmianę statusu, a po własnym powrocie do tej samej klasy błędu — również przydział
+  i zmianę priorytetu, wraz z sygnałem dla administratora, który wcześniej ginął przy wycofaniu
+  transakcji.
+- **Pracownik serwisu pobierał załącznik dowolnej sprawy**, także nieprzydzielonej — mimo że kartę
+  cudzej sprawy system odbijał już wcześniej.
+- **Obietnica usunięcia danych po zakończeniu zgłoszenia nie miała wykonawcy** — po zamknięciu sprawy
+  dane zostawały w bazie, dopóki ktoś nie powtórzył żądania.
+- **Trzy zachowania rozjeżdżały się przy równoczesnych żądaniach**: dobowy limit zgłoszeń,
+  archiwizacja produktu z aktywną sprawą i próby wysyłki przypomnień o terminach.
+- **Wbudowana diagnostyka podawała instrukcję, która nie usuwała problemu** — kontrola wdrożenia
+  wykonała ją dosłownie i ostrzeżenie nie zniknęło. Warunek testu był poprawny; myliła treść porady.
+- **Instrukcje i diagramy zrównane z zachowaniem produktu** w kilkunastu miejscach: limit wielkości
+  pliku przy imporcie, zakres uprawnień w panelu koordynatora, warunki odinstalowania, moment wysyłki
+  raportu końcowego, ważność linku potwierdzającego wobec okna na potwierdzenie.
+
+### Dwie powtórki w kontroli oddania — obie zapisane
+
+Kontrola oddania **zatrzymała wydanie dwukrotnie** i za każdym razem miała rację:
+
+1. Naprawa odświeżania tabeli importów wniosła nowy defekt — link do raportu błędów dorabiany przez
+   przeglądarkę był martwy do czasu odświeżenia strony. Punkt powtórzony po poprawce i zaliczony.
+2. Diagnostyka, napisy przy imporcie z błędami i opis odinstalowania — trzy punkty powtórzone po
+   ostatniej poprawce i zaliczone.
+
+To jest powód, dla którego kontrola oddania pracuje na paczce, a nie na repozytorium: **oba defekty
+były widoczne dopiero w zainstalowanym produkcie**.
+
+### Co świadomie zostaje — i dlaczego
+
+- **Przydział zgłoszeń według kraju i języka nie działa.** Zamówienie wymienia cztery kryteria
+  przydziału; działają dwa — kategoria produktu i priorytet. Produkt nigdzie nie zbiera danych
+  o kraju ani języku klienta, więc reguła oparta na nich nie dopasuje żadnej sprawy. **Nie jest to
+  ukryte:** ostrzega o tym ekran ustawień przy zapisie reguły, opis bazy danych i instrukcja
+  administratora, a w tym wydaniu poprawiono ostatnie miejsce, które o tym milczało — opis modułu
+  automatyzacji. Uzupełnienie wymagałoby dołożenia pól do formularza zgłoszenia i zmiany zakresu
+  zamówienia; **to decyzja zamawiającego, nie wykonawcy.**
+- **Klasa obsługująca sprawy jest za duża** — 2371 linii i 45 metod w jednym pliku, przez który
+  przechodzi każda zmiana w module zgłoszeń. Recenzja zewnętrzna ważyła to jako pozycję dużą ze
+  względu na skalę, zaznaczając, że **nie jest to błąd działania, tylko koszt utrzymania**. Podział
+  tej klasy to refaktor dotykający wszystkich ścieżek zapisu; przed wydaniem byłby zmianą
+  najwyższego ryzyka przy zerowym zysku dla użytkownika. Zostaje jako dług do zaplanowania.
+- **Jedno miejsce, w którym moduł automatyzacji sięga wprost do klasy modułu zgłoszeń**, zamiast
+  przez punkt zaczepienia — przy ochronie przed podwójnym mailem. Kod ma zabezpieczenie na wypadek
+  braku tej klasy i uczciwy komentarz, ale precedens narusza najmocniejszą regułę tej architektury.
+  Zamiana na punkt zaczepienia jest prosta; nie robimy jej w wydaniu naprawczym, żeby nie zmieniać
+  kontraktu między modułami w tym samym wydaniu, w którym zmieniamy zachowanie.
+- **Sygnał o gubionych wpisach dziennika jest zapisywany, ale nie ma go na liście testów
+  „Stanu witryny".** Kontrola oddania wywołała ten sygnał na żywo i potwierdziła, że administrator
+  go nie zobaczy. Naprawa to dołożenie jednego testu diagnostycznego — zmiana innej klasy niż te
+  z tego wydania, więc czeka na kolejne.
+- **Niepotwierdzone zgłoszenie blokuje archiwizację produktu, a lista pokazuje przy nim zero
+  spraw** — stan zastany z poprzedniego wydania, nie regresja. Ekran przeczy sam sobie i nie daje
+  administratorowi drogi do znalezienia blokującego zgłoszenia. Do naprawy w kolejnym wydaniu.
+- **Drobiazgi oddane do decyzji zamawiającego:** granica gwarancji liczona w czasie uniwersalnym
+  (przesunięcie działa zawsze na korzyść klienta, jest udokumentowane) oraz daty gwarancji na karcie
+  sprawy pokazywane z doklejoną godziną. Żaden z nich nie wpływa na rozstrzygnięcie gwarancji.
+
+### Czego ta runda nie objęła
+
+Przeglądy zewnętrzne pracowały na kodzie i na paczce — **nie** na środowisku produkcyjnym
+zamawiającego. Nie badano wydajności pod obciążeniem ani importu bazy liczącej dziesiątki tysięcy
+pozycji. Badanie dostępności **nie zostało powtórzone** na tym wydaniu; raport w paczce mówi wprost,
+którego wydania dotyczy i których ekranów dotknęły zmiany. Kontrola wdrożenia prowadzona była
+w jednej przeglądarce.
 
 ## Runda przy 1.3.9 — audyt końcowy przed przekazaniem (sześć kątów naraz)
 
