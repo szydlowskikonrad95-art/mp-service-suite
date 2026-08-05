@@ -377,7 +377,7 @@ pośrednika. To jednorazowa konfiguracja przy wdrożeniu.
   wyłączone — wniosek składa się wiadomością w sprawie i rozpatruje go pracownik (żeby jedna osoba
   nie usunęła danych drugiej).
 - Wbudowane w mechanizmy WordPressa: **eksport** i **usuwanie** danych osobowych (Narzędzia → Eksport/Usuwanie danych osobowych).
-- Usunięcie danych przy **aktywnej sprawie** jest **wstrzymywane** (dane potrzebne do obsługi) i wykonuje się po jej zamknięciu — z raportem co zostało zatrzymane i dlaczego.
+- Usunięcie danych przy **aktywnej sprawie** jest **wstrzymywane** (dane potrzebne do obsługi) i wykonuje się **automatycznie przy najbliższym przebiegu porządkowym po zamknięciu sprawy** (zadanie cykliczne, raz na dobę — patrz §7.3; klient nie musi klikać nic po raz drugi) — z raportem co zostało zatrzymane i dlaczego. Jeśli po wycofaniu zgody osoba wyśle **nowe zgłoszenie** (czyli udzieli zgody na nowo), zaplanowane usunięcie jest anulowane.
 - Historia zdarzeń sprawy jest **nieusuwalna, ale bez danych osobowych** (same fakty/daty/decyzje).
 - **Porzucone zgłoszenia kasują się same.** Jeśli ktoś wypełni formularz i nigdy nie kliknie linku
   potwierdzającego, zgłoszenie po **30 dniach** znika razem z jego danymi kontaktowymi i załącznikami
