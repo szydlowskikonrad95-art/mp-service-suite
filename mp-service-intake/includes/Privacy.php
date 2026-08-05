@@ -209,6 +209,95 @@ final class Privacy {
 	}
 
 	/**
+	 * WYKONAWCA ODROCZONEGO USUNIECIA (Z7). Panel obiecywal: „dane usuniemy po
+	 * zakonczeniu sprawy" — ale Privacy::erase wolal TYLKO przycisk panelu
+	 * i reczny eraser WP, wiec obietnica nie miala wykonawcy: po zamknieciu
+	 * sprawy dane lezaly, az ktos kliknie jeszcze raz.
+	 *
+	 * Wolane z dobowego crona retencji (Lifecycle, pod zamkiem procesu).
+	 * IDEMPOTENTNE: po udanym erase kartoteka dostaje anonymized_at i znika
+	 * z kandydatow; przebieg, ktory nie ma nic do roboty, niczego nie tyka.
+	 *
+	 * Kryteria (per ADRES, bo erase() pracuje na adresie — jak przycisk):
+	 * 1. NAJNOWSZY wpis rejestru zgod dla adresu to wycofanie. Nowa zgoda
+	 *    PO wycofaniu (nowe zgloszenie tej samej osoby) tworzy nowszy wiersz
+	 *    bez withdrawn_at — i ANULUJE odroczenie, takze ZANIM zgloszenie
+	 *    zostanie potwierdzone (wiersz zgody niesie e-mail od chwili zapisu).
+	 * 2. KAZDA zywa (nieanonimizowana) kartoteka adresu ma wycofanie jako
+	 *    wlasny ostatni wpis — wspolna skrzynka, w ktorej wycofala jedna
+	 *    osoba z kilku, NIE uruchamia kasowania cudzych danych (ten sam
+	 *    powod, dla ktorego panel blokuje samoobsluge przy wspolnym adresie).
+	 * 3. Zadna kartoteka adresu nie ma sprawy w statusie nieterminalnym
+	 *    (erase i tak sprawdza to ponownie pod blokada wiersza).
+	 *
+	 * Sciezka NATYCHMIASTOWA (klik bez aktywnej sprawy) pozostaje bez zmian.
+	 *
+	 * @return int Liczba adresow, dla ktorych wykonano anonimizacje.
+	 */
+	public static function run_deferred_erasures(): int {
+		global $wpdb;
+
+		$consents  = Tables::full( Tables::CONSENTS );
+		$customers = Tables::full( Tables::CUSTOMERS );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- tabele wlasne, zapytania przygotowane.
+		$emails = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT c.email
+				   FROM {$consents} c
+				  INNER JOIN ( SELECT email, MAX(id) AS last_id
+				                 FROM {$consents}
+				                WHERE consent_key = %s
+				                GROUP BY email ) ostatnie
+				          ON ostatnie.last_id = c.id
+				  WHERE c.withdrawn_at IS NOT NULL
+				    AND EXISTS ( SELECT 1 FROM {$customers} k
+				                  WHERE k.email = c.email AND k.anonymized_at IS NULL )",
+				Consents::KEY_PROCESSING
+			)
+		);
+
+		$done = 0;
+
+		foreach ( $emails as $email ) {
+			$email    = (string) $email;
+			$eligible = true;
+
+			foreach ( Customers::ids_by_email( $email ) as $customer_id ) {
+				$last_withdrawn = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT withdrawn_at FROM {$consents}
+						  WHERE customer_id = %d AND consent_key = %s
+						  ORDER BY id DESC LIMIT 1",
+						$customer_id,
+						Consents::KEY_PROCESSING
+					)
+				);
+
+				if ( null === $last_withdrawn || CaseRepo::has_active_case( $customer_id ) ) {
+					$eligible = false;
+					break;
+				}
+			}
+
+			if ( ! $eligible ) {
+				continue;
+			}
+
+			// TA SAMA sciezka co przycisk panelu — z jej blokada wiersza,
+			// ponownym sprawdzeniem aktywnej sprawy i sladem PII_REDACTION.
+			$result = self::erase( $email );
+
+			if ( $result['items_removed'] ) {
+				++$done;
+			}
+		}
+		// phpcs:enable
+
+		return $done;
+	}
+
+	/**
 	 * Exporter: dane klienta + sprawy + TRESCI Z FORMULARZA + wiadomosci + metadane zalacznikow.
 	 *
 	 * Zasada (audyt 28.07): co redagujemy przy USUWANIU jako dane wrazliwe, to musi

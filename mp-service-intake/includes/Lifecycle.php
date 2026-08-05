@@ -143,6 +143,10 @@ final class Lifecycle {
 					// RODO (audyt 27.07): porzucone zgloszenia niepotwierdzone
 					// zostawaly w bazie RAZEM z danymi kontaktowymi na zawsze.
 					CaseRepo::purge_abandoned_pending();
+					// RODO (Z7): odroczone usuniecie danych po zamknieciu sprawy.
+					// Panel obiecywal „dane usuniemy po zakonczeniu sprawy" —
+					// ten przebieg jest wykonawca tej obietnicy.
+					Privacy::run_deferred_erasures();
 				} finally {
 					$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'mp_intake_retention' ) );
 					// phpcs:enable
