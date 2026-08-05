@@ -72,6 +72,12 @@ Ekrany i praca administratora:
 * Wspólna dla pakietu warstwa ustawień: administrator ustawia statusy, terminy i reguły bez
   programisty.
 
+Z kontroli na działającej instalacji (dotyczy tego modułu):
+* **Ekrany wyjątków gwarancyjnych i importu rozjeżdżały się na wąskim oknie.** Tabele przewijają
+  się teraz w swoim obszarze, z zaczepem klawiatury, i mieszczą się na telefonie i na monitorze.
+  Kolumn nie schowaliśmy: schowanie dałoby w pomiarze identyczny wynik co poprawne przewijanie,
+  a kasowałoby kolumny na zawsze.
+
 = 1.3.11 =
 * Ekran „Wyjatki gwarancyjne" otwarty z menu (bez wybranego produktu) mowil tylko „wybierz produkt
   z listy Rejestru" i zostawial uzytkownika bez wyjscia. Teraz tlumaczy, czym jest wyjatek

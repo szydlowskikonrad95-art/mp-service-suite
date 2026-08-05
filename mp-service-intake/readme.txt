@@ -117,6 +117,21 @@ Rzetelność zapisu i drobiazgi:
 * Wiersze-sieroty w tabeli terminów są naprawdę sprzątane (dotąd obiecywał to tylko komentarz).
 * Poprawka stylu lub skryptu dociera do przeglądarek, zamiast zostać w pamięci podręcznej.
 
+Sześć wad z kontroli na działającej instalacji (cztery dotyczą tego modułu):
+* **Pracownik serwisu docierał do spraw spoza swojego przydziału — razem z danymi klienta.**
+  Lista pokazywała mu wyłącznie jego sprawy, ale karta sprawy otwierała się po samym numerze
+  w adresie. Ta sama luka pozwalała zmienić cudzą sprawę: status, odpowiedź wysyłaną do klienta,
+  notatkę. Karta i każde działanie na niej pytają teraz o prawo do TEJ konkretnej sprawy.
+  UWAGA: wada jest obecna w 1.3.11 i wcześniejszych — zamyka ją sama aktualizacja.
+* **Zbyt duży załącznik kończył się pustą białą stroną** — zgłaszający nie wiedział, czy wysłał,
+  a wpisane dane znikały. Teraz dostaje czytelny komunikat i wraca na formularz.
+* **Przekroczenie dobowego limitu zgłoszeń czyściło cały formularz.** Wartości zostają,
+  a komunikat mówi, kiedy będzie można wysłać ponownie.
+* **Treść z adresu strony trafiała na ekran jako komunikat panelu** — spreparowanym odnośnikiem
+  dało się pokazać na prawdziwej stronie serwisu dowolne zdanie. Skryptu uruchomić się nie dało;
+  ciężar polegał na wiarygodności, jakiej taki odnośnik użyczał od domeny serwisu. Ekran
+  przyjmuje teraz wyłącznie znane komunikaty.
+
 = 1.3.11 =
 * Wydanie zbiorcze pakietu: bez zmian w tym module, numer wersji podniesiony razem z pozostałymi.
   Jedyna poprawka tego wydania dotyczy ekranu „Wyjątki gwarancyjne" w module Rejestr MP.
