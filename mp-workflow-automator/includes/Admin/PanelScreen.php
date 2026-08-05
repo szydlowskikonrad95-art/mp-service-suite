@@ -983,6 +983,17 @@ final class PanelScreen {
 				continue;
 			}
 
+			/*
+			 * Z4 (polowanie 2026-08-05): wpisy WBUDOWANE (notyfikacja przydzialu,
+			 * przeglad SLA) loguja rule_id=0, bo nie pochodza z tabeli regul — a ta
+			 * numeruje od 1. „reguła nr: 0" kazalo czytelnikowi szukac reguly-widma,
+			 * wiec zamiast numeru, ktorego nie ma, mowimy wprost: wbudowana.
+			 */
+			if ( 'rule_id' === $k && 0 === (int) $v ) {
+				$parts[] = __( 'reguła: wbudowana', 'mp-workflow-automator' );
+				continue;
+			}
+
 			$wartosc = is_bool( $v )
 				? ( $v ? __( 'tak', 'mp-workflow-automator' ) : __( 'nie', 'mp-workflow-automator' ) )
 				: (string) $v;

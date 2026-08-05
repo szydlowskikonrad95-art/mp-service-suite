@@ -203,7 +203,10 @@ final class SubmissionHandler {
 			// podlega temu limitowi (tak samo mowi instrukcja klienta).
 			$notice = RateLimit::BLOCK_DUPLICATE === $blocked
 				? self::duplicate_message()
-				: self::rate_limited_message( RateLimit::retry_after( $ip, $email, $serial ) );
+				: self::rate_limited_message(
+					RateLimit::retry_after( $ip, $email, $serial ),
+					RateLimit::blocked_scope( $ip, $email, $serial )
+				);
 			self::redirect_back(
 				array(
 					'notice' => $notice,
@@ -651,7 +654,7 @@ final class SubmissionHandler {
 	}
 
 	/**
-	 * Komunikat odmowy przy przekroczeniu limitu zgloszen (S4 #3).
+	 * Komunikat odmowy przy przekroczeniu limitu zgloszen (S4 #3 + Z8).
 	 *
 	 * Mowi KIEDY znow mozna (moment z RateLimit::retry_after, w strefie witryny)
 	 * oraz ze nie trzeba czekac — wiadomosc w istniejacej sprawie idzie od razu.
@@ -659,23 +662,45 @@ final class SubmissionHandler {
 	 * kiedy, ani co zrobic zamiast. Gdy momentu nie da sie ustalic (okno tuz
 	 * wygaslo) — pomijamy zdanie o godzinie, reszta zostaje.
 	 *
-	 * @param int|null $retry_ts Unix ts konca blokady albo null.
+	 * Z8 (polowanie 2026-08-05): jeden wspolny tekst „Z TEGO ADRESU wysłano…"
+	 * obwinial niewinny adres, gdy odbicie poszlo z limitu NUMERU SERYJNEGO albo
+	 * LACZA — klient ze swiezym adresem zmienial go (nic nie dawalo) albo uznawal
+	 * system za zepsuty. Kazdy zakres blokady mowi teraz wlasnym zdaniem; gdy
+	 * zakresu nie da sie ustalic — zdanie neutralne bez wskazywania winnego.
+	 *
+	 * @param int|null    $retry_ts Unix ts konca blokady albo null.
+	 * @param string|null $scope    Zakres blokady (RateLimit::SCOPE_*) albo null.
 	 * @return string
 	 */
-	private static function rate_limited_message( ?int $retry_ts ): string {
-		$kiedy = null !== $retry_ts
-			? sprintf(
+	private static function rate_limited_message( ?int $retry_ts, ?string $scope ): string {
+		switch ( $scope ) {
+			case RateLimit::SCOPE_SERIAL:
+				$powod = __( 'Dla tego numeru seryjnego wysłano zbyt wiele zgłoszeń w krótkim czasie.', 'mp-service-intake' );
 				/* translators: %s: data i godzina, od ktorej znow mozna wyslac, np. „5.08, 14:30". */
-				__( ' Kolejne zgłoszenie z tego adresu wyślesz po %s.', 'mp-service-intake' ),
-				wp_date( 'j.m, H:i', $retry_ts )
-			)
+				$kiedy_wzor = __( ' Kolejne zgłoszenie z tym numerem seryjnym wyślesz po %s.', 'mp-service-intake' );
+				break;
+			case RateLimit::SCOPE_IP:
+				$powod = __( 'Z tego łącza internetowego wysłano zbyt wiele zgłoszeń w krótkim czasie.', 'mp-service-intake' );
+				/* translators: %s: data i godzina, od ktorej znow mozna wyslac, np. „5.08, 14:30". */
+				$kiedy_wzor = __( ' Kolejne zgłoszenie wyślesz po %s.', 'mp-service-intake' );
+				break;
+			case RateLimit::SCOPE_EMAIL:
+				$powod = __( 'Z tego adresu e-mail wysłano zbyt wiele zgłoszeń w krótkim czasie.', 'mp-service-intake' );
+				/* translators: %s: data i godzina, od ktorej znow mozna wyslac, np. „5.08, 14:30". */
+				$kiedy_wzor = __( ' Kolejne zgłoszenie z tego adresu wyślesz po %s.', 'mp-service-intake' );
+				break;
+			default:
+				$powod = __( 'Wysłano zbyt wiele zgłoszeń w krótkim czasie.', 'mp-service-intake' );
+				/* translators: %s: data i godzina, od ktorej znow mozna wyslac, np. „5.08, 14:30". */
+				$kiedy_wzor = __( ' Kolejne zgłoszenie wyślesz po %s.', 'mp-service-intake' );
+		}
+
+		$kiedy = null !== $retry_ts
+			? sprintf( $kiedy_wzor, wp_date( 'j.m, H:i', $retry_ts ) )
 			: '';
 
-		return sprintf(
-			/* translators: %s: zdanie „Kolejne zgłoszenie … wyślesz po …" albo puste. */
-			__( 'Z tego adresu wysłano zbyt wiele zgłoszeń w krótkim czasie.%s Nie musisz czekać — jeśli masz już założoną sprawę, napisz wiadomość przy niej w panelu zgłoszeń: trafia do serwisu od razu i nie podlega temu limitowi.', 'mp-service-intake' ),
-			$kiedy
-		);
+		return $powod . $kiedy . ' '
+			. __( 'Nie musisz czekać — jeśli masz już założoną sprawę, napisz wiadomość przy niej w panelu zgłoszeń: trafia do serwisu od razu i nie podlega temu limitowi.', 'mp-service-intake' );
 	}
 
 	/**

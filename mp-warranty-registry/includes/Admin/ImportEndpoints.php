@@ -167,10 +167,13 @@ final class ImportEndpoints {
 
 		wp_send_json_success(
 			array(
-				'token'     => $token,
-				'processed' => (int) $job['processed_rows'],
-				'total'     => (int) $job['total_rows'],
-				'errors'    => (int) $job['error_rows'],
+				'token'      => $token,
+				'processed'  => (int) $job['processed_rows'],
+				'total'      => (int) $job['total_rows'],
+				'errors'     => (int) $job['error_rows'],
+				// Z1b: wiersz historii odswiezany po done potrzebuje linku raportu
+				// takze przy imporcie wznowionym (upload dostaje go w js_config).
+				'report_url' => ImportScreen::report_url( $job_id ),
 			)
 		);
 	}

@@ -43,6 +43,21 @@ final class RateLimit {
 	public const BLOCK_DUPLICATE = 'duplicate';
 
 	/**
+	 * Zakres blokady rate-limit: adres e-mail zglaszajacego.
+	 */
+	public const SCOPE_EMAIL = 'email';
+
+	/**
+	 * Zakres blokady rate-limit: numer seryjny.
+	 */
+	public const SCOPE_SERIAL = 'serial';
+
+	/**
+	 * Zakres blokady rate-limit: lacze (adres IP).
+	 */
+	public const SCOPE_IP = 'ip';
+
+	/**
 	 * Okno dedup w sekundach (15 min).
 	 *
 	 * PUBLICZNA, bo ta sama liczba musi trafic do KLIENTA: komunikat o odrzuconym
@@ -172,6 +187,45 @@ final class RateLimit {
 		}
 
 		return $when > 0 ? $when : null;
+	}
+
+	/**
+	 * KTORY licznik faktycznie blokuje — do komunikatu odmowy (Z8, polowanie 2026-08-05).
+	 *
+	 * PO CO: komunikat odmowy mowil ZAWSZE „z tego adresu", takze gdy odbicie
+	 * poszlo z limitu numeru seryjnego albo lacza — klient ze swiezym, niewinnym
+	 * adresem zmienial go (nic nie dawalo) albo uznawal system za zepsuty.
+	 * Odmowa ma obwiniac wlasciwy zakres, wiec wolajacy pyta tutaj.
+	 *
+	 * Odczyt bez inkrementu, te same warunki co w check()/retry_after(). Gdy
+	 * blokuje wiecej niz jeden zakres, zwracamy pierwszy w kolejnosci
+	 * e-mail → serial → IP: zdanie o adresie jest wtedy PRAWDZIWE, a moment
+	 * powrotu i tak liczy retry_after() ze WSZYSTKICH blokujacych okien.
+	 * Null = zaden licznik juz nie blokuje (okno wygaslo miedzy odmowa a odczytem).
+	 *
+	 * @param string $ip     Adres IP (jak w check()).
+	 * @param string $email  E-mail.
+	 * @param string $serial Numer seryjny (moze byc pusty).
+	 * @return string|null Stala SCOPE_* albo null.
+	 */
+	public static function blocked_scope( string $ip, string $email, string $serial ): ?string {
+		$email  = strtolower( trim( $email ) );
+		$serial = trim( $serial );
+		$limits = self::limits();
+
+		if ( '' !== $email && self::current_count( self::email_counter_key( $email ) ) >= (int) $limits['email_max'] ) {
+			return self::SCOPE_EMAIL;
+		}
+
+		if ( '' !== $serial && self::current_count( self::serial_counter_key( $serial ) ) >= (int) $limits['serial_max'] ) {
+			return self::SCOPE_SERIAL;
+		}
+
+		if ( '' !== $ip && self::current_count( 'mp_rl_ip_' . md5( $ip ) ) > (int) $limits['ip_max'] ) {
+			return self::SCOPE_IP;
+		}
+
+		return null;
 	}
 
 	/**
