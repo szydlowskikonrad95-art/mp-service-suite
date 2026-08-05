@@ -70,9 +70,7 @@ Rzetelność liczb i zapisu:
 * Kontrola w Stanie witryny **nazywa** fabryczne treści WordPressa („Hello world!", „Przykładowa
   strona") widoczne bez logowania — i świadomie ich **nie kasuje**, bo to cudza treść.
 
-Z kontroli na działającej instalacji (dwie dotyczą tego modułu):
-* **Koordynator widział w menu pozycję, która go nie wpuszczała.** Jest ukryta temu, kto nie ma
-  do niej prawa, zamiast otwierać drzwi i odsyłać z kwitkiem.
+Z kontroli na działającej instalacji (dotyczy tego modułu):
 * **Ekrany ustawień rozjeżdżały się na wąskim oknie** — z tabeli statusów widać było jedną
   kolumnę. Tabele przewijają się teraz w swoim obszarze, z zaczepem klawiatury. Kolumn nie
   schowaliśmy: schowanie dałoby w pomiarze identyczny wynik co poprawne przewijanie, a kasowałoby

@@ -104,7 +104,8 @@ W tym jednym miejscu znajdziesz razem:
 - **28 testów samego WordPressa** — wersja PHP i brakujące rozszerzenia, zaległe aktualizacje,
   HTTPS, zaplanowane zadania cykliczne, dostępność interfejsu programistycznego, limity
   wgrywania plików, miejsce na dysku, tryb diagnostyczny włączony na produkcji;
-- **14 testów dopisanych przez nasze wtyczki** — m.in. czy zadanie usuwające stare dane osobowe
+- **16 testów dopisanych przez nasze wtyczki** (9 z modułu zgłoszeń, 2 z rejestru, 5 z automatu)
+  — m.in. czy zadanie usuwające stare dane osobowe
   nie zniknęło z listy zadań (wymóg ochrony danych), czy poczta do klientów nie zaczęła się
   odbijać, czy ustawiona jest pula pracowników przyjmujących zgłoszenia (bez niej sprawy nie
   będą przydzielane), czy nie zostały niedokończone weryfikacje, czy obecne są biblioteki do
