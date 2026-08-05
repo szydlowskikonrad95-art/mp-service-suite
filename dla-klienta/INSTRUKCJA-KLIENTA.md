@@ -202,7 +202,10 @@ Od tej chwili stronę widzisz tylko Ty (jako zalogowany administrator), a klienc
 - **Kodowanie:** UTF-8 albo Windows-1250 (domyślne z polskiego Excela). Jeśli serwer nie ma rozszerzenia `iconv` ani `intl`,
   import **uczciwie odmówi** pliku z Windows-1250 (zamiast przekłamać polskie znaki) i poprosi o UTF-8 — ekran importu
   ostrzega o tym z góry. W Excelu: *Zapisz jako → CSV UTF-8*.
-- **Limit rozmiaru pliku: 8 MB** — większą bazę podziel na części (import można wznawiać).
+- **Limit rozmiaru pliku: 8 MB — chyba że serwer pozwala na mniej.** Obowiązuje **mniejsza** z dwóch
+  wartości: limitu wtyczki (8 MB) i limitu wysyłki plików Twojego serwera (typowy hosting ma np. 2 MB).
+  **Ekran importu zawsze pokazuje właściwą liczbę dla Twojej instalacji** — kieruj się nią, nie tą z instrukcji.
+  Większą bazę podziel na części (import można wznawiać); podniesienie limitu serwera to sprawa dla informatyka.
 - **Import DODAJE produkty, nie nadpisuje.** Numer seryjny, który już jest w rejestrze, trafia do raportu błędów jako duplikat.
   Przy porównywaniu **spacje i myślniki są pomijane, wielkość liter nie ma znaczenia** — `SN-AUD-1001`, `sn aud 1001`
   i `snaud1001` to dla systemu **ten sam** produkt.

@@ -15,8 +15,9 @@ której automat nie umiał przydzielić (najczęściej pusta pula — patrz §3)
 
 ![Lista spraw](zdjecia/admin-01-sprawy.png)
 
-Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status i priorytet,
+Na karcie sprawy możesz: **przydzielić / prze-przydzielić** pracownika, zmienić status,
 pisać do klienta. Ponowne przydzielenie tej samej osobie nic nie wysyła (bez spamu).
+Priorytet widzisz w nagłówku karty — nadaje go automat według reguł, z karty się go nie zmienia.
 
 Wynik sprawdzenia gwarancji ma cztery statusy: aktywna / wygasła / brak danych / **wymagana
 weryfikacja**. Ten ostatni znaczy, że numer dokumentu zakupu albo data zakupu od klienta nie
@@ -51,12 +52,13 @@ wysyłkę dla tej samej sprawy można wywołać **raz na 5 minut**.
 
 ![Panel Automatyzacje MP](zdjecia/admin-07-automatyzacje.png)
 
-- **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). Pod nią
-  jest sekcja **„Kto dostaje zgłoszenia"** z listą pracowników do zaznaczenia — **ustawia ją
-  administrator systemu** (tak samo jak pozostałe konfiguracje). **Pusta lista = sprawy zostają
-  nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to ostrzeżenie, poproś administratora.
-- **Akcje**: „Przelicz terminy obsługi" (po zmianie konfiguracji terminów; nie wysyła ponownie starych
-  powiadomień) i „Eksport CSV" (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
+- **Reguły przydziału** — tabela pokazuje, co automat robi i kiedy (tylko do odczytu). **Pusta lista
+  pracowników = sprawy zostają nieprzydzielone**, a tabela reguł mówi o tym wprost. Jeśli widzisz to
+  ostrzeżenie, poproś administratora: sekcję **„Kto dostaje zgłoszenia"** z listą pracowników do
+  zaznaczenia widzi i ustawia **wyłącznie administrator systemu** — w Twoim panelu jej nie ma.
+- **Akcje**: u Ciebie jest **„Eksport CSV"** (zestawienie: liczba spraw, czas obsługi, powody odrzuceń).
+  Przycisk **„Przelicz terminy obsługi"** (uruchamiany po zmianie konfiguracji terminów; nie wysyła
+  ponownie starych powiadomień) **widzi wyłącznie administrator systemu** — to, że go nie masz, nie jest błędem.
 
 ### ⏱️ Dwie kolumny czasu w eksporcie — i dlaczego dwie
 
@@ -85,7 +87,7 @@ zamykającym sprawę** — obie strony mówią o tym samym.
   w **Automatyzacje MP → Ustawienia** (sekcja „Statusy własne"); tam też ustawia się **godziny
   terminów** dla każdego statusu. Programista nie jest do tego potrzebny.
 - **Rejestr zdarzeń** — co automat zrobił i dlaczego (np. `ASSIGNMENT_UNMATCHED` = nie umiał
-  przydzielić). Przycisk „Pokaż techniczne" odsłania też wpisy cyklicznego sprawdzania.
+  przydzielić). Przycisk „Pokaż wpisy automatycznego przeglądu" odsłania też wpisy cyklicznego sprawdzania.
 - **Checklisty i szablony odpowiedzi** — kroki obsługi per rodzaj sprawy i gotowe treści maili;
   w treściach działają wyłącznie markery z listy pod edytorem (np. `{{numer_sprawy}}`,
   `{{status}}`) — inne są pomijane.

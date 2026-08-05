@@ -39,8 +39,9 @@ Kliknij numer sprawy. Na karcie masz wszystko:
   (**MP: Sprawy → Ustawienia**).
 
 Zmiana danych kontaktowych przez klienta **zostawia ślad na osi zdarzeń** (sam fakt i nazwy
-zmienionych pól, bez wartości — numer telefonu jest daną osobową). Zanim zadzwonisz pod numer
-z góry karty, rzuć okiem na oś: jeśli klient go poprawił, dzwonisz pod stary.
+zmienionych pól, bez wartości — numer telefonu jest daną osobową). **Numer z góry karty jest
+zawsze aktualny** — karta czyta dane kontaktowe na żywo z kartoteki klienta, więc po poprawce
+od razu widzisz nowy; wpis na osi tylko odnotowuje, że zmiana była.
 
 ## 3. Terminy (SLA)
 

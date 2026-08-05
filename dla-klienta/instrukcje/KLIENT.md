@@ -67,7 +67,7 @@ przy każdej sprawie:
 ![Sprawa w panelu klienta](zdjecia/11-panel-sprawa-srv10.jpg)
 ![Wiadomość wysłana do serwisu](zdjecia/12-wiadomosc-do-serwisu-wyslana.jpg)
 
-O każdej ważnej zmianie (przydział, zmiana statusu, decyzja) system powiadomi Cię e-mailem.
+O każdej ważnej zmianie (zmiana statusu, decyzja) system powiadomi Cię e-mailem.
 
 ## 4. Twoje dane (RODO)
 
