@@ -37,11 +37,16 @@ tego nie załatwia: nieudany INSERT eventu jej nie przerywa, więc do 1.3.12 COM
 wpisu i status zmieniał się po cichu, bez śladu na osi, którą README obiecuje jako nieusuwalną
 i kompletną. `CaseRepo::change_status` sprawdza teraz wynik `CaseEvents::log()` i przy porażce
 **wycofuje całą transakcję** (zwrotka `EVENT_LOG_FAILED`) — lepiej odmówić zmiany, niż zmienić stan
-bez śladu. **Zakres:** gwarancja obowiązuje dla `STATUS_CHANGED`. `CASE_ASSIGNED` i `PRIORITY_CHANGED`
-mają event w tej samej transakcji, ale wyniku zapisu nie sprawdzają — przy nieudanym INSERT mutacja
-zostaje, a alarm podnosi `Common\EventWrite` („Stan witryny"). `wp_mp_workflow_events` (D) nigdy nie
-idzie w transakcji z mutacją C: to dziennik operacji automatu zapisywany PO commit C, z założenia
-best‑effort.
+bez śladu. **Zakres:** gwarancja obowiązuje dla **wszystkich trzech** zdarzeń mutujących sprawę —
+`STATUS_CHANGED`, `CASE_ASSIGNED` i `PRIORITY_CHANGED` — jednym wspólnym gardłem
+(`CaseRepo::wycofaj_bez_sladu`). Alarm dla administratora podnoszony jest **po** wycofaniu
+transakcji: `wp_options` jest tabelą transakcyjną, więc alarm z wnętrza transakcji ginął razem z nią.
+`wp_mp_workflow_events` (D) nigdy nie idzie w transakcji z mutacją C: to dziennik operacji automatu
+zapisywany PO commit C, z założenia best‑effort.
+
+Zdarzenia zapisywane **poza** transakcją (`CASE_VERIFIED`/`CONSENT_RECORDED` w `verify()`,
+`CHECKLIST_ITEM_TOGGLED`, wpisy `reconcile_unlaunched`) tej gwarancji nie mają i mieć nie mogą —
+nie ma czego wycofywać. Nieudany zapis podnosi tam alarm i na tym się kończy.
 
 ## 3. Typy zdarzeń — `wp_mp_case_events` (C)
 
