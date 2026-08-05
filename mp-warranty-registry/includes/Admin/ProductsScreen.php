@@ -94,7 +94,7 @@ final class ProductsScreen {
 		self::$hook_suffix = (string) add_menu_page(
 			__( 'Rejestr produktów MP', 'mp-warranty-registry' ),
 			__( 'Rejestr MP', 'mp-warranty-registry' ),
-			Roles::menu_cap_for_current_user(),
+			Roles::registry_menu_cap(),
 			self::PAGE_SLUG,
 			array( self::class, 'render' ),
 			'dashicons-database'
@@ -107,7 +107,11 @@ final class ProductsScreen {
 	 * @return void
 	 */
 	public static function render(): void {
-		if ( ! current_user_can( 'mp_agent' ) && ! current_user_can( 'mp_system_admin' ) ) {
+		// ⛔ TEN SAM warunek co pozycja w menu — patrz `Roles::REGISTRY_CAPS`.
+		// Wczesniej menu i ekran pytaly o co innego, wiec koordynator widzial drzwi
+		// i dostawal odmowe. Ta bramka zostaje: menu chowa pozycje, a ekran broni
+		// wejscia z palca w adres.
+		if ( ! Roles::can_current_user_see_registry() ) {
 			wp_die( esc_html__( 'Brak uprawnień do rejestru produktów.', 'mp-warranty-registry' ) );
 		}
 
