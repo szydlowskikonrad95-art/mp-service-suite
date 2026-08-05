@@ -138,8 +138,9 @@ celowo nie przechowuje notatek ani danych osobowych; powód znajdziesz na liści
   automatycznie** — nie musisz po aktualizacji klikać „Przelicz terminy obsługi". Przed aktualizacją
   na produkcji zrób kopię bazy (polityka: `MIGRATION_POLICY.md` — w głównym katalogu paczki).
 - **Odinstalowanie** sprząta role systemowe (4 role), automatycznie założone strony (2), zadania
-  cykliczne oraz **wszystkie pliki robocze**: załączniki ze zgłoszeń, a także pliki wsadowe
-  i raporty błędów z importu produktów — nic z tego nie zostaje na dysku serwera. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
+  cykliczne oraz pliki wsadowe i raporty błędów z importu produktów. **Załączniki ze zgłoszeń idą
+  tam, gdzie reszta danych sprawy**: kasowane są tylko przy włączonym przełączniku „Kasowanie danych
+  przy odinstalowaniu" (domyślnie wyłączony — patrz §1a); bez niego zostają na dysku razem z danymi w bazie. **16 tabel z danymi (klienci, sprawy, wiadomości, zgody)**
   oraz wpisy niepotwierdzonych zgłoszeń **zostają w bazie** — to świadoma decyzja, żeby
   przypadkowe odinstalowanie wtyczki nie skasowało danych biznesowych. Zostają też konta
   klientów założone przez system (bez roli). Uwaga: narzędzie do kasowania tych danych

@@ -86,7 +86,7 @@ zamykającym sprawę** — obie strony mówią o tym samym.
   w **Automatyzacje MP → Ustawienia** (sekcja „Statusy własne"); tam też ustawia się **godziny
   terminów** dla każdego statusu. Programista nie jest do tego potrzebny.
 - **Rejestr zdarzeń** — co automat zrobił i dlaczego (np. `ASSIGNMENT_UNMATCHED` = nie umiał
-  przydzielić). Przycisk „Pokaż techniczne" odsłania też wpisy cyklicznego sprawdzania.
+  przydzielić). Przycisk „Pokaż wpisy automatycznego przeglądu" odsłania też wpisy cyklicznego sprawdzania.
 - **Checklisty i szablony odpowiedzi** — kroki obsługi per rodzaj sprawy i gotowe treści maili;
   w treściach działają wyłącznie markery z listy pod edytorem (np. `{{numer_sprawy}}`,
   `{{status}}`) — inne są pomijane.
