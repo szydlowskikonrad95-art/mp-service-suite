@@ -132,8 +132,16 @@ jobs:
 
   # E2E kryteria odbioru modułu B na ZYWYM WP (sygnal #1): import 10k, kill-polowa-wznowienie,
   # partia CSV->check, negatywne uprawnienia, snapshot-uninstall.
-  e2e-import:
+  # PODZIAL NA 4 ROWNOLEGLE CZESCI: jeden sekwencyjny przebieg 146 testow trwal ~19 min
+  # (zmierzone per-job 5.08), rozruch jobu tylko ~30 s — wiec 4 czesci daja ~5 min bez
+  # utraty pokrycia. Bramka sumujaca nizej (job `e2e-import`) pilnuje, zeby czesci razem
+  # przeszly PELNA liste — podzial gubiacy pliki wygladalby jak zielone CI.
+  e2e-shard:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     services:
       db:
         image: mariadb:11.8
@@ -188,8 +196,58 @@ jobs:
       # test z przebiegu. Do tego test napisany i niewpiety nie chodzil nigdzie.
       # Teraz: dodanie testu = dodanie PLIKU w testy/e2e/. Kolejnosc dotychczasowa
       # zachowana co do pliku (testy/e2e/KOLEJNOSC.txt), nowe doklejaja sie na koncu.
-      - name: Testy e2e (automatyczne wykrywanie — cały zestaw)
-        run: cd /tmp/wp && MP_BASE=http://127.0.0.1:8080 bash "$GITHUB_WORKSPACE"/testy/e2e/uruchom-wszystkie.sh
+      - name: Testy e2e (automatyczne wykrywanie — część ${{ matrix.shard }} z 4)
+        run: >-
+          cd /tmp/wp &&
+          MP_BASE=http://127.0.0.1:8080
+          MP_SHARDS=4 MP_SHARD=${{ matrix.shard }}
+          MP_WYKONANE_PLIK=/tmp/wykonane.txt
+          bash "$GITHUB_WORKSPACE"/testy/e2e/uruchom-wszystkie.sh
+      # if: always() — licznik ma sie wgrac takze gdy ktorys test padl, zeby bramka
+      # sumujaca odroznila "czesc pobiegla i padla" od "czesc w ogole nie wystartowala".
+      - name: Licznik wykonanych do artefaktu
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-wykonane-${{ matrix.shard }}
+          path: /tmp/wykonane.txt
+          if-no-files-found: error
+
+  # BRAMKA SUMUJACA — nazwa `e2e-import` NIE JEST przypadkowa: tak nazywa sie kontrola
+  # WYMAGANA w ochronie galezi main. Czesci matrixa meldowalyby sie jako "e2e-shard (1)"...
+  # i wymagana kontrola nigdy by nie wstala, blokujac KAZDE scalenie. Ta bramka czeka na
+  # wszystkie czesci i dodatkowo sprawdza, ze razem wykonaly PELNA liste testow.
+  e2e-import:
+    runs-on: ubuntu-latest
+    needs: e2e-shard
+    if: always()
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Pobierz liczniki czesci
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: e2e-wykonane-*
+          path: /tmp/liczniki
+      - name: Bramka sumy czesci (pelna lista albo czerwono)
+        env:
+          WYNIK_CZESCI: ${{ needs.e2e-shard.result }}
+        run: |
+          if [ "$WYNIK_CZESCI" != "success" ]; then
+            echo "⛔ Co najmniej jedna czesc e2e padla albo nie wystartowala (wynik: $WYNIK_CZESCI)."
+            exit 1
+          fi
+          OCZEKIWANE=$(bash testy/e2e/uruchom-wszystkie.sh --lista | tail -1 | grep -oE '[0-9]+$')
+          SUMA=0
+          for PLIK in /tmp/liczniki/e2e-wykonane-*/wykonane.txt; do
+            [ -f "$PLIK" ] || { echo "⛔ Brak licznika: $PLIK"; exit 1; }
+            SUMA=$(( SUMA + $(cat "$PLIK") ))
+          done
+          echo "Suma z czesci: $SUMA · pelna lista: $OCZEKIWANE"
+          if [ "$SUMA" -ne "$OCZEKIWANE" ]; then
+            echo "⛔ Czesci razem wykonaly $SUMA testow, a pelna lista ma $OCZEKIWANE — podzial GUBI pliki."
+            exit 1
+          fi
+          echo "✔ Wszystkie czesci przeszly, suma zgadza sie z pelna lista ($SUMA)."
 
   # kryteria odbioru C sekcja 4 — brudny WP: niestandardowy prefiks + WP_DEBUG + object-cache + degraded-order
   dirty-env:
