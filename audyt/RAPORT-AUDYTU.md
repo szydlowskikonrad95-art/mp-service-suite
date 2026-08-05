@@ -9,7 +9,8 @@ Zakres: trzy wtyczki, paczka dla klienta, dokumentacja i zgodność z **oryginal
 (nie z naszym opracowaniem), bez prawa zmiany kodu. **Wynik: 61 żywych pozycji** — rozkład wag
 policzony z nagłówków listy: **3 krytyczne**, 16 dużych, 27 średnich, 15 drobnych — plus 5 miejsc
 w części pierwszej. Naprawy wchodzą w wydaniu **1.3.12**; co zamknięte i czym udowodnione, mówią
-[`CHANGELOG.md`](../CHANGELOG.md) i [`dzial-audytu-POSTEP.md`](../dzial-audytu-POSTEP.md).
+[`CHANGELOG.md`](../CHANGELOG.md) — wpis 1.3.12 wymienia każdą naprawę wraz z dowodem,
+a przy większości podaje nazwę testu, który ją pilnuje.
 
 ⛔ **Poprzednie brzmienie tego nagłówka było jedną z wad, które ta runda znalazła.** Stało tu
 zdanie *„Stan na wydanie 1.3.11: znalezisk krytycznych 0, dużych 0"* — **bez daty i bez zakresu**,
