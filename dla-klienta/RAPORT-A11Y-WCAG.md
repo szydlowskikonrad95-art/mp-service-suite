@@ -1,7 +1,21 @@
 # Raport dostępności (WCAG 2.1 AA) — MP Service Suite
 
-**Data badania:** 2026-08-04 · **Wersja badana:** 1.3.12 — czyli **kod tej paczki**.
-**Wersja:** 1.3.12.
+**Data badania:** 2026-08-04 · **Wersja badana:** 1.3.12.
+**Wersja:** 1.3.13.
+
+> ⚠️ **Ten raport opisuje pomiar wykonany na wydaniu 1.3.12, a paczka, którą trzymasz, ma numer
+> 1.3.13.** Badania nie powtarzaliśmy i nie chcemy udawać, że je powtórzyliśmy. Wydanie 1.3.13
+> dotknęło **czterech** spośród jedenastu badanych powierzchni:
+>
+> - **Formularz zgłoszenia** — inna treść odmowy przy przekroczeniu limitu zgłoszeń;
+> - **Import CSV** — tabela „Ostatnie importy" odświeża się teraz sama po zakończeniu importu;
+> - **Sprawy** — inna treść komunikatu po zmianie statusu;
+> - **Automat** — inny opis wpisów wbudowanych w rejestrze zdarzeń.
+>
+> We wszystkich czterech zmieniła się **treść napisu albo odświeżenie wiersza tabeli**, a nie
+> struktura nagłówków, etykiety pól czy kolejność fokusu — czyli to, co ten pomiar mierzył.
+> Pozostałe siedem powierzchni jest w 1.3.13 nietkniętych. Pełny pomiar powtórzymy przy
+> najbliższym wydaniu zmieniającym układ ekranów.
 
 ## Co zmieniło się od poprzedniego badania
 
